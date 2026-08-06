@@ -1,0 +1,26 @@
+﻿<div class="alert alert-@Type.ToString().ToLower() alert-dismissible fade show" role="alert">
+    @ChildContent
+    @if (Dismissible)
+    {
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    }
+</div>
+
+@code {
+    public enum AlertType
+    {
+        Success,
+        Info,
+        Warning,
+        Danger
+    }
+
+    [Parameter]
+    public AlertType Type { get; set; } = AlertType.Success;
+
+    [Parameter]
+    public bool Dismissible { get; set; } = true;
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

@@ -1,1 +1,13 @@
-<Solution />
+<Solution>
+  <Folder Name="/Documentation/" />
+  <Folder Name="/src/">
+    <Project Path="MyGardenPlanner2026.Core/MyGardenPlanner2026.Core.csproj" />
+    <Project Path="MyGardenPlanner2026.Infrastructure/MyGardenPlanner2026.Infrastructure.csproj" />
+    <Project Path="MyGardenPlanner2026/MyGardenPlanner2026.Client/MyGardenPlanner2026.Client.csproj" />
+    <Project Path="MyGardenPlanner2026/MyGardenPlanner2026/MyGardenPlanner2026.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="MyGardenPlanner2026.Tests.UI/MyGardenPlanner2026.Tests.UI.csproj" />
+    <Project Path="MyGardenPlanner2026.Tests.Unit/MyGardenPlanner2026.Tests.Unit.csproj" />
+  </Folder>
+</Solution>

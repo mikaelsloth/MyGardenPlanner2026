@@ -1,0 +1,29 @@
+Licensing Model Overview
+
+The software is offered under a commercial licensing model designed for
+enterprise and white-label use.
+
+Licenses are granted on a per-customer basis and are available under
+two alternative pricing models:
+
+1. Annual Subscription
+2. Fixed-Term Perpetual License (30 months)
+
+The annual subscription provides the right to use, modify, brand, and
+commercially distribute the software, including as a white-label solution,
+for the duration of the subscription term.
+
+The fixed-term perpetual license grants the same rights for a one-time
+fee, valid for a period of thirty (30) months from the effective date.
+At the end of the term, the license may be renewed or converted to an
+annual subscription.
+
+Both license models allow:
+- proprietary and closed-source use
+- full white-label branding
+- commercial distribution to end customers
+- internal modification and integration
+
+Support, maintenance, updates, and service-level agreements (SLAs) may
+be included as part of a subscription or offered separately, subject to
+commercial agreement.

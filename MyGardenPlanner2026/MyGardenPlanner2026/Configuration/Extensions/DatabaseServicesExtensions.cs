@@ -1,7 +1,7 @@
 ﻿namespace MyGardenPlanner2026.Configuration.Extensions;
 
 using Microsoft.EntityFrameworkCore;
-using MyGardenPlanner2026.Data;
+using MyGardenPlanner2026.Infrastructure.Data;
 
 public static class DatabaseServicesExtensions
 {
@@ -10,7 +10,7 @@ public static class DatabaseServicesExtensions
         var connectionString = configuration.GetConnectionString("DefaultConnection")
             ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-        services.AddDbContext<ApplicationDbContext>(options =>
+        services.AddDbContext<PlannerDbContext>(options =>
             options.UseSqlite(connectionString)); // UseSqlServer til produktion
 
         services.AddDatabaseDeveloperPageExceptionFilter();

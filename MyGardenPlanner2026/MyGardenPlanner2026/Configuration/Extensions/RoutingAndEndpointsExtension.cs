@@ -1,6 +1,7 @@
 ﻿namespace MyGardenPlanner2026.Configuration.Extensions;
 
 using MyGardenPlanner2026.Components;
+using MyGardenPlanner2026.Components.Account;
 
 public static class RoutingAndEndpointsExtension
 {

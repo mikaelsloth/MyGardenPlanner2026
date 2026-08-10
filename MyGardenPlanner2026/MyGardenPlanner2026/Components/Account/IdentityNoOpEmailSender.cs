@@ -2,7 +2,7 @@ namespace MyGardenPlanner2026.Components.Account;
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using MyGardenPlanner2026.Data;
+using MyGardenPlanner2026.Core.Entities;
 
 // Remove the "else if (EmailSender is IdentityNoOpEmailSender)" block from RegisterConfirmation.razor after updating with a real implementation.
 internal sealed class IdentityNoOpEmailSender : IEmailSender<ApplicationUser>

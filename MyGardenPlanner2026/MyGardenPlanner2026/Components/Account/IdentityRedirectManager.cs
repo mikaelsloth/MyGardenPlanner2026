@@ -2,7 +2,7 @@ namespace MyGardenPlanner2026.Components.Account;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
-using MyGardenPlanner2026.Data;
+using MyGardenPlanner2026.Core.Entities;
 
 internal sealed class IdentityRedirectManager(NavigationManager navigationManager)
 {

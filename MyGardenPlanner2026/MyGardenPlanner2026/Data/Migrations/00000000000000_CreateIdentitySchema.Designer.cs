@@ -8,10 +8,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using MyGardenPlanner2026.Data;
+using MyGardenPlanner2026.Core.Entities;
+using MyGardenPlanner2026.Infrastructure.Data;
 using System;
 
-[DbContext(typeof(ApplicationDbContext))]
+[DbContext(typeof(PlannerDbContext))]
 [Migration("00000000000000_CreateIdentitySchema")]
 partial class CreateIdentitySchema
 {

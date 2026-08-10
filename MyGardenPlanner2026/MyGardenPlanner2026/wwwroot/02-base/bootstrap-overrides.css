@@ -1,0 +1,183 @@
+/* ==========================================================================
+   02-Base: Bootstrap 5 Overrides & MGP Utilities
+   ========================================================================== */
+
+/* Buttons Baseline Override */
+.btn {
+  font-family: var(--mgp-font-sans);
+  font-size: 0.95rem;
+  font-weight: var(--font-weight-bold);
+  padding: var(--mgp-space-sm) var(--mgp-space-md);
+  border-radius: var(--radius-md);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--mgp-space-xs);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* Button Variants */
+.btn-primary {
+  background-color: var(--mgp-primary);
+  color: var(--mgp-surface);
+  border: 1px solid var(--mgp-primary);
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible {
+  background-color: var(--mgp-primary-dark);
+  border-color: var(--mgp-primary-dark);
+  color: var(--mgp-surface);
+}
+
+.btn-secondary {
+  background-color: var(--mgp-surface);
+  color: var(--mgp-primary-dark);
+  border: 1px solid var(--mgp-border);
+}
+
+.btn-secondary:hover,
+.btn-secondary:focus-visible {
+  background-color: var(--mgp-surface-muted);
+  border-color: var(--mgp-border-hover);
+  color: var(--mgp-primary-dark);
+}
+
+.btn-accent {
+  background-color: var(--mgp-accent);
+  color: var(--mgp-surface);
+  border: 1px solid var(--mgp-accent);
+}
+
+.btn-accent:hover,
+.btn-accent:focus-visible {
+  filter: brightness(0.95);
+  color: var(--mgp-surface);
+}
+
+.btn-danger {
+  background-color: var(--mgp-surface);
+  color: var(--mgp-danger);
+  border: 1px solid var(--mgp-danger-border);
+}
+
+.btn-danger:hover,
+.btn-danger:focus-visible {
+  background-color: var(--mgp-danger-bg);
+  border-color: var(--mgp-danger-border-hover);
+  color: var(--mgp-danger);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--mgp-primary-dark);
+  border: 1px solid transparent;
+  padding-inline: var(--mgp-space-xs);
+}
+
+.btn-ghost:hover,
+.btn-ghost:focus-visible {
+  background-color: var(--mgp-primary-soft);
+  color: var(--mgp-primary-dark);
+}
+
+.btn-icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Button Sizes */
+.btn-sm {
+  padding: var(--mgp-space-xs) var(--mgp-space-sm);
+  font-size: var(--font-size-sm);
+}
+
+.btn-lg {
+  padding: var(--mgp-space-md) var(--mgp-space-lg);
+  font-size: var(--font-size-base);
+}
+
+/* Button States */
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn-spinner {
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  animation: mgp-spin 0.7s linear infinite;
+  display: inline-block;
+  margin-right: var(--mgp-space-xs);
+}
+
+@keyframes mgp-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Forms & Inputs Overrides */
+.form-control,
+.form-select {
+  width: 100%;
+  border: 1px solid var(--mgp-border);
+  background-color: var(--mgp-surface);
+  color: var(--mgp-text);
+  border-radius: var(--radius-md);
+  padding: var(--mgp-space-sm) var(--mgp-space-md);
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--mgp-primary);
+  box-shadow: 0 0 0 4px var(--mgp-focus-ring);
+}
+
+/* Domain Specific Typography Utilities */
+.meta {
+  font-size: var(--font-size-sm);
+  color: var(--mgp-text-muted);
+  line-height: 1.4;
+}
+
+.latin-name {
+  color: var(--mgp-text-muted);
+  font-style: italic;
+  font-size: var(--font-size-sm);
+}
+
+.numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+code, .mono {
+  font-family: var(--mgp-font-mono);
+  font-size: 0.92em;
+}
+
+label, .label {
+  font-size: 0.92rem;
+  font-weight: var(--font-weight-bold);
+}
+
+.bg-soft {
+  background-color: var(--mgp-primary-soft) !important;
+}
+
+.text-primary {
+  color: var(--mgp-primary) !important;
+}

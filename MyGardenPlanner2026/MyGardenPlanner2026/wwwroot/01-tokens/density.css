@@ -1,0 +1,38 @@
+/* ==========================================================================
+   01-Tokens: Data Density & Compact Mode
+   ========================================================================== */
+
+:root {
+  /* Dynamic Component Base Spacing Tokens (Default Density) */
+  --mgp-card-padding:  var(--mgp-space-md);
+  --mgp-row-padding-y: var(--mgp-space-sm);
+  --mgp-row-padding-x: var(--mgp-space-md);
+  --mgp-section-gap:   var(--mgp-space-lg);
+
+  /* Density Scale Reference Values */
+  --mgp-density-comfortable: var(--mgp-space-md);
+  --mgp-density-default:     var(--mgp-space-sm);
+  --mgp-density-compact:     0.375rem var(--mgp-space-sm);
+}
+
+/* Scoped Overrides via [data-density] attribute */
+[data-density="comfortable"] {
+  --mgp-card-padding:  var(--mgp-space-lg);
+  --mgp-row-padding-y: var(--mgp-space-md);
+  --mgp-row-padding-x: var(--mgp-space-lg);
+  --mgp-section-gap:   var(--mgp-space-xl);
+}
+
+[data-density="default"] {
+  --mgp-card-padding:  var(--mgp-space-md);
+  --mgp-row-padding-y: var(--mgp-space-sm);
+  --mgp-row-padding-x: var(--mgp-space-md);
+  --mgp-section-gap:   var(--mgp-space-lg);
+}
+
+[data-density="compact"] {
+  --mgp-card-padding:  var(--mgp-space-sm);
+  --mgp-row-padding-y: 0.375rem;
+  --mgp-row-padding-x: var(--mgp-space-sm);
+  --mgp-section-gap:   var(--mgp-space-md);
+}

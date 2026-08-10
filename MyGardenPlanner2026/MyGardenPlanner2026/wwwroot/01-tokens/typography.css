@@ -1,0 +1,32 @@
+/* ==========================================================================
+   01-Tokens: Typography
+   ========================================================================== */
+
+:root {
+  /* Font Families */
+  --mgp-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --mgp-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Font Sizes */
+  --font-size-xs:   0.78rem;
+  --font-size-sm:   0.9rem;
+  --font-size-base: 1rem;
+  --font-size-md:   1.08rem;
+  --font-size-lg:   1.25rem;
+  --font-size-xl:   clamp(1.35rem, 2.2vw, 2rem);
+  --font-size-xxl:  clamp(2rem, 4vw, 3.25rem);
+
+  /* Line Heights */
+  --mgp-line-height-tight:   1.15;
+  --mgp-line-height-base:    1.55;
+  --mgp-line-height-relaxed: 1.7;
+
+  /* Weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold:   750;
+  --font-weight-heavy:  800;
+
+  /* Letter Spacing */
+  --mgp-letter-spacing-heading: -0.03em;
+}

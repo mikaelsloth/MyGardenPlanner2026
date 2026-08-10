@@ -1,0 +1,146 @@
+/* ==========================================================================
+   03-Components: ConfirmDialog, Popovers, DangerZone, Off-Canvas Drawers
+   ========================================================================== */
+
+/* Confirmation Modal Overlay */
+.confirm-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: grid;
+  place-items: center;
+  z-index: 1060;
+}
+
+.confirm-dialog {
+  background: var(--mgp-surface);
+  border: 1px solid var(--mgp-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  width: 100%;
+  max-width: 480px;
+  padding: var(--mgp-space-md);
+  display: grid;
+  gap: var(--mgp-space-md);
+}
+
+.confirm-dialog-header {
+  display: flex;
+  align-items: center;
+  gap: var(--mgp-space-sm);
+}
+
+.confirm-dialog-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-bold);
+  margin: 0;
+  color: var(--mgp-text);
+}
+
+.confirm-dialog-body {
+  font-size: var(--font-size-sm);
+  color: var(--mgp-text-muted);
+  line-height: 1.5;
+}
+
+.confirm-dialog-impact {
+  margin-top: var(--mgp-space-xs);
+  padding: var(--mgp-space-xs) var(--mgp-space-sm);
+  background: var(--mgp-surface-muted);
+  border-left: 3px solid var(--mgp-danger);
+  border-radius: var(--radius-sm);
+  color: var(--mgp-text);
+}
+
+.confirm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--mgp-space-sm);
+}
+
+/* Inline Confirm Popover */
+.inline-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--mgp-space-xs);
+  padding: var(--mgp-space-xs) var(--mgp-space-sm);
+  background: var(--mgp-surface);
+  border: 1px solid var(--mgp-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Danger Zone */
+.danger-zone {
+  border: 1px solid var(--mgp-danger-border);
+  background: var(--mgp-surface);
+  border-radius: var(--radius-md);
+  padding: var(--mgp-space-md);
+  display: grid;
+  gap: var(--mgp-space-sm);
+}
+
+.danger-zone-header {
+  color: var(--mgp-danger);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-base);
+}
+
+/* Off-Canvas Navigation Drawer (< 940px) */
+.nav-drawer {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: min(86vw, 340px);
+  background: var(--mgp-surface);
+  border-right: 1px solid var(--mgp-border);
+  padding: var(--mgp-space-lg);
+  z-index: 1050;
+  box-shadow: var(--shadow-lg);
+  transform: translateX(-100%);
+  transition: transform 0.25s ease-in-out;
+}
+
+.nav-drawer.open {
+  transform: translateX(0);
+}
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(36, 49, 40, 0.4);
+  z-index: 1040;
+}
+
+/* Mobile Filter Drawer / Bottom Sheet (< 640px) */
+.filter-drawer {
+  position: fixed;
+  inset: auto 0 0 0;
+  max-height: 85vh;
+  background: var(--mgp-surface);
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+  padding: var(--mgp-space-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 1060;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mgp-space-md);
+}
+
+@media (max-width: 640px) {
+  .confirm-dialog {
+    width: calc(100% - (2 * var(--mgp-space-md)));
+    margin: var(--mgp-space-md);
+  }
+
+  .confirm-dialog-actions {
+    flex-direction: column-reverse;
+    width: 100%;
+  }
+
+  .confirm-dialog-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

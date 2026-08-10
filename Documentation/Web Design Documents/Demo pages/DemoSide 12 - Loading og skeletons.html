@@ -1,0 +1,1343 @@
+﻿<!doctype html>
+<html lang="da">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MyGardenPlanner – Design demo 11: Loading states og skeletons</title>
+
+    <style>
+            :root {
+                --mgp-primary: #3F6B4A;
+                --mgp-primary-dark: #2F5138;
+                --mgp-primary-soft: #DDE8D8;
+                --mgp-accent: #B86B4B;
+                --mgp-text: #243128;
+                --mgp-text-muted: #6F766D;
+                --mgp-bg: #FAF8F2;
+                --mgp-surface: #FFFFFF;
+                --mgp-surface-muted: #EFEAE0;
+                --mgp-border: #D8D2C7;
+                --mgp-danger: #9F3A38;
+                --mgp-warning-bg: #F8E8D8;
+                --space-2xs: .25rem;
+                --space-xs: .5rem;
+                --space-sm: .75rem;
+                --space-md: 1rem;
+                --space-lg: 1.5rem;
+                --space-xl: 2rem;
+                --space-2xl: 3rem;
+                --page-x: var(--space-lg);
+                --page-y: var(--space-xl);
+                --sidebar-width: 280px;
+                --content-max: 1220px;
+                --radius-sm: .45rem;
+                --radius-md: .75rem;
+                --radius-lg: 1.1rem;
+                --shadow-sm: 0 1px 2px rgba(36, 49, 40, .08);
+                --shadow-md: 0 12px 28px rgba(36, 49, 40, .10);
+                --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+                --font-size-xs: .78rem;
+                --font-size-sm: .9rem;
+                --font-size-base: 1rem;
+                --font-size-md: 1.08rem;
+                --font-size-xl: clamp(1.35rem, 2.2vw, 2rem);
+                --font-size-xxl: clamp(2rem, 4vw, 3.25rem);
+                --line-height-tight: 1.15;
+                --line-height-base: 1.55;
+                --font-weight-normal: 400;
+                --font-weight-medium: 600;
+                --font-weight-bold: 750;
+                --letter-spacing-heading: -0.03em;
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+            body {
+                margin: 0;
+                min-height: 100vh;
+                color: var(--mgp-text);
+                background: var(--mgp-bg);
+                font-family: var(--font-sans);
+                font-size: var(--font-size-base);
+                line-height: var(--line-height-base);
+            }
+
+            h1,
+            h2,
+            h3 {
+                color: var(--mgp-text);
+                line-height: var(--line-height-tight);
+                letter-spacing: var(--letter-spacing-heading);
+                font-weight: var(--font-weight-bold);
+            }
+
+            h1 {
+                margin: 0;
+                font-size: var(--font-size-xxl);
+            }
+
+            h2 {
+                margin: 0 0 var(--space-md);
+                font-size: var(--font-size-xl);
+            }
+
+            h3 {
+                margin: 0;
+                font-size: var(--font-size-md);
+            }
+
+            p {
+                margin-top: 0;
+            }
+
+            code,
+            .mono {
+                font-family: var(--font-mono);
+                font-size: .92em;
+            }
+
+            .app-shell {
+                display: grid;
+                min-height: 100vh;
+                grid-template-columns: var(--sidebar-width) 1fr;
+                grid-template-rows: auto 1fr auto;
+                grid-template-areas:
+                    "sidebar header"
+                    "sidebar main"
+                    "sidebar footer";
+            }
+
+            .sidebar {
+                grid-area: sidebar;
+                background: var(--mgp-surface);
+                border-right: 1px solid var(--mgp-border);
+                padding: var(--space-lg);
+                position: sticky;
+                top: 0;
+                height: 100vh;
+                overflow-y: auto;
+            }
+
+            .brand {
+                display: flex;
+                align-items: center;
+                gap: var(--space-sm);
+                padding-bottom: var(--space-lg);
+                border-bottom: 1px solid var(--mgp-border);
+                margin-bottom: var(--space-lg);
+                font-weight: var(--font-weight-bold);
+                letter-spacing: -.02em;
+            }
+
+            .brand-mark {
+                width: 2.3rem;
+                height: 2.3rem;
+                border-radius: 50%;
+                display: grid;
+                place-items: center;
+                color: white;
+                background: linear-gradient(135deg, var(--mgp-primary), var(--mgp-primary-dark));
+                box-shadow: var(--shadow-sm);
+            }
+
+            .nav-section-title {
+                color: var(--mgp-text-muted);
+                text-transform: uppercase;
+                font-size: var(--font-size-xs);
+                letter-spacing: .08em;
+                font-weight: var(--font-weight-bold);
+                margin: var(--space-lg) 0 var(--space-xs);
+            }
+
+            .nav-list {
+                display: grid;
+                gap: var(--space-2xs);
+                margin: 0;
+                padding: 0;
+                list-style: none;
+            }
+
+            .nav-link {
+                width: 100%;
+                display: flex;
+                align-items: center;
+                gap: var(--space-sm);
+                color: var(--mgp-text);
+                background: transparent;
+                border: 0;
+                text-align: left;
+                border-radius: var(--radius-sm);
+                padding: var(--space-xs) var(--space-sm);
+                font-size: .95rem;
+                font-weight: var(--font-weight-bold);
+                cursor: pointer;
+            }
+
+                .nav-link:hover {
+                    background: var(--mgp-surface-muted);
+                }
+
+                .nav-link.active {
+                    background: var(--mgp-primary-soft);
+                    color: var(--mgp-primary-dark);
+                }
+
+            .header {
+                grid-area: header;
+                background: rgba(250, 248, 242, .88);
+                backdrop-filter: blur(10px);
+                border-bottom: 1px solid var(--mgp-border);
+                position: sticky;
+                top: 0;
+                z-index: 10;
+            }
+
+            .header-inner {
+                max-width: var(--content-max);
+                margin: 0 auto;
+                padding: var(--space-sm) var(--space-lg);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: var(--space-md);
+            }
+
+            .context-title {
+                margin: 0;
+                font-size: 1rem;
+                font-weight: var(--font-weight-bold);
+            }
+
+            .context-subtitle {
+                margin: var(--space-2xs) 0 0;
+                color: var(--mgp-text-muted);
+                font-size: var(--font-size-sm);
+            }
+
+            main {
+                grid-area: main;
+                max-width: var(--content-max);
+                width: 100%;
+                margin: 0 auto;
+                padding: var(--page-y) var(--page-x) var(--space-2xl);
+            }
+
+            .footer {
+                grid-area: footer;
+                color: var(--mgp-text-muted);
+                border-top: 1px solid var(--mgp-border);
+                padding: var(--space-md) var(--space-lg);
+                text-align: center;
+                font-size: var(--font-size-sm);
+            }
+
+            .section {
+                margin-top: var(--space-xl);
+            }
+
+            .section-header {
+                display: flex;
+                align-items: end;
+                justify-content: space-between;
+                gap: var(--space-md);
+                margin-bottom: var(--space-md);
+            }
+
+                .section-header p {
+                    margin: var(--space-2xs) 0 0;
+                    color: var(--mgp-text-muted);
+                }
+
+            .hero {
+                background: linear-gradient(135deg, var(--mgp-surface), var(--mgp-primary-soft));
+                border: 1px solid var(--mgp-border);
+                border-radius: var(--radius-lg);
+                box-shadow: var(--shadow-md);
+                padding: clamp(var(--space-lg), 3vw, var(--space-xl));
+                display: grid;
+                grid-template-columns: 1.35fr .95fr;
+                gap: var(--space-lg);
+                align-items: center;
+                margin-bottom: var(--space-lg);
+            }
+
+            .eyebrow {
+                display: inline-flex;
+                align-items: center;
+                gap: var(--space-xs);
+                color: var(--mgp-primary-dark);
+                background: var(--mgp-primary-soft);
+                border: 1px solid rgba(63, 107, 74, .18);
+                border-radius: 999px;
+                padding: var(--space-2xs) var(--space-sm);
+                font-size: .84rem;
+                font-weight: var(--font-weight-bold);
+                margin-bottom: var(--space-sm);
+            }
+
+            .lead {
+                color: var(--mgp-text-muted);
+                max-width: 68ch;
+                font-size: var(--font-size-md);
+                line-height: var(--line-height-base);
+                margin-bottom: var(--space-lg);
+            }
+
+            .grid {
+                display: grid;
+                gap: var(--space-md);
+            }
+
+            .grid-comfortable {
+                gap: var(--space-lg);
+            }
+
+            .grid-2 {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .grid-3 {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .grid-4 {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+
+            .stack-sm {
+                display: grid;
+                gap: var(--space-sm);
+            }
+
+            .stack-md {
+                display: grid;
+                gap: var(--space-md);
+            }
+
+            .card {
+                background: var(--mgp-surface);
+                border: 1px solid var(--mgp-border);
+                border-radius: var(--radius-md);
+                box-shadow: var(--shadow-sm);
+                padding: var(--space-md);
+            }
+
+            .card-highlight {
+                background: var(--mgp-primary-soft);
+                border-color: rgba(63, 107, 74, .22);
+            }
+
+            .btn-row,
+            .card-actions {
+                display: flex;
+                gap: var(--space-sm);
+                flex-wrap: wrap;
+                align-items: center;
+            }
+
+            .card-actions {
+                margin-top: var(--space-sm);
+                gap: var(--space-xs);
+            }
+
+            .btn {
+                appearance: none;
+                border: 1px solid transparent;
+                border-radius: .65rem;
+                padding: var(--space-sm) var(--space-md);
+                font-weight: var(--font-weight-bold);
+                font-size: .95rem;
+                cursor: pointer;
+                transition: .15s ease;
+                text-decoration: none;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: var(--space-xs);
+                white-space: nowrap;
+            }
+
+            .btn-primary {
+                background: var(--mgp-primary);
+                color: white;
+                border-color: var(--mgp-primary);
+            }
+
+                .btn-primary:hover {
+                    background: var(--mgp-primary-dark);
+                    border-color: var(--mgp-primary-dark);
+                }
+
+            .btn-secondary {
+                background: var(--mgp-surface);
+                color: var(--mgp-primary-dark);
+                border-color: var(--mgp-border);
+            }
+
+                .btn-secondary:hover {
+                    background: var(--mgp-surface-muted);
+                    border-color: rgba(63, 107, 74, .28);
+                }
+
+            .btn-danger {
+                background: white;
+                color: var(--mgp-danger);
+                border-color: rgba(159, 58, 56, .35);
+            }
+
+                .btn-danger:hover {
+                    background: #fff4f3;
+                    border-color: rgba(159, 58, 56, .55);
+                }
+
+            .btn-sm {
+                padding: var(--space-xs) var(--space-sm);
+                font-size: var(--font-size-sm);
+            }
+
+            .btn:disabled,
+            .btn[aria-disabled="true"] {
+                opacity: .55;
+                cursor: not-allowed;
+                pointer-events: none;
+            }
+
+            .btn-spinner {
+                width: 1em;
+                height: 1em;
+                border: 2px solid currentColor;
+                border-right-color: transparent;
+                border-radius: 999px;
+                animation: spin .7s linear infinite;
+            }
+
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .badge-row {
+                display: flex;
+                flex-wrap: wrap;
+                gap: var(--space-xs);
+                margin-top: var(--space-sm);
+            }
+
+            .badge {
+                display: inline-flex;
+                align-items: center;
+                gap: var(--space-2xs);
+                border-radius: 999px;
+                padding: var(--space-2xs) var(--space-sm);
+                font-size: var(--font-size-xs);
+                font-weight: var(--font-weight-bold);
+                border: 1px solid transparent;
+                white-space: nowrap;
+            }
+
+            .badge-primary {
+                color: var(--mgp-primary-dark);
+                background: var(--mgp-primary-soft);
+                border-color: rgba(63, 107, 74, .18);
+            }
+
+            .badge-muted {
+                color: var(--mgp-text-muted);
+                background: var(--mgp-surface-muted);
+                border-color: var(--mgp-border);
+            }
+
+            .badge-accent {
+                color: #653521;
+                background: var(--mgp-warning-bg);
+                border-color: rgba(184, 107, 75, .22);
+            }
+
+            .badge-danger {
+                color: var(--mgp-danger);
+                background: #fff4f3;
+                border-color: rgba(159, 58, 56, .22);
+            }
+
+            .meta {
+                color: var(--mgp-text-muted);
+                font-size: var(--font-size-sm);
+                line-height: 1.4;
+                margin: var(--space-2xs) 0 0;
+            }
+
+            .numeric {
+                font-variant-numeric: tabular-nums;
+            }
+
+            .demo-label {
+                display: inline-flex;
+                align-items: center;
+                width: fit-content;
+                color: var(--mgp-text-muted);
+                font-family: var(--font-mono);
+                font-size: var(--font-size-xs);
+                background: var(--mgp-surface-muted);
+                border: 1px solid var(--mgp-border);
+                border-radius: 999px;
+                padding: var(--space-2xs) var(--space-sm);
+                margin-bottom: var(--space-sm);
+            }
+
+            /* ============================================================
+           Skeletons
+           Skeletons bruges til indhold. Spinner bruges til handlinger.
+        ============================================================ */
+
+            .skeleton-card,
+            .skeleton-row,
+            .skeleton-media-card,
+            .skeleton-summary-card {
+                pointer-events: none;
+            }
+
+            .skeleton-line,
+            .skeleton-block,
+            .skeleton-icon,
+            .skeleton-pill,
+            .skeleton-thumbnail,
+            .skeleton-avatar {
+                background: linear-gradient( 90deg, var(--mgp-surface-muted), var(--mgp-primary-soft), var(--mgp-surface-muted) );
+                background-size: 200% 100%;
+                animation: skeleton-shimmer 1.3s linear infinite;
+            }
+
+            @keyframes skeleton-shimmer {
+                to {
+                    background-position: -200% 0;
+                }
+            }
+
+            .skeleton-line {
+                height: .85rem;
+                border-radius: 999px;
+            }
+
+            .skeleton-title {
+                width: 62%;
+            }
+
+            .skeleton-meta {
+                width: 42%;
+            }
+
+            .skeleton-short {
+                width: 28%;
+            }
+
+            .skeleton-medium {
+                width: 55%;
+            }
+
+            .skeleton-long {
+                width: 84%;
+            }
+
+            .skeleton-actions {
+                width: 36%;
+            }
+
+            .skeleton-block {
+                height: 6rem;
+                border-radius: var(--radius-md);
+            }
+
+            .skeleton-icon,
+            .skeleton-avatar {
+                width: 2.75rem;
+                height: 2.75rem;
+                border-radius: 999px;
+                flex: 0 0 auto;
+            }
+
+            .skeleton-pill {
+                width: 4.25rem;
+                height: 1.55rem;
+                border-radius: 999px;
+            }
+
+            .skeleton-thumbnail {
+                width: 100%;
+                aspect-ratio: 1 / 1;
+                border-radius: .8rem;
+            }
+
+            .skeleton-summary-card {
+                display: grid;
+                gap: var(--space-sm);
+                min-height: 9rem;
+            }
+
+            .skeleton-card {
+                display: grid;
+                gap: var(--space-sm);
+                min-height: 13rem;
+            }
+
+            .skeleton-row {
+                display: grid;
+                grid-template-columns: auto 1fr auto;
+                gap: var(--space-md);
+                align-items: center;
+                padding: var(--space-sm) var(--space-md);
+                border: 1px solid var(--mgp-border);
+                border-radius: var(--radius-md);
+                background: var(--mgp-surface);
+            }
+
+            .skeleton-row-content {
+                display: grid;
+                gap: var(--space-sm);
+            }
+
+            .skeleton-media-card {
+                display: grid;
+                grid-template-columns: 120px 1fr;
+                gap: var(--space-md);
+                align-items: start;
+                min-height: 10rem;
+            }
+
+            .skeleton-media-content {
+                display: grid;
+                gap: var(--space-sm);
+            }
+
+            .inline-loading {
+                display: inline-flex;
+                align-items: center;
+                gap: var(--space-xs);
+                color: var(--mgp-text-muted);
+                font-size: var(--font-size-sm);
+            }
+
+            .loading-section {
+                display: flex;
+                gap: var(--space-sm);
+                align-items: start;
+                padding: var(--space-sm);
+                border-radius: var(--radius-md);
+                border: 1px solid var(--mgp-border);
+                background: var(--mgp-surface);
+            }
+
+                .loading-section strong {
+                    display: block;
+                    font-weight: var(--font-weight-bold);
+                }
+
+            .progress {
+                height: .65rem;
+                background: var(--mgp-surface-muted);
+                border-radius: 999px;
+                overflow: hidden;
+                border: 1px solid var(--mgp-border);
+            }
+
+            .progress-bar {
+                height: 100%;
+                background: var(--mgp-primary);
+            }
+
+            .progress-30 {
+                width: 30%;
+            }
+
+            .progress-62 {
+                width: 62%;
+            }
+
+            .progress-88 {
+                width: 88%;
+            }
+
+            .thumbnail-processing {
+                min-height: 120px;
+                border-radius: .8rem;
+                border: 1px solid rgba(63, 107, 74, .18);
+                background: linear-gradient(90deg, var(--mgp-surface-muted), var(--mgp-primary-soft), var(--mgp-surface-muted));
+                background-size: 200% 100%;
+                animation: skeleton-shimmer 1.3s linear infinite;
+                display: grid;
+                place-items: center;
+                color: var(--mgp-text-muted);
+                font-weight: var(--font-weight-bold);
+                text-align: center;
+                padding: var(--space-md);
+            }
+
+            .preview-stage {
+                min-height: 380px;
+                border-radius: var(--radius-lg);
+                border: 1px solid rgba(63, 107, 74, .18);
+                background: var(--mgp-surface);
+                display: grid;
+                place-items: center;
+                padding: var(--space-lg);
+            }
+
+            .preview-stage-skeleton {
+                width: 100%;
+                min-height: 320px;
+                border-radius: var(--radius-md);
+                background: linear-gradient(90deg, var(--mgp-surface-muted), var(--mgp-primary-soft), var(--mgp-surface-muted));
+                background-size: 200% 100%;
+                animation: skeleton-shimmer 1.3s linear infinite;
+            }
+
+            .status-message {
+                display: flex;
+                gap: var(--space-sm);
+                align-items: start;
+                padding: var(--space-sm);
+                border-radius: var(--radius-md);
+                border: 1px solid var(--mgp-border);
+                background: var(--mgp-surface);
+            }
+
+            .status-dot {
+                width: .75rem;
+                height: .75rem;
+                border-radius: 50%;
+                margin-top: .42rem;
+                flex: 0 0 auto;
+                background: var(--mgp-text-muted);
+            }
+
+            .status-success .status-dot {
+                background: var(--mgp-primary);
+            }
+
+            .status-warning .status-dot {
+                background: var(--mgp-accent);
+            }
+
+            .status-danger .status-dot {
+                background: var(--mgp-danger);
+            }
+
+            .status-message strong {
+                display: block;
+                font-weight: var(--font-weight-bold);
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .skeleton-line,
+                .skeleton-block,
+                .skeleton-icon,
+                .skeleton-pill,
+                .skeleton-thumbnail,
+                .skeleton-avatar,
+                .thumbnail-processing,
+                .preview-stage-skeleton,
+                .btn-spinner {
+                    animation: none;
+                }
+            }
+
+            @media (max-width: 940px) {
+                :root {
+                    --page-x: var(--space-md);
+                    --page-y: var(--space-lg);
+                }
+
+                .app-shell {
+                    grid-template-columns: 1fr;
+                    grid-template-areas:
+                        "header"
+                        "main"
+                        "footer";
+                }
+
+                .sidebar {
+                    display: none;
+                }
+
+                .hero,
+                .grid-4,
+                .grid-3,
+                .grid-2,
+                .skeleton-media-card {
+                    grid-template-columns: 1fr;
+                }
+
+                .header-inner {
+                    align-items: start;
+                    flex-direction: column;
+                    padding: var(--space-sm) var(--space-md);
+                }
+
+                .skeleton-row {
+                    grid-template-columns: auto 1fr;
+                }
+
+                    .skeleton-row .skeleton-pill {
+                        grid-column: 1 / -1;
+                    }
+
+                .btn-row .btn {
+                    width: 100%;
+                }
+            }
+
+            @media print {
+                body {
+                    background: white;
+                }
+
+                .sidebar,
+                .header,
+                .footer,
+                .btn-row,
+                .card-actions {
+                    display: none !important;
+                }
+
+                .app-shell {
+                    display: block;
+                }
+
+                main {
+                    max-width: none;
+                    padding: 0;
+                }
+
+                .card,
+                .hero,
+                .status-message {
+                    box-shadow: none;
+                    break-inside: avoid;
+                }
+
+                .skeleton-line,
+                .skeleton-block,
+                .skeleton-icon,
+                .skeleton-pill,
+                .skeleton-thumbnail,
+                .skeleton-avatar,
+                .thumbnail-processing,
+                .preview-stage-skeleton {
+                    animation: none !important;
+                }
+            }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar" aria-label="Primær navigation">
+            <div class="brand">
+                <div class="brand-mark">✿</div>
+                <div>MyGardenPlanner</div>
+            </div>
+
+            <div class="nav-section-title">Loading</div>
+            <ul class="nav-list">
+                <li><button class="nav-link active" type="button">Demo 11</button></li>
+                <li><button class="nav-link" type="button">Page skeleton</button></li>
+                <li><button class="nav-link" type="button">Card skeleton</button></li>
+                <li><button class="nav-link" type="button">Row skeleton</button></li>
+                <li><button class="nav-link" type="button">Media skeleton</button></li>
+                <li><button class="nav-link" type="button">Loading buttons</button></li>
+                <li><button class="nav-link" type="button">Progress</button></li>
+                <li><button class="nav-link" type="button">Stalled loading</button></li>
+            </ul>
+        </aside>
+
+        <header class="header">
+            <div class="header-inner">
+                <div>
+                    <p class="context-title">Design demo 11</p>
+                    <p class="context-subtitle">Loading states · skeletons · loading buttons · progress</p>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-secondary" type="button">Vis skeletons</button>
+                    <button class="btn btn-secondary" type="button">Test upload</button>
+                    <button class="btn btn-primary" type="button">Gem ændringer</button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section class="hero">
+                <div>
+                    <span class="eyebrow">Nordisk havearkitekt · demo 11</span>
+                    <h1>Loading states og skeletons</h1>
+                    <p class="lead">
+                        Denne demo viser loading-principper for MyGardenPlanner: skeletons til indhold,
+                        loading buttons til handlinger, progress bars til målbar fremdrift og forklarende states,
+                        når noget tager længere tid end forventet.
+                    </p>
+
+                    <div class="btn-row">
+                        <button class="btn btn-primary" type="button" disabled>
+                            <span class="btn-spinner"></span>
+                            Gemmer…
+                        </button>
+                        <button class="btn btn-secondary" type="button" disabled>
+                            <span class="btn-spinner"></span>
+                            Henter data…
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card card-highlight stack-sm">
+                    <span class="demo-label">hovedregel</span>
+                    <h3>Spinner til handlinger, skeleton til indhold</h3>
+                    <p class="meta">
+                        Brugeren skal se, at appen arbejder — men loading må ikke blokere mere end nødvendigt.
+                    </p>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Dashboard skeleton</h2>
+                        <p>Summary cards kan loade lokalt, mens resten af siden allerede er synlig.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-4">
+                    <article class="card skeleton-summary-card" aria-hidden="true">
+                        <div class="skeleton-line skeleton-short"></div>
+                        <div class="skeleton-line skeleton-title"></div>
+                        <div class="skeleton-line skeleton-meta"></div>
+                        <div class="skeleton-pill"></div>
+                    </article>
+
+                    <article class="card skeleton-summary-card" aria-hidden="true">
+                        <div class="skeleton-line skeleton-short"></div>
+                        <div class="skeleton-line skeleton-title"></div>
+                        <div class="skeleton-line skeleton-meta"></div>
+                        <div class="skeleton-pill"></div>
+                    </article>
+
+                    <article class="card skeleton-summary-card" aria-hidden="true">
+                        <div class="skeleton-line skeleton-short"></div>
+                        <div class="skeleton-line skeleton-title"></div>
+                        <div class="skeleton-line skeleton-meta"></div>
+                        <div class="skeleton-pill"></div>
+                    </article>
+
+                    <article class="card skeleton-summary-card" aria-hidden="true">
+                        <div class="skeleton-line skeleton-short"></div>
+                        <div class="skeleton-line skeleton-title"></div>
+                        <div class="skeleton-line skeleton-meta"></div>
+                        <div class="skeleton-pill"></div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Card skeletons</h2>
+                        <p>Bruges til entity cards, plantekort, materialekort og havelister.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-3">
+                    <article class="card skeleton-card" aria-hidden="true">
+                        <div class="skeleton-line skeleton-title"></div>
+                        <div class="skeleton-line skeleton-meta"></div>
+                        <div class="skeleton-block"></div>
+                        <div class="skeleton-line skeleton-actions"></div>
+                    </article>
+
+                    <article class="card skeleton-card" aria-hidden="true">
+                        <div class="skeleton-line skeleton-title"></div>
+                        <div class="skeleton-line skeleton-meta"></div>
+                        <div class="skeleton-block"></div>
+                        <div class="skeleton-line skeleton-actions"></div>
+                    </article>
+
+                    <article class="card skeleton-card" aria-hidden="true">
+                        <div class="skeleton-line skeleton-title"></div>
+                        <div class="skeleton-line skeleton-meta"></div>
+                        <div class="skeleton-block"></div>
+                        <div class="skeleton-line skeleton-actions"></div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Compact row skeletons</h2>
+                        <p>Bruges til lange lister, hvor endelig visning er kompakte rækker.</p>
+                    </div>
+                </div>
+
+                <div class="grid">
+                    <div class="skeleton-row" aria-hidden="true">
+                        <div class="skeleton-icon"></div>
+                        <div class="skeleton-row-content">
+                            <div class="skeleton-line skeleton-long"></div>
+                            <div class="skeleton-line skeleton-medium"></div>
+                        </div>
+                        <div class="skeleton-pill"></div>
+                    </div>
+
+                    <div class="skeleton-row" aria-hidden="true">
+                        <div class="skeleton-icon"></div>
+                        <div class="skeleton-row-content">
+                            <div class="skeleton-line skeleton-long"></div>
+                            <div class="skeleton-line skeleton-short"></div>
+                        </div>
+                        <div class="skeleton-pill"></div>
+                    </div>
+
+                    <div class="skeleton-row" aria-hidden="true">
+                        <div class="skeleton-icon"></div>
+                        <div class="skeleton-row-content">
+                            <div class="skeleton-line skeleton-medium"></div>
+                            <div class="skeleton-line skeleton-short"></div>
+                        </div>
+                        <div class="skeleton-pill"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Media skeletons</h2>
+                        <p>Metadata kan vises før thumbnails; thumbnail-loader må ikke blokere filkortet.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <article class="card skeleton-media-card" aria-hidden="true">
+                        <div class="skeleton-thumbnail"></div>
+                        <div class="skeleton-media-content">
+                            <div class="skeleton-line skeleton-title"></div>
+                            <div class="skeleton-line skeleton-meta"></div>
+                            <div class="skeleton-line skeleton-long"></div>
+                            <div class="skeleton-line skeleton-actions"></div>
+                        </div>
+                    </article>
+
+                    <article class="card stack-md">
+                        <span class="demo-label">thumbnail processing</span>
+                        <div class="thumbnail-processing">
+                            Thumbnail oprettes…
+                        </div>
+                        <div>
+                            <h3>Ny skitse.png</h3>
+                            <p class="meta">Filen er uploadet, men preview er ikke klar endnu.</p>
+                        </div>
+                        <div class="badge-row">
+                            <span class="badge badge-accent">Processing</span>
+                            <span class="badge badge-muted">Metadata klar</span>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Loading buttons</h2>
+                        <p>Den handling brugeren netop har startet, skal vise loading direkte på knappen.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-3">
+                    <div class="card stack-md">
+                        <span class="demo-label">save</span>
+                        <h3>Gem handling</h3>
+                        <button class="btn btn-primary" type="button" disabled>
+                            <span class="btn-spinner"></span>
+                            Gemmer…
+                        </button>
+                        <p class="meta">Submit-knappen er disabled for at undgå dobbeltklik.</p>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">upload</span>
+                        <h3>Upload handling</h3>
+                        <button class="btn btn-primary" type="button" disabled>
+                            <span class="btn-spinner"></span>
+                            Uploader…
+                        </button>
+                        <p class="meta">Brug progress bar hvis upload-fremdrift kan måles.</p>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">destructive</span>
+                        <h3>Slet handling</h3>
+                        <button class="btn btn-danger" type="button" disabled>
+                            <span class="btn-spinner"></span>
+                            Sletter…
+                        </button>
+                        <p class="meta">Destruktive handlinger viser tydelig aktiv tilstand.</p>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">invitation</span>
+                        <h3>Send invitation</h3>
+                        <button class="btn btn-primary" type="button" disabled>
+                            <span class="btn-spinner"></span>
+                            Sender invitation…
+                        </button>
+                        <p class="meta">God til flows hvor brugeren venter på en serverbekræftelse.</p>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">secondary</span>
+                        <h3>Hent data</h3>
+                        <button class="btn btn-secondary" type="button" disabled>
+                            <span class="btn-spinner"></span>
+                            Henter…
+                        </button>
+                        <p class="meta">Sekundær loading skal stadig være tydelig.</p>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">inline</span>
+                        <h3>Inline loading</h3>
+                        <div class="inline-loading">
+                            <span class="btn-spinner"></span>
+                            Henter filer…
+                        </div>
+                        <p class="meta">Bruges i små sektioner, ikke som global side-loader.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Progress bars</h2>
+                        <p>Bruges kun når vi faktisk kan vise målbar fremdrift.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-3">
+                    <div class="card stack-md">
+                        <span class="demo-label">upload 30%</span>
+                        <h3>Referencefoto-bed.jpg</h3>
+                        <p class="meta">Uploader billede og opretter thumbnails.</p>
+                        <div class="progress" aria-label="Uploadstatus 30%">
+                            <div class="progress-bar progress-30"></div>
+                        </div>
+                        <span class="meta numeric">30%</span>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">upload 62%</span>
+                        <h3>Haveskitse maj.pdf</h3>
+                        <p class="meta">Uploader dokument til Villa Solbakken.</p>
+                        <div class="progress" aria-label="Uploadstatus 62%">
+                            <div class="progress-bar progress-62"></div>
+                        </div>
+                        <span class="meta numeric">62%</span>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">processing 88%</span>
+                        <h3>Thumbnail-service</h3>
+                        <p class="meta">Opretter large preview-version.</p>
+                        <div class="progress" aria-label="Behandlingsstatus 88%">
+                            <div class="progress-bar progress-88"></div>
+                        </div>
+                        <span class="meta numeric">88%</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Preview loading</h2>
+                        <p>Preview-loader er lokal for preview-panelet og henter ikke originalfil uden eksplicit handling.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <div class="card stack-md">
+                        <span class="demo-label">preview skeleton</span>
+                        <div>
+                            <h3>Haveskitse maj.pdf</h3>
+                            <p class="meta">Preview indlæses · PDF · Villa Solbakken</p>
+                        </div>
+
+                        <div class="preview-stage">
+                            <div class="preview-stage-skeleton" aria-hidden="true"></div>
+                        </div>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">preview status</span>
+                        <div class="loading-section">
+                            <span class="btn-spinner"></span>
+                            <div>
+                                <strong>Preview indlæses</strong>
+                                <p class="meta">Metadata er klar. Preview-versionen hentes separat.</p>
+                            </div>
+                        </div>
+
+                        <div class="status-message status-warning">
+                            <span class="status-dot"></span>
+                            <div>
+                                <strong>Preview tager længere tid end forventet</strong>
+                                <p class="meta">Du kan prøve igen eller downloade originalfilen.</p>
+                            </div>
+                        </div>
+
+                        <div class="card-actions">
+                            <button class="btn btn-secondary" type="button">Prøv igen</button>
+                            <button class="btn btn-secondary" type="button">Download original</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Stalled loading</h2>
+                        <p>Skeleton må ikke fortsætte for evigt. Lang ventetid skal forklares.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <div class="card stack-md">
+                        <span class="demo-label">først</span>
+                        <h3>Indhold loader</h3>
+                        <div class="skeleton-card" aria-hidden="true">
+                            <div class="skeleton-line skeleton-title"></div>
+                            <div class="skeleton-line skeleton-meta"></div>
+                            <div class="skeleton-block"></div>
+                        </div>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">efter længere ventetid</span>
+                        <h3>Forklarende status</h3>
+
+                        <div class="status-message status-warning">
+                            <span class="status-dot"></span>
+                            <div>
+                                <strong>Det tager længere tid end forventet</strong>
+                                <p class="meta">Du kan prøve igen eller fortsætte med andre dele af siden.</p>
+                            </div>
+                        </div>
+
+                        <div class="card-actions">
+                            <button class="btn btn-secondary" type="button">Prøv igen</button>
+                            <button class="btn btn-secondary" type="button">Fortsæt</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Loading vs. empty vs. error</h2>
+                        <p>Empty state vises først efter loading er afklaret.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-3">
+                    <div class="card stack-md">
+                        <span class="demo-label">loading</span>
+                        <h3>Vi henter data</h3>
+                        <div class="skeleton-row" aria-hidden="true">
+                            <div class="skeleton-icon"></div>
+                            <div class="skeleton-row-content">
+                                <div class="skeleton-line skeleton-long"></div>
+                                <div class="skeleton-line skeleton-medium"></div>
+                            </div>
+                            <div class="skeleton-pill"></div>
+                        </div>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">empty</span>
+                        <h3>Ingen filer endnu</h3>
+                        <p class="meta">Data er hentet, og der er ingen filer at vise.</p>
+                        <button class="btn btn-primary" type="button">Upload fil</button>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">error</span>
+                        <h3>Filer kunne ikke hentes</h3>
+                        <p class="meta">Der opstod en fejl under indlæsningen.</p>
+                        <button class="btn btn-secondary" type="button">Prøv igen</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Beslutningstabel</h2>
+                        <p>Hvornår de forskellige loading patterns bruges.</p>
+                    </div>
+                </div>
+
+                <div class="card" style="overflow:auto;">
+                    <table style="width:100%;border-collapse:collapse;">
+                        <thead>
+                            <tr>
+                                <th style="text-align:left;border-bottom:1px solid var(--mgp-border);padding:var(--space-sm);">Situation</th>
+                                <th style="text-align:left;border-bottom:1px solid var(--mgp-border);padding:var(--space-sm);">Pattern</th>
+                                <th style="text-align:left;border-bottom:1px solid var(--mgp-border);padding:var(--space-sm);">Guideline</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Kort/action gemmes</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Loading button</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Vis “Gemmer…” på knappen</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Liste loader</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Row/card skeleton</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Match view-mode</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Dashboard loader</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Summary skeletons</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Load widgets lokalt</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Thumbnail loader</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Thumbnail skeleton</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Vis metadata først</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Upload</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Progress bar</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Kun ved målbar fremdrift</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:var(--space-sm);">Lang ventetid</td>
+                                <td style="padding:var(--space-sm);">Forklarende status</td>
+                                <td style="padding:var(--space-sm);">Tilbyd retry/fortsæt</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            © MyGardenPlanner · Design demo 11 · Loading states og skeletons
+        </footer>
+    </div>
+</body>
+</html>

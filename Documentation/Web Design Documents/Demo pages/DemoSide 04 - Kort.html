@@ -1,0 +1,1686 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MyGardenPlanner – Design demo 4: Kortdesign</title>
+  <style>
+    :root {
+      /* Brand palette – Nordisk havearkitekt */
+      --mgp-primary: #3F6B4A;
+      --mgp-primary-dark: #2F5138;
+      --mgp-primary-soft: #DDE8D8;
+      --mgp-accent: #B86B4B;
+
+      /* Text */
+      --mgp-text: #243128;
+      --mgp-text-muted: #6F766D;
+
+      /* Surfaces */
+      --mgp-bg: #FAF8F2;
+      --mgp-surface: #FFFFFF;
+      --mgp-surface-muted: #EFEAE0;
+      --mgp-border: #D8D2C7;
+
+      /* States */
+      --mgp-danger: #9F3A38;
+      --mgp-warning-bg: #F8E8D8;
+      --mgp-success-bg: #E4EFE1;
+      --mgp-info-bg: #E7EEE5;
+
+      /* Spacing */
+      --space-2xs: .25rem;  /* 4px */
+      --space-xs: .5rem;    /* 8px */
+      --space-sm: .75rem;   /* 12px */
+      --space-md: 1rem;     /* 16px */
+      --space-lg: 1.5rem;   /* 24px */
+      --space-xl: 2rem;     /* 32px */
+      --space-2xl: 3rem;    /* 48px */
+      --space-3xl: 4rem;    /* 64px */
+
+      --page-x: var(--space-lg);
+      --page-y: var(--space-xl);
+
+      /* Layout */
+      --radius-sm: .45rem;
+      --radius-md: .75rem;
+      --radius-lg: 1.1rem;
+      --shadow-sm: 0 1px 2px rgba(36, 49, 40, .08);
+      --shadow-md: 0 12px 28px rgba(36, 49, 40, .10);
+      --content-max: 1220px;
+
+      /* Typography */
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+      --font-size-xs: .78rem;
+      --font-size-sm: .9rem;
+      --font-size-base: 1rem;
+      --font-size-md: 1.08rem;
+      --font-size-lg: 1.25rem;
+      --font-size-xl: clamp(1.35rem, 2.2vw, 2rem);
+      --font-size-xxl: clamp(2rem, 4vw, 3.25rem);
+
+      --line-height-tight: 1.15;
+      --line-height-base: 1.55;
+      --line-height-relaxed: 1.7;
+
+      --font-weight-normal: 400;
+      --font-weight-medium: 600;
+      --font-weight-bold: 750;
+
+      --letter-spacing-heading: -0.03em;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--mgp-text);
+      background: var(--mgp-bg);
+      font-family: var(--font-sans);
+      font-size: var(--font-size-base);
+      line-height: var(--line-height-base);
+    }
+
+    a {
+      color: var(--mgp-primary);
+      text-decoration-thickness: 2px;
+      text-underline-offset: 3px;
+    }
+
+    a:hover {
+      color: var(--mgp-primary-dark);
+    }
+
+    h1,
+    h2,
+    h3 {
+      color: var(--mgp-text);
+      line-height: var(--line-height-tight);
+      letter-spacing: var(--letter-spacing-heading);
+      font-weight: var(--font-weight-bold);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: var(--font-size-xxl);
+    }
+
+    h2 {
+      margin: 0 0 var(--space-md);
+      font-size: var(--font-size-xl);
+    }
+
+    h3 {
+      margin: 0;
+      font-size: var(--font-size-md);
+    }
+
+    p {
+      margin-top: 0;
+    }
+
+    code,
+    .mono {
+      font-family: var(--font-mono);
+      font-size: .92em;
+    }
+
+    .app-shell {
+      display: grid;
+      min-height: 100vh;
+      grid-template-columns: 280px 1fr;
+      grid-template-rows: auto 1fr auto;
+      grid-template-areas:
+        "sidebar header"
+        "sidebar main"
+        "sidebar footer";
+    }
+
+    .sidebar {
+      grid-area: sidebar;
+      background: var(--mgp-surface);
+      border-right: 1px solid var(--mgp-border);
+      padding: var(--space-lg);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding-bottom: var(--space-lg);
+      border-bottom: 1px solid var(--mgp-border);
+      margin-bottom: var(--space-lg);
+      font-weight: var(--font-weight-bold);
+      letter-spacing: -.02em;
+    }
+
+    .brand-mark {
+      width: 2.3rem;
+      height: 2.3rem;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: linear-gradient(135deg, var(--mgp-primary), var(--mgp-primary-dark));
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-section-title {
+      color: var(--mgp-text-muted);
+      text-transform: uppercase;
+      font-size: var(--font-size-xs);
+      letter-spacing: .08em;
+      font-weight: var(--font-weight-bold);
+      margin: var(--space-lg) 0 var(--space-xs);
+    }
+
+    .nav-list {
+      display: grid;
+      gap: var(--space-2xs);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      color: var(--mgp-text);
+      text-decoration: none;
+      border-radius: var(--radius-sm);
+      padding: var(--space-xs) var(--space-sm);
+      font-size: .95rem;
+      font-weight: var(--font-weight-bold);
+    }
+
+    .nav-link:hover {
+      background: var(--mgp-surface-muted);
+    }
+
+    .nav-link.active {
+      background: var(--mgp-primary-soft);
+      color: var(--mgp-primary-dark);
+    }
+
+    .header {
+      grid-area: header;
+      background: rgba(250, 248, 242, .88);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--mgp-border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-inner {
+      max-width: var(--content-max);
+      margin: 0 auto;
+      padding: var(--space-sm) var(--space-lg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+    }
+
+    .context-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: var(--font-weight-bold);
+    }
+
+    .context-subtitle {
+      margin: var(--space-2xs) 0 0;
+      color: var(--mgp-text-muted);
+      font-size: var(--font-size-sm);
+    }
+
+    main {
+      grid-area: main;
+      max-width: var(--content-max);
+      width: 100%;
+      margin: 0 auto;
+      padding: var(--page-y) var(--page-x) var(--space-2xl);
+    }
+
+    .footer {
+      grid-area: footer;
+      color: var(--mgp-text-muted);
+      border-top: 1px solid var(--mgp-border);
+      padding: var(--space-md) var(--space-lg);
+      text-align: center;
+      font-size: var(--font-size-sm);
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--mgp-surface), var(--mgp-primary-soft));
+      border: 1px solid var(--mgp-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: clamp(var(--space-lg), 3vw, var(--space-xl));
+      display: grid;
+      grid-template-columns: 1.4fr .9fr;
+      gap: var(--space-lg);
+      align-items: center;
+      margin-bottom: var(--space-lg);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      color: var(--mgp-primary-dark);
+      background: var(--mgp-primary-soft);
+      border: 1px solid rgba(63, 107, 74, .18);
+      border-radius: 999px;
+      padding: var(--space-2xs) var(--space-sm);
+      font-size: .84rem;
+      font-weight: var(--font-weight-bold);
+      margin-bottom: var(--space-sm);
+    }
+
+    .lead {
+      color: var(--mgp-text-muted);
+      max-width: 68ch;
+      font-size: var(--font-size-md);
+      line-height: var(--line-height-base);
+      margin-bottom: var(--space-lg);
+    }
+
+    .section {
+      margin-top: var(--space-xl);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: var(--space-md);
+      margin-bottom: var(--space-md);
+    }
+
+    .section-header p {
+      margin: var(--space-2xs) 0 0;
+      color: var(--mgp-text-muted);
+    }
+
+    .grid {
+      display: grid;
+      gap: var(--space-md);
+    }
+
+    .grid-comfortable {
+      gap: var(--space-lg);
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .stack-xs,
+    .stack-sm,
+    .stack-md,
+    .stack-lg {
+      display: grid;
+    }
+
+    .stack-xs {
+      gap: var(--space-xs);
+    }
+
+    .stack-sm {
+      gap: var(--space-sm);
+    }
+
+    .stack-md {
+      gap: var(--space-md);
+    }
+
+    .stack-lg {
+      gap: var(--space-lg);
+    }
+
+    /* Buttons */
+    .btn-row {
+      display: flex;
+      gap: var(--space-sm);
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid transparent;
+      border-radius: .65rem;
+      padding: var(--space-sm) var(--space-md);
+      font-weight: var(--font-weight-bold);
+      font-size: .95rem;
+      cursor: pointer;
+      transition: .15s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--mgp-primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--mgp-primary-dark);
+    }
+
+    .btn-secondary {
+      background: var(--mgp-surface);
+      color: var(--mgp-primary-dark);
+      border-color: var(--mgp-border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--mgp-surface-muted);
+    }
+
+    .btn-accent {
+      background: var(--mgp-accent);
+      color: white;
+    }
+
+    .btn-danger {
+      background: white;
+      color: var(--mgp-danger);
+      border-color: rgba(159, 58, 56, .35);
+    }
+
+    .btn-danger:hover {
+      background: #fff4f3;
+    }
+
+    /* Badges */
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      margin-top: var(--space-sm);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2xs);
+      border-radius: 999px;
+      padding: var(--space-2xs) var(--space-sm);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-bold);
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .badge-primary {
+      color: var(--mgp-primary-dark);
+      background: var(--mgp-primary-soft);
+      border-color: rgba(63, 107, 74, .18);
+    }
+
+    .badge-muted {
+      color: var(--mgp-text-muted);
+      background: var(--mgp-surface-muted);
+      border-color: var(--mgp-border);
+    }
+
+    .badge-accent {
+      color: #653521;
+      background: var(--mgp-warning-bg);
+      border-color: rgba(184, 107, 75, .22);
+    }
+
+    .badge-danger {
+      color: var(--mgp-danger);
+      background: #fff4f3;
+      border-color: rgba(159, 58, 56, .22);
+    }
+
+    /* Base cards */
+    .card {
+      background: var(--mgp-surface);
+      border: 1px solid var(--mgp-border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      padding: var(--space-md);
+    }
+
+    .card-sm {
+      padding: var(--space-sm);
+    }
+
+    .card-lg {
+      padding: var(--space-lg);
+    }
+
+    .card-highlight {
+      background: var(--mgp-primary-soft);
+      border-color: rgba(63, 107, 74, .22);
+    }
+
+    .card-attention {
+      border-left: 5px solid var(--mgp-accent);
+    }
+
+    .card-muted {
+      background: var(--mgp-surface-muted);
+      color: var(--mgp-text-muted);
+    }
+
+    .card-selected {
+      border-color: var(--mgp-primary);
+      box-shadow: 0 0 0 4px rgba(63, 107, 74, .14);
+    }
+
+    .card-clickable {
+      cursor: pointer;
+      transition:
+        transform .15s ease,
+        box-shadow .15s ease,
+        border-color .15s ease;
+    }
+
+    .card-clickable:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+      border-color: rgba(63, 107, 74, .28);
+    }
+
+    .card-main {
+      display: grid;
+      gap: var(--space-sm);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: var(--space-md);
+    }
+
+    .card-description {
+      margin: 0;
+      color: var(--mgp-text);
+      max-width: 68ch;
+    }
+
+    .card-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+    }
+
+    .card-actions {
+      margin-top: var(--space-sm);
+      display: flex;
+      gap: var(--space-xs);
+      flex-wrap: wrap;
+    }
+
+    .meta {
+      color: var(--mgp-text-muted);
+      font-size: var(--font-size-sm);
+      line-height: 1.4;
+      margin: var(--space-2xs) 0 0;
+    }
+
+    .latin-name {
+      color: var(--mgp-text-muted);
+      font-style: italic;
+      font-size: var(--font-size-sm);
+      margin: var(--space-2xs) 0 0;
+    }
+
+    .numeric {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Specific cards */
+    .card-summary {
+      display: grid;
+      gap: var(--space-sm);
+      background: linear-gradient(135deg, var(--mgp-surface), var(--mgp-primary-soft));
+    }
+
+    .summary-value {
+      font-size: clamp(1.8rem, 3vw, 2.75rem);
+      line-height: 1;
+      font-weight: var(--font-weight-bold);
+      letter-spacing: -.04em;
+      color: var(--mgp-primary-dark);
+    }
+
+    .card-entity,
+    .card-plant {
+      display: grid;
+      gap: var(--space-sm);
+    }
+
+    .card-media {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: var(--space-md);
+      align-items: start;
+    }
+
+    .card-media .thumbnail {
+      min-height: 120px;
+    }
+
+    .card-compact {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: var(--space-md);
+      align-items: center;
+      padding: var(--space-sm) var(--space-md);
+    }
+
+    .card-action {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: var(--space-md);
+      align-items: center;
+    }
+
+    .action-icon {
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: var(--mgp-primary-soft);
+      color: var(--mgp-primary-dark);
+      font-weight: var(--font-weight-bold);
+      font-size: 1.3rem;
+    }
+
+    .thumbnail {
+      border-radius: .8rem;
+      min-height: 96px;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(255,255,255,.75), transparent 25%),
+        linear-gradient(135deg, var(--mgp-primary-soft), #c5d7bf);
+      border: 1px solid rgba(63, 107, 74, .18);
+      display: grid;
+      place-items: center;
+      color: var(--mgp-primary-dark);
+      font-size: 2rem;
+      font-weight: var(--font-weight-bold);
+      text-align: center;
+    }
+
+    .thumbnail-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-md);
+    }
+
+    /* Status message cards */
+    .status-message {
+      display: flex;
+      gap: var(--space-sm);
+      align-items: start;
+      padding: var(--space-sm);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--mgp-border);
+      background: var(--mgp-surface);
+    }
+
+    .status-message-content {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-md);
+      align-items: center;
+      width: 100%;
+    }
+
+    .status-dot {
+      width: .75rem;
+      height: .75rem;
+      border-radius: 50%;
+      margin-top: .42rem;
+      flex: 0 0 auto;
+      background: var(--mgp-text-muted);
+    }
+
+    .status-success .status-dot {
+      background: var(--mgp-primary);
+    }
+
+    .status-info .status-dot {
+      background: var(--mgp-text-muted);
+    }
+
+    .status-warning .status-dot {
+      background: var(--mgp-accent);
+    }
+
+    .status-danger .status-dot {
+      background: var(--mgp-danger);
+    }
+
+    .status-message strong {
+      display: block;
+      font-weight: var(--font-weight-bold);
+    }
+
+    .status-message .meta {
+      margin-top: var(--space-2xs);
+    }
+
+    /* Typography demo */
+    .type-scale {
+      display: grid;
+      gap: var(--space-sm);
+    }
+
+    .type-row {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: var(--space-md);
+      align-items: baseline;
+      padding-bottom: var(--space-sm);
+      border-bottom: 1px solid var(--mgp-border);
+    }
+
+    .type-token {
+      color: var(--mgp-text-muted);
+      font-family: var(--font-mono);
+      font-size: var(--font-size-xs);
+    }
+
+    .type-h1-demo {
+      font-size: var(--font-size-xxl);
+      line-height: var(--line-height-tight);
+      letter-spacing: var(--letter-spacing-heading);
+      font-weight: var(--font-weight-bold);
+    }
+
+    .type-h2-demo {
+      font-size: var(--font-size-xl);
+      line-height: var(--line-height-tight);
+      letter-spacing: var(--letter-spacing-heading);
+      font-weight: var(--font-weight-bold);
+    }
+
+    .type-h3-demo {
+      font-size: var(--font-size-md);
+      line-height: var(--line-height-tight);
+      font-weight: var(--font-weight-bold);
+    }
+
+    .reading-sample {
+      max-width: 68ch;
+      line-height: var(--line-height-base);
+    }
+
+    /* Spacing demo */
+    .space-demo {
+      display: grid;
+      gap: var(--space-sm);
+    }
+
+    .space-row {
+      display: grid;
+      grid-template-columns: 90px 1fr 70px;
+      gap: var(--space-md);
+      align-items: center;
+    }
+
+    .space-bar {
+      height: 1rem;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--mgp-primary-soft), var(--mgp-primary));
+      border: 1px solid rgba(63,107,74,.18);
+    }
+
+    .space-label {
+      color: var(--mgp-text-muted);
+      font-family: var(--font-mono);
+      font-size: var(--font-size-xs);
+    }
+
+    .form-demo label {
+      display: block;
+      font-size: .92rem;
+      font-weight: var(--font-weight-bold);
+      margin: 0 0 var(--space-xs);
+    }
+
+    .form-demo input,
+    .form-demo select,
+    .form-demo textarea {
+      width: 100%;
+      border: 1px solid var(--mgp-border);
+      background: var(--mgp-surface);
+      color: var(--mgp-text);
+      border-radius: .65rem;
+      padding: var(--space-sm) var(--space-md);
+      font: inherit;
+      outline: none;
+    }
+
+    .form-demo input:focus,
+    .form-demo select:focus,
+    .form-demo textarea:focus {
+      border-color: var(--mgp-primary);
+      box-shadow: 0 0 0 4px rgba(63, 107, 74, .16);
+    }
+
+    .field {
+      margin-bottom: var(--space-md);
+    }
+
+    .help {
+      color: var(--mgp-text-muted);
+      font-size: .84rem;
+      margin-top: var(--space-2xs);
+    }
+
+    .demo-label {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      color: var(--mgp-text-muted);
+      font-family: var(--font-mono);
+      font-size: var(--font-size-xs);
+      background: var(--mgp-surface-muted);
+      border: 1px solid var(--mgp-border);
+      border-radius: 999px;
+      padding: var(--space-2xs) var(--space-sm);
+      margin-bottom: var(--space-sm);
+    }
+
+    @media (max-width: 940px) {
+      :root {
+        --page-x: var(--space-md);
+        --page-y: var(--space-lg);
+      }
+
+      .app-shell {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "header"
+          "main"
+          "footer";
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .grid-4,
+      .grid-3,
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .header-inner {
+        align-items: start;
+        flex-direction: column;
+        padding: var(--space-sm) var(--space-md);
+      }
+
+      .card-media,
+      .card-compact,
+      .card-action {
+        grid-template-columns: 1fr;
+      }
+
+      .thumbnail-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .type-row,
+      .space-row {
+        grid-template-columns: 1fr;
+        gap: var(--space-xs);
+      }
+
+      .status-message-content {
+        align-items: start;
+        flex-direction: column;
+      }
+
+      .card {
+        padding: var(--space-sm);
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .sidebar,
+      .header,
+      .footer,
+      .btn-row,
+      .card-actions {
+        display: none !important;
+      }
+
+      .app-shell {
+        display: block;
+      }
+
+      main {
+        max-width: none;
+        padding: 0;
+      }
+
+      .card,
+      .hero,
+      .status-message {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Primær navigation">
+      <div class="brand">
+        <div class="brand-mark">✿</div>
+        <div>MyGardenPlanner</div>
+      </div>
+
+      <div class="nav-section-title">Design</div>
+      <ul class="nav-list">
+        <li><a class="nav-link active" href="#overview">Demo 4</a></li>
+        <li><a class="nav-link" href="#typography">Typografi</a></li>
+        <li><a class="nav-link" href="#spacing">Spacing</a></li>
+        <li><a class="nav-link" href="#summary">Summary</a></li>
+        <li><a class="nav-link" href="#entities">Entities</a></li>
+        <li><a class="nav-link" href="#media">Media</a></li>
+        <li><a class="nav-link" href="#compact">Compact</a></li>
+        <li><a class="nav-link" href="#actions">Actions</a></li>
+        <li><a class="nav-link" href="#states">States</a></li>
+        <li><a class="nav-link" href="#status-messages">Statusbeskeder</a></li>
+      </ul>
+
+      <div class="nav-section-title">Arbejde</div>
+      <ul class="nav-list">
+        <li><a class="nav-link" href="#">Haver</a></li>
+        <li><a class="nav-link" href="#">Bede</a></li>
+        <li><a class="nav-link" href="#">Planter</a></li>
+        <li><a class="nav-link" href="#">Materialer</a></li>
+        <li><a class="nav-link" href="#">Filer</a></li>
+      </ul>
+    </aside>
+
+    <header class="header">
+      <div class="header-inner">
+        <div>
+          <p class="context-title">Design demo 4</p>
+          <p class="context-subtitle">Kortdesign + typografi + spacing + statusbeskeder</p>
+        </div>
+
+        <div class="btn-row">
+          <a class="btn btn-secondary" href="#typography">Typografi</a>
+          <a class="btn btn-secondary" href="#spacing">Spacing</a>
+          <a class="btn btn-primary" href="#entities">Korttyper</a>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section id="overview" class="hero">
+        <div>
+          <span class="eyebrow">Nordisk havearkitekt · demo 4 opdateret</span>
+          <h1>Kortdesign til MyGardenPlanner</h1>
+          <p class="lead">
+            Denne demo samler de nyeste beslutninger for typografi, spacing og kortdesign —
+            nu også med en selvstændig definition af statusbesked-kort.
+          </p>
+
+          <div class="btn-row">
+            <a class="btn btn-primary" href="#entities">Se entity cards</a>
+            <a class="btn btn-secondary" href="#status-messages">Se statusbeskeder</a>
+            <a class="btn btn-secondary" href="#spacing">Se spacing</a>
+          </div>
+        </div>
+
+        <div class="card card-summary">
+          <span class="demo-label">card-summary</span>
+          <div>
+            <h3>Aktiv have</h3>
+            <p class="meta">Villa Solbakken · Aarhus N</p>
+          </div>
+
+          <div class="summary-value numeric">6</div>
+          <p class="meta">bede oprettet i denne kundehave</p>
+
+          <div class="badge-row">
+            <span class="badge badge-primary">Aktiv</span>
+            <span class="badge badge-muted">3 filer</span>
+            <span class="badge badge-accent">2 invitationer</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="typography" class="section">
+        <div class="section-header">
+          <div>
+            <h2>Typografi</h2>
+            <p>Lettere overskrifter, systemfont og rolige tekstniveauer til arbejdsflader.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card stack-md">
+            <div>
+              <h3>Typografisk skala</h3>
+              <p class="meta">Overskrifter bruger <code>--font-weight-bold</code> og ikke en tung heavy-vægt.</p>
+            </div>
+
+            <div class="type-scale">
+              <div class="type-row">
+                <div class="type-token">H1 / page</div>
+                <div class="type-h1-demo">Mine haver</div>
+              </div>
+
+              <div class="type-row">
+                <div class="type-token">H2 / section</div>
+                <div class="type-h2-demo">Aktive kundehaver</div>
+              </div>
+
+              <div class="type-row">
+                <div class="type-token">H3 / card</div>
+                <div class="type-h3-demo">Villa Solbakken</div>
+              </div>
+
+              <div class="type-row">
+                <div class="type-token">Body</div>
+                <div>Rolig villahave med fokus på staudebede, struktur og nem vedligeholdelse.</div>
+              </div>
+
+              <div class="type-row">
+                <div class="type-token">Meta</div>
+                <div class="meta">Kundehave · opdateret for nylig · 6 bede</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card stack-md">
+            <div>
+              <h3>Fagspecifik tekst</h3>
+              <p class="meta">Eksempler på plantenavne, dimensioner og længere læsetekst.</p>
+            </div>
+
+            <div>
+              <h3>Lavendel</h3>
+              <p class="latin-name">Lavandula angustifolia</p>
+
+              <div class="badge-row">
+                <span class="badge badge-primary">Sol</span>
+                <span class="badge badge-muted numeric">30–60 cm</span>
+                <span class="badge badge-muted numeric">Juni–august</span>
+              </div>
+
+              <p class="reading-sample" style="margin-top:var(--space-md)">
+                Denne tekstprøve viser almindelig brødtekst i et card. Linjelængden holdes bevidst nede,
+                så beskrivelser af haver, bede, planter og materialer er behagelige at læse på både store
+                skærme og tablets.
+              </p>
+
+              <p class="meta numeric">Eksempel på dimensioner: 3,50 × 1,20 m · 800 × 600 px</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="spacing" class="section">
+        <div class="section-header">
+          <div>
+            <h2>Spacing</h2>
+            <p>4/8px rytme med faste tokens, så komponenter får ensartet luft.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card stack-md">
+            <h3>Spacing-skala</h3>
+
+            <div class="space-demo">
+              <div class="space-row">
+                <div class="space-label">2xs</div>
+                <div class="space-bar" style="width:var(--space-2xs)"></div>
+                <div class="space-label">4px</div>
+              </div>
+
+              <div class="space-row">
+                <div class="space-label">xs</div>
+                <div class="space-bar" style="width:var(--space-xs)"></div>
+                <div class="space-label">8px</div>
+              </div>
+
+              <div class="space-row">
+                <div class="space-label">sm</div>
+                <div class="space-bar" style="width:var(--space-sm)"></div>
+                <div class="space-label">12px</div>
+              </div>
+
+              <div class="space-row">
+                <div class="space-label">md</div>
+                <div class="space-bar" style="width:var(--space-md)"></div>
+                <div class="space-label">16px</div>
+              </div>
+
+              <div class="space-row">
+                <div class="space-label">lg</div>
+                <div class="space-bar" style="width:var(--space-lg)"></div>
+                <div class="space-label">24px</div>
+              </div>
+
+              <div class="space-row">
+                <div class="space-label">xl</div>
+                <div class="space-bar" style="width:var(--space-xl)"></div>
+                <div class="space-label">32px</div>
+              </div>
+
+              <div class="space-row">
+                <div class="space-label">2xl</div>
+                <div class="space-bar" style="width:var(--space-2xl)"></div>
+                <div class="space-label">48px</div>
+              </div>
+
+              <div class="space-row">
+                <div class="space-label">3xl</div>
+                <div class="space-bar" style="width:var(--space-3xl)"></div>
+                <div class="space-label">64px</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card stack-md">
+            <h3>Praktisk brug</h3>
+
+            <div class="grid grid-2">
+              <div class="card card-sm stack-xs">
+                <strong>card-sm</strong>
+                <span class="meta">12px padding</span>
+              </div>
+
+              <div class="card stack-xs">
+                <strong>card</strong>
+                <span class="meta">16px padding</span>
+              </div>
+
+              <div class="card card-lg stack-xs">
+                <strong>card-lg</strong>
+                <span class="meta">24px padding</span>
+              </div>
+
+              <div class="card stack-sm">
+                <strong>stack-sm</strong>
+                <span class="meta">12px gap mellem elementer</span>
+              </div>
+            </div>
+
+            <p class="meta">Standard grid-gap er 16px. Komfortabelt grid-gap er 24px.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="summary" class="section">
+        <div class="section-header">
+          <div>
+            <h2>Summary cards</h2>
+            <p>Små dashboard-kort til nøgletal, status og hurtige overblik.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-4">
+          <article class="card card-summary">
+            <span class="demo-label">summary</span>
+            <h3>Aktive haver</h3>
+            <div class="summary-value numeric">8</div>
+            <p class="meta">kundehaver under arbejde</p>
+          </article>
+
+          <article class="card card-summary">
+            <span class="demo-label">summary</span>
+            <h3>Bede</h3>
+            <div class="summary-value numeric">42</div>
+            <p class="meta">registreret på tværs af haver</p>
+          </article>
+
+          <article class="card card-summary card-attention">
+            <span class="demo-label">summary + attention</span>
+            <h3>Filer</h3>
+            <div class="summary-value numeric">5</div>
+            <p class="meta">midlertidige filer udløber snart</p>
+          </article>
+
+          <article class="card card-summary card-selected">
+            <span class="demo-label">summary + selected</span>
+            <h3>Aktuel have</h3>
+            <div class="summary-value numeric">1</div>
+            <p class="meta">valgt som aktiv arbejdskontekst</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="entities" class="section">
+        <div class="section-header">
+          <div>
+            <h2>Entity cards</h2>
+            <p>Kort til haver, bede, planter, materialer og butikker.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-2 grid-comfortable">
+          <article class="card card-entity card-clickable">
+            <span class="demo-label">card-entity · have</span>
+
+            <div class="card-header">
+              <div>
+                <h3>Villa Solbakken</h3>
+                <p class="meta">Kundehave · Aarhus N</p>
+              </div>
+              <span class="badge badge-primary">Aktiv</span>
+            </div>
+
+            <p class="card-description">
+              Rolig villahave med fokus på staudebede, struktur og nem vedligeholdelse.
+            </p>
+
+            <div class="card-meta-row">
+              <span class="meta numeric">6 bede</span>
+              <span class="meta numeric">3 filer</span>
+              <span class="meta numeric">2 medlemmer</span>
+            </div>
+
+            <div class="card-actions">
+              <a class="btn btn-primary" href="#">Åbn have</a>
+              <a class="btn btn-secondary" href="#">Redigér</a>
+            </div>
+          </article>
+
+          <article class="card card-entity">
+            <span class="demo-label">card-entity · bed</span>
+
+            <div class="card-header">
+              <div>
+                <h3>Staudehaven mod syd</h3>
+                <p class="meta">Bed #4</p>
+              </div>
+              <span class="badge badge-muted">Planlagt</span>
+            </div>
+
+            <p class="card-description">
+              Solrigt bed med lavendel, salvie og prydgræsser.
+            </p>
+
+            <div class="card-meta-row">
+              <span class="meta numeric">3,50 × 1,20 m</span>
+              <span class="meta">Stauder</span>
+              <span class="meta">Sol</span>
+            </div>
+
+            <div class="card-actions">
+              <a class="btn btn-primary" href="#">Åbn bed</a>
+              <a class="btn btn-secondary" href="#">Redigér</a>
+            </div>
+          </article>
+
+          <article class="card card-plant">
+            <span class="demo-label">card-plant</span>
+
+            <div class="card-header">
+              <div>
+                <h3>Lavendel</h3>
+                <p class="latin-name">Lavandula angustifolia</p>
+              </div>
+              <span class="badge badge-primary">Staude</span>
+            </div>
+
+            <p class="card-description">
+              Duftende, tørketålende plante til solrige bede.
+            </p>
+
+            <div class="badge-row">
+              <span class="badge badge-muted">Sol</span>
+              <span class="badge badge-muted numeric">30–60 cm</span>
+              <span class="badge badge-muted">Lilla</span>
+              <span class="badge badge-muted">Juni–august</span>
+            </div>
+
+            <div class="card-actions">
+              <a class="btn btn-primary" href="#">Vælg plante</a>
+              <a class="btn btn-secondary" href="#">Detaljer</a>
+            </div>
+          </article>
+
+          <article class="card card-entity">
+            <span class="demo-label">card-entity · materiale</span>
+
+            <div class="card-header">
+              <div>
+                <h3>Chaussésten</h3>
+                <p class="meta">Belægning · granit</p>
+              </div>
+              <span class="badge badge-muted">Materiale</span>
+            </div>
+
+            <p class="card-description">
+              Klassisk stenmateriale til stier, kanter og små belagte flader.
+            </p>
+
+            <div class="card-meta-row">
+              <span class="meta numeric">10 × 10 × 10 cm</span>
+              <span class="meta">Grå</span>
+              <span class="meta">Natursten</span>
+            </div>
+
+            <div class="card-actions">
+              <a class="btn btn-primary" href="#">Vælg materiale</a>
+              <a class="btn btn-secondary" href="#">Detaljer</a>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="media" class="section">
+        <div class="section-header">
+          <div>
+            <h2>Media cards</h2>
+            <p>Kort til filer, tegninger, billeder og PDF-dokumenter.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-2 grid-comfortable">
+          <article class="card card-media">
+            <div class="thumbnail">PDF</div>
+
+            <div class="card-main">
+              <span class="demo-label">card-media</span>
+
+              <div>
+                <h3>Haveskitse maj.pdf</h3>
+                <p class="meta">PDF · tegning · midlertidig fil</p>
+              </div>
+
+              <div class="badge-row">
+                <span class="badge badge-accent">Udløber snart</span>
+                <span class="badge badge-muted">Thumbnail small</span>
+              </div>
+
+              <div class="card-actions">
+                <a class="btn btn-primary" href="#">Åbn</a>
+                <a class="btn btn-secondary" href="#">Download</a>
+                <a class="btn btn-danger" href="#">Slet</a>
+              </div>
+            </div>
+          </article>
+
+          <article class="card card-media card-selected">
+            <div class="thumbnail">🌿</div>
+
+            <div class="card-main">
+              <span class="demo-label">card-media + selected</span>
+
+              <div>
+                <h3>Referencefoto-bed.jpg</h3>
+                <p class="meta">Billede · valgt som reference</p>
+              </div>
+
+              <div class="badge-row">
+                <span class="badge badge-primary">Valgt</span>
+                <span class="badge badge-muted">Image/jpeg</span>
+              </div>
+
+              <div class="card-actions">
+                <a class="btn btn-primary" href="#">Vis</a>
+                <a class="btn btn-secondary" href="#">Download</a>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="section" style="margin-top: var(--space-lg);">
+          <div class="card stack-md">
+            <span class="demo-label">thumbnail-grid card</span>
+
+            <div>
+              <h3>Thumbnail grid</h3>
+              <p class="meta">Kompakt visning af billeder, PDF’er og fallback-visninger.</p>
+            </div>
+
+            <div class="thumbnail-grid">
+              <div class="thumbnail">🌿</div>
+              <div class="thumbnail">PDF</div>
+              <div class="thumbnail">▧</div>
+              <div class="thumbnail">✎</div>
+              <div class="thumbnail">IMG</div>
+              <div class="thumbnail">…</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="compact" class="section">
+        <div class="section-header">
+          <div>
+            <h2>Compact list cards</h2>
+            <p>Kompakte kort til lister med mange planter, materialer, filer eller invitationer.</p>
+          </div>
+        </div>
+
+        <div class="grid">
+          <article class="card card-compact">
+            <div>
+              <h3>Lavendel</h3>
+              <p class="latin-name">Lavandula angustifolia</p>
+            </div>
+
+            <div class="badge-row" style="margin-top:0;">
+              <span class="badge badge-muted">Sol</span>
+              <span class="badge badge-muted numeric">30–60 cm</span>
+            </div>
+
+            <a class="btn btn-secondary" href="#">Detaljer</a>
+          </article>
+
+          <article class="card card-compact">
+            <div>
+              <h3>Chaussésten</h3>
+              <p class="meta">Belægning · granit</p>
+            </div>
+
+            <div class="badge-row" style="margin-top:0;">
+              <span class="badge badge-muted numeric">10 × 10 × 10 cm</span>
+              <span class="badge badge-muted">Grå</span>
+            </div>
+
+            <a class="btn btn-secondary" href="#">Detaljer</a>
+          </article>
+
+          <article class="card card-compact card-attention">
+            <div>
+              <h3>Kundeinvitation</h3>
+              <p class="meta">kunde@example.dk</p>
+            </div>
+
+            <div class="badge-row" style="margin-top:0;">
+              <span class="badge badge-accent">Afventer</span>
+              <span class="badge badge-muted">HaveViewer</span>
+            </div>
+
+            <a class="btn btn-secondary" href="#">Se</a>
+          </article>
+        </div>
+      </section>
+
+      <section id="actions" class="section">
+        <div class="section-header">
+          <div>
+            <h2>Action cards</h2>
+            <p>Kort til tomme tilstande og hurtige handlinger.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-3">
+          <article class="card card-action">
+            <div class="action-icon">＋</div>
+
+            <div>
+              <span class="demo-label">card-action</span>
+              <h3>Opret ny have</h3>
+              <p class="meta">Start en ny kundehave med adresse, kontakt og bede.</p>
+            </div>
+
+            <a class="btn btn-primary" href="#">Opret</a>
+          </article>
+
+          <article class="card card-action">
+            <div class="action-icon">⇧</div>
+
+            <div>
+              <span class="demo-label">card-action</span>
+              <h3>Upload tegning</h3>
+              <p class="meta">Tilføj skitser, fotos eller PDF-dokumenter.</p>
+            </div>
+
+            <a class="btn btn-primary" href="#">Upload</a>
+          </article>
+
+          <article class="card card-action">
+            <div class="action-icon">✉</div>
+
+            <div>
+              <span class="demo-label">card-action</span>
+              <h3>Invitér kunde</h3>
+              <p class="meta">Giv kunden adgang til at se eller deltage i haveplanen.</p>
+            </div>
+
+            <a class="btn btn-primary" href="#">Invitér</a>
+          </article>
+        </div>
+      </section>
+
+      <section id="states" class="section">
+        <div class="section-header">
+          <div>
+            <h2>Card states</h2>
+            <p>Visuelle states til valgt, opmærksomhed, arkiveret og klikbart kort.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-4">
+          <article class="card">
+            <span class="demo-label">default</span>
+            <h3>Standard card</h3>
+            <p class="meta">Neutral flade med diskret border og skygge.</p>
+          </article>
+
+          <article class="card card-selected">
+            <span class="demo-label">selected</span>
+            <h3>Valgt kort</h3>
+            <p class="meta">Bruges til aktiv have, valgt fil eller markeret element.</p>
+          </article>
+
+          <article class="card card-attention">
+            <span class="demo-label">attention</span>
+            <h3>Kræver opmærksomhed</h3>
+            <p class="meta">Fx fil udløber snart eller invitation afventer.</p>
+          </article>
+
+          <article class="card card-muted">
+            <span class="demo-label">muted</span>
+            <h3>Arkiveret</h3>
+            <p class="meta">Dæmpet visning for historiske eller inaktive elementer.</p>
+          </article>
+        </div>
+
+        <div class="section" style="margin-top: var(--space-lg);">
+          <article class="card card-clickable">
+            <span class="demo-label">card-clickable</span>
+
+            <div class="card-header">
+              <div>
+                <h3>Klikbart entity card</h3>
+                <p class="meta">Hover giver kun en diskret løft-effekt.</p>
+              </div>
+              <span class="badge badge-primary">Hover test</span>
+            </div>
+
+            <p class="card-description">
+              Hele kortet kan fungere som klikmål, hvis det åbner objektets detaljeside.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="status-messages" class="section">
+        <div class="section-header">
+          <div>
+            <h2>Status message cards</h2>
+            <p>Kompakte, rolige beskedkort med dot-indikator, titel og forklarende tekst.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-2 grid-comfortable">
+          <div class="card stack-sm">
+            <span class="demo-label">status-message cards</span>
+
+            <div class="status-message status-success">
+              <span class="status-dot"></span>
+              <div>
+                <strong>Alt ser fint ud</strong>
+                <p class="meta">Haveprofilen er opdateret.</p>
+              </div>
+            </div>
+
+            <div class="status-message status-info">
+              <span class="status-dot"></span>
+              <div>
+                <strong>Ny referencefil</strong>
+                <p class="meta">Der er uploadet en ny tegning til haven.</p>
+              </div>
+            </div>
+
+            <div class="status-message status-warning">
+              <span class="status-dot"></span>
+              <div>
+                <strong>Handling kræves</strong>
+                <p class="meta">En invitation afventer svar.</p>
+              </div>
+            </div>
+
+            <div class="status-message status-danger">
+              <span class="status-dot"></span>
+              <div>
+                <strong>Filen kunne ikke slettes</strong>
+                <p class="meta">Prøv igen eller kontrollér rettighederne.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card stack-sm">
+            <span class="demo-label">status-message med handling</span>
+
+            <div class="status-message status-warning">
+              <span class="status-dot"></span>
+              <div class="status-message-content">
+                <div>
+                  <strong>Invitation afventer</strong>
+                  <p class="meta">Kunden har endnu ikke accepteret invitationen.</p>
+                </div>
+                <a class="btn btn-secondary" href="#">Se invitation</a>
+              </div>
+            </div>
+
+            <div class="status-message status-success">
+              <span class="status-dot"></span>
+              <div class="status-message-content">
+                <div>
+                  <strong>Upload gennemført</strong>
+                  <p class="meta">Referencefoto-bed.jpg er tilføjet til haven.</p>
+                </div>
+                <a class="btn btn-secondary" href="#">Åbn fil</a>
+              </div>
+            </div>
+
+            <p class="meta">Farve må ikke stå alene; dot-indikatoren ledsages altid af tekst.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Formular-card</h2>
+            <p>Eksempel på en card-baseret formularblok.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-2 grid-comfortable">
+          <form class="card form-demo">
+            <span class="demo-label">form card</span>
+
+            <h3>Opret have</h3>
+            <p class="meta">Formular placeret i et neutralt standardkort.</p>
+
+            <div class="field">
+              <label for="gardenName">Havens navn</label>
+              <input id="gardenName" value="Villa Solbakken" />
+              <div class="help">Brug et navn kunden kan genkende.</div>
+            </div>
+
+            <div class="field">
+              <label for="gardenType">Primær anvendelse</label>
+              <select id="gardenType">
+                <option>Kundehave</option>
+                <option>Privat have</option>
+                <option>Demo</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="gardenDescription">Beskrivelse</label>
+              <textarea id="gardenDescription" rows="4">Rolig villahave med fokus på staudebede og nem vedligeholdelse.</textarea>
+            </div>
+
+            <button class="btn btn-primary" type="button">Gem ændringer</button>
+          </form>
+
+          <article class="card card-lg stack-md">
+            <span class="demo-label">card-lg</span>
+
+            <div>
+              <h3>Designnote</h3>
+              <p class="meta">Større kort kan bruges til forklarende paneler, onboarding og sideopsummeringer.</p>
+            </div>
+
+            <p class="card-description">
+              Kort bør som udgangspunkt være hvide med diskret border.
+              Farve bruges kun til status, valgt tilstand eller opmærksomhed.
+            </p>
+
+            <div class="badge-row">
+              <span class="badge badge-primary">Roligt</span>
+              <span class="badge badge-muted">Printvenligt</span>
+              <span class="badge badge-muted">Responsivt</span>
+            </div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      © MyGardenPlanner · Design demo 4 · Kortdesign
+    </footer>
+  </div>
+</body>
+</html>

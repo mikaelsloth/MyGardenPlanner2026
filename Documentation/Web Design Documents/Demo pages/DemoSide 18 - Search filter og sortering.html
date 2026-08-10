@@ -1,0 +1,1406 @@
+﻿<!doctype html>
+<html lang="da">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MyGardenPlanner – Demo17 Search, filter og sortering</title>
+
+    <style>
+        :root {
+            --mgp-primary: #3F6B4A;
+            --mgp-primary-dark: #2F5138;
+            --mgp-primary-soft: #DDE8D8;
+            --mgp-accent: #B86B4B;
+            --mgp-text: #243128;
+            --mgp-text-muted: #6F766D;
+            --mgp-bg: #FAF8F2;
+            --mgp-surface: #FFFFFF;
+            --mgp-surface-muted: #EFEAE0;
+            --mgp-border: #D8D2C7;
+            --mgp-danger: #9F3A38;
+            --mgp-danger-soft: #FFF4F3;
+            --mgp-warning-bg: #F8E8D8;
+            --mgp-info-soft: #E7EEF0;
+            --space-2xs: .25rem;
+            --space-xs: .5rem;
+            --space-sm: .75rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-2xl: 3rem;
+            --sidebar-width: 280px;
+            --content-max: 1220px;
+            --radius-sm: .45rem;
+            --radius-md: .75rem;
+            --radius-lg: 1.1rem;
+            --shadow-sm: 0 1px 2px rgba(36, 49, 40, .08);
+            --shadow-md: 0 12px 28px rgba(36, 49, 40, .10);
+            --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+            --font-size-xs: .78rem;
+            --font-size-sm: .9rem;
+            --font-size-base: 1rem;
+            --font-size-md: 1.08rem;
+            --font-size-xl: clamp(1.35rem, 2.2vw, 2rem);
+            --font-size-xxl: clamp(2rem, 4vw, 3.25rem);
+            --line-height-tight: 1.15;
+            --line-height-base: 1.55;
+            --font-weight-medium: 600;
+            --font-weight-bold: 750;
+            --letter-spacing-heading: -0.03em;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--mgp-text);
+            background: var(--mgp-bg);
+            font-family: var(--font-sans);
+            font-size: var(--font-size-base);
+            line-height: var(--line-height-base);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--mgp-text);
+            line-height: var(--line-height-tight);
+            letter-spacing: var(--letter-spacing-heading);
+            font-weight: var(--font-weight-bold);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: var(--font-size-xxl);
+        }
+
+        h2 {
+            margin: 0 0 var(--space-md);
+            font-size: var(--font-size-xl);
+        }
+
+        h3 {
+            margin: 0;
+            font-size: var(--font-size-md);
+        }
+
+        p {
+            margin-top: 0;
+        }
+
+        code,
+        .mono {
+            font-family: var(--font-mono);
+            font-size: .92em;
+        }
+
+        .app-shell {
+            display: grid;
+            min-height: 100vh;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            grid-template-rows: auto 1fr auto;
+            grid-template-areas:
+                "sidebar header"
+                "sidebar main"
+                "sidebar footer";
+        }
+
+        .sidebar {
+            grid-area: sidebar;
+            background: var(--mgp-surface);
+            border-right: 1px solid var(--mgp-border);
+            padding: var(--space-lg);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding-bottom: var(--space-lg);
+            border-bottom: 1px solid var(--mgp-border);
+            margin-bottom: var(--space-lg);
+            font-weight: var(--font-weight-bold);
+            letter-spacing: -.02em;
+        }
+
+        .brand-mark {
+            width: 2.3rem;
+            height: 2.3rem;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: white;
+            background: linear-gradient(135deg, var(--mgp-primary), var(--mgp-primary-dark));
+            box-shadow: var(--shadow-sm);
+        }
+
+        .nav-section-title {
+            color: var(--mgp-text-muted);
+            text-transform: uppercase;
+            font-size: var(--font-size-xs);
+            letter-spacing: .08em;
+            font-weight: var(--font-weight-bold);
+            margin: var(--space-lg) 0 var(--space-xs);
+        }
+
+        .nav-list {
+            display: grid;
+            gap: var(--space-2xs);
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .nav-link {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            color: var(--mgp-text);
+            background: transparent;
+            border: 0;
+            text-align: left;
+            border-radius: var(--radius-sm);
+            padding: var(--space-xs) var(--space-sm);
+            font-size: .95rem;
+            font-weight: var(--font-weight-bold);
+            cursor: pointer;
+        }
+
+            .nav-link:hover {
+                background: var(--mgp-surface-muted);
+            }
+
+            .nav-link.active {
+                background: var(--mgp-primary-soft);
+                color: var(--mgp-primary-dark);
+            }
+
+        .header {
+            grid-area: header;
+            background: rgba(250, 248, 242, .88);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--mgp-border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-inner {
+            max-width: var(--content-max);
+            margin: 0 auto;
+            padding: var(--space-sm) var(--space-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-md);
+        }
+
+        .context-title {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: var(--font-weight-bold);
+        }
+
+        .context-subtitle {
+            margin: var(--space-2xs) 0 0;
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-sm);
+        }
+
+        main {
+            grid-area: main;
+            max-width: var(--content-max);
+            width: 100%;
+            margin: 0 auto;
+            padding: var(--space-xl) var(--space-lg) var(--space-2xl);
+        }
+
+        .footer {
+            grid-area: footer;
+            color: var(--mgp-text-muted);
+            border-top: 1px solid var(--mgp-border);
+            padding: var(--space-md) var(--space-lg);
+            text-align: center;
+            font-size: var(--font-size-sm);
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--mgp-surface), var(--mgp-primary-soft));
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: clamp(var(--space-lg), 3vw, var(--space-xl));
+            display: grid;
+            grid-template-columns: 1.35fr .95fr;
+            gap: var(--space-lg);
+            align-items: center;
+            margin-bottom: var(--space-lg);
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            color: var(--mgp-primary-dark);
+            background: var(--mgp-primary-soft);
+            border: 1px solid rgba(63, 107, 74, .18);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            font-size: .84rem;
+            font-weight: var(--font-weight-bold);
+            margin-bottom: var(--space-sm);
+        }
+
+        .lead {
+            color: var(--mgp-text-muted);
+            max-width: 68ch;
+            font-size: var(--font-size-md);
+            line-height: var(--line-height-base);
+            margin-bottom: var(--space-lg);
+        }
+
+        .section {
+            margin-top: var(--space-xl);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: var(--space-md);
+            margin-bottom: var(--space-md);
+        }
+
+            .section-header p {
+                margin: var(--space-2xs) 0 0;
+                color: var(--mgp-text-muted);
+            }
+
+        .grid {
+            display: grid;
+            gap: var(--space-md);
+        }
+
+        .grid-comfortable {
+            gap: var(--space-lg);
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .stack-sm {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .stack-md {
+            display: grid;
+            gap: var(--space-md);
+        }
+
+        .card {
+            background: var(--mgp-surface);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: var(--space-md);
+        }
+
+        .card-highlight {
+            background: var(--mgp-primary-soft);
+            border-color: rgba(63, 107, 74, .22);
+        }
+
+        .btn-row,
+        .card-actions,
+        .filter-actions,
+        .chip-row,
+        .view-toggle,
+        .pagination {
+            display: flex;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .card-actions {
+            gap: var(--space-xs);
+            margin-top: var(--space-sm);
+        }
+
+        .filter-actions {
+            justify-content: space-between;
+            gap: var(--space-md);
+        }
+
+        .btn {
+            appearance: none;
+            border: 1px solid transparent;
+            border-radius: .65rem;
+            padding: var(--space-sm) var(--space-md);
+            font-weight: var(--font-weight-bold);
+            font-size: .95rem;
+            cursor: pointer;
+            transition: .15s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-xs);
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--mgp-primary);
+            color: #fff;
+            border-color: var(--mgp-primary);
+        }
+
+            .btn-primary:hover {
+                background: var(--mgp-primary-dark);
+                border-color: var(--mgp-primary-dark);
+            }
+
+        .btn-secondary {
+            background: var(--mgp-surface);
+            color: var(--mgp-primary-dark);
+            border-color: var(--mgp-border);
+        }
+
+            .btn-secondary:hover {
+                background: var(--mgp-surface-muted);
+                border-color: rgba(63, 107, 74, .28);
+            }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--mgp-primary-dark);
+            border-color: transparent;
+            padding-inline: var(--space-xs);
+        }
+
+            .btn-ghost:hover {
+                background: var(--mgp-primary-soft);
+            }
+
+        .btn-sm {
+            padding: var(--space-xs) var(--space-sm);
+            font-size: var(--font-size-sm);
+        }
+
+        .badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-xs);
+            margin-top: var(--space-sm);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2xs);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-bold);
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+        .badge-primary {
+            color: var(--mgp-primary-dark);
+            background: var(--mgp-primary-soft);
+            border-color: rgba(63, 107, 74, .18);
+        }
+
+        .badge-muted {
+            color: var(--mgp-text-muted);
+            background: var(--mgp-surface-muted);
+            border-color: var(--mgp-border);
+        }
+
+        .badge-accent {
+            color: #653521;
+            background: var(--mgp-warning-bg);
+            border-color: rgba(184, 107, 75, .22);
+        }
+
+        .badge-danger {
+            color: var(--mgp-danger);
+            background: var(--mgp-danger-soft);
+            border-color: rgba(159, 58, 56, .22);
+        }
+
+        .meta {
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-sm);
+            line-height: 1.4;
+            margin: var(--space-2xs) 0 0;
+        }
+
+        .demo-label {
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+            color: var(--mgp-text-muted);
+            font-family: var(--font-mono);
+            font-size: var(--font-size-xs);
+            background: var(--mgp-surface-muted);
+            border: 1px solid var(--mgp-border);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            margin-bottom: var(--space-sm);
+        }
+
+        /* Search/filter/sort */
+
+        .filter-bar {
+            display: grid;
+            grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(140px, .7fr)) auto;
+            gap: var(--space-sm);
+            align-items: end;
+            padding: var(--space-md);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-lg);
+            background: var(--mgp-surface);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .filter-field {
+            display: grid;
+            gap: var(--space-2xs);
+        }
+
+        .filter-label {
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-xs);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            font-weight: var(--font-weight-bold);
+        }
+
+        .filter-input,
+        .filter-select {
+            width: 100%;
+            border: 1px solid var(--mgp-border);
+            background: var(--mgp-surface);
+            color: var(--mgp-text);
+            border-radius: .65rem;
+            padding: var(--space-sm) var(--space-md);
+            font: inherit;
+            min-height: 2.7rem;
+        }
+
+            .filter-input:focus,
+            .filter-select:focus {
+                outline: none;
+                border-color: rgba(63, 107, 74, .45);
+                box-shadow: 0 0 0 4px rgba(63, 107, 74, .12);
+            }
+
+        .chip-row {
+            margin-top: var(--space-sm);
+        }
+
+        .filter-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            border: 1px solid var(--mgp-border);
+            border-radius: 999px;
+            background: var(--mgp-surface);
+            color: var(--mgp-text);
+            padding: var(--space-2xs) var(--space-sm);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-bold);
+        }
+
+            .filter-chip button {
+                border: 0;
+                background: transparent;
+                color: var(--mgp-text-muted);
+                cursor: pointer;
+                font: inherit;
+                padding: 0;
+                line-height: 1;
+            }
+
+        .view-toggle {
+            gap: var(--space-2xs);
+            border: 1px solid var(--mgp-border);
+            background: var(--mgp-surface);
+            border-radius: .75rem;
+            padding: var(--space-2xs);
+        }
+
+            .view-toggle button {
+                border: 0;
+                background: transparent;
+                border-radius: .55rem;
+                padding: var(--space-xs) var(--space-sm);
+                color: var(--mgp-text-muted);
+                font-weight: var(--font-weight-bold);
+                cursor: pointer;
+            }
+
+                .view-toggle button.active {
+                    background: var(--mgp-primary-soft);
+                    color: var(--mgp-primary-dark);
+                }
+
+        .result-summary {
+            display: flex;
+            justify-content: space-between;
+            gap: var(--space-md);
+            align-items: center;
+            margin: var(--space-md) 0;
+        }
+
+        .plant-card,
+        .file-row,
+        .garden-row {
+            background: var(--mgp-surface);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: var(--space-md);
+        }
+
+        .plant-card {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .plant-card-header {
+            display: flex;
+            justify-content: space-between;
+            gap: var(--space-md);
+            align-items: start;
+        }
+
+        .compact-list {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .file-row,
+        .garden-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: var(--space-md);
+            align-items: center;
+        }
+
+        .file-icon {
+            width: 2.75rem;
+            height: 2.75rem;
+            border-radius: .65rem;
+            background: var(--mgp-primary-soft);
+            color: var(--mgp-primary-dark);
+            display: grid;
+            place-items: center;
+            font-weight: var(--font-weight-bold);
+            font-family: var(--font-mono);
+            font-size: var(--font-size-xs);
+        }
+
+        .empty-state {
+            display: grid;
+            gap: var(--space-md);
+            justify-items: center;
+            text-align: center;
+            padding: var(--space-2xl) var(--space-lg);
+            border: 1px dashed var(--mgp-border);
+            border-radius: var(--radius-lg);
+            background: var(--mgp-surface);
+        }
+
+        .empty-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            background: var(--mgp-surface-muted);
+            color: var(--mgp-text-muted);
+            font-weight: var(--font-weight-bold);
+            font-size: 1.4rem;
+            border: 1px solid var(--mgp-border);
+        }
+
+        .mobile-filter-preview {
+            display: grid;
+            gap: var(--space-md);
+        }
+
+        .mobile-filter-bar {
+            display: grid;
+            gap: var(--space-sm);
+            padding: var(--space-md);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-lg);
+            background: var(--mgp-surface);
+        }
+
+        .mobile-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-sm);
+        }
+
+        .drawer-demo {
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-lg);
+            background: var(--mgp-surface);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+        }
+
+        .drawer-header {
+            padding: var(--space-md);
+            border-bottom: 1px solid var(--mgp-border);
+            display: flex;
+            justify-content: space-between;
+            gap: var(--space-md);
+            align-items: center;
+        }
+
+        .drawer-body {
+            padding: var(--space-md);
+            display: grid;
+            gap: var(--space-md);
+        }
+
+        .drawer-footer {
+            padding: var(--space-md);
+            border-top: 1px solid var(--mgp-border);
+            display: flex;
+            gap: var(--space-sm);
+            justify-content: flex-end;
+            background: var(--mgp-surface-muted);
+        }
+
+        .check-list {
+            display: grid;
+            gap: var(--space-xs);
+        }
+
+            .check-list label {
+                display: flex;
+                gap: var(--space-sm);
+                align-items: center;
+            }
+
+        .url-state {
+            padding: var(--space-sm);
+            background: var(--mgp-surface-muted);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            overflow-x: auto;
+        }
+
+        .pagination {
+            justify-content: center;
+            margin-top: var(--space-md);
+        }
+
+            .pagination button {
+                border: 1px solid var(--mgp-border);
+                background: var(--mgp-surface);
+                color: var(--mgp-text);
+                border-radius: .55rem;
+                padding: var(--space-xs) var(--space-sm);
+                cursor: pointer;
+                font-weight: var(--font-weight-bold);
+            }
+
+                .pagination button.active {
+                    background: var(--mgp-primary);
+                    color: #fff;
+                    border-color: var(--mgp-primary);
+                }
+
+        .matrix {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .matrix th,
+            .matrix td {
+                text-align: left;
+                border-bottom: 1px solid var(--mgp-border);
+                padding: var(--space-sm);
+                vertical-align: top;
+            }
+
+            .matrix th {
+                font-weight: var(--font-weight-bold);
+            }
+
+        @media (max-width: 1060px) {
+            .filter-bar {
+                grid-template-columns: 1fr 1fr;
+            }
+
+                .filter-bar .filter-field:first-child {
+                    grid-column: 1 / -1;
+                }
+        }
+
+        @media (max-width: 940px) {
+            .app-shell {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "header"
+                    "main"
+                    "footer";
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .hero,
+            .grid-3,
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .header-inner {
+                align-items: start;
+                flex-direction: column;
+                padding: var(--space-sm) var(--space-md);
+            }
+
+            main {
+                padding: var(--space-lg) var(--space-md) var(--space-2xl);
+            }
+
+            .filter-bar {
+                grid-template-columns: 1fr;
+            }
+
+            .filter-actions,
+            .result-summary,
+            .plant-card-header,
+            .file-row,
+            .garden-row {
+                grid-template-columns: 1fr;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn-row,
+            .card-actions,
+            .chip-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+                .btn,
+                .btn-row .btn,
+                .card-actions .btn {
+                    width: 100%;
+                }
+
+            .mobile-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .drawer-footer {
+                flex-direction: column;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .sidebar,
+            .header,
+            .footer,
+            .btn-row,
+            .card-actions,
+            .filter-actions,
+            .pagination,
+            .drawer-demo {
+                display: none !important;
+            }
+
+            .app-shell {
+                display: block;
+            }
+
+            main {
+                max-width: none;
+                padding: 0;
+            }
+
+            .card,
+            .hero,
+            .plant-card,
+            .file-row,
+            .garden-row,
+            .empty-state {
+                box-shadow: none;
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar" aria-label="Primær navigation">
+            <div class="brand">
+                <div class="brand-mark">✿</div>
+                <div>MyGardenPlanner</div>
+            </div>
+
+            <div class="nav-section-title">Search/filter</div>
+            <ul class="nav-list">
+                <li><button class="nav-link active" type="button">Demo 17</button></li>
+                <li><button class="nav-link" type="button">Filterbar</button></li>
+                <li><button class="nav-link" type="button">Active chips</button></li>
+                <li><button class="nav-link" type="button">Sortering</button></li>
+                <li><button class="nav-link" type="button">Mobile drawer</button></li>
+                <li><button class="nav-link" type="button">Filtered empty</button></li>
+                <li><button class="nav-link" type="button">URL-state</button></li>
+            </ul>
+        </aside>
+
+        <header class="header">
+            <div class="header-inner">
+                <div>
+                    <p class="context-title">Design demo 17</p>
+                    <p class="context-subtitle">Search, filter og sortering · URL-state og aktive filtre</p>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-secondary" type="button">Nulstil filtre</button>
+                    <button class="btn btn-primary" type="button">Opret plante</button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section class="hero">
+                <div>
+                    <span class="eyebrow">Nordisk havearkitekt · demo 17</span>
+                    <h1>Search, filter og sortering</h1>
+                    <p class="lead">
+                        Denne demo viser filterbar, aktive filterchips, sortering, view-mode,
+                        mobile filter drawer, filtered empty state og URL-state-principper.
+                        Mønsteret skal kunne genbruges på planter, materialer, haver, filer og invitationer.
+                    </p>
+
+                    <div class="btn-row">
+                        <button class="btn btn-primary" type="button">Opret plante</button>
+                        <button class="btn btn-secondary" type="button">Gem filtervisning</button>
+                    </div>
+                </div>
+
+                <div class="card card-highlight stack-sm">
+                    <span class="demo-label">hovedregel</span>
+                    <h3>Søgning finder. Filter indsnævrer. Sortering prioriterer.</h3>
+                    <p class="meta">
+                        View-mode ændrer kun præsentationen og bør ikke blandes sammen med filter.
+                    </p>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Desktop filterbar: planter</h2>
+                        <p>De mest brugte filtre vises direkte. Sjældne filtre kan ligge under “Flere filtre”.</p>
+                    </div>
+                </div>
+
+                <div class="filter-bar">
+                    <div class="filter-field">
+                        <span class="filter-label">Søg</span>
+                        <input class="filter-input" value="lavendel" aria-label="Søg planter" />
+                    </div>
+
+                    <div class="filter-field">
+                        <span class="filter-label">Lys</span>
+                        <select class="filter-select" aria-label="Lysforhold">
+                            <option>Sol</option>
+                            <option>Halvskygge</option>
+                            <option>Skygge</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <span class="filter-label">Type</span>
+                        <select class="filter-select" aria-label="Plantetype">
+                            <option>Staude</option>
+                            <option>Busk</option>
+                            <option>Træ</option>
+                            <option>Græs</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <span class="filter-label">Sortér</span>
+                        <select class="filter-select" aria-label="Sortering">
+                            <option>Navn A–Å</option>
+                            <option>Navn Å–A</option>
+                            <option>Blomstring tidligst</option>
+                            <option>Højde lav–høj</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-secondary" type="button">Flere filtre</button>
+                </div>
+
+                <div class="filter-actions" style="margin-top:var(--space-md);">
+                    <div>
+                        <strong>Aktive filtre</strong>
+                        <div class="chip-row">
+                            <span class="filter-chip">Søgning: lavendel <button aria-label="Fjern søgning">×</button></span>
+                            <span class="filter-chip">Lys: Sol <button aria-label="Fjern filter Lys Sol">×</button></span>
+                            <span class="filter-chip">Type: Staude <button aria-label="Fjern filter Type Staude">×</button></span>
+                        </div>
+                    </div>
+
+                    <div class="btn-row">
+                        <button class="btn btn-secondary btn-sm" type="button">Nulstil alle</button>
+
+                        <div class="view-toggle" aria-label="Visning">
+                            <button class="active" type="button">Cards</button>
+                            <button type="button">Liste</button>
+                            <button type="button">Tabel</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-summary">
+                    <div>
+                        <strong>24 planter</strong>
+                        <p class="meta">Filtreret på Sol og Staude · sorteret efter Navn A–Å</p>
+                    </div>
+                    <span class="badge badge-muted">URL-state aktiv</span>
+                </div>
+
+                <div class="grid grid-3">
+                    <article class="plant-card">
+                        <div class="plant-card-header">
+                            <div>
+                                <h3>Lavendel</h3>
+                                <p class="meta"><em>Lavandula angustifolia</em></p>
+                            </div>
+                            <span class="badge badge-primary">Sol</span>
+                        </div>
+                        <p class="meta">Staude · 30–60 cm · juni–august</p>
+                        <div class="badge-row">
+                            <span class="badge badge-muted">Blå/lilla</span>
+                            <span class="badge badge-muted">Tørketålende</span>
+                        </div>
+                    </article>
+
+                    <article class="plant-card">
+                        <div class="plant-card-header">
+                            <div>
+                                <h3>Sommerlavendel</h3>
+                                <p class="meta"><em>Lavandula stoechas</em></p>
+                            </div>
+                            <span class="badge badge-primary">Sol</span>
+                        </div>
+                        <p class="meta">Staude · 40–70 cm · juni–september</p>
+                        <div class="badge-row">
+                            <span class="badge badge-muted">Lilla</span>
+                            <span class="badge badge-muted">Duft</span>
+                        </div>
+                    </article>
+
+                    <article class="plant-card">
+                        <div class="plant-card-header">
+                            <div>
+                                <h3>Russisk lavendel</h3>
+                                <p class="meta"><em>Perovskia atriplicifolia</em></p>
+                            </div>
+                            <span class="badge badge-primary">Sol</span>
+                        </div>
+                        <p class="meta">Staude · 70–110 cm · juli–september</p>
+                        <div class="badge-row">
+                            <span class="badge badge-muted">Blå</span>
+                            <span class="badge badge-muted">Let løv</span>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Compact list: filer</h2>
+                        <p>Filer bruger søgning, filtype, status og sortering — uden at hente originalfiler.</p>
+                    </div>
+                </div>
+
+                <div class="filter-bar">
+                    <div class="filter-field">
+                        <span class="filter-label">Søg</span>
+                        <input class="filter-input" value="skitse" aria-label="Søg filer" />
+                    </div>
+
+                    <div class="filter-field">
+                        <span class="filter-label">Filtype</span>
+                        <select class="filter-select" aria-label="Filtype">
+                            <option>PDF</option>
+                            <option>Billeder</option>
+                            <option>Dokumenter</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <span class="filter-label">Status</span>
+                        <select class="filter-select" aria-label="Filstatus">
+                            <option>Alle statusser</option>
+                            <option>Midlertidig</option>
+                            <option>Permanent</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-field">
+                        <span class="filter-label">Sortér</span>
+                        <select class="filter-select" aria-label="Sortering filer">
+                            <option>Nyeste først</option>
+                            <option>Filnavn A–Å</option>
+                            <option>Filtype</option>
+                            <option>Størrelse</option>
+                        </select>
+                    </div>
+
+                    <button class="btn btn-secondary" type="button">Flere filtre</button>
+                </div>
+
+                <div class="chip-row">
+                    <span class="filter-chip">Søgning: skitse <button aria-label="Fjern søgning">×</button></span>
+                    <span class="filter-chip">Type: PDF <button aria-label="Fjern filtype PDF">×</button></span>
+                    <button class="btn btn-ghost btn-sm" type="button">Nulstil alle</button>
+                </div>
+
+                <div class="compact-list" style="margin-top:var(--space-md);">
+                    <div class="file-row">
+                        <div class="file-icon">PDF</div>
+                        <div>
+                            <h3>Haveskitse maj.pdf</h3>
+                            <p class="meta">PDF · 2,4 MB · Permanent · nyeste først</p>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn btn-secondary btn-sm" type="button">Vis</button>
+                            <button class="btn btn-secondary btn-sm" type="button">Download</button>
+                        </div>
+                    </div>
+
+                    <div class="file-row">
+                        <div class="file-icon">PDF</div>
+                        <div>
+                            <h3>Gammel skitse.pdf</h3>
+                            <p class="meta">PDF · 1,8 MB · Historisk</p>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn btn-secondary btn-sm" type="button">Vis</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Mobile filter drawer</h2>
+                        <p>På mobil bør filtre samles i drawer/bottom sheet i stedet for en overfyldt filterbar.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <div class="mobile-filter-preview">
+                        <div class="mobile-filter-bar">
+                            <div class="filter-field">
+                                <span class="filter-label">Søg planter</span>
+                                <input class="filter-input" value="lavendel" />
+                            </div>
+
+                            <div class="mobile-actions">
+                                <button class="btn btn-secondary" type="button">Filtrer</button>
+                                <button class="btn btn-secondary" type="button">Sortér</button>
+                            </div>
+
+                            <div class="chip-row">
+                                <span class="filter-chip">Sol <button>×</button></span>
+                                <span class="filter-chip">Staude <button>×</button></span>
+                            </div>
+                        </div>
+
+                        <p class="meta">
+                            Mobile UI viser søgning direkte og gemmer flere filtre i en drawer.
+                        </p>
+                    </div>
+
+                    <div class="drawer-demo">
+                        <div class="drawer-header">
+                            <h3>Filtrer planter</h3>
+                            <button class="btn btn-ghost btn-sm" type="button">Luk</button>
+                        </div>
+
+                        <div class="drawer-body">
+                            <div>
+                                <strong>Lys</strong>
+                                <div class="check-list">
+                                    <label><input type="checkbox" checked /> Sol</label>
+                                    <label><input type="checkbox" /> Halvskygge</label>
+                                    <label><input type="checkbox" /> Skygge</label>
+                                </div>
+                            </div>
+
+                            <div>
+                                <strong>Type</strong>
+                                <div class="check-list">
+                                    <label><input type="checkbox" checked /> Staude</label>
+                                    <label><input type="checkbox" /> Busk</label>
+                                    <label><input type="checkbox" /> Græs</label>
+                                </div>
+                            </div>
+
+                            <div>
+                                <strong>Blomstring</strong>
+                                <div class="check-list">
+                                    <label><input type="checkbox" /> Maj–juni</label>
+                                    <label><input type="checkbox" /> Juni–august</label>
+                                    <label><input type="checkbox" /> August–oktober</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="drawer-footer">
+                            <button class="btn btn-secondary" type="button">Nulstil</button>
+                            <button class="btn btn-primary" type="button">Anvend filtre</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Filtered/search empty</h2>
+                        <p>Filtered empty må ikke ligne first-use empty.</p>
+                    </div>
+                </div>
+
+                <div class="empty-state">
+                    <div class="empty-icon">⌕</div>
+                    <div>
+                        <h2>Ingen planter matcher dine filtre</h2>
+                        <p class="meta">
+                            Prøv at ændre søgningen eller nulstil filtrene.
+                        </p>
+                    </div>
+
+                    <div class="chip-row" style="justify-content:center;">
+                        <span class="filter-chip">Søgning: lavenddel <button>×</button></span>
+                        <span class="filter-chip">Lys: Skygge <button>×</button></span>
+                        <span class="filter-chip">Type: Træ <button>×</button></span>
+                    </div>
+
+                    <div class="btn-row">
+                        <button class="btn btn-secondary" type="button">Ryd søgning</button>
+                        <button class="btn btn-secondary" type="button">Nulstil filtre</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Scope-filter: aktive, arkiverede og alle</h2>
+                        <p>Arkiverede objekter er et tydeligt scope-filter, ikke et skjult specialtilfælde.</p>
+                    </div>
+                </div>
+
+                <div class="card stack-md">
+                    <div class="filter-actions">
+                        <div>
+                            <h3>Haver</h3>
+                            <p class="meta">Standard: Aktive haver. Brug scope-filter til arkiverede.</p>
+                        </div>
+
+                        <div class="view-toggle" aria-label="Status scope">
+                            <button class="active" type="button">Aktive</button>
+                            <button type="button">Arkiverede</button>
+                            <button type="button">Alle</button>
+                        </div>
+                    </div>
+
+                    <div class="compact-list">
+                        <div class="garden-row">
+                            <div class="file-icon">✿</div>
+                            <div>
+                                <h3>Villa Solbakken</h3>
+                                <p class="meta">Kundehave · Aarhus N · senest opdateret i dag</p>
+                            </div>
+                            <span class="badge badge-primary">Aktiv</span>
+                        </div>
+
+                        <div class="garden-row">
+                            <div class="file-icon">✿</div>
+                            <div>
+                                <h3>Skovhaven</h3>
+                                <p class="meta">Privat have · Silkeborg · senest opdateret i går</p>
+                            </div>
+                            <span class="badge badge-primary">Aktiv</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>URL-state og return-flow</h2>
+                        <p>Search, filter, sortering, pagination og view-mode bør kunne genskabes via URL.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <div class="card stack-md">
+                        <span class="demo-label">URL-state</span>
+                        <h3>Eksempel: planteliste</h3>
+                        <div class="url-state">
+                            <code>/planter?search=lavendel&amp;lys=sol&amp;type=staude&amp;sort=name-asc&amp;view=compact&amp;page=1</code>
+                        </div>
+                        <p class="meta">
+                            Denne state kan bruges ved refresh, back/forward og return-flow efter oprettelse.
+                        </p>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">return-flow</span>
+                        <h3>Efter oprettelse</h3>
+                        <p class="meta">
+                            Hvis den nye plante ikke matcher filtrene, forklarer UI’et hvorfor.
+                        </p>
+                        <div class="empty-state" style="padding:var(--space-lg);">
+                            <div class="empty-icon">i</div>
+                            <div>
+                                <h3>Planten er oprettet</h3>
+                                <p class="meta">Den vises ikke i listen, fordi det aktive filter er “Sol”.</p>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" type="button">Nulstil filter</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Pagination</h2>
+                        <p>Når søgning eller filter ændres, bør pagination nulstilles til første side.</p>
+                    </div>
+                </div>
+
+                <div class="card stack-md">
+                    <div class="pagination">
+                        <button type="button">Forrige</button>
+                        <button class="active" type="button">1</button>
+                        <button type="button">2</button>
+                        <button type="button">3</button>
+                        <button type="button">Næste</button>
+                    </div>
+
+                    <p class="meta" style="text-align:center;">
+                        Eksempel: Filter ændres → page resettes til 1 for at undgå tomme sider.
+                    </p>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Beslutningstabel</h2>
+                        <p>Samlet guideline for search, filter og sortering.</p>
+                    </div>
+                </div>
+
+                <div class="card" style="overflow:auto;">
+                    <table class="matrix">
+                        <thead>
+                            <tr>
+                                <th>Situation</th>
+                                <th>UI-mønster</th>
+                                <th>Guideline</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Søgning</td>
+                                <td>Search input + clear</td>
+                                <td>Search empty viser søgetermen.</td>
+                            </tr>
+                            <tr>
+                                <td>Aktive filtre</td>
+                                <td>Filter chips</td>
+                                <td>Kan fjernes enkeltvis og nulstilles samlet.</td>
+                            </tr>
+                            <tr>
+                                <td>Sortering</td>
+                                <td>Sort select</td>
+                                <td>Vis felt og retning, fx Navn A–Å.</td>
+                            </tr>
+                            <tr>
+                                <td>Mobil</td>
+                                <td>Filter drawer</td>
+                                <td>Undgå overfyldt filterbar.</td>
+                            </tr>
+                            <tr>
+                                <td>Ingen resultater</td>
+                                <td>Filtered/search empty</td>
+                                <td>Må ikke ligne first-use empty.</td>
+                            </tr>
+                            <tr>
+                                <td>Navigation</td>
+                                <td>URL-state</td>
+                                <td>Bevar search/filter/sort/view/pagination.</td>
+                            </tr>
+                            <tr>
+                                <td>Arkiverede data</td>
+                                <td>Scope-filter</td>
+                                <td>Aktive / Arkiverede / Alle.</td>
+                            </tr>
+                            <tr>
+                                <td>Performance</td>
+                                <td>Metadata først</td>
+                                <td>Search/filter må ikke hente originalfiler.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            © MyGardenPlanner · Design demo 17 · Search, filter og sortering
+        </footer>
+    </div>
+</body>
+</html>

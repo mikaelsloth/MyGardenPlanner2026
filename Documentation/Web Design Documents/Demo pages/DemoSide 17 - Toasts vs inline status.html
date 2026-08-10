@@ -1,0 +1,1115 @@
+﻿<!doctype html>
+<html lang="da">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MyGardenPlanner – Demo16 Toasts vs. inline statusbeskeder</title>
+    <style>
+        :root {
+            --mgp-primary: #3F6B4A;
+            --mgp-primary-dark: #2F5138;
+            --mgp-primary-soft: #DDE8D8;
+            --mgp-accent: #B86B4B;
+            --mgp-text: #243128;
+            --mgp-text-muted: #6F766D;
+            --mgp-bg: #FAF8F2;
+            --mgp-surface: #fff;
+            --mgp-surface-muted: #EFEAE0;
+            --mgp-border: #D8D2C7;
+            --mgp-danger: #9F3A38;
+            --mgp-danger-soft: #FFF4F3;
+            --mgp-warning-bg: #F8E8D8;
+            --mgp-info-soft: #E7EEF0;
+            --space-2xs: .25rem;
+            --space-xs: .5rem;
+            --space-sm: .75rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-2xl: 3rem;
+            --sidebar-width: 280px;
+            --content-max: 1220px;
+            --radius-sm: .45rem;
+            --radius-md: .75rem;
+            --radius-lg: 1.1rem;
+            --shadow-sm: 0 1px 2px rgba(36,49,40,.08);
+            --shadow-md: 0 12px 28px rgba(36,49,40,.10);
+            --font-sans: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+            --font-mono: ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+            --font-size-xs: .78rem;
+            --font-size-sm: .9rem;
+            --font-size-base: 1rem;
+            --font-size-md: 1.08rem;
+            --font-size-xl: clamp(1.35rem,2.2vw,2rem);
+            --font-size-xxl: clamp(2rem,4vw,3.25rem);
+            --line-height-tight: 1.15;
+            --line-height-base: 1.55;
+            --font-weight-bold: 750;
+            --letter-spacing-heading: -.03em;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--mgp-text);
+            background: var(--mgp-bg);
+            font-family: var(--font-sans);
+            font-size: var(--font-size-base);
+            line-height: var(--line-height-base);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--mgp-text);
+            line-height: var(--line-height-tight);
+            letter-spacing: var(--letter-spacing-heading);
+            font-weight: var(--font-weight-bold);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: var(--font-size-xxl);
+        }
+
+        h2 {
+            margin: 0 0 var(--space-md);
+            font-size: var(--font-size-xl);
+        }
+
+        h3 {
+            margin: 0;
+            font-size: var(--font-size-md);
+        }
+
+        p {
+            margin-top: 0;
+        }
+
+        .mono,
+        code {
+            font-family: var(--font-mono);
+            font-size: .92em;
+        }
+
+        .app-shell {
+            display: grid;
+            min-height: 100vh;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            grid-template-rows: auto 1fr auto;
+            grid-template-areas:
+                "sidebar header"
+                "sidebar main"
+                "sidebar footer";
+        }
+
+        .sidebar {
+            grid-area: sidebar;
+            background: var(--mgp-surface);
+            border-right: 1px solid var(--mgp-border);
+            padding: var(--space-lg);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding-bottom: var(--space-lg);
+            border-bottom: 1px solid var(--mgp-border);
+            margin-bottom: var(--space-lg);
+            font-weight: var(--font-weight-bold);
+            letter-spacing: -.02em;
+        }
+
+        .brand-mark {
+            width: 2.3rem;
+            height: 2.3rem;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: white;
+            background: linear-gradient(135deg,var(--mgp-primary),var(--mgp-primary-dark));
+            box-shadow: var(--shadow-sm);
+        }
+
+        .nav-section-title {
+            color: var(--mgp-text-muted);
+            text-transform: uppercase;
+            font-size: var(--font-size-xs);
+            letter-spacing: .08em;
+            font-weight: var(--font-weight-bold);
+            margin: var(--space-lg) 0 var(--space-xs);
+        }
+
+        .nav-list {
+            display: grid;
+            gap: var(--space-2xs);
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .nav-link {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            color: var(--mgp-text);
+            background: transparent;
+            border: 0;
+            text-align: left;
+            border-radius: var(--radius-sm);
+            padding: var(--space-xs) var(--space-sm);
+            font-size: .95rem;
+            font-weight: var(--font-weight-bold);
+            cursor: pointer;
+        }
+
+            .nav-link:hover {
+                background: var(--mgp-surface-muted);
+            }
+
+            .nav-link.active {
+                background: var(--mgp-primary-soft);
+                color: var(--mgp-primary-dark);
+            }
+
+        .header {
+            grid-area: header;
+            background: rgba(250,248,242,.88);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--mgp-border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-inner {
+            max-width: var(--content-max);
+            margin: 0 auto;
+            padding: var(--space-sm) var(--space-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-md);
+        }
+
+        .context-title {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: var(--font-weight-bold);
+        }
+
+        .context-subtitle {
+            margin: var(--space-2xs) 0 0;
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-sm);
+        }
+
+        main {
+            grid-area: main;
+            max-width: var(--content-max);
+            width: 100%;
+            margin: 0 auto;
+            padding: var(--space-xl) var(--space-lg) var(--space-2xl);
+        }
+
+        .footer {
+            grid-area: footer;
+            color: var(--mgp-text-muted);
+            border-top: 1px solid var(--mgp-border);
+            padding: var(--space-md) var(--space-lg);
+            text-align: center;
+            font-size: var(--font-size-sm);
+        }
+
+        .hero {
+            background: linear-gradient(135deg,var(--mgp-surface),var(--mgp-primary-soft));
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: clamp(var(--space-lg),3vw,var(--space-xl));
+            display: grid;
+            grid-template-columns: 1.35fr .95fr;
+            gap: var(--space-lg);
+            align-items: center;
+            margin-bottom: var(--space-lg);
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            color: var(--mgp-primary-dark);
+            background: var(--mgp-primary-soft);
+            border: 1px solid rgba(63,107,74,.18);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            font-size: .84rem;
+            font-weight: var(--font-weight-bold);
+            margin-bottom: var(--space-sm);
+        }
+
+        .lead {
+            color: var(--mgp-text-muted);
+            max-width: 68ch;
+            font-size: var(--font-size-md);
+            line-height: var(--line-height-base);
+            margin-bottom: var(--space-lg);
+        }
+
+        .section {
+            margin-top: var(--space-xl);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: var(--space-md);
+            margin-bottom: var(--space-md);
+        }
+
+            .section-header p {
+                margin: var(--space-2xs) 0 0;
+                color: var(--mgp-text-muted);
+            }
+
+        .grid {
+            display: grid;
+            gap: var(--space-md);
+        }
+
+        .grid-comfortable {
+            gap: var(--space-lg);
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2,minmax(0,1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3,minmax(0,1fr));
+        }
+
+        .stack-sm {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .stack-md {
+            display: grid;
+            gap: var(--space-md);
+        }
+
+        .card {
+            background: var(--mgp-surface);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: var(--space-md);
+        }
+
+        .card-highlight {
+            background: var(--mgp-primary-soft);
+            border-color: rgba(63,107,74,.22);
+        }
+
+        .btn-row,
+        .card-actions,
+        .toast-actions,
+        .status-actions {
+            display: flex;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .card-actions,
+        .toast-actions,
+        .status-actions {
+            gap: var(--space-xs);
+            margin-top: var(--space-sm);
+        }
+
+        .btn {
+            appearance: none;
+            border: 1px solid transparent;
+            border-radius: .65rem;
+            padding: var(--space-sm) var(--space-md);
+            font-weight: var(--font-weight-bold);
+            font-size: .95rem;
+            cursor: pointer;
+            transition: .15s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-xs);
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--mgp-primary);
+            color: #fff;
+            border-color: var(--mgp-primary);
+        }
+
+            .btn-primary:hover {
+                background: var(--mgp-primary-dark);
+                border-color: var(--mgp-primary-dark);
+            }
+
+        .btn-secondary {
+            background: var(--mgp-surface);
+            color: var(--mgp-primary-dark);
+            border-color: var(--mgp-border);
+        }
+
+            .btn-secondary:hover {
+                background: var(--mgp-surface-muted);
+                border-color: rgba(63,107,74,.28);
+            }
+
+        .btn-danger {
+            background: #fff;
+            color: var(--mgp-danger);
+            border-color: rgba(159,58,56,.35);
+        }
+
+            .btn-danger:hover {
+                background: var(--mgp-danger-soft);
+                border-color: rgba(159,58,56,.55);
+            }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--mgp-primary-dark);
+            border-color: transparent;
+            padding-inline: var(--space-xs);
+        }
+
+            .btn-ghost:hover {
+                background: var(--mgp-primary-soft);
+            }
+
+        .btn-sm {
+            padding: var(--space-xs) var(--space-sm);
+            font-size: var(--font-size-sm);
+        }
+
+        .badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-xs);
+            margin-top: var(--space-sm);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2xs);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-bold);
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+        .badge-primary {
+            color: var(--mgp-primary-dark);
+            background: var(--mgp-primary-soft);
+            border-color: rgba(63,107,74,.18);
+        }
+
+        .badge-muted {
+            color: var(--mgp-text-muted);
+            background: var(--mgp-surface-muted);
+            border-color: var(--mgp-border);
+        }
+
+        .badge-accent {
+            color: #653521;
+            background: var(--mgp-warning-bg);
+            border-color: rgba(184,107,75,.22);
+        }
+
+        .badge-danger {
+            color: var(--mgp-danger);
+            background: var(--mgp-danger-soft);
+            border-color: rgba(159,58,56,.22);
+        }
+
+        .meta {
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-sm);
+            line-height: 1.4;
+            margin: var(--space-2xs) 0 0;
+        }
+
+        .demo-label {
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+            color: var(--mgp-text-muted);
+            font-family: var(--font-mono);
+            font-size: var(--font-size-xs);
+            background: var(--mgp-surface-muted);
+            border: 1px solid var(--mgp-border);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            margin-bottom: var(--space-sm);
+        }
+
+        .status-message {
+            display: flex;
+            gap: var(--space-sm);
+            align-items: start;
+            padding: var(--space-sm);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--mgp-border);
+            background: var(--mgp-surface);
+        }
+
+        .status-dot {
+            width: .75rem;
+            height: .75rem;
+            border-radius: 50%;
+            margin-top: .42rem;
+            flex: 0 0 auto;
+            background: var(--mgp-text-muted);
+        }
+
+        .status-success .status-dot {
+            background: var(--mgp-primary);
+        }
+
+        .status-warning .status-dot {
+            background: var(--mgp-accent);
+        }
+
+        .status-danger .status-dot {
+            background: var(--mgp-danger);
+        }
+
+        .status-info .status-dot {
+            background: #55717A;
+        }
+
+        .status-processing .status-dot {
+            background: var(--mgp-accent);
+        }
+
+        .status-restricted .status-dot {
+            background: var(--mgp-text-muted);
+        }
+
+        .status-message strong {
+            display: block;
+            font-weight: var(--font-weight-bold);
+        }
+
+        .status-message.page-level {
+            border-left: 5px solid var(--mgp-primary);
+            padding: var(--space-md);
+        }
+
+        .status-message.section-level {
+            border-left: 5px solid var(--mgp-accent);
+        }
+
+        .status-message.object-level {
+            padding: var(--space-xs) var(--space-sm);
+        }
+
+        .status-message.danger-level {
+            border-left: 5px solid var(--mgp-danger);
+        }
+
+        .field-message {
+            margin-top: var(--space-xs);
+            color: var(--mgp-danger);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-bold);
+        }
+
+        .form-control {
+            width: 100%;
+            border: 1px solid var(--mgp-border);
+            background: var(--mgp-surface);
+            color: var(--mgp-text);
+            border-radius: .65rem;
+            padding: var(--space-sm) var(--space-md);
+            font: inherit;
+        }
+
+            .form-control.error {
+                border-color: rgba(159,58,56,.55);
+                box-shadow: 0 0 0 4px rgba(159,58,56,.08);
+            }
+
+        .toast-demo-area {
+            position: relative;
+            min-height: 320px;
+            border: 1px dashed var(--mgp-border);
+            border-radius: var(--radius-lg);
+            background: linear-gradient(135deg,var(--mgp-surface),var(--mgp-surface-muted));
+            padding: var(--space-md);
+            overflow: hidden;
+        }
+
+        .toast-stack {
+            position: absolute;
+            right: var(--space-md);
+            bottom: var(--space-md);
+            display: grid;
+            gap: var(--space-sm);
+            max-width: min(360px,calc(100% - 2rem));
+            z-index: 2;
+        }
+
+        .toast {
+            display: flex;
+            gap: var(--space-sm);
+            align-items: start;
+            background: var(--mgp-surface);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-md);
+            padding: var(--space-sm) var(--space-md);
+        }
+
+        .toast-icon {
+            width: 1.6rem;
+            height: 1.6rem;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            flex: 0 0 auto;
+            background: var(--mgp-primary-soft);
+            color: var(--mgp-primary-dark);
+            font-weight: var(--font-weight-bold);
+        }
+
+        .toast-close {
+            border: 0;
+            background: transparent;
+            color: var(--mgp-text-muted);
+            font-size: 1.2rem;
+            line-height: 1;
+            cursor: pointer;
+            margin-left: auto;
+        }
+
+        .toast-success .toast-icon {
+            background: var(--mgp-primary-soft);
+            color: var(--mgp-primary-dark);
+        }
+
+        .toast-info .toast-icon {
+            background: var(--mgp-info-soft);
+            color: #55717A;
+        }
+
+        .toast-warning .toast-icon {
+            background: var(--mgp-warning-bg);
+            color: #653521;
+        }
+
+        .toast-not-recommended {
+            opacity: .72;
+            border-style: dashed;
+        }
+
+        .attention-scale {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .attention-row {
+            display: grid;
+            grid-template-columns: 140px 1fr auto;
+            gap: var(--space-md);
+            align-items: center;
+            padding: var(--space-sm);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            background: var(--mgp-surface);
+        }
+
+        .matrix {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .matrix th,
+            .matrix td {
+                text-align: left;
+                border-bottom: 1px solid var(--mgp-border);
+                padding: var(--space-sm);
+                vertical-align: top;
+            }
+
+            .matrix th {
+                font-weight: var(--font-weight-bold);
+            }
+
+        @media(max-width:940px) {
+            .app-shell {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "header"
+                    "main"
+                    "footer";
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .hero,
+            .grid-3,
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .header-inner {
+                align-items: start;
+                flex-direction: column;
+                padding: var(--space-sm) var(--space-md);
+            }
+
+            .btn-row,
+            .card-actions,
+            .toast-actions,
+            .status-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .attention-row {
+                grid-template-columns: 1fr;
+            }
+
+            .toast-stack {
+                left: var(--space-md);
+                right: var(--space-md);
+                bottom: var(--space-md);
+                max-width: none;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .sidebar,
+            .header,
+            .footer,
+            .toast-stack,
+            .btn-row,
+            .card-actions,
+            .toast-actions,
+            .status-actions {
+                display: none !important;
+            }
+
+            .app-shell {
+                display: block;
+            }
+
+            main {
+                max-width: none;
+                padding: 0;
+            }
+
+            .card,
+            .hero,
+            .status-message {
+                box-shadow: none;
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar" aria-label="Primær navigation">
+            <div class="brand">
+                <div class="brand-mark">✿</div>
+                <div>MyGardenPlanner</div>
+            </div>
+
+            <div class="nav-section-title">Feedback</div>
+            <ul class="nav-list">
+                <li><button class="nav-link active" type="button">Demo 16</button></li>
+                <li><button class="nav-link" type="button">Inline status</button></li>
+                <li><button class="nav-link" type="button">Toasts</button></li>
+                <li><button class="nav-link" type="button">Validation</button></li>
+                <li><button class="nav-link" type="button">Attention scale</button></li>
+            </ul>
+        </aside>
+
+        <header class="header">
+            <div class="header-inner">
+                <div>
+                    <p class="context-title">Design demo 16</p>
+                    <p class="context-subtitle">Toasts vs. inline statusbeskeder · feedback og opmærksomhed</p>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-secondary" type="button">Vis toast</button>
+                    <button class="btn btn-primary" type="button">Gem ændringer</button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section class="hero">
+                <div>
+                    <span class="eyebrow">Nordisk havearkitekt · demo 16</span>
+                    <h1>Toasts vs. inline statusbeskeder</h1>
+                    <p class="lead">
+                        Denne demo viser, hvornår feedback bør være persistent og kontekstuel som inline statusbesked,
+                        og hvornår en kort toast er nok. Hovedreglen er: vigtig information skal kunne genlæses.
+                    </p>
+
+                    <div class="btn-row">
+                        <button class="btn btn-primary">Gem ændringer</button>
+                        <button class="btn btn-secondary">Kopier link</button>
+                    </div>
+                </div>
+
+                <div class="card card-highlight stack-sm">
+                    <span class="demo-label">hovedregel</span>
+                    <h3>Toast må kun bruges til det, brugeren trygt kan overse</h3>
+                    <p class="meta">
+                        Fejl, no-access, validation, uploadproblemer, destructive actions og return-flow bør være inline.
+                    </p>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Inline statusbeskeder</h2>
+                        <p>Persistent feedback placeret tæt på årsagen.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <div class="status-message status-success page-level">
+                        <span class="status-dot"></span>
+                        <div>
+                            <strong>Haven er arkiveret</strong>
+                            <p class="meta">Villa Solbakken findes nu under arkiverede haver.</p>
+                            <div class="status-actions">
+                                <button class="btn btn-secondary btn-sm">Vis arkiverede</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="status-message status-warning section-level">
+                        <span class="status-dot"></span>
+                        <div>
+                            <strong>Planten er oprettet</strong>
+                            <p class="meta">Den vises ikke i listen, fordi det aktive filter er “Sol”.</p>
+                            <div class="status-actions">
+                                <button class="btn btn-secondary btn-sm">Nulstil filter</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="status-message status-danger danger-level">
+                        <span class="status-dot"></span>
+                        <div>
+                            <strong>Upload mislykkedes</strong>
+                            <p class="meta">Filen er for stor. Vælg en mindre fil, og prøv igen.</p>
+                            <div class="status-actions">
+                                <button class="btn btn-danger btn-sm">Vælg anden fil</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="status-message status-restricted">
+                        <span class="status-dot"></span>
+                        <div>
+                            <strong>Du har ikke adgang til filerne</strong>
+                            <p class="meta">Kontakt haveejeren, hvis du skal kunne se eller downloade dem.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Object-level og form-level feedback</h2>
+                        <p>Små statusbeskeder placeres ved objektet eller feltet.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <article class="card stack-md">
+                        <span class="demo-label">object-level</span>
+                        <h3>Ny skitse.png</h3>
+                        <p class="meta">Billede · Uploadet i dag</p>
+
+                        <div class="status-message status-processing object-level">
+                            <span class="status-dot"></span>
+                            <div>
+                                <strong>Thumbnail oprettes…</strong>
+                                <p class="meta">Metadata er klar, men preview er under behandling.</p>
+                            </div>
+                        </div>
+
+                        <div class="card-actions">
+                            <button class="btn btn-secondary btn-sm">Vis metadata</button>
+                        </div>
+                    </article>
+
+                    <article class="card stack-md">
+                        <span class="demo-label">field-level</span>
+                        <h3>Formularfejl</h3>
+
+                        <label>
+                            <strong>Havens navn</strong>
+                            <input class="form-control error" value="" placeholder="Indtast havens navn" />
+                        </label>
+
+                        <div class="field-message">Havens navn er påkrævet.</div>
+                        <p class="meta">Validering hører til feltet og må ikke vises som toast.</p>
+                    </article>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Toast stack</h2>
+                        <p>Toasts er korte, globale og ikke-kritiske. De må ikke være eneste sted for vigtig information.</p>
+                    </div>
+                </div>
+
+                <div class="toast-demo-area">
+                    <div class="card" style="max-width:34rem;">
+                        <span class="demo-label">demo area</span>
+                        <h3>Brugeren arbejder videre</h3>
+                        <p class="meta">
+                            Toast-stack ligger diskret i hjørnet og blokerer ikke indholdet.
+                            På mobil flyttes den til bunden.
+                        </p>
+
+                        <div class="btn-row">
+                            <button class="btn btn-secondary">Kopier link</button>
+                            <button class="btn btn-primary">Gem</button>
+                        </div>
+                    </div>
+
+                    <div class="toast-stack" aria-live="polite">
+                        <div class="toast toast-success">
+                            <div class="toast-icon">✓</div>
+                            <div>
+                                <strong>Ændringer gemt.</strong>
+                                <p class="meta">Kort bekræftelse.</p>
+                            </div>
+                            <button class="toast-close" aria-label="Luk">×</button>
+                        </div>
+
+                        <div class="toast toast-info">
+                            <div class="toast-icon">i</div>
+                            <div>
+                                <strong>Link kopieret.</strong>
+                                <p class="meta">Kan trygt forsvinde.</p>
+                            </div>
+                            <button class="toast-close" aria-label="Luk">×</button>
+                        </div>
+
+                        <div class="toast toast-warning toast-not-recommended">
+                            <div class="toast-icon">!</div>
+                            <div>
+                                <strong>Upload fejlede.</strong>
+                                <p class="meta">Ikke anbefalet som toast alene.</p>
+                            </div>
+                            <button class="toast-close" aria-label="Luk">×</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Toast egnet vs. skal være inline</h2>
+                        <p>Eksempler på feedbackbeslutninger.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-3">
+                    <div class="card stack-md">
+                        <span class="demo-label">toast egnet</span>
+                        <h3>Kopier link</h3>
+                        <p class="meta">Kort bekræftelse uden kritisk betydning.</p>
+
+                        <div class="toast toast-info">
+                            <div class="toast-icon">i</div>
+                            <div>
+                                <strong>Link kopieret.</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">inline påkrævet</span>
+                        <h3>Slet fil</h3>
+                        <p class="meta">Destruktivt resultat skal kunne genlæses.</p>
+
+                        <div class="status-message status-danger">
+                            <span class="status-dot"></span>
+                            <div>
+                                <strong>Filen er slettet</strong>
+                                <p class="meta">Haveskitse maj.pdf blev fjernet fra Villa Solbakken.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">inline + action</span>
+                        <h3>Filtered return-flow</h3>
+                        <p class="meta">Forklaring og handling skal blive stående.</p>
+
+                        <div class="status-message status-warning">
+                            <span class="status-dot"></span>
+                            <div>
+                                <strong>Planten er oprettet</strong>
+                                <p class="meta">Den vises ikke med det aktive filter.</p>
+                                <button class="btn btn-secondary btn-sm" style="margin-top:var(--space-sm);">Nulstil filter</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Attention scale</h2>
+                        <p>Jo vigtigere beskeden er, desto mere persistent og kontekstuel skal den være.</p>
+                    </div>
+                </div>
+
+                <div class="card attention-scale">
+                    <div class="attention-row">
+                        <strong>Lav</strong>
+                        <p class="meta">Link kopieret, ændringer gemt.</p>
+                        <span class="badge badge-muted">Toast</span>
+                    </div>
+
+                    <div class="attention-row">
+                        <strong>Middel</strong>
+                        <p class="meta">Thumbnail oprettes, invitation afventer.</p>
+                        <span class="badge badge-accent">Object/section inline</span>
+                    </div>
+
+                    <div class="attention-row">
+                        <strong>Høj</strong>
+                        <p class="meta">Uploadfejl, no-access, destructive result.</p>
+                        <span class="badge badge-danger">Persistent inline</span>
+                    </div>
+
+                    <div class="attention-row">
+                        <strong>Kritisk</strong>
+                        <p class="meta">Konto/adgang kræver handling.</p>
+                        <span class="badge badge-danger">Banner + handling</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Beslutningstabel</h2>
+                        <p>Samlet guideline for feedbacktype.</p>
+                    </div>
+                </div>
+
+                <div class="card" style="overflow:auto">
+                    <table class="matrix">
+                        <thead>
+                            <tr>
+                                <th>Situation</th>
+                                <th>Toast</th>
+                                <th>Inline</th>
+                                <th>Bemærkning</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Link kopieret</td>
+                                <td>Ja</td>
+                                <td>Nej</td>
+                                <td>Kort og ikke-kritisk.</td>
+                            </tr>
+                            <tr>
+                                <td>Ændringer gemt</td>
+                                <td>Ja</td>
+                                <td>Evt.</td>
+                                <td>Inline hvis konteksten er vigtig.</td>
+                            </tr>
+                            <tr>
+                                <td>Upload fejlede</td>
+                                <td>Nej</td>
+                                <td>Ja</td>
+                                <td>Brugeren skal kunne læse årsagen.</td>
+                            </tr>
+                            <tr>
+                                <td>Slet fil</td>
+                                <td>Nej</td>
+                                <td>Ja</td>
+                                <td>Destruktivt resultat skal blive stående.</td>
+                            </tr>
+                            <tr>
+                                <td>No access</td>
+                                <td>Nej</td>
+                                <td>Ja</td>
+                                <td>Forklaring skal være persistent.</td>
+                            </tr>
+                            <tr>
+                                <td>Return-flow efter oprettelse</td>
+                                <td>Nej</td>
+                                <td>Ja</td>
+                                <td>Skal vises på destinationssiden.</td>
+                            </tr>
+                            <tr>
+                                <td>Validation error</td>
+                                <td>Nej</td>
+                                <td>Ja</td>
+                                <td>Vis ved felt/formular.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            © MyGardenPlanner · Design demo 16 · Toasts vs. inline statusbeskeder
+        </footer>
+    </div>
+</body>
+</html>

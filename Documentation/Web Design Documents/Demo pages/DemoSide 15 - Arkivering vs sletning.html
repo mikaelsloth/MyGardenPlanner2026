@@ -1,0 +1,1353 @@
+﻿<!doctype html>
+<html lang="da">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MyGardenPlanner – Design demo 14: Arkivering vs. sletning</title>
+
+    <style>
+        :root {
+            --mgp-primary: #3F6B4A;
+            --mgp-primary-dark: #2F5138;
+            --mgp-primary-soft: #DDE8D8;
+            --mgp-accent: #B86B4B;
+            --mgp-text: #243128;
+            --mgp-text-muted: #6F766D;
+            --mgp-bg: #FAF8F2;
+            --mgp-surface: #FFFFFF;
+            --mgp-surface-muted: #EFEAE0;
+            --mgp-border: #D8D2C7;
+            --mgp-danger: #9F3A38;
+            --mgp-danger-soft: #FFF4F3;
+            --mgp-warning-bg: #F8E8D8;
+            --space-2xs: .25rem;
+            --space-xs: .5rem;
+            --space-sm: .75rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-2xl: 3rem;
+            --page-x: var(--space-lg);
+            --page-y: var(--space-xl);
+            --sidebar-width: 280px;
+            --content-max: 1220px;
+            --radius-sm: .45rem;
+            --radius-md: .75rem;
+            --radius-lg: 1.1rem;
+            --shadow-sm: 0 1px 2px rgba(36, 49, 40, .08);
+            --shadow-md: 0 12px 28px rgba(36, 49, 40, .10);
+            --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+            --font-size-xs: .78rem;
+            --font-size-sm: .9rem;
+            --font-size-base: 1rem;
+            --font-size-md: 1.08rem;
+            --font-size-xl: clamp(1.35rem, 2.2vw, 2rem);
+            --font-size-xxl: clamp(2rem, 4vw, 3.25rem);
+            --line-height-tight: 1.15;
+            --line-height-base: 1.55;
+            --font-weight-medium: 600;
+            --font-weight-bold: 750;
+            --letter-spacing-heading: -0.03em;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--mgp-text);
+            background: var(--mgp-bg);
+            font-family: var(--font-sans);
+            font-size: var(--font-size-base);
+            line-height: var(--line-height-base);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--mgp-text);
+            line-height: var(--line-height-tight);
+            letter-spacing: var(--letter-spacing-heading);
+            font-weight: var(--font-weight-bold);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: var(--font-size-xxl);
+        }
+
+        h2 {
+            margin: 0 0 var(--space-md);
+            font-size: var(--font-size-xl);
+        }
+
+        h3 {
+            margin: 0;
+            font-size: var(--font-size-md);
+        }
+
+        p {
+            margin-top: 0;
+        }
+
+        code,
+        .mono {
+            font-family: var(--font-mono);
+            font-size: .92em;
+        }
+
+        .app-shell {
+            display: grid;
+            min-height: 100vh;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            grid-template-rows: auto 1fr auto;
+            grid-template-areas:
+                "sidebar header"
+                "sidebar main"
+                "sidebar footer";
+        }
+
+        .sidebar {
+            grid-area: sidebar;
+            background: var(--mgp-surface);
+            border-right: 1px solid var(--mgp-border);
+            padding: var(--space-lg);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding-bottom: var(--space-lg);
+            border-bottom: 1px solid var(--mgp-border);
+            margin-bottom: var(--space-lg);
+            font-weight: var(--font-weight-bold);
+            letter-spacing: -.02em;
+        }
+
+        .brand-mark {
+            width: 2.3rem;
+            height: 2.3rem;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: white;
+            background: linear-gradient(135deg, var(--mgp-primary), var(--mgp-primary-dark));
+            box-shadow: var(--shadow-sm);
+        }
+
+        .nav-section-title {
+            color: var(--mgp-text-muted);
+            text-transform: uppercase;
+            font-size: var(--font-size-xs);
+            letter-spacing: .08em;
+            font-weight: var(--font-weight-bold);
+            margin: var(--space-lg) 0 var(--space-xs);
+        }
+
+        .nav-list {
+            display: grid;
+            gap: var(--space-2xs);
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .nav-link {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            color: var(--mgp-text);
+            background: transparent;
+            border: 0;
+            text-align: left;
+            border-radius: var(--radius-sm);
+            padding: var(--space-xs) var(--space-sm);
+            font-size: .95rem;
+            font-weight: var(--font-weight-bold);
+            cursor: pointer;
+        }
+
+            .nav-link:hover {
+                background: var(--mgp-surface-muted);
+            }
+
+            .nav-link.active {
+                background: var(--mgp-primary-soft);
+                color: var(--mgp-primary-dark);
+            }
+
+        .header {
+            grid-area: header;
+            background: rgba(250, 248, 242, .88);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--mgp-border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-inner {
+            max-width: var(--content-max);
+            margin: 0 auto;
+            padding: var(--space-sm) var(--space-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-md);
+        }
+
+        .context-title {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: var(--font-weight-bold);
+        }
+
+        .context-subtitle {
+            margin: var(--space-2xs) 0 0;
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-sm);
+        }
+
+        main {
+            grid-area: main;
+            max-width: var(--content-max);
+            width: 100%;
+            margin: 0 auto;
+            padding: var(--page-y) var(--page-x) var(--space-2xl);
+        }
+
+        .footer {
+            grid-area: footer;
+            color: var(--mgp-text-muted);
+            border-top: 1px solid var(--mgp-border);
+            padding: var(--space-md) var(--space-lg);
+            text-align: center;
+            font-size: var(--font-size-sm);
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--mgp-surface), var(--mgp-primary-soft));
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: clamp(var(--space-lg), 3vw, var(--space-xl));
+            display: grid;
+            grid-template-columns: 1.35fr .95fr;
+            gap: var(--space-lg);
+            align-items: center;
+            margin-bottom: var(--space-lg);
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            color: var(--mgp-primary-dark);
+            background: var(--mgp-primary-soft);
+            border: 1px solid rgba(63, 107, 74, .18);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            font-size: .84rem;
+            font-weight: var(--font-weight-bold);
+            margin-bottom: var(--space-sm);
+        }
+
+        .lead {
+            color: var(--mgp-text-muted);
+            max-width: 68ch;
+            font-size: var(--font-size-md);
+            line-height: var(--line-height-base);
+            margin-bottom: var(--space-lg);
+        }
+
+        .section {
+            margin-top: var(--space-xl);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: var(--space-md);
+            margin-bottom: var(--space-md);
+        }
+
+            .section-header p {
+                margin: var(--space-2xs) 0 0;
+                color: var(--mgp-text-muted);
+            }
+
+        .grid {
+            display: grid;
+            gap: var(--space-md);
+        }
+
+        .grid-comfortable {
+            gap: var(--space-lg);
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .stack-sm {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .stack-md {
+            display: grid;
+            gap: var(--space-md);
+        }
+
+        .card {
+            background: var(--mgp-surface);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: var(--space-md);
+        }
+
+        .card-highlight {
+            background: var(--mgp-primary-soft);
+            border-color: rgba(63, 107, 74, .22);
+        }
+
+        .card-archived {
+            background: var(--mgp-surface-muted);
+            color: var(--mgp-text-muted);
+            opacity: .95;
+        }
+
+            .card-archived h3 {
+                color: var(--mgp-text);
+            }
+
+        .card-danger-zone {
+            border-left: 5px solid var(--mgp-danger);
+            background: linear-gradient(90deg, var(--mgp-danger-soft), var(--mgp-surface));
+        }
+
+        .btn-row,
+        .card-actions,
+        .dialog-actions,
+        .filter-actions {
+            display: flex;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .dialog-actions {
+            justify-content: flex-end;
+            margin-top: var(--space-lg);
+        }
+
+        .card-actions {
+            margin-top: var(--space-sm);
+            gap: var(--space-xs);
+        }
+
+        .filter-actions {
+            justify-content: space-between;
+        }
+
+        .btn {
+            appearance: none;
+            border: 1px solid transparent;
+            border-radius: .65rem;
+            padding: var(--space-sm) var(--space-md);
+            font-weight: var(--font-weight-bold);
+            font-size: .95rem;
+            cursor: pointer;
+            transition: .15s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-xs);
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--mgp-primary);
+            color: white;
+            border-color: var(--mgp-primary);
+        }
+
+            .btn-primary:hover {
+                background: var(--mgp-primary-dark);
+                border-color: var(--mgp-primary-dark);
+            }
+
+        .btn-secondary {
+            background: var(--mgp-surface);
+            color: var(--mgp-primary-dark);
+            border-color: var(--mgp-border);
+        }
+
+            .btn-secondary:hover {
+                background: var(--mgp-surface-muted);
+                border-color: rgba(63, 107, 74, .28);
+            }
+
+        .btn-danger {
+            background: white;
+            color: var(--mgp-danger);
+            border-color: rgba(159, 58, 56, .35);
+        }
+
+            .btn-danger:hover {
+                background: var(--mgp-danger-soft);
+                border-color: rgba(159, 58, 56, .55);
+            }
+
+        .btn-danger-solid {
+            background: var(--mgp-danger);
+            color: white;
+            border-color: var(--mgp-danger);
+        }
+
+            .btn-danger-solid:hover {
+                filter: brightness(.95);
+            }
+
+        .btn-sm {
+            padding: var(--space-xs) var(--space-sm);
+            font-size: var(--font-size-sm);
+        }
+
+        .btn:disabled,
+        .btn[aria-disabled="true"] {
+            opacity: .55;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-xs);
+            margin-top: var(--space-sm);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2xs);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-bold);
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+        .badge-primary {
+            color: var(--mgp-primary-dark);
+            background: var(--mgp-primary-soft);
+            border-color: rgba(63, 107, 74, .18);
+        }
+
+        .badge-muted,
+        .badge-archived {
+            color: var(--mgp-text-muted);
+            background: var(--mgp-surface-muted);
+            border-color: var(--mgp-border);
+        }
+
+        .badge-accent {
+            color: #653521;
+            background: var(--mgp-warning-bg);
+            border-color: rgba(184, 107, 75, .22);
+        }
+
+        .badge-danger {
+            color: var(--mgp-danger);
+            background: var(--mgp-danger-soft);
+            border-color: rgba(159, 58, 56, .22);
+        }
+
+        .meta {
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-sm);
+            line-height: 1.4;
+            margin: var(--space-2xs) 0 0;
+        }
+
+        .demo-label {
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+            color: var(--mgp-text-muted);
+            font-family: var(--font-mono);
+            font-size: var(--font-size-xs);
+            background: var(--mgp-surface-muted);
+            border: 1px solid var(--mgp-border);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            margin-bottom: var(--space-sm);
+        }
+
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            background: var(--mgp-surface);
+        }
+
+            .toggle-row input {
+                accent-color: var(--mgp-primary);
+            }
+
+        .entity-card-header {
+            display: flex;
+            justify-content: space-between;
+            gap: var(--space-md);
+            align-items: start;
+            margin-bottom: var(--space-sm);
+        }
+
+        .entity-card-footer {
+            display: flex;
+            justify-content: space-between;
+            gap: var(--space-md);
+            align-items: center;
+            margin-top: var(--space-md);
+            padding-top: var(--space-sm);
+            border-top: 1px solid var(--mgp-border);
+        }
+
+        .archive-note {
+            padding: var(--space-sm);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            background: var(--mgp-surface-muted);
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-sm);
+        }
+
+        .dialog-demo {
+            max-width: 580px;
+            margin: 0 auto;
+            background: var(--mgp-surface);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: var(--space-lg);
+        }
+
+        .dialog-header {
+            display: flex;
+            gap: var(--space-md);
+            align-items: start;
+            margin-bottom: var(--space-md);
+        }
+
+        .dialog-icon {
+            width: 2.75rem;
+            height: 2.75rem;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            flex: 0 0 auto;
+            font-weight: var(--font-weight-bold);
+        }
+
+        .dialog-icon-warning {
+            color: #653521;
+            background: var(--mgp-warning-bg);
+            border: 1px solid rgba(184, 107, 75, .22);
+        }
+
+        .dialog-icon-danger {
+            color: var(--mgp-danger);
+            background: var(--mgp-danger-soft);
+            border: 1px solid rgba(159, 58, 56, .22);
+        }
+
+        .dialog-body {
+            color: var(--mgp-text-muted);
+        }
+
+        .object-preview {
+            display: grid;
+            gap: var(--space-xs);
+            padding: var(--space-sm);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            background: var(--mgp-surface-muted);
+            margin-top: var(--space-md);
+        }
+
+        .impact-list {
+            display: grid;
+            gap: var(--space-xs);
+            margin: var(--space-md) 0 0;
+            padding: 0;
+            list-style: none;
+        }
+
+            .impact-list li {
+                display: flex;
+                gap: var(--space-xs);
+                align-items: start;
+                color: var(--mgp-text);
+                font-size: var(--font-size-sm);
+            }
+
+                .impact-list li::before {
+                    content: "•";
+                    color: var(--mgp-accent);
+                    font-weight: var(--font-weight-bold);
+                }
+
+        .status-message {
+            display: flex;
+            gap: var(--space-sm);
+            align-items: start;
+            padding: var(--space-sm);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--mgp-border);
+            background: var(--mgp-surface);
+        }
+
+        .status-dot {
+            width: .75rem;
+            height: .75rem;
+            border-radius: 50%;
+            margin-top: .42rem;
+            flex: 0 0 auto;
+            background: var(--mgp-text-muted);
+        }
+
+        .status-success .status-dot {
+            background: var(--mgp-primary);
+        }
+
+        .status-warning .status-dot {
+            background: var(--mgp-accent);
+        }
+
+        .status-danger .status-dot {
+            background: var(--mgp-danger);
+        }
+
+        .status-message strong {
+            display: block;
+            font-weight: var(--font-weight-bold);
+        }
+
+        .definition-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .definition-table th,
+            .definition-table td {
+                text-align: left;
+                border-bottom: 1px solid var(--mgp-border);
+                padding: var(--space-sm);
+                vertical-align: top;
+            }
+
+            .definition-table th {
+                font-weight: var(--font-weight-bold);
+            }
+
+        @media (max-width: 940px) {
+            :root {
+                --page-x: var(--space-md);
+                --page-y: var(--space-lg);
+            }
+
+            .app-shell {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "header"
+                    "main"
+                    "footer";
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .hero,
+            .grid-3,
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .header-inner {
+                align-items: start;
+                flex-direction: column;
+                padding: var(--space-sm) var(--space-md);
+            }
+
+            .btn-row,
+            .card-actions,
+            .dialog-actions,
+            .filter-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+                .btn,
+                .btn-row .btn,
+                .card-actions .btn,
+                .dialog-actions .btn,
+                .filter-actions .btn {
+                    width: 100%;
+                }
+
+            .entity-card-header,
+            .entity-card-footer {
+                flex-direction: column;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .sidebar,
+            .header,
+            .footer,
+            .btn-row,
+            .card-actions,
+            .dialog-actions,
+            .filter-actions {
+                display: none !important;
+            }
+
+            .app-shell {
+                display: block;
+            }
+
+            main {
+                max-width: none;
+                padding: 0;
+            }
+
+            .card,
+            .hero,
+            .dialog-demo,
+            .status-message {
+                box-shadow: none;
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar" aria-label="Primær navigation">
+            <div class="brand">
+                <div class="brand-mark">✿</div>
+                <div>MyGardenPlanner</div>
+            </div>
+
+            <div class="nav-section-title">Arkivering</div>
+            <ul class="nav-list">
+                <li><button class="nav-link active" type="button">Demo 14</button></li>
+                <li><button class="nav-link" type="button">Aktive lister</button></li>
+                <li><button class="nav-link" type="button">Arkiverede cards</button></li>
+                <li><button class="nav-link" type="button">Gendan</button></li>
+                <li><button class="nav-link" type="button">Sletning</button></li>
+                <li><button class="nav-link" type="button">Danger zone</button></li>
+            </ul>
+        </aside>
+
+        <header class="header">
+            <div class="header-inner">
+                <div>
+                    <p class="context-title">Design demo 14</p>
+                    <p class="context-subtitle">Arkivering vs. sletning · status, filtre og gendan</p>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-secondary" type="button">Vis arkiverede</button>
+                    <button class="btn btn-danger" type="button">Arkivér have</button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section class="hero">
+                <div>
+                    <span class="eyebrow">Nordisk havearkitekt · demo 14</span>
+                    <h1>Arkivering vs. sletning</h1>
+                    <p class="lead">
+                        Denne demo viser forskellen på at arkivere, gendanne, fjerne relationer og slette data.
+                        Arkivering holder historik og dokumentation intakt, mens sletning er en destruktiv handling.
+                    </p>
+
+                    <div class="btn-row">
+                        <button class="btn btn-secondary" type="button">Vis arkiverede</button>
+                        <button class="btn btn-danger" type="button">Arkivér have</button>
+                    </div>
+                </div>
+
+                <div class="card card-highlight stack-sm">
+                    <span class="demo-label">hovedregel</span>
+                    <h3>Arkivér før slet</h3>
+                    <p class="meta">
+                        Hvis objektet kan have historisk værdi, bør det arkiveres frem for at blive slettet.
+                    </p>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Begreber</h2>
+                        <p>Ordene skal bruges konsekvent i hele appen.</p>
+                    </div>
+                </div>
+
+                <div class="card" style="overflow:auto;">
+                    <table class="definition-table">
+                        <thead>
+                            <tr>
+                                <th>Begreb</th>
+                                <th>Betydning</th>
+                                <th>Eksempel</th>
+                                <th>Typisk UI</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Arkivér</strong></td>
+                                <td>Skjul fra aktive visninger, men bevar data.</td>
+                                <td>Arkivér have</td>
+                                <td>Confirmation + badge + filter</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Gendan</strong></td>
+                                <td>Flyt arkiveret objekt tilbage til aktiv visning.</td>
+                                <td>Gendan bed</td>
+                                <td>Gendan-knap + status</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Fjern</strong></td>
+                                <td>Fjern relation, men bevar objektet.</td>
+                                <td>Fjern plante fra bed</td>
+                                <td>Inline confirmation / undo</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Slet</strong></td>
+                                <td>Fjern data eller gør data utilgængelig.</td>
+                                <td>Slet fil</td>
+                                <td>Danger confirmation</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Aktive lister som standard</h2>
+                        <p>Arkiverede objekter skjules fra aktive lister, men kan vises via filter.</p>
+                    </div>
+                </div>
+
+                <div class="card stack-md">
+                    <div class="filter-actions">
+                        <div>
+                            <h3>Haver</h3>
+                            <p class="meta">Standard: viser kun aktive haver.</p>
+                        </div>
+
+                        <label class="toggle-row">
+                            <input type="checkbox" />
+                            <span>
+                                <strong>Vis arkiverede</strong>
+                                <span class="meta" style="display:block;">Medtag historiske/inaktive haver i listen.</span>
+                            </span>
+                        </label>
+                    </div>
+
+                    <div class="grid grid-2">
+                        <article class="card">
+                            <div class="entity-card-header">
+                                <div>
+                                    <h3>Villa Solbakken</h3>
+                                    <p class="meta">Kundehave · Aarhus N</p>
+                                </div>
+                                <span class="badge badge-primary">Aktiv</span>
+                            </div>
+
+                            <p class="meta">6 bede · 3 filer · 2 medlemmer</p>
+
+                            <div class="entity-card-footer">
+                                <span class="meta">Senest opdateret: i dag</span>
+                                <div class="card-actions">
+                                    <button class="btn btn-secondary btn-sm" type="button">Åbn</button>
+                                    <button class="btn btn-danger btn-sm" type="button">Arkivér</button>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="card">
+                            <div class="entity-card-header">
+                                <div>
+                                    <h3>Skovhaven</h3>
+                                    <p class="meta">Privat have · Silkeborg</p>
+                                </div>
+                                <span class="badge badge-primary">Aktiv</span>
+                            </div>
+
+                            <p class="meta">4 bede · 1 fil · 1 medlem</p>
+
+                            <div class="entity-card-footer">
+                                <span class="meta">Senest opdateret: i går</span>
+                                <div class="card-actions">
+                                    <button class="btn btn-secondary btn-sm" type="button">Åbn</button>
+                                    <button class="btn btn-danger btn-sm" type="button">Arkivér</button>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Arkiveret card state</h2>
+                        <p>Arkiverede objekter skal være tydeligt inaktive, men ikke ligne fejl.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <article class="card card-archived">
+                        <div class="entity-card-header">
+                            <div>
+                                <span class="demo-label">archived card</span>
+                                <h3>Villa Solbakken</h3>
+                                <p class="meta">Kundehave · Aarhus N</p>
+                            </div>
+                            <span class="badge badge-archived">Arkiveret</span>
+                        </div>
+
+                        <p>
+                            Haven er skjult fra aktive oversigter, men data er bevaret.
+                        </p>
+
+                        <div class="archive-note">
+                            Arkiverede haver kan bruges som historik eller dokumentation.
+                        </div>
+
+                        <div class="entity-card-footer">
+                            <span class="meta">6 bede · 3 filer · 2 medlemmer</span>
+                            <div class="card-actions">
+                                <button class="btn btn-primary btn-sm" type="button">Gendan</button>
+                                <button class="btn btn-secondary btn-sm" type="button">Vis detaljer</button>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="card card-archived">
+                        <div class="entity-card-header">
+                            <div>
+                                <span class="demo-label">archived bed</span>
+                                <h3>Staudehaven mod syd</h3>
+                                <p class="meta">Bed #4 · Villa Solbakken</p>
+                            </div>
+                            <span class="badge badge-archived">Arkiveret</span>
+                        </div>
+
+                        <p>
+                            Beddet vises ikke blandt aktive bede, men historikken bevares.
+                        </p>
+
+                        <div class="entity-card-footer">
+                            <span class="meta">3,50 × 1,20 m</span>
+                            <div class="card-actions">
+                                <button class="btn btn-primary btn-sm" type="button">Gendan bed</button>
+                                <button class="btn btn-secondary btn-sm" type="button">Vis</button>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Arkivér-flow</h2>
+                        <p>Arkivering skal forklare, at objektet bevares, men flyttes ud af aktiv visning.</p>
+                    </div>
+                </div>
+
+                <div class="dialog-demo">
+                    <div class="dialog-header">
+                        <div class="dialog-icon dialog-icon-warning">↧</div>
+                        <div>
+                            <span class="demo-label">archive confirmation</span>
+                            <h2>Arkivér Villa Solbakken?</h2>
+                            <p class="dialog-body">
+                                Haven skjules fra aktive oversigter, men bevares med bede, filer og medlemmer.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="object-preview">
+                        <strong>Villa Solbakken</strong>
+                        <span class="meta">Kundehave · Aarhus N · 6 bede · 3 filer</span>
+                    </div>
+
+                    <ul class="impact-list">
+                        <li>Haven vises ikke længere under aktive haver.</li>
+                        <li>Haven kan findes igen under arkiverede haver.</li>
+                        <li>Data slettes ikke.</li>
+                    </ul>
+
+                    <div class="dialog-actions">
+                        <button class="btn btn-secondary" type="button">Annullér</button>
+                        <button class="btn btn-danger" type="button">Arkivér have</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Gendan-flow</h2>
+                        <p>Hvis arkivering findes, bør der også være en tydelig gendan-handling.</p>
+                    </div>
+                </div>
+
+                <div class="dialog-demo">
+                    <div class="dialog-header">
+                        <div class="dialog-icon dialog-icon-warning">↥</div>
+                        <div>
+                            <span class="demo-label">restore confirmation</span>
+                            <h2>Gendan Villa Solbakken?</h2>
+                            <p class="dialog-body">
+                                Haven vises igen under aktive haver.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="object-preview">
+                        <strong>Villa Solbakken</strong>
+                        <span class="meta">Arkiveret kundehave · 6 bede · 3 filer</span>
+                    </div>
+
+                    <ul class="impact-list">
+                        <li>Haven bliver synlig i aktive oversigter igen.</li>
+                        <li>Bede, filer og medlemmer bevares uændret.</li>
+                    </ul>
+
+                    <div class="dialog-actions">
+                        <button class="btn btn-secondary" type="button">Annullér</button>
+                        <button class="btn btn-primary" type="button">Gendan have</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Sletning</h2>
+                        <p>Sletning bruges kun, når data faktisk fjernes eller gøres utilgængelig.</p>
+                    </div>
+                </div>
+
+                <div class="dialog-demo">
+                    <div class="dialog-header">
+                        <div class="dialog-icon dialog-icon-danger">!</div>
+                        <div>
+                            <span class="demo-label">delete confirmation</span>
+                            <h2>Slet Haveskitse maj.pdf?</h2>
+                            <p class="dialog-body">
+                                Filen fjernes fra Villa Solbakken. Denne handling kan ikke fortrydes.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="object-preview">
+                        <strong>Haveskitse maj.pdf</strong>
+                        <span class="meta">PDF · Tegning · 2,4 MB · Villa Solbakken</span>
+                    </div>
+
+                    <ul class="impact-list">
+                        <li>Filen fjernes fra filoversigten.</li>
+                        <li>Preview og download bliver ikke længere tilgængelige.</li>
+                        <li>Dette flow viser ingen gendan-mulighed.</li>
+                    </ul>
+
+                    <div class="dialog-actions">
+                        <button class="btn btn-secondary" type="button">Annullér</button>
+                        <button class="btn btn-danger-solid" type="button">Slet fil</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Fjern relation er hverken arkivér eller slet</h2>
+                        <p>Hvis objektet bevares, skal handlingen hedde “Fjern”.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <div class="card">
+                        <span class="demo-label">fjern relation</span>
+                        <h3>Fjern Lavendel fra bed?</h3>
+                        <p class="meta">
+                            Planten fjernes kun fra Staudehaven mod syd. Den findes stadig i plantelisten.
+                        </p>
+
+                        <div class="card-actions">
+                            <button class="btn btn-secondary" type="button">Annullér</button>
+                            <button class="btn btn-danger" type="button">Fjern fra bed</button>
+                        </div>
+                    </div>
+
+                    <div class="status-message status-success">
+                        <span class="status-dot"></span>
+                        <div>
+                            <strong>Planten er fjernet fra beddet</strong>
+                            <p class="meta">Lavendel findes stadig i plantelisten.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Filer: lifetime før arkiv</h2>
+                        <p>Filer styres først og fremmest af status/lifetime frem for arkivering.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-3">
+                    <article class="card">
+                        <div class="entity-card-header">
+                            <div>
+                                <span class="demo-label">temporary</span>
+                                <h3>Ny skitse.png</h3>
+                                <p class="meta">Billede · Uploadet i dag</p>
+                            </div>
+                            <span class="badge badge-accent">Midlertidig</span>
+                        </div>
+                        <p class="meta">Filen udløber snart, medmindre den gøres permanent.</p>
+                        <div class="card-actions">
+                            <button class="btn btn-primary btn-sm" type="button">Gør permanent</button>
+                            <button class="btn btn-danger btn-sm" type="button">Fjern fil</button>
+                        </div>
+                    </article>
+
+                    <article class="card">
+                        <div class="entity-card-header">
+                            <div>
+                                <span class="demo-label">permanent</span>
+                                <h3>Haveskitse maj.pdf</h3>
+                                <p class="meta">PDF · Tegning</p>
+                            </div>
+                            <span class="badge badge-primary">Permanent</span>
+                        </div>
+                        <p class="meta">Filen er en del af havens dokumentation.</p>
+                        <div class="card-actions">
+                            <button class="btn btn-secondary btn-sm" type="button">Vis</button>
+                            <button class="btn btn-danger btn-sm" type="button">Slet fil</button>
+                        </div>
+                    </article>
+
+                    <article class="card card-archived">
+                        <div class="entity-card-header">
+                            <div>
+                                <span class="demo-label">historical</span>
+                                <h3>Gammel haveskitse.pdf</h3>
+                                <p class="meta">PDF · Historisk dokument</p>
+                            </div>
+                            <span class="badge badge-archived">Historisk</span>
+                        </div>
+                        <p class="meta">Kun relevant hvis filarkiv indføres senere.</p>
+                        <div class="card-actions">
+                            <button class="btn btn-secondary btn-sm" type="button">Vis</button>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Danger zone</h2>
+                        <p>Permanent sletning placeres adskilt fra almindelige handlinger.</p>
+                    </div>
+                </div>
+
+                <div class="card card-danger-zone stack-md">
+                    <span class="demo-label">danger-zone</span>
+
+                    <div>
+                        <h3>Arkivering og sletning</h3>
+                        <p class="meta">
+                            Handlinger her kan skjule eller fjerne data. Arkivering bevarer data;
+                            permanent sletning fjerner data.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <h3>Arkivér have</h3>
+                            <p class="meta">Skjul haven fra aktive oversigter, men bevar data.</p>
+                            <div class="card-actions">
+                                <button class="btn btn-danger" type="button">Arkivér have</button>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3>Slet permanent</h3>
+                            <p class="meta">Permanent sletning bør kræve stærk confirmation.</p>
+                            <div class="card-actions">
+                                <button class="btn btn-danger-solid" type="button">Slet permanent</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Status efter handling</h2>
+                        <p>Statusbeskeden skal bruge samme begreb som handlingen.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <div class="status-message status-success">
+                        <span class="status-dot"></span>
+                        <div>
+                            <strong>Haven er arkiveret</strong>
+                            <p class="meta">Villa Solbakken findes nu under arkiverede haver.</p>
+                        </div>
+                    </div>
+
+                    <div class="status-message status-success">
+                        <span class="status-dot"></span>
+                        <div>
+                            <strong>Haven er gendannet</strong>
+                            <p class="meta">Villa Solbakken vises igen under aktive haver.</p>
+                        </div>
+                    </div>
+
+                    <div class="status-message status-warning">
+                        <span class="status-dot"></span>
+                        <div>
+                            <strong>Planten er fjernet fra beddet</strong>
+                            <p class="meta">Lavendel findes stadig i plantelisten.</p>
+                        </div>
+                    </div>
+
+                    <div class="status-message status-danger">
+                        <span class="status-dot"></span>
+                        <div>
+                            <strong>Filen er slettet</strong>
+                            <p class="meta">Haveskitse maj.pdf blev fjernet fra Villa Solbakken.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Beslutningstabel</h2>
+                        <p>Hvornår arkivér, gendan, fjern og slet bruges.</p>
+                    </div>
+                </div>
+
+                <div class="card" style="overflow:auto;">
+                    <table class="definition-table">
+                        <thead>
+                            <tr>
+                                <th>Situation</th>
+                                <th>Brug</th>
+                                <th>Primær handling</th>
+                                <th>Confirmation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Have ikke længere aktiv</td>
+                                <td>Arkivér</td>
+                                <td>Arkivér have</td>
+                                <td>Ja</td>
+                            </tr>
+                            <tr>
+                                <td>Bed ikke længere aktivt</td>
+                                <td>Arkivér</td>
+                                <td>Arkivér bed</td>
+                                <td>Ja</td>
+                            </tr>
+                            <tr>
+                                <td>Brugeren vil se historik</td>
+                                <td>Vis arkiverede</td>
+                                <td>Vis arkiverede</td>
+                                <td>Nej</td>
+                            </tr>
+                            <tr>
+                                <td>Brugeren vil aktivere igen</td>
+                                <td>Gendan</td>
+                                <td>Gendan have/bed</td>
+                                <td>Let / status</td>
+                            </tr>
+                            <tr>
+                                <td>Plante fjernes fra bed</td>
+                                <td>Fjern relation</td>
+                                <td>Fjern fra bed</td>
+                                <td>Inline/modal</td>
+                            </tr>
+                            <tr>
+                                <td>Fil uploadet forkert</td>
+                                <td>Slet</td>
+                                <td>Slet fil</td>
+                                <td>Ja</td>
+                            </tr>
+                            <tr>
+                                <td>Permanent slet have</td>
+                                <td>Slet permanent</td>
+                                <td>Slet permanent</td>
+                                <td>Strong confirmation</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            © MyGardenPlanner · Design demo 14 · Arkivering vs. sletning
+        </footer>
+    </div>
+</body>
+</html>

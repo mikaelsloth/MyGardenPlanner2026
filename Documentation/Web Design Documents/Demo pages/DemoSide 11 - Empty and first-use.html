@@ -1,0 +1,1184 @@
+﻿<!doctype html>
+<html lang="da">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MyGardenPlanner – Design demo 10: Empty states</title>
+
+    <style>
+        :root {
+            --mgp-primary: #3F6B4A;
+            --mgp-primary-dark: #2F5138;
+            --mgp-primary-soft: #DDE8D8;
+            --mgp-accent: #B86B4B;
+            --mgp-text: #243128;
+            --mgp-text-muted: #6F766D;
+            --mgp-bg: #FAF8F2;
+            --mgp-surface: #FFFFFF;
+            --mgp-surface-muted: #EFEAE0;
+            --mgp-border: #D8D2C7;
+            --mgp-danger: #9F3A38;
+            --mgp-warning-bg: #F8E8D8;
+            --space-2xs: .25rem;
+            --space-xs: .5rem;
+            --space-sm: .75rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-2xl: 3rem;
+            --page-x: var(--space-lg);
+            --page-y: var(--space-xl);
+            --sidebar-width: 280px;
+            --content-max: 1220px;
+            --radius-sm: .45rem;
+            --radius-md: .75rem;
+            --radius-lg: 1.1rem;
+            --shadow-sm: 0 1px 2px rgba(36, 49, 40, .08);
+            --shadow-md: 0 12px 28px rgba(36, 49, 40, .10);
+            --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+            --font-size-xs: .78rem;
+            --font-size-sm: .9rem;
+            --font-size-base: 1rem;
+            --font-size-md: 1.08rem;
+            --font-size-xl: clamp(1.35rem, 2.2vw, 2rem);
+            --font-size-xxl: clamp(2rem, 4vw, 3.25rem);
+            --line-height-tight: 1.15;
+            --line-height-base: 1.55;
+            --font-weight-normal: 400;
+            --font-weight-medium: 600;
+            --font-weight-bold: 750;
+            --letter-spacing-heading: -0.03em;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--mgp-text);
+            background: var(--mgp-bg);
+            font-family: var(--font-sans);
+            font-size: var(--font-size-base);
+            line-height: var(--line-height-base);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--mgp-text);
+            line-height: var(--line-height-tight);
+            letter-spacing: var(--letter-spacing-heading);
+            font-weight: var(--font-weight-bold);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: var(--font-size-xxl);
+        }
+
+        h2 {
+            margin: 0 0 var(--space-md);
+            font-size: var(--font-size-xl);
+        }
+
+        h3 {
+            margin: 0;
+            font-size: var(--font-size-md);
+        }
+
+        p {
+            margin-top: 0;
+        }
+
+        code,
+        .mono {
+            font-family: var(--font-mono);
+            font-size: .92em;
+        }
+
+        .app-shell {
+            display: grid;
+            min-height: 100vh;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            grid-template-rows: auto 1fr auto;
+            grid-template-areas:
+                "sidebar header"
+                "sidebar main"
+                "sidebar footer";
+        }
+
+        .sidebar {
+            grid-area: sidebar;
+            background: var(--mgp-surface);
+            border-right: 1px solid var(--mgp-border);
+            padding: var(--space-lg);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding-bottom: var(--space-lg);
+            border-bottom: 1px solid var(--mgp-border);
+            margin-bottom: var(--space-lg);
+            font-weight: var(--font-weight-bold);
+            letter-spacing: -.02em;
+        }
+
+        .brand-mark {
+            width: 2.3rem;
+            height: 2.3rem;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: white;
+            background: linear-gradient(135deg, var(--mgp-primary), var(--mgp-primary-dark));
+            box-shadow: var(--shadow-sm);
+        }
+
+        .nav-section-title {
+            color: var(--mgp-text-muted);
+            text-transform: uppercase;
+            font-size: var(--font-size-xs);
+            letter-spacing: .08em;
+            font-weight: var(--font-weight-bold);
+            margin: var(--space-lg) 0 var(--space-xs);
+        }
+
+        .nav-list {
+            display: grid;
+            gap: var(--space-2xs);
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .nav-link {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            color: var(--mgp-text);
+            background: transparent;
+            border: 0;
+            text-align: left;
+            border-radius: var(--radius-sm);
+            padding: var(--space-xs) var(--space-sm);
+            font-size: .95rem;
+            font-weight: var(--font-weight-bold);
+            cursor: pointer;
+        }
+
+            .nav-link:hover {
+                background: var(--mgp-surface-muted);
+            }
+
+            .nav-link.active {
+                background: var(--mgp-primary-soft);
+                color: var(--mgp-primary-dark);
+            }
+
+        .header {
+            grid-area: header;
+            background: rgba(250, 248, 242, .88);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--mgp-border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-inner {
+            max-width: var(--content-max);
+            margin: 0 auto;
+            padding: var(--space-sm) var(--space-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-md);
+        }
+
+        .context-title {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: var(--font-weight-bold);
+        }
+
+        .context-subtitle {
+            margin: var(--space-2xs) 0 0;
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-sm);
+        }
+
+        main {
+            grid-area: main;
+            max-width: var(--content-max);
+            width: 100%;
+            margin: 0 auto;
+            padding: var(--page-y) var(--page-x) var(--space-2xl);
+        }
+
+        .footer {
+            grid-area: footer;
+            color: var(--mgp-text-muted);
+            border-top: 1px solid var(--mgp-border);
+            padding: var(--space-md) var(--space-lg);
+            text-align: center;
+            font-size: var(--font-size-sm);
+        }
+
+        .section {
+            margin-top: var(--space-xl);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: var(--space-md);
+            margin-bottom: var(--space-md);
+        }
+
+            .section-header p {
+                margin: var(--space-2xs) 0 0;
+                color: var(--mgp-text-muted);
+            }
+
+        .hero {
+            background: linear-gradient(135deg, var(--mgp-surface), var(--mgp-primary-soft));
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: clamp(var(--space-lg), 3vw, var(--space-xl));
+            display: grid;
+            grid-template-columns: 1.35fr .95fr;
+            gap: var(--space-lg);
+            align-items: center;
+            margin-bottom: var(--space-lg);
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            color: var(--mgp-primary-dark);
+            background: var(--mgp-primary-soft);
+            border: 1px solid rgba(63, 107, 74, .18);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            font-size: .84rem;
+            font-weight: var(--font-weight-bold);
+            margin-bottom: var(--space-sm);
+        }
+
+        .lead {
+            color: var(--mgp-text-muted);
+            max-width: 68ch;
+            font-size: var(--font-size-md);
+            line-height: var(--line-height-base);
+            margin-bottom: var(--space-lg);
+        }
+
+        .grid {
+            display: grid;
+            gap: var(--space-md);
+        }
+
+        .grid-comfortable {
+            gap: var(--space-lg);
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .stack-sm {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .stack-md {
+            display: grid;
+            gap: var(--space-md);
+        }
+
+        .card {
+            background: var(--mgp-surface);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: var(--space-md);
+        }
+
+        .card-highlight {
+            background: var(--mgp-primary-soft);
+            border-color: rgba(63, 107, 74, .22);
+        }
+
+        .btn-row,
+        .empty-actions {
+            display: flex;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .empty-actions {
+            justify-content: center;
+        }
+
+        .btn {
+            appearance: none;
+            border: 1px solid transparent;
+            border-radius: .65rem;
+            padding: var(--space-sm) var(--space-md);
+            font-weight: var(--font-weight-bold);
+            font-size: .95rem;
+            cursor: pointer;
+            transition: .15s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-xs);
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--mgp-primary);
+            color: white;
+            border-color: var(--mgp-primary);
+        }
+
+            .btn-primary:hover {
+                background: var(--mgp-primary-dark);
+                border-color: var(--mgp-primary-dark);
+            }
+
+        .btn-secondary {
+            background: var(--mgp-surface);
+            color: var(--mgp-primary-dark);
+            border-color: var(--mgp-border);
+        }
+
+            .btn-secondary:hover {
+                background: var(--mgp-surface-muted);
+                border-color: rgba(63, 107, 74, .28);
+            }
+
+        .btn-danger {
+            background: white;
+            color: var(--mgp-danger);
+            border-color: rgba(159, 58, 56, .35);
+        }
+
+            .btn-danger:hover {
+                background: #fff4f3;
+                border-color: rgba(159, 58, 56, .55);
+            }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--mgp-primary-dark);
+            border-color: transparent;
+            padding-inline: var(--space-xs);
+        }
+
+            .btn-ghost:hover {
+                background: var(--mgp-primary-soft);
+            }
+
+        .btn-sm {
+            padding: var(--space-xs) var(--space-sm);
+            font-size: var(--font-size-sm);
+        }
+
+        .btn:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(63, 107, 74, .18);
+        }
+
+        .badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-xs);
+            margin-top: var(--space-sm);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2xs);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-bold);
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+        .badge-primary {
+            color: var(--mgp-primary-dark);
+            background: var(--mgp-primary-soft);
+            border-color: rgba(63, 107, 74, .18);
+        }
+
+        .badge-muted {
+            color: var(--mgp-text-muted);
+            background: var(--mgp-surface-muted);
+            border-color: var(--mgp-border);
+        }
+
+        .badge-accent {
+            color: #653521;
+            background: var(--mgp-warning-bg);
+            border-color: rgba(184, 107, 75, .22);
+        }
+
+        .badge-danger {
+            color: var(--mgp-danger);
+            background: #fff4f3;
+            border-color: rgba(159, 58, 56, .22);
+        }
+
+        .meta {
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-sm);
+            line-height: 1.4;
+            margin: var(--space-2xs) 0 0;
+        }
+
+        .demo-label {
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+            color: var(--mgp-text-muted);
+            font-family: var(--font-mono);
+            font-size: var(--font-size-xs);
+            background: var(--mgp-surface-muted);
+            border: 1px solid var(--mgp-border);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            margin-bottom: var(--space-sm);
+        }
+
+        /* Empty states */
+
+        .empty-state {
+            display: grid;
+            gap: var(--space-md);
+            justify-items: center;
+            text-align: center;
+            padding: var(--space-2xl) var(--space-lg);
+            border: 1px dashed var(--mgp-border);
+            border-radius: var(--radius-lg);
+            background: var(--mgp-surface);
+        }
+
+        .empty-state-inline {
+            justify-items: start;
+            text-align: left;
+            padding: var(--space-lg);
+        }
+
+        .empty-state-compact {
+            padding: var(--space-lg);
+        }
+
+        .empty-icon {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            background: var(--mgp-primary-soft);
+            color: var(--mgp-primary-dark);
+            font-weight: var(--font-weight-bold);
+            font-size: 1.4rem;
+            border: 1px solid rgba(63, 107, 74, .18);
+        }
+
+        .empty-content {
+            display: grid;
+            gap: var(--space-xs);
+            max-width: 54ch;
+        }
+
+            .empty-content p {
+                margin: 0;
+                color: var(--mgp-text-muted);
+            }
+
+        .empty-filtered .empty-icon,
+        .empty-search .empty-icon {
+            background: var(--mgp-surface-muted);
+            color: var(--mgp-text-muted);
+            border-color: var(--mgp-border);
+        }
+
+        .empty-restricted .empty-icon {
+            background: var(--mgp-surface-muted);
+            color: var(--mgp-text-muted);
+            border-color: var(--mgp-border);
+        }
+
+        .empty-error {
+            border-color: rgba(159, 58, 56, .35);
+        }
+
+            .empty-error .empty-icon {
+                background: #fff4f3;
+                color: var(--mgp-danger);
+                border-color: rgba(159, 58, 56, .22);
+            }
+
+        .empty-processing .empty-icon {
+            background: var(--mgp-warning-bg);
+            color: #653521;
+            border-color: rgba(184, 107, 75, .22);
+        }
+
+        .empty-state-inline .empty-actions {
+            justify-content: start;
+        }
+
+        .empty-helper-row {
+            display: flex;
+            gap: var(--space-xs);
+            flex-wrap: wrap;
+            justify-content: center;
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-sm);
+        }
+
+        .empty-state-inline .empty-helper-row {
+            justify-content: start;
+        }
+
+        /* Loading / skeleton */
+
+        .skeleton-grid {
+            display: grid;
+            gap: var(--space-md);
+        }
+
+        .skeleton-card {
+            display: grid;
+            gap: var(--space-sm);
+            padding: var(--space-md);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            background: var(--mgp-surface);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .skeleton-line,
+        .skeleton-block,
+        .skeleton-icon {
+            background: linear-gradient(90deg, var(--mgp-surface-muted), var(--mgp-primary-soft), var(--mgp-surface-muted));
+            background-size: 200% 100%;
+            animation: shimmer 1.3s linear infinite;
+            border-radius: 999px;
+        }
+
+        .skeleton-icon {
+            width: 2.75rem;
+            height: 2.75rem;
+            border-radius: 999px;
+        }
+
+        .skeleton-line {
+            height: .85rem;
+        }
+
+            .skeleton-line.short {
+                width: 35%;
+            }
+
+            .skeleton-line.medium {
+                width: 62%;
+            }
+
+            .skeleton-line.long {
+                width: 88%;
+            }
+
+        .skeleton-block {
+            height: 6rem;
+            border-radius: var(--radius-md);
+        }
+
+        @keyframes shimmer {
+            to {
+                background-position: -200% 0;
+            }
+        }
+
+        /* Example result cards */
+
+        .result-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: var(--space-md);
+            align-items: center;
+            padding: var(--space-sm) var(--space-md);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            background: var(--mgp-surface);
+        }
+
+            .result-row.is-highlighted {
+                border-color: var(--mgp-primary);
+                box-shadow: 0 0 0 4px rgba(63, 107, 74, .14);
+            }
+
+        .status-message {
+            display: flex;
+            gap: var(--space-sm);
+            align-items: start;
+            padding: var(--space-sm);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--mgp-border);
+            background: var(--mgp-surface);
+        }
+
+        .status-dot {
+            width: .75rem;
+            height: .75rem;
+            border-radius: 50%;
+            margin-top: .42rem;
+            flex: 0 0 auto;
+            background: var(--mgp-text-muted);
+        }
+
+        .status-success .status-dot {
+            background: var(--mgp-primary);
+        }
+
+        .status-warning .status-dot {
+            background: var(--mgp-accent);
+        }
+
+        .status-danger .status-dot {
+            background: var(--mgp-danger);
+        }
+
+        .status-message strong {
+            display: block;
+            font-weight: var(--font-weight-bold);
+        }
+
+        @media (max-width: 940px) {
+            :root {
+                --page-x: var(--space-md);
+                --page-y: var(--space-lg);
+            }
+
+            .app-shell {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "header"
+                    "main"
+                    "footer";
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .hero,
+            .grid-3,
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .header-inner {
+                align-items: start;
+                flex-direction: column;
+                padding: var(--space-sm) var(--space-md);
+            }
+
+            .empty-state {
+                padding: var(--space-xl) var(--space-md);
+            }
+
+            .empty-actions .btn {
+                width: 100%;
+            }
+
+            .result-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .sidebar,
+            .header,
+            .footer,
+            .btn-row,
+            .empty-actions {
+                display: none !important;
+            }
+
+            .app-shell {
+                display: block;
+            }
+
+            main {
+                max-width: none;
+                padding: 0;
+            }
+
+            .card,
+            .hero,
+            .empty-state,
+            .status-message {
+                box-shadow: none;
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar" aria-label="Primær navigation">
+            <div class="brand">
+                <div class="brand-mark">✿</div>
+                <div>MyGardenPlanner</div>
+            </div>
+
+            <div class="nav-section-title">States</div>
+            <ul class="nav-list">
+                <li><button class="nav-link active" type="button">Demo 10</button></li>
+                <li><button class="nav-link" type="button">First-use</button></li>
+                <li><button class="nav-link" type="button">Context empty</button></li>
+                <li><button class="nav-link" type="button">Filtered empty</button></li>
+                <li><button class="nav-link" type="button">No access</button></li>
+                <li><button class="nav-link" type="button">Error</button></li>
+                <li><button class="nav-link" type="button">Loading</button></li>
+            </ul>
+        </aside>
+
+        <header class="header">
+            <div class="header-inner">
+                <div>
+                    <p class="context-title">Design demo 10</p>
+                    <p class="context-subtitle">Empty states · first-use · loading · error · no access</p>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-secondary" type="button">Vis states</button>
+                    <button class="btn btn-secondary" type="button">Nulstil filtre</button>
+                    <button class="btn btn-primary" type="button">Opret have</button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section class="hero">
+                <div>
+                    <span class="eyebrow">Nordisk havearkitekt · demo 10</span>
+                    <h1>Empty states og first-use states</h1>
+                    <p class="lead">
+                        Denne demo viser, hvordan tomme tilstande kan hjælpe brugeren videre:
+                        første oprettelse, tomme sektioner, tomme filtre, søgninger uden resultat,
+                        manglende adgang, fejl og loading.
+                    </p>
+
+                    <div class="btn-row">
+                        <button class="btn btn-primary" type="button">Opret første have</button>
+                        <button class="btn btn-secondary" type="button">Se eksempler</button>
+                    </div>
+                </div>
+
+                <div class="card card-highlight stack-sm">
+                    <span class="demo-label">hovedregel</span>
+                    <h3>Tom tilstand er også design</h3>
+                    <p class="meta">
+                        Empty states skal forklare hvad der mangler, hvorfor det er relevant,
+                        og hvad brugeren kan gøre nu.
+                    </p>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Full-page first-use states</h2>
+                        <p>Bruges når hele siden eller hele funktionen er tom første gang.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <div class="empty-state empty-first-use">
+                        <div class="empty-icon">✿</div>
+                        <div class="empty-content">
+                            <h2>Ingen haver endnu</h2>
+                            <p>Opret din første have for at begynde at planlægge bede, planter, materialer og filer.</p>
+                        </div>
+                        <div class="empty-actions">
+                            <button class="btn btn-primary" type="button">Opret have</button>
+                        </div>
+                    </div>
+
+                    <div class="empty-state empty-first-use">
+                        <div class="empty-icon">🌿</div>
+                        <div class="empty-content">
+                            <h2>Ingen planter endnu</h2>
+                            <p>Opret planter, så de kan bruges i dine bede og projekter.</p>
+                        </div>
+                        <div class="empty-actions">
+                            <button class="btn btn-primary" type="button">Opret plante</button>
+                            <button class="btn btn-secondary" type="button">Se eksempel</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Inline context empty states</h2>
+                        <p>Bruges når kun en sektion eller tab i en eksisterende kontekst er tom.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <div class="card stack-md">
+                        <div>
+                            <h3>Villa Solbakken</h3>
+                            <p class="meta">Haveoverblik · fanen Bede</p>
+                        </div>
+
+                        <div class="empty-state empty-state-inline">
+                            <div class="empty-icon">◌</div>
+                            <div class="empty-content">
+                                <h3>Ingen bede i Villa Solbakken endnu</h3>
+                                <p>Bede hjælper dig med at opdele haven i overskuelige arbejdsområder.</p>
+                            </div>
+                            <div class="empty-actions">
+                                <button class="btn btn-primary" type="button">Opret bed</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card stack-md">
+                        <div>
+                            <h3>Filer</h3>
+                            <p class="meta">Tegninger, referencefotos og dokumenter</p>
+                        </div>
+
+                        <div class="empty-state empty-state-inline">
+                            <div class="empty-icon">⇧</div>
+                            <div class="empty-content">
+                                <h3>Ingen filer endnu</h3>
+                                <p>Upload tegninger, referencefotos eller dokumenter, så de er samlet på haven.</p>
+                            </div>
+                            <div class="empty-actions">
+                                <button class="btn btn-primary" type="button">Upload fil</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Filtered og search empty</h2>
+                        <p>Skal tydeligt adskilles fra “der findes ingen data”.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <div class="empty-state empty-filtered">
+                        <div class="empty-icon">⌕</div>
+                        <div class="empty-content">
+                            <h2>Ingen planter matcher dine filtre</h2>
+                            <p>Prøv at ændre søgningen eller nulstil filtrene.</p>
+                        </div>
+                        <div class="empty-helper-row">
+                            <span class="badge badge-muted">Lys: Sol</span>
+                            <span class="badge badge-muted">Type: Staude</span>
+                            <span class="badge badge-muted">Farve: Blå</span>
+                        </div>
+                        <div class="empty-actions">
+                            <button class="btn btn-secondary" type="button">Nulstil filtre</button>
+                        </div>
+                    </div>
+
+                    <div class="empty-state empty-search">
+                        <div class="empty-icon">⌕</div>
+                        <div class="empty-content">
+                            <h2>Ingen resultater for “lavenddel”</h2>
+                            <p>Kontrollér stavningen, eller prøv med et bredere søgeord.</p>
+                        </div>
+                        <div class="empty-actions">
+                            <button class="btn btn-secondary" type="button">Ryd søgning</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Post-action hidden by filter</h2>
+                        <p>Når en ny entity er oprettet, men ikke vises med de aktuelle filtre.</p>
+                    </div>
+                </div>
+
+                <div class="card stack-md">
+                    <div class="status-message status-warning">
+                        <span class="status-dot"></span>
+                        <div>
+                            <strong>Planten er oprettet</strong>
+                            <p class="meta">Den vises ikke i listen, fordi det aktive filter er “Sol”, og planten er oprettet med “Skygge”.</p>
+                        </div>
+                    </div>
+
+                    <div class="empty-state empty-filtered empty-state-inline">
+                        <div class="empty-icon">⌕</div>
+                        <div class="empty-content">
+                            <h3>Den nye plante er skjult af filteret</h3>
+                            <p>Nulstil filtrene for at se den nye plante i listen.</p>
+                        </div>
+                        <div class="empty-actions">
+                            <button class="btn btn-secondary" type="button">Nulstil filter</button>
+                            <button class="btn btn-ghost" type="button">Behold filter</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Permission og restricted empty</h2>
+                        <p>Bruges når brugeren forventer data, men ikke har adgang.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <div class="empty-state empty-restricted">
+                        <div class="empty-icon">🔒</div>
+                        <div class="empty-content">
+                            <h2>Du har ikke adgang til disse filer</h2>
+                            <p>Filerne findes, men din rolle giver ikke adgang til at se eller downloade dem.</p>
+                        </div>
+                        <div class="empty-actions">
+                            <button class="btn btn-secondary" type="button">Kontakt haveejer</button>
+                        </div>
+                    </div>
+
+                    <div class="empty-state empty-restricted">
+                        <div class="empty-icon">🔒</div>
+                        <div class="empty-content">
+                            <h2>Ingen filer tilgængelige</h2>
+                            <p>Der er ingen filer, du kan se med den aktuelle adgang.</p>
+                        </div>
+                        <div class="empty-helper-row">
+                            <span>Bruges hvis UI’et ikke bør afsløre, om filer findes.</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Error empty og processing empty</h2>
+                        <p>Fejl og midlertidige tilstande må ikke ligne almindelige empty states.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <div class="empty-state empty-error">
+                        <div class="empty-icon">!</div>
+                        <div class="empty-content">
+                            <h2>Filer kunne ikke hentes</h2>
+                            <p>Der opstod en fejl under indlæsningen. Prøv igen.</p>
+                        </div>
+                        <div class="empty-actions">
+                            <button class="btn btn-danger" type="button">Prøv igen</button>
+                            <button class="btn btn-secondary" type="button">Gå tilbage</button>
+                        </div>
+                    </div>
+
+                    <div class="empty-state empty-processing">
+                        <div class="empty-icon">…</div>
+                        <div class="empty-content">
+                            <h2>Thumbnail oprettes</h2>
+                            <p>Filen er uploadet, men forhåndsvisningen er ikke klar endnu.</p>
+                        </div>
+                        <div class="empty-actions">
+                            <button class="btn btn-secondary" type="button">Vis metadata</button>
+                            <button class="btn btn-secondary" type="button">Download original</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Loading før empty</h2>
+                        <p>Empty state må først vises, når data faktisk er afklaret.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <div class="card stack-md">
+                        <span class="demo-label">loading / skeleton</span>
+                        <h3>Vi henter data</h3>
+                        <p class="meta">Skeleton betyder “data er på vej” — ikke “listen er tom”.</p>
+
+                        <div class="skeleton-grid">
+                            <div class="skeleton-card">
+                                <div class="skeleton-icon"></div>
+                                <div class="skeleton-line long"></div>
+                                <div class="skeleton-line medium"></div>
+                                <div class="skeleton-block"></div>
+                            </div>
+
+                            <div class="skeleton-card">
+                                <div class="skeleton-icon"></div>
+                                <div class="skeleton-line long"></div>
+                                <div class="skeleton-line short"></div>
+                                <div class="skeleton-block"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">efter loading</span>
+                        <h3>Data er afklaret</h3>
+                        <p class="meta">Når data er hentet, vises enten liste, empty state eller error state.</p>
+
+                        <div class="empty-state empty-state-inline empty-state-compact">
+                            <div class="empty-icon">✿</div>
+                            <div class="empty-content">
+                                <h3>Ingen haver endnu</h3>
+                                <p>Nu er data afklaret, og empty state kan vises.</p>
+                            </div>
+                            <div class="empty-actions">
+                                <button class="btn btn-primary" type="button">Opret have</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Return-flow med highlight</h2>
+                        <p>Når noget oprettes eller ændres, bør det relevante element markeres kortvarigt.</p>
+                    </div>
+                </div>
+
+                <div class="card stack-md">
+                    <div class="status-message status-success">
+                        <span class="status-dot"></span>
+                        <div>
+                            <strong>Planten er oprettet</strong>
+                            <p class="meta">Lavendel er nu tilgængelig i plantelisten.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid">
+                        <div class="result-row is-highlighted">
+                            <div>
+                                <h3>Lavendel</h3>
+                                <p class="meta"><em>Lavandula angustifolia</em> · Sol · 30–60 cm</p>
+                            </div>
+                            <span class="badge badge-primary">Ny</span>
+                        </div>
+
+                        <div class="result-row">
+                            <div>
+                                <h3>Salvie</h3>
+                                <p class="meta"><em>Salvia officinalis</em> · Sol · 40–70 cm</p>
+                            </div>
+                            <span class="badge badge-muted">Staude</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Beslutningstabel</h2>
+                        <p>Hvornår de forskellige empty states bruges.</p>
+                    </div>
+                </div>
+
+                <div class="card" style="overflow:auto;">
+                    <table style="width:100%;border-collapse:collapse;">
+                        <thead>
+                            <tr>
+                                <th style="text-align:left;border-bottom:1px solid var(--mgp-border);padding:var(--space-sm);">Situation</th>
+                                <th style="text-align:left;border-bottom:1px solid var(--mgp-border);padding:var(--space-sm);">State</th>
+                                <th style="text-align:left;border-bottom:1px solid var(--mgp-border);padding:var(--space-sm);">Primær handling</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Ingen haver</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Full-page first-use</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Opret have</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Ingen bede i have</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Inline context empty</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Opret bed</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Ingen filterresultater</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Filtered empty</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Nulstil filtre</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Ingen adgang</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Restricted empty</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Forklar / kontakt ejer</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Data kunne ikke hentes</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Error empty</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Prøv igen</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:var(--space-sm);">Data loader</td>
+                                <td style="padding:var(--space-sm);">Skeleton/loading</td>
+                                <td style="padding:var(--space-sm);">Ingen</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            © MyGardenPlanner · Design demo 10 · Empty states
+        </footer>
+    </div>
+</body>
+</html>

@@ -1,0 +1,1190 @@
+﻿<!doctype html>
+<html lang="da">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MyGardenPlanner – Demo19 Detail page layout</title>
+
+    <style>
+        :root {
+            --mgp-primary: #3F6B4A;
+            --mgp-primary-dark: #2F5138;
+            --mgp-primary-soft: #DDE8D8;
+            --mgp-accent: #B86B4B;
+            --mgp-text: #243128;
+            --mgp-text-muted: #6F766D;
+            --mgp-bg: #FAF8F2;
+            --mgp-surface: #FFFFFF;
+            --mgp-surface-muted: #EFEAE0;
+            --mgp-border: #D8D2C7;
+            --mgp-danger: #9F3A38;
+            --mgp-danger-soft: #FFF4F3;
+            --mgp-warning-bg: #F8E8D8;
+            --space-2xs: .25rem;
+            --space-xs: .5rem;
+            --space-sm: .75rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-2xl: 3rem;
+            --sidebar-width: 280px;
+            --content-max: 1220px;
+            --radius-sm: .45rem;
+            --radius-md: .75rem;
+            --radius-lg: 1.1rem;
+            --shadow-sm: 0 1px 2px rgba(36, 49, 40, .08);
+            --shadow-md: 0 12px 28px rgba(36, 49, 40, .10);
+            --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+            --font-size-xs: .78rem;
+            --font-size-sm: .9rem;
+            --font-size-base: 1rem;
+            --font-size-md: 1.08rem;
+            --font-size-xl: clamp(1.35rem, 2.2vw, 2rem);
+            --font-size-xxl: clamp(2rem, 4vw, 3.25rem);
+            --line-height-tight: 1.15;
+            --line-height-base: 1.55;
+            --font-weight-medium: 600;
+            --font-weight-bold: 750;
+            --letter-spacing-heading: -0.03em;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--mgp-text);
+            background: var(--mgp-bg);
+            font-family: var(--font-sans);
+            font-size: var(--font-size-base);
+            line-height: var(--line-height-base);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--mgp-text);
+            line-height: var(--line-height-tight);
+            letter-spacing: var(--letter-spacing-heading);
+            font-weight: var(--font-weight-bold);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: var(--font-size-xxl);
+        }
+
+        h2 {
+            margin: 0 0 var(--space-md);
+            font-size: var(--font-size-xl);
+        }
+
+        h3 {
+            margin: 0;
+            font-size: var(--font-size-md);
+        }
+
+        p {
+            margin-top: 0;
+        }
+
+        code,
+        .mono {
+            font-family: var(--font-mono);
+            font-size: .92em;
+        }
+
+        .app-shell {
+            display: grid;
+            min-height: 100vh;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            grid-template-rows: auto 1fr auto;
+            grid-template-areas:
+                "sidebar header"
+                "sidebar main"
+                "sidebar footer";
+        }
+
+        .sidebar {
+            grid-area: sidebar;
+            background: var(--mgp-surface);
+            border-right: 1px solid var(--mgp-border);
+            padding: var(--space-lg);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding-bottom: var(--space-lg);
+            border-bottom: 1px solid var(--mgp-border);
+            margin-bottom: var(--space-lg);
+            font-weight: var(--font-weight-bold);
+            letter-spacing: -.02em;
+        }
+
+        .brand-mark {
+            width: 2.3rem;
+            height: 2.3rem;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: white;
+            background: linear-gradient(135deg, var(--mgp-primary), var(--mgp-primary-dark));
+            box-shadow: var(--shadow-sm);
+        }
+
+        .nav-section-title {
+            color: var(--mgp-text-muted);
+            text-transform: uppercase;
+            font-size: var(--font-size-xs);
+            letter-spacing: .08em;
+            font-weight: var(--font-weight-bold);
+            margin: var(--space-lg) 0 var(--space-xs);
+        }
+
+        .nav-list {
+            display: grid;
+            gap: var(--space-2xs);
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .nav-link {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            color: var(--mgp-text);
+            background: transparent;
+            border: 0;
+            text-align: left;
+            border-radius: var(--radius-sm);
+            padding: var(--space-xs) var(--space-sm);
+            font-size: .95rem;
+            font-weight: var(--font-weight-bold);
+            cursor: pointer;
+        }
+
+            .nav-link:hover {
+                background: var(--mgp-surface-muted);
+            }
+
+            .nav-link.active {
+                background: var(--mgp-primary-soft);
+                color: var(--mgp-primary-dark);
+            }
+
+        .header {
+            grid-area: header;
+            background: rgba(250, 248, 242, .88);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--mgp-border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-inner {
+            max-width: var(--content-max);
+            margin: 0 auto;
+            padding: var(--space-sm) var(--space-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-md);
+        }
+
+        .context-title {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: var(--font-weight-bold);
+        }
+
+        .context-subtitle {
+            margin: var(--space-2xs) 0 0;
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-sm);
+        }
+
+        main {
+            grid-area: main;
+            max-width: var(--content-max);
+            width: 100%;
+            margin: 0 auto;
+            padding: var(--space-xl) var(--space-lg) var(--space-2xl);
+        }
+
+        .footer {
+            grid-area: footer;
+            color: var(--mgp-text-muted);
+            border-top: 1px solid var(--mgp-border);
+            padding: var(--space-md) var(--space-lg);
+            text-align: center;
+            font-size: var(--font-size-sm);
+        }
+
+        .detail-return {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            color: var(--mgp-primary-dark);
+            text-decoration: none;
+            font-weight: var(--font-weight-bold);
+            margin-bottom: var(--space-md);
+        }
+
+        .detail-header {
+            background: linear-gradient(135deg, var(--mgp-surface), var(--mgp-primary-soft));
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: clamp(var(--space-lg), 3vw, var(--space-xl));
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: var(--space-lg);
+            align-items: start;
+            margin-bottom: var(--space-lg);
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            color: var(--mgp-primary-dark);
+            background: var(--mgp-primary-soft);
+            border: 1px solid rgba(63, 107, 74, .18);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            font-size: .84rem;
+            font-weight: var(--font-weight-bold);
+            margin-bottom: var(--space-sm);
+        }
+
+        .detail-meta {
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-md);
+            margin: var(--space-xs) 0 0;
+        }
+
+        .btn-row,
+        .card-actions,
+        .tab-list,
+        .badge-row {
+            display: flex;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn-row {
+            justify-content: flex-end;
+        }
+
+        .card-actions {
+            gap: var(--space-xs);
+            margin-top: var(--space-sm);
+        }
+
+        .btn {
+            appearance: none;
+            border: 1px solid transparent;
+            border-radius: .65rem;
+            padding: var(--space-sm) var(--space-md);
+            font-weight: var(--font-weight-bold);
+            font-size: .95rem;
+            cursor: pointer;
+            transition: .15s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-xs);
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--mgp-primary);
+            color: white;
+            border-color: var(--mgp-primary);
+        }
+
+            .btn-primary:hover {
+                background: var(--mgp-primary-dark);
+                border-color: var(--mgp-primary-dark);
+            }
+
+        .btn-secondary {
+            background: var(--mgp-surface);
+            color: var(--mgp-primary-dark);
+            border-color: var(--mgp-border);
+        }
+
+            .btn-secondary:hover {
+                background: var(--mgp-surface-muted);
+                border-color: rgba(63, 107, 74, .28);
+            }
+
+        .btn-danger {
+            background: white;
+            color: var(--mgp-danger);
+            border-color: rgba(159, 58, 56, .35);
+        }
+
+            .btn-danger:hover {
+                background: var(--mgp-danger-soft);
+                border-color: rgba(159, 58, 56, .55);
+            }
+
+        .btn-sm {
+            padding: var(--space-xs) var(--space-sm);
+            font-size: var(--font-size-sm);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2xs);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-bold);
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+        .badge-primary {
+            color: var(--mgp-primary-dark);
+            background: var(--mgp-primary-soft);
+            border-color: rgba(63, 107, 74, .18);
+        }
+
+        .badge-muted {
+            color: var(--mgp-text-muted);
+            background: var(--mgp-surface-muted);
+            border-color: var(--mgp-border);
+        }
+
+        .badge-accent {
+            color: #653521;
+            background: var(--mgp-warning-bg);
+            border-color: rgba(184, 107, 75, .22);
+        }
+
+        .badge-danger {
+            color: var(--mgp-danger);
+            background: var(--mgp-danger-soft);
+            border-color: rgba(159, 58, 56, .22);
+        }
+
+        .meta {
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-sm);
+            line-height: 1.4;
+            margin: var(--space-2xs) 0 0;
+        }
+
+        .demo-label {
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+            color: var(--mgp-text-muted);
+            font-family: var(--font-mono);
+            font-size: var(--font-size-xs);
+            background: var(--mgp-surface-muted);
+            border: 1px solid var(--mgp-border);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            margin-bottom: var(--space-sm);
+        }
+
+        .status-message {
+            display: flex;
+            gap: var(--space-sm);
+            align-items: start;
+            padding: var(--space-sm);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--mgp-border);
+            background: var(--mgp-surface);
+            margin-bottom: var(--space-lg);
+        }
+
+        .status-dot {
+            width: .75rem;
+            height: .75rem;
+            border-radius: 50%;
+            margin-top: .42rem;
+            flex: 0 0 auto;
+            background: var(--mgp-primary);
+        }
+
+        .status-warning .status-dot {
+            background: var(--mgp-accent);
+        }
+
+        .status-danger .status-dot {
+            background: var(--mgp-danger);
+        }
+
+        .status-message strong {
+            display: block;
+            font-weight: var(--font-weight-bold);
+        }
+
+        .tabs {
+            background: var(--mgp-surface);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-lg);
+            padding: var(--space-xs);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: var(--space-lg);
+            overflow-x: auto;
+        }
+
+        .tab-list {
+            flex-wrap: nowrap;
+        }
+
+        .tab {
+            border: 0;
+            background: transparent;
+            color: var(--mgp-text-muted);
+            border-radius: .7rem;
+            padding: var(--space-sm) var(--space-md);
+            font-weight: var(--font-weight-bold);
+            white-space: nowrap;
+            cursor: pointer;
+        }
+
+            .tab.active {
+                background: var(--mgp-primary-soft);
+                color: var(--mgp-primary-dark);
+            }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: var(--space-md);
+            margin-bottom: var(--space-lg);
+        }
+
+        .summary-card,
+        .card {
+            background: var(--mgp-surface);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: var(--space-md);
+        }
+
+            .summary-card strong {
+                display: block;
+                font-size: 1.5rem;
+                line-height: 1.1;
+                margin-bottom: var(--space-xs);
+            }
+
+        .detail-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.4fr) minmax(320px, .75fr);
+            gap: var(--space-lg);
+            align-items: start;
+        }
+
+        .section {
+            margin-bottom: var(--space-lg);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            gap: var(--space-md);
+            align-items: end;
+            margin-bottom: var(--space-md);
+        }
+
+            .section-header p {
+                margin: var(--space-2xs) 0 0;
+                color: var(--mgp-text-muted);
+            }
+
+        .stack-md {
+            display: grid;
+            gap: var(--space-md);
+        }
+
+        .related-list {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .related-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: var(--space-md);
+            align-items: center;
+            padding: var(--space-sm);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            background: var(--mgp-surface);
+        }
+
+        .row-icon {
+            width: 2.75rem;
+            height: 2.75rem;
+            border-radius: .65rem;
+            display: grid;
+            place-items: center;
+            background: var(--mgp-primary-soft);
+            color: var(--mgp-primary-dark);
+            font-weight: var(--font-weight-bold);
+            font-family: var(--font-mono);
+            font-size: var(--font-size-xs);
+        }
+
+        .media-card {
+            display: grid;
+            grid-template-columns: 90px 1fr;
+            gap: var(--space-md);
+            align-items: start;
+            padding: var(--space-sm);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            background: var(--mgp-surface);
+        }
+
+        .thumbnail {
+            min-height: 90px;
+            border-radius: .8rem;
+            background: var(--mgp-primary-soft);
+            border: 1px solid rgba(63, 107, 74, .18);
+            display: grid;
+            place-items: center;
+            color: var(--mgp-primary-dark);
+            font-weight: var(--font-weight-bold);
+        }
+
+        .info-grid {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .info-row {
+            display: grid;
+            grid-template-columns: 130px 1fr;
+            gap: var(--space-sm);
+            padding-bottom: var(--space-sm);
+            border-bottom: 1px solid var(--mgp-border);
+        }
+
+        .info-label {
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-xs);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            font-weight: var(--font-weight-bold);
+        }
+
+        .danger-zone {
+            border-left: 5px solid var(--mgp-danger);
+            background: linear-gradient(90deg, var(--mgp-danger-soft), var(--mgp-surface));
+        }
+
+        .print-box {
+            border-left: 5px solid var(--mgp-accent);
+            background: var(--mgp-warning-bg);
+        }
+
+        @media (max-width: 1000px) {
+            .detail-header,
+            .detail-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-row {
+                justify-content: flex-start;
+            }
+
+            .summary-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 760px) {
+            .app-shell {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "header"
+                    "main"
+                    "footer";
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            main {
+                padding: var(--space-lg) var(--space-md) var(--space-2xl);
+            }
+
+            .header-inner {
+                align-items: start;
+                flex-direction: column;
+                padding: var(--space-sm) var(--space-md);
+            }
+
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .related-row,
+            .media-card,
+            .info-row {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-row,
+            .card-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .sidebar,
+            .header,
+            .footer,
+            .detail-return,
+            .btn-row,
+            .card-actions,
+            .tabs,
+            .danger-zone {
+                display: none !important;
+            }
+
+            .app-shell {
+                display: block;
+            }
+
+            main {
+                max-width: none;
+                padding: 0;
+            }
+
+            .detail-header,
+            .summary-card,
+            .card,
+            .status-message,
+            .related-row,
+            .media-card {
+                box-shadow: none;
+                break-inside: avoid;
+            }
+
+            .detail-layout {
+                display: block;
+            }
+        }
+
+        /* Collapsible cards */
+
+        .collapsible-card {
+            background: var(--mgp-surface);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+            .collapsible-card.attention {
+                border-left: 5px solid var(--mgp-accent);
+            }
+
+            .collapsible-card.danger {
+                border-left: 5px solid var(--mgp-danger);
+            }
+
+        .collapsible-summary {
+            list-style: none;
+            cursor: pointer;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: var(--space-md);
+            align-items: center;
+            padding: var(--space-md);
+        }
+
+            .collapsible-summary::marker {
+                content: "";
+            }
+
+        .collapsible-title {
+            display: grid;
+            gap: var(--space-2xs);
+        }
+
+            .collapsible-title h2 {
+                margin: 0;
+                font-size: var(--font-size-md);
+            }
+
+        .collapsible-chevron {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            border: 1px solid var(--mgp-border);
+            color: var(--mgp-text-muted);
+            background: var(--mgp-surface-muted);
+            font-weight: var(--font-weight-bold);
+            transition: transform .15s ease;
+        }
+
+        details[open] .collapsible-chevron {
+            transform: rotate(90deg);
+        }
+
+        .collapsible-body {
+            padding: 0 var(--space-md) var(--space-md);
+            border-top: 1px solid var(--mgp-border);
+        }
+
+        .collapsed-hint {
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-sm);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar" aria-label="Primær navigation">
+            <div class="brand">
+                <div class="brand-mark">✿</div>
+                <div>MyGardenPlanner</div>
+            </div>
+
+            <div class="nav-section-title">Detail page</div>
+            <ul class="nav-list">
+                <li><button class="nav-link active" type="button">Demo 19</button></li>
+                <li><button class="nav-link" type="button">Header</button></li>
+                <li><button class="nav-link" type="button">Tabs</button></li>
+                <li><button class="nav-link" type="button">Summary</button></li>
+                <li><button class="nav-link" type="button">Related sections</button></li>
+                <li><button class="nav-link" type="button">Files</button></li>
+                <li><button class="nav-link" type="button">Danger zone</button></li>
+            </ul>
+        </aside>
+
+        <header class="header">
+            <div class="header-inner">
+                <div>
+                    <p class="context-title">Design demo 19</p>
+                    <p class="context-subtitle">Detail page layout · header, tabs, summary, relationer og filer</p>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-secondary" type="button">Print</button>
+                    <button class="btn btn-primary" type="button">Redigér</button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <a href="#" class="detail-return">← Tilbage til haver</a>
+
+            <section class="detail-header">
+                <div>
+                    <span class="eyebrow">Havedetalje · demo 19</span>
+                    <h1>Villa Solbakken</h1>
+                    <p class="detail-meta">
+                        Kundehave · Aarhus N · Senest opdateret i dag
+                    </p>
+
+                    <div class="badge-row" style="margin-top:var(--space-sm);">
+                        <span class="badge badge-primary">Aktiv</span>
+                        <span class="badge badge-muted">2 medlemmer</span>
+                        <span class="badge badge-muted">3 filer</span>
+                        <span class="badge badge-accent">1 invitation afventer</span>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-primary" type="button">Redigér have</button>
+                    <button class="btn btn-secondary" type="button">Upload fil</button>
+                    <button class="btn btn-secondary" type="button">Print</button>
+                </div>
+            </section>
+
+            <div class="status-message status-warning">
+                <span class="status-dot"></span>
+                <div>
+                    <strong>Invitation afventer svar</strong>
+                    <p class="meta">kunde@example.dk er inviteret som læser og har endnu ikke accepteret.</p>
+                </div>
+            </div>
+
+            <nav class="tabs" aria-label="Detaljesektioner">
+                <div class="tab-list">
+                    <button class="tab active" type="button">Overblik</button>
+                    <button class="tab" type="button">Bede</button>
+                    <button class="tab" type="button">Filer</button>
+                    <button class="tab" type="button">Medlemmer</button>
+                    <button class="tab" type="button">Aktivitet</button>
+                    <button class="tab" type="button">Indstillinger</button>
+                </div>
+            </nav>
+
+            <section class="summary-grid" aria-label="Nøgletal">
+                <article class="summary-card">
+                    <strong>6</strong>
+                    <span class="meta">Bede</span>
+                </article>
+
+                <article class="summary-card">
+                    <strong>3</strong>
+                    <span class="meta">Filer</span>
+                </article>
+
+                <article class="summary-card">
+                    <strong>2</strong>
+                    <span class="meta">Medlemmer</span>
+                </article>
+
+                <article class="summary-card">
+                    <strong>1</strong>
+                    <span class="meta">Invitation afventer</span>
+                </article>
+            </section>
+
+            <div class="detail-layout">
+                <div>
+                    <section class="section card">
+                        <div class="section-header">
+                            <div>
+                                <span class="demo-label">main content</span>
+                                <h2>Overblik</h2>
+                                <p>Havens kerneinformation vises før relaterede sektioner.</p>
+                            </div>
+                        </div>
+
+                        <div class="info-grid">
+                            <div class="info-row">
+                                <span class="info-label">Navn</span>
+                                <span>Villa Solbakken</span>
+                            </div>
+
+                            <div class="info-row">
+                                <span class="info-label">Type</span>
+                                <span>Kundehave</span>
+                            </div>
+
+                            <div class="info-row">
+                                <span class="info-label">Lokation</span>
+                                <span>Aarhus N</span>
+                                "info-row">
+                                <span class="info-label">Status</span>
+                                <span>Aktiv</span>
+                            </div>
+
+                            <div class="info-row">
+                                <span class="info-label">Beskrivelse</span>
+                                <span>
+                                    Rolig villahave med fokus på staudebede, referencefotos og løbende dialog med kunden.
+                                </span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="section">
+                        <div class="section-header">
+                            <div>
+                                <h2>Bede</h2>
+                                <p>Relaterede sektioner viser nok til overblik og linker videre.</p>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" type="button">Se alle bede</button>
+                        </div>
+
+                        <div class="related-list">
+                            <div class="related-row">
+                                <div class="row-icon">BED</div>
+                                <div>
+                                    <h3>Staudehaven mod syd</h3>
+                                    <p class="meta">3,50 × 1,20 m · Sol · 12 planter</p>
+                                </div>
+                                <button class="btn btn-secondary btn-sm" type="button">Åbn</button>
+                            </div>
+
+                            <div class="related-row">
+                                <div class="row-icon">BED</div>
+                                <div>
+                                    <h3>Skyggebed ved terrasse</h3>
+                                    <p class="meta">2,80 × 0,90 m · Halvskygge · 7 planter</p>
+                                </div>
+                                <button class="btn btn-secondary btn-sm" type="button">Åbn</button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="section">
+                        <div class="section-header">
+                            <div>
+                                <h2>Filer</h2>
+                                <p>Filer følger preview/download-principperne: metadata først, original kun eksplicit.</p>
+                            </div>
+                            <button class="btn btn-primary btn-sm" type="button">Upload fil</button>
+                        </div>
+
+                        <div class="related-list">
+                            <article class="media-card">
+                                <div class="thumbnail">PDF</div>
+                                <div>
+                                    <h3>Haveskitse maj.pdf</h3>
+                                    <p class="meta">PDF · Tegning · 2,4 MB · Permanent</p>
+                                    <div class="badge-row">
+                                        <span class="badge badge-primary">Preview klar</span>
+                                        <span class="badge badge-muted">Large thumbnail</span>
+                                    </div>
+                                    <div class="card-actions">
+                                        <button class="btn btn-secondary btn-sm" type="button">Vis preview</button>
+                                        <button class="btn btn-secondary btn-sm" type="button">Download</button>
+                                    </div>
+                                </div>
+                            </article>
+
+                            <article class="media-card">
+                                <div class="thumbnail">IMG</div>
+                                <div>
+                                    <h3>Referencefoto-bed.jpg</h3>
+                                    <p class="meta">Billede · 860 KB · Uploadet i dag</p>
+                                    <div class="badge-row">
+                                        <span class="badge badge-accent">Thumbnail oprettes</span>
+                                    </div>
+                                    <div class="card-actions">
+                                        <button class="btn btn-secondary btn-sm" type="button">Vis metadata</button>
+                                    </div>
+                                </div>
+                            </article>
+                        </div>
+                    </section>
+                </div>
+
+                <aside class="stack-md">
+                    <section class="card">
+                        <span class="demo-label">metadata sidepanel</span>
+                        <h2>Metadata</h2>
+
+                        <div class="info-grid">
+                            <div class="info-row">
+                                <span class="info-label">Ejer</span>
+                                <span>Mikael Sloth</span>
+                            </div>
+
+                            <div class="info-row">
+                                <span class="info-label">Oprettet</span>
+                                <span>12. juni</span>
+                            </div>
+
+                            <div class="info-row">
+                                <span class="info-label">Senest ændret</span>
+                                <span>I dag</span>
+                            </div>
+
+                            <div class="info-row">
+                                <span class="info-label">Adgang</span>
+                                <span>2 medlemmer</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <details class="collapsible-card attention" open>
+                        <summary class="collapsible-summary">
+                            <div class="collapsible-title">
+                                <span class="demo-label">collapsible · open by attention</span>
+                                <h2>Medlemmer</h2>
+                                <span class="collapsed-hint">2 aktive · 1 invitation afventer</span>
+                                <div class="badge-row">
+                                    <span class="badge badge-accent">Attention</span>
+                                </div>
+                            </div>
+                            <span class="collapsible-chevron">›</span>
+                        </summary>
+
+                        <div class="collapsible-body">
+                            <div class="related-list" style="margin-top:var(--space-md);">
+                                <div class="related-row">
+                                    <div class="row-icon">E</div>
+                                    <div>
+                                        <strong>Mikael Sloth</strong>
+                                        <p class="meta">Ejer</p>
+                                    </div>
+                                    <span class="badge badge-primary">Aktiv</span>
+                                </div>
+
+                                <div class="related-row">
+                                    <div class="row-icon">K</div>
+                                    <div>
+                                        <strong>Anne Solbakken</strong>
+                                        <p class="meta">Kunde · Læser</p>
+                                    </div>
+                                    <span class="badge badge-muted">Aktiv</span>
+                                </div>
+
+                                <div class="related-row">
+                                    <div class="row-icon">@</div>
+                                    <div>
+                                        <strong>kunde@example.dk</strong>
+                                        <p class="meta">Invitation · Læser</p>
+                                    </div>
+                                    <span class="badge badge-accent">Afventer</span>
+                                </div>
+                            </div>
+
+                            <div class="card-actions">
+                                <button class="btn btn-secondary btn-sm" type="button">Administrér medlemmer</button>
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="collapsible-card">
+                        <summary class="collapsible-summary">
+                            <div class="collapsible-title">
+                                <span class="demo-label">collapsible · default closed</span>
+                                <h2>Print og eksport</h2>
+                                <span class="collapsed-hint">Printvenligt haveoverblik</span>
+                            </div>
+                            <span class="collapsible-chevron">›</span>
+                        </summary>
+
+                        <div class="collapsible-body">
+                            <div class="card print-box" style="box-shadow:none;margin-top:var(--space-md);">
+                                <p class="meta">
+                                    Udskriv et roligt haveoverblik uden navigation, handlinger og sidepaneler.
+                                </p>
+                                <div class="card-actions">
+                                    <button class="btn btn-secondary btn-sm" type="button">Print haveoverblik</button>
+                                    <button class="btn btn-secondary btn-sm" type="button">Print filoversigt</button>
+                                </div>
+                            </div>
+                        </div>
+
+                    </details>
+
+                    <details class="collapsible-card danger">
+                        <summary class="collapsible-summary">
+                            <div class="collapsible-title">
+                                <span class="demo-label">collapsible · danger</span>
+                                <h2>Arkivering og sletning</h2>
+                                <span class="collapsed-hint">Avancerede handlinger</span>
+                            </div>
+                            <span class="collapsible-chevron">›</span>
+                        </summary>
+
+                        <div class="collapsible-body">
+                            <div class="card danger-zone" style="box-shadow:none;margin-top:var(--space-md);">
+                                <p class="meta">
+                                    Handlinger her kan skjule eller fjerne data. De er adskilt fra headerens primære handlinger.
+                                </p>
+                                <div class="card-actions">
+                                    <button class="btn btn-danger btn-sm" type="button">Arkivér have</button>
+                                    <button class="btn btn-danger btn-sm" type="button">Slet permanent</button>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+
+                    <details class="collapsible-card">
+                        <summary class="collapsible-summary">
+                            <div class="collapsible-title">
+                                <span class="demo-label">collapsible · secondary</span>
+                                <h2>Aktivitet</h2>
+                                <span class="collapsed-hint">Senest ændret i dag</span>
+                            </div>
+                            <span class="collapsible-chevron">›</span>
+                        </summary>
+
+                        <div class="collapsible-body">
+                            <div class="related-list" style="margin-top:var(--space-md);">
+                                <div class="related-row">
+                                    <div class="row-icon">LOG</div>
+                                    <div>
+                                        <strong>Filen Haveskitse maj.pdf blev uploadet</strong>
+                                        <p class="meta">I dag</p>
+                                    </div>
+                                </div>
+
+                                <div class="related-row">
+                                    <div class="row-icon">LOG</div>
+                                    <div>
+                                        <strong>Invitation sendt til kunde@example.dk</strong>
+                                        <p class="meta">I går</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+
+                </aside>
+            </div>
+
+            <section class="section card" style="margin-top:var(--space-lg);">
+                <span class="demo-label">layout decision</span>
+                <h2>Beslutningspunkter i denne demo</h2>
+
+                <div class="info-grid">
+                    <div class="info-row">
+                        <span class="info-label">Return context</span>
+                        <span>Tilbage-link øverst bevarer brugerens navigation state.</span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="info-label">Header</span>
+                        <span>Titel, metadata, badges og 1–3 primære handlinger.</span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="info-label">Tabs</span>
+                        <span>Stabile undersektioner som Overblik, Bede, Filer og Medlemmer.</span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="info-label">Summary cards</span>
+                        <span>3–5 vigtigste nøgletal eller statusser.</span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="info-label">Related sections</span>
+                        <span>Viser nok til overblik og linker videre til fuld sektion.</span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="info-label">Danger zone</span>
+                        <span>Arkivering og sletning er adskilt fra almindelige handlinger.</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            © MyGardenPlanner · Design demo 19 · Detail page layout
+        </footer>
+    </div>
+</body>
+</html>

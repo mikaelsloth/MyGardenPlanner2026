@@ -1,0 +1,1034 @@
+﻿<!doctype html>
+<html lang="da">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MyGardenPlanner – Demo25 Navigation state og return-flow</title>
+
+    <style>
+        :root {
+            --mgp-color-primary: #3F6B4A;
+            --mgp-color-primary-dark: #2F5138;
+            --mgp-color-primary-soft: #DDE8D8;
+            --mgp-color-accent: #B86B4B;
+            --mgp-color-bg: #FAF8F2;
+            --mgp-color-surface: #FFFFFF;
+            --mgp-color-surface-muted: #EFEAE0;
+            --mgp-color-border: #D8D2C7;
+            --mgp-color-text: #243128;
+            --mgp-color-text-muted: #6F766D;
+            --mgp-color-danger: #9F3A38;
+            --mgp-color-danger-soft: #FFF4F3;
+            --mgp-color-warning-bg: #F8E8D8;
+            --mgp-color-info-soft: #E7EEF0;
+            --mgp-content-max: 1180px;
+            --mgp-space-2xs: .25rem;
+            --mgp-space-xs: .5rem;
+            --mgp-space-sm: .75rem;
+            --mgp-space-md: 1rem;
+            --mgp-space-lg: 1.5rem;
+            --mgp-space-xl: 2rem;
+            --mgp-space-2xl: 3rem;
+            --mgp-radius-sm: .45rem;
+            --mgp-radius-md: .75rem;
+            --mgp-radius-lg: 1.1rem;
+            --mgp-radius-pill: 999px;
+            --mgp-shadow-sm: 0 1px 2px rgba(36, 49, 40, .08);
+            --mgp-shadow-md: 0 12px 28px rgba(36, 49, 40, .10);
+            --mgp-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --mgp-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+            --mgp-touch-target-min: 44px;
+            --mgp-focus-ring-color: var(--mgp-color-primary-dark);
+            --mgp-focus-ring-width: 3px;
+            --mgp-focus-ring-offset: 3px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--mgp-color-bg);
+            color: var(--mgp-color-text);
+            font-family: var(--mgp-font-sans);
+            line-height: 1.55;
+        }
+
+        :focus-visible {
+            outline: var(--mgp-focus-ring-width) solid var(--mgp-focus-ring-color);
+            outline-offset: var(--mgp-focus-ring-offset);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--mgp-color-text);
+            line-height: 1.15;
+            letter-spacing: -.03em;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(2rem, 4vw, 3.25rem);
+        }
+
+        h2 {
+            margin: 0 0 var(--mgp-space-md);
+            font-size: clamp(1.35rem, 2vw, 2rem);
+        }
+
+        h3 {
+            margin: 0;
+            font-size: 1.08rem;
+        }
+
+        p {
+            margin-top: 0;
+        }
+
+        code,
+        pre {
+            font-family: var(--mgp-font-mono);
+            font-size: .92em;
+        }
+
+        pre {
+            overflow: auto;
+            margin: 0;
+            padding: var(--mgp-space-md);
+            background: var(--mgp-color-surface-muted);
+            border: 1px solid var(--mgp-color-border);
+            border-radius: var(--mgp-radius-md);
+        }
+
+        main {
+            max-width: var(--mgp-content-max);
+            margin: 0 auto;
+            padding: var(--mgp-space-xl) var(--mgp-space-lg) var(--mgp-space-2xl);
+        }
+
+        .section {
+            margin-top: var(--mgp-space-xl);
+        }
+
+        .hero,
+        .card,
+        .state-card,
+        .flow-card,
+        .status-message,
+        .url-card,
+        .decision,
+        .mock-page {
+            background: var(--mgp-color-surface);
+            border: 1px solid var(--mgp-color-border);
+            border-radius: var(--mgp-radius-lg);
+            box-shadow: var(--mgp-shadow-sm);
+            padding: var(--mgp-space-lg);
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--mgp-color-surface), var(--mgp-color-primary-soft));
+            box-shadow: var(--mgp-shadow-md);
+            margin-bottom: var(--mgp-space-xl);
+        }
+
+        .lead,
+        .meta {
+            color: var(--mgp-color-text-muted);
+        }
+
+        .lead {
+            max-width: 72ch;
+            font-size: 1.08rem;
+            margin-bottom: var(--mgp-space-lg);
+        }
+
+        .grid {
+            display: grid;
+            gap: var(--mgp-space-md);
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .stack {
+            display: grid;
+            gap: var(--mgp-space-md);
+        }
+
+        .demo-label {
+            display: inline-flex;
+            width: fit-content;
+            align-items: center;
+            color: var(--mgp-color-text-muted);
+            font-family: var(--mgp-font-mono);
+            font-size: .78rem;
+            background: var(--mgp-color-surface-muted);
+            border: 1px solid var(--mgp-color-border);
+            border-radius: var(--mgp-radius-pill);
+            padding: var(--mgp-space-2xs) var(--mgp-space-sm);
+            margin-bottom: var(--mgp-space-sm);
+        }
+
+        .btn-row,
+        .card-actions,
+        .badge-row,
+        .chip-row,
+        .filter-actions {
+            display: flex;
+            gap: var(--mgp-space-sm);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .card-actions {
+            margin-top: var(--mgp-space-sm);
+            gap: var(--mgp-space-xs);
+        }
+
+        .btn {
+            min-height: var(--mgp-touch-target-min);
+            appearance: none;
+            border: 1px solid var(--mgp-color-border);
+            border-radius: .7rem;
+            background: var(--mgp-color-surface);
+            color: var(--mgp-color-primary-dark);
+            padding: var(--mgp-space-sm) var(--mgp-space-md);
+            font: inherit;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--mgp-space-xs);
+            white-space: nowrap;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--mgp-color-primary);
+            border-color: var(--mgp-color-primary);
+            color: white;
+        }
+
+        .btn-danger {
+            color: var(--mgp-color-danger);
+            border-color: rgba(159, 58, 56, .35);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border-color: transparent;
+            padding-inline: var(--mgp-space-xs);
+        }
+
+        .badge,
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            border-radius: var(--mgp-radius-pill);
+            font-size: .78rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .badge {
+            border: 1px solid transparent;
+            padding: var(--mgp-space-2xs) var(--mgp-space-sm);
+        }
+
+        .badge-neutral {
+            color: var(--mgp-color-text-muted);
+            background: var(--mgp-color-surface-muted);
+            border-color: var(--mgp-color-border);
+        }
+
+        .badge-primary {
+            color: var(--mgp-color-primary-dark);
+            background: var(--mgp-color-primary-soft);
+            border-color: rgba(63, 107, 74, .18);
+        }
+
+        .badge-warning {
+            color: #653521;
+            background: var(--mgp-color-warning-bg);
+            border-color: rgba(184, 107, 75, .22);
+        }
+
+        .badge-danger {
+            color: var(--mgp-color-danger);
+            background: var(--mgp-color-danger-soft);
+            border-color: rgba(159, 58, 56, .22);
+        }
+
+        .chip {
+            gap: var(--mgp-space-xs);
+            border: 1px solid var(--mgp-color-border);
+            background: var(--mgp-color-surface);
+            color: var(--mgp-color-text);
+            padding: var(--mgp-space-2xs) var(--mgp-space-sm);
+        }
+
+        .url-card {
+            display: grid;
+            gap: var(--mgp-space-sm);
+        }
+
+        .url-line {
+            overflow-x: auto;
+            padding: var(--mgp-space-sm);
+            border: 1px solid var(--mgp-color-border);
+            border-radius: var(--mgp-radius-md);
+            background: var(--mgp-color-surface-muted);
+            color: var(--mgp-color-text);
+        }
+
+        .flow-steps {
+            display: grid;
+            gap: var(--mgp-space-sm);
+        }
+
+        .flow-step {
+            display: grid;
+            grid-template-columns: 44px 1fr auto;
+            gap: var(--mgp-space-md);
+            align-items: center;
+            padding: var(--mgp-space-sm);
+            border: 1px solid var(--mgp-color-border);
+            border-radius: var(--mgp-radius-md);
+            background: var(--mgp-color-surface);
+        }
+
+        .step-number {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--mgp-radius-pill);
+            display: grid;
+            place-items: center;
+            background: var(--mgp-color-primary-soft);
+            color: var(--mgp-color-primary-dark);
+            font-weight: 900;
+            border: 1px solid rgba(63, 107, 74, .18);
+        }
+
+        .status-message {
+            display: flex;
+            gap: var(--mgp-space-sm);
+            align-items: flex-start;
+            border-radius: var(--mgp-radius-md);
+            box-shadow: none;
+        }
+
+            .status-message.success {
+                border-left: 5px solid var(--mgp-color-primary);
+            }
+
+            .status-message.warning {
+                border-left: 5px solid var(--mgp-color-accent);
+            }
+
+        .status-dot {
+            width: .8rem;
+            height: .8rem;
+            border-radius: var(--mgp-radius-pill);
+            margin-top: .45rem;
+            flex: 0 0 auto;
+            background: var(--mgp-color-primary);
+        }
+
+        .status-message.warning .status-dot {
+            background: var(--mgp-color-accent);
+        }
+
+        .filter-bar {
+            display: grid;
+            grid-template-columns: minmax(220px, 1.4fr) repeat(3, minmax(140px, .7fr)) auto;
+            gap: var(--mgp-space-sm);
+            align-items: end;
+            padding: var(--mgp-space-md);
+            border: 1px solid var(--mgp-color-border);
+            border-radius: var(--mgp-radius-lg);
+            background: var(--mgp-color-surface);
+        }
+
+        .field {
+            display: grid;
+            gap: var(--mgp-space-2xs);
+        }
+
+        .field-label {
+            color: var(--mgp-color-text-muted);
+            font-size: .78rem;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            font-weight: 800;
+        }
+
+        .input,
+        .select {
+            min-height: var(--mgp-touch-target-min);
+            width: 100%;
+            border: 1px solid var(--mgp-color-border);
+            border-radius: .7rem;
+            background: var(--mgp-color-surface);
+            color: var(--mgp-color-text);
+            padding: var(--mgp-space-sm) var(--mgp-space-md);
+            font: inherit;
+        }
+
+        .view-toggle {
+            display: inline-flex;
+            gap: var(--mgp-space-2xs);
+            border: 1px solid var(--mgp-color-border);
+            background: var(--mgp-color-surface);
+            border-radius: .85rem;
+            padding: var(--mgp-space-2xs);
+        }
+
+            .view-toggle span {
+                padding: var(--mgp-space-xs) var(--mgp-space-sm);
+                border-radius: .65rem;
+                color: var(--mgp-color-text-muted);
+                font-weight: 800;
+            }
+
+            .view-toggle .active {
+                background: var(--mgp-color-primary-soft);
+                color: var(--mgp-color-primary-dark);
+            }
+
+        .list-window {
+            border: 1px solid var(--mgp-color-border);
+            border-radius: var(--mgp-radius-lg);
+            background: var(--mgp-color-surface);
+            overflow: hidden;
+        }
+
+        .scroll-indicator {
+            height: 12px;
+            background: linear-gradient( 90deg, var(--mgp-color-surface-muted) 0%, var(--mgp-color-surface-muted) 68%, var(--mgp-color-primary) 68%, var(--mgp-color-primary) 74%, var(--mgp-color-surface-muted) 74% );
+            border-bottom: 1px solid var(--mgp-color-border);
+        }
+
+        .list-content {
+            padding: var(--mgp-space-md);
+            display: grid;
+            gap: var(--mgp-space-sm);
+        }
+
+        .plant-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: var(--mgp-space-md);
+            align-items: center;
+            padding: var(--mgp-space-sm);
+            border: 1px solid var(--mgp-color-border);
+            border-radius: var(--mgp-radius-md);
+            background: var(--mgp-color-surface);
+        }
+
+            .plant-row.selected {
+                border-color: rgba(63, 107, 74, .45);
+                background: linear-gradient(90deg, var(--mgp-color-primary-soft), var(--mgp-color-surface));
+                box-shadow: 0 0 0 4px rgba(63, 107, 74, .10);
+            }
+
+            .plant-row.faded {
+                opacity: .68;
+            }
+
+        .tabs {
+            display: flex;
+            gap: var(--mgp-space-xs);
+            flex-wrap: wrap;
+            padding: var(--mgp-space-xs);
+            border: 1px solid var(--mgp-color-border);
+            border-radius: var(--mgp-radius-lg);
+            background: var(--mgp-color-surface);
+        }
+
+        .tab {
+            min-height: 44px;
+            border: 0;
+            border-radius: .75rem;
+            background: transparent;
+            padding: var(--mgp-space-sm) var(--mgp-space-md);
+            color: var(--mgp-color-text-muted);
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+            .tab.active {
+                background: var(--mgp-color-primary-soft);
+                color: var(--mgp-color-primary-dark);
+            }
+
+        .preview-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 340px;
+            gap: var(--mgp-space-md);
+            align-items: start;
+        }
+
+        .preview-panel {
+            border: 1px solid var(--mgp-color-border);
+            border-radius: var(--mgp-radius-lg);
+            background: #243128;
+            color: white;
+            min-height: 260px;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+            overflow: hidden;
+        }
+
+        .preview-header,
+        .preview-footer {
+            padding: var(--mgp-space-sm);
+            background: rgba(0, 0, 0, .3);
+            display: flex;
+            justify-content: space-between;
+            gap: var(--mgp-space-sm);
+            align-items: center;
+        }
+
+        .preview-body {
+            display: grid;
+            place-items: center;
+            text-align: center;
+            padding: var(--mgp-space-lg);
+        }
+
+        .decision {
+            display: grid;
+            gap: var(--mgp-space-sm);
+        }
+
+        .decision-row {
+            display: grid;
+            grid-template-columns: 190px 1fr 180px;
+            gap: var(--mgp-space-md);
+            align-items: center;
+            padding: var(--mgp-space-md);
+            border: 1px solid var(--mgp-color-border);
+            border-radius: var(--mgp-radius-md);
+            background: var(--mgp-color-surface);
+        }
+
+        @media (max-width: 960px) {
+            main {
+                padding: var(--mgp-space-lg) var(--mgp-space-md) var(--mgp-space-2xl);
+            }
+
+            .grid-2,
+            .grid-3,
+            .filter-bar,
+            .flow-step,
+            .plant-row,
+            .preview-layout,
+            .decision-row {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-row,
+            .card-actions,
+            .chip-row,
+            .filter-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+                .btn,
+                .btn-row .btn,
+                .card-actions .btn {
+                    width: 100%;
+                }
+
+            .view-toggle {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            main {
+                max-width: none;
+                padding: 0;
+            }
+
+            .btn-row,
+            .card-actions,
+            .filter-actions,
+            .tabs,
+            .preview-panel {
+                display: none !important;
+            }
+
+            .hero,
+            .card,
+            .state-card,
+            .flow-card,
+            .status-message,
+            .url-card,
+            .decision,
+            .mock-page,
+            .plant-row {
+                box-shadow: none;
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <section class="hero">
+            <span class="demo-label">Demo25</span>
+            <h1>Navigation state og return-flow</h1>
+            <p class="lead">
+                Denne demo viser hvordan MyGardenPlanner bevarer brugerens arbejdskontekst:
+                URL-båret liste-state, returnUrl, specifikke tilbageknapper, status efter retur,
+                highlight af nyt/ændret objekt, tabs som URL-state, preview-state og edge case
+                hvor nyt indhold ikke matcher aktive filtre.
+            </p>
+
+            <div class="btn-row">
+                <button class="btn btn-primary" type="button">Start opret-flow</button>
+                <button class="btn" type="button">Se URL-state</button>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>1. Liste-state bæres i URL’en</h2>
+
+            <div class="url-card">
+                <span class="demo-label">query-state</span>
+                <h3>Planteliste med søgning, filter, sortering og view-mode</h3>
+                <div class="url-line">
+                    <code>/planter?search=lavendel&amp;lys=sol&amp;type=staude&amp;sort=name&amp;view=compact&amp;page=1</code>
+                </div>
+                <p class="meta">
+                    URL’en viser den state, der ændrer hvad brugeren ser: søgning, filter,
+                    sortering, pagination og view-mode.
+                </p>
+            </div>
+
+            <div class="filter-bar" style="margin-top:var(--mgp-space-md);">
+                <label class="field">
+                    <span class="field-label">Søg</span>
+                    <input class="input" value="lavendel" />
+                </label>
+
+                <label class="field">
+                    <span class="field-label">Lys</span>
+                    <select class="select">
+                        <option>Sol</option>
+                        <option>Halvskygge</option>
+                        <option>Skygge</option>
+                    </select>
+                </label>
+
+                <label class="field">
+                    <span class="field-label">Type</span>
+                    <select class="select">
+                        <option>Staude</option>
+                        <option>Busk</option>
+                        <option>Træ</option>
+                    </select>
+                </label>
+
+                <label class="field">
+                    <span class="field-label">Sortér</span>
+                    <select class="select">
+                        <option>Navn A–Å</option>
+                        <option>Navn Å–A</option>
+                    </select>
+                </label>
+
+                <div class="view-toggle" aria-label="View mode">
+                    <span>Cards</span>
+                    <span class="active">Compact</span>
+                    <span>Tabel</span>
+                </div>
+            </div>
+
+            <div class="chip-row" style="margin-top:var(--mgp-space-md);">
+                <span class="chip">Søgning: lavendel ×</span>
+                <span class="chip">Lys: Sol ×</span>
+                <span class="chip">Type: Staude ×</span>
+                <button class="btn btn-ghost" type="button">Nulstil alle</button>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>2. Return-flow fra opret/rediger</h2>
+
+            <div class="flow-card">
+                <span class="demo-label">workflow-state</span>
+                <h3>Planteliste → Opret plante → Tilbage til samme kontekst</h3>
+
+                <div class="flow-steps" style="margin-top:var(--mgp-space-md);">
+                    <div class="flow-step">
+                        <span class="step-number">1</span>
+                        <div>
+                            <strong>Brugeren står i plantelisten</strong>
+                            <p class="meta">Søgning: lavendel · filter: Sol · view: compact · scrollposition ca. 70%</p>
+                        </div>
+                        <span class="badge badge-primary">Liste-state</span>
+                    </div>
+
+                    <div class="flow-step">
+                        <span class="step-number">2</span>
+                        <div>
+                            <strong>Brugeren vælger “Opret plante”</strong>
+                            <p class="meta">Opret-siden får en returnUrl med den aktuelle listekontekst.</p>
+                        </div>
+                        <span class="badge badge-neutral">returnUrl</span>
+                    </div>
+
+                    <div class="flow-step">
+                        <span class="step-number">3</span>
+                        <div>
+                            <strong>Brugeren gemmer planten</strong>
+                            <p class="meta">Appen returnerer til samme URL-state og forsøger at highlight’e den nye plante.</p>
+                        </div>
+                        <span class="badge badge-primary">Highlight</span>
+                    </div>
+                </div>
+
+                <div class="url-line" style="margin-top:var(--mgp-space-md);">
+                    <code>/planter/opret?returnUrl=/planter%3Fsearch%3Dlavendel%26lys%3Dsol%26type%3Dstaude%26sort%3Dname%26view%3Dcompact</code>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>3. Status efter return og highlight af nyt element</h2>
+
+            <div class="grid grid-2">
+                <div class="stack">
+                    <article class="status-message success">
+                        <span class="status-dot" aria-hidden="true"></span>
+                        <div>
+                            <strong>Planten er oprettet</strong>
+                            <p class="meta">Lavendel er nu tilgængelig i plantelisten.</p>
+                        </div>
+                    </article>
+
+                    <section class="list-window">
+                        <div class="scroll-indicator" title="Scrollposition gendannet omkring 70%"></div>
+
+                        <div class="list-content">
+                            <div class="plant-row faded">
+                                <div>
+                                    <strong>Lavendel 'Hidcote'</strong>
+                                    <p class="meta">Lavandula angustifolia · Sol · Staude</p>
+                                </div>
+                                <button class="btn" type="button">Vis</button>
+                            </div>
+
+                            <div class="plant-row selected">
+                                <div>
+                                    <strong>Lavendel 'Munstead'</strong>
+                                    <p class="meta">Ny plante · Sol · Staude · 30–45 cm</p>
+                                </div>
+                                <span class="badge badge-primary">Ny</span>
+                            </div>
+
+                            <div class="plant-row">
+                                <div>
+                                    <strong>Sommerlavendel</strong>
+                                    <p class="meta">Lavandula stoechas · Sol · Staude</p>
+                                </div>
+                                <button class="btn" type="button">Vis</button>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <article class="card">
+                    <span class="demo-label">return status</span>
+                    <h3>Hvorfor highlight?</h3>
+                    <p class="meta">
+                        Når brugeren kommer tilbage fra opret/rediger, viser appen en rolig statusbesked
+                        og markerer det relevante element kortvarigt, hvis elementet findes i den aktuelle visning.
+                    </p>
+
+                    <div class="url-line">
+                        <code>/planter?search=lavendel&amp;lys=sol&amp;highlight=plant-123</code>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>4. Edge case: nyt element matcher ikke aktivt filter</h2>
+
+            <div class="grid grid-2">
+                <article class="status-message warning">
+                    <span class="status-dot" aria-hidden="true"></span>
+                    <div>
+                        <strong>Planten er oprettet</strong>
+                        <p class="meta">
+                            Den vises ikke i listen, fordi det aktuelle filter er “Sol”, og planten er oprettet med “Skygge”.
+                        </p>
+                        <div class="card-actions">
+                            <button class="btn" type="button">Nulstil filter</button>
+                            <button class="btn" type="button">Vis planten</button>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <span class="demo-label">filtered empty after create</span>
+                    <h3>Vigtigt UX-princip</h3>
+                    <p class="meta">
+                        Hvis appen bare returnerer til listen uden forklaring, kan brugeren tro at oprettelsen fejlede.
+                        Derfor skal UI’et forklare, at elementet findes, men ikke matcher de aktive filtre.
+                    </p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>5. Kontekstuel tilbageknap</h2>
+
+            <div class="grid grid-3">
+                <article class="card">
+                    <span class="demo-label">god label</span>
+                    <h3>Fra planteliste</h3>
+                    <p class="meta">Brugeren startede i en specifik listekontekst.</p>
+                    <button class="btn" type="button">← Tilbage til plantelisten</button>
+                </article>
+
+                <article class="card">
+                    <span class="demo-label">god label</span>
+                    <h3>Fra have</h3>
+                    <p class="meta">Brugeren startede i Villa Solbakken.</p>
+                    <button class="btn" type="button">← Tilbage til Villa Solbakken</button>
+                </article>
+
+                <article class="card">
+                    <span class="demo-label">mindre god label</span>
+                    <h3>Generisk</h3>
+                    <p class="meta">“Tilbage” fortæller ikke, hvor brugeren lander.</p>
+                    <button class="btn" type="button">Tilbage</button>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>6. Tabs som URL-state</h2>
+
+            <div class="mock-page">
+                <span class="demo-label">detail tab state</span>
+                <h3>Villa Solbakken</h3>
+                <p class="meta">Aktiv tab: Filer</p>
+
+                <nav class="tabs" aria-label="Detaljesektioner" style="margin-top:var(--mgp-space-md);">
+                    <button class="tab" type="button">Overblik</button>
+                    <button class="tab" type="button">Bede</button>
+                    <button class="tab active" type="button">Filer</button>
+                    <button class="tab" type="button">Medlemmer</button>
+                    <button class="tab" type="button">Aktivitet</button>
+                </nav>
+
+                <div class="url-line" style="margin-top:var(--mgp-space-md);">
+                    <code>/haver/123?tab=filer</code>
+                </div>
+
+                <p class="meta" style="margin-top:var(--mgp-space-md);">
+                    Hvis brugeren uploader en fil fra fanen “Filer”, skal de tilbage til samme fane efter upload.
+                </p>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>7. Preview som URL-state</h2>
+
+            <div class="preview-layout">
+                <section class="mock-page">
+                    <span class="demo-label">file list</span>
+                    <h3>Filer</h3>
+
+                    <div class="list-content">
+                        <div class="plant-row selected">
+                            <div>
+                                <strong>Haveskitse maj.pdf</strong>
+                                <p class="meta">PDF · Preview åbent</p>
+                            </div>
+                            <span class="badge badge-primary">preview=file-456</span>
+                        </div>
+
+                        <div class="plant-row">
+                            <div>
+                                <strong>Referencefoto-bed.jpg</strong>
+                                <p class="meta">Billede · Thumbnail klar</p>
+                            </div>
+                            <button class="btn" type="button">Preview</button>
+                        </div>
+                    </div>
+
+                    <div class="url-line" style="margin-top:var(--mgp-space-md);">
+                        <code>/haver/123/filer?preview=file-456</code>
+                    </div>
+                </section>
+
+                <aside class="preview-panel">
+                    <div class="preview-header">
+                        <strong>Haveskitse maj.pdf</strong>
+                        <button class="btn" type="button">Luk</button>
+                    </div>
+
+                    <div class="preview-body">
+                        <div>
+                            <h3 style="color:white;">PDF preview</h3>
+                            <p class="meta" style="color:#ddd;">
+                                Back kan lukke preview, forward kan åbne det igen.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="preview-footer">
+                        <span class="meta" style="color:#ddd;">Preview-state i URL</span>
+                        <button class="btn btn-primary" type="button">Download</button>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>8. Anchor-baseret return frem for pixel-scroll</h2>
+
+            <div class="grid grid-2">
+                <article class="card">
+                    <span class="demo-label">bedre ved dynamiske lister</span>
+                    <h3>Returnér til objekt-id</h3>
+                    <p class="meta">
+                        For lange eller virtualiserede lister er det mere robust at returnere til et konkret element
+                        end til en pixelposition.
+                    </p>
+
+                    <div class="url-line">
+                        <code>/planter?search=lavendel&amp;highlight=plant-123&amp;returnTo=plant-123</code>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <span class="demo-label">mindre robust</span>
+                    <h3>Pixel-scroll alene</h3>
+                    <p class="meta">
+                        Pixel-scroll kan fejle, hvis billeder loader langsomt, rækkernes højde ændrer sig,
+                        eller listen får nye elementer.
+                    </p>
+
+                    <div class="url-line">
+                        <code>scrollTop = 1847px</code>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>9. Modal/drawer vs. fuldt sideflow</h2>
+
+            <div class="grid grid-2">
+                <article class="card">
+                    <span class="demo-label">kort handling</span>
+                    <h3>Brug modal/drawer</h3>
+                    <p class="meta">
+                        Upload fil, invitér kunde eller hurtig opret kan ske uden at forlade siden.
+                        Scrollposition og listekontekst bevares naturligt.
+                    </p>
+                    <button class="btn btn-primary" type="button">Upload fil i drawer</button>
+                </article>
+
+                <article class="card">
+                    <span class="demo-label">lang handling</span>
+                    <h3>Brug fuld side med return context</h3>
+                    <p class="meta">
+                        Længere planteformularer, haveformularer og materialeredigering bør have egen side,
+                        men kende deres returnUrl.
+                    </p>
+                    <button class="btn" type="button">Åbn redigeringsside</button>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>10. Hvad gemmes hvor?</h2>
+
+            <section class="decision">
+                <div class="decision-row">
+                    <strong>Søgning/filter/sortering</strong>
+                    <span>Ændrer hvilket indhold brugeren ser.</span>
+                    <span class="badge badge-primary">URL query</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Aktiv tab</strong>
+                    <span>Repræsenterer ofte en meningsfuld sektion på detail page.</span>
+                    <span class="badge badge-primary">URL/query</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Pagination</strong>
+                    <span>Brugeren skal kunne vende tilbage til samme side.</span>
+                    <span class="badge badge-primary">URL query</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>View-mode</strong>
+                    <span>Kan være side-state eller brugerpræference.</span>
+                    <span class="badge badge-neutral">URL / local storage</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Scrollposition</strong>
+                    <span>Gendannes ved return-flow, hvis indholdet stadig findes.</span>
+                    <span class="badge badge-neutral">Session/browser</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Anchor/highlight-id</strong>
+                    <span>Robust ved lange, dynamiske eller virtualiserede lister.</span>
+                    <span class="badge badge-primary">URL/query</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Sidebar collapsed</strong>
+                    <span>Layoutpræference, ikke sideindhold.</span>
+                    <span class="badge badge-neutral">Local storage</span>
+                </div>
+            </section>
+        </section>
+
+        <section class="section">
+            <h2>Beslutningspunkter</h2>
+
+            <section class="card">
+                <ul class="meta">
+                    <li><strong>Brugeren skal tilbage til samme arbejdskontekst</strong> efter opret, rediger, upload eller preview.</li>
+                    <li><strong>Liste-state bæres i URL’en</strong>, når den ændrer hvilket indhold brugeren ser.</li>
+                    <li><strong>Return-flow bruger specifik tilbageknaptekst</strong>, fx “Tilbage til plantelisten”.</li>
+                    <li><strong>Efter return vises rolig inline status</strong>, så brugeren forstår at handlingen lykkedes.</li>
+                    <li><strong>Nyt eller ændret objekt highlightes kortvarigt</strong>, hvis det findes i den aktuelle visning.</li>
+                    <li><strong>Hvis objektet ikke matcher filteret</strong>, forklarer UI’et hvorfor og tilbyder en relevant handling.</li>
+                    <li><strong>Tabs og preview kan være URL-state</strong>, hvis de repræsenterer en meningsfuld visning.</li>
+                    <li><strong>Store lister bør bruge anchor-id</strong> frem for ren pixel-scroll, når det er muligt.</li>
+                </ul>
+            </section>
+        </section>
+    </main>
+</body>
+</html>

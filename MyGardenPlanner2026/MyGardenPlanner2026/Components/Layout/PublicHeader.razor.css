@@ -1,0 +1,38 @@
+/* CSS for PublicHeader component */
+.public-header {
+    background-color: var(--mgp-surface);
+    border-color: var(--mgp-border) !important;
+    min-height: var(--mgp-mobile-header-height);
+}
+
+.brand-text {
+    color: var(--mgp-primary-dark);
+    font-weight: var(--font-weight-heavy);
+}
+
+.header-touch-target {
+    min-height: var(--mgp-touch-target-min);
+    min-width: var(--mgp-touch-target-min);
+}
+
+.btn-ghost {
+    color: var(--mgp-text);
+    background-color: transparent;
+    border: 1px solid transparent;
+}
+
+    .btn-ghost:hover {
+        background-color: var(--mgp-surface-muted);
+        color: var(--mgp-primary-dark);
+    }
+
+.btn-primary {
+    background-color: var(--mgp-primary);
+    border-color: var(--mgp-primary);
+    color: var(--mgp-surface);
+}
+
+    .btn-primary:hover {
+        background-color: var(--mgp-primary-dark);
+        border-color: var(--mgp-primary-dark);
+    }

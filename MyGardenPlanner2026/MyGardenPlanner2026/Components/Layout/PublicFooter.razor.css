@@ -1,0 +1,33 @@
+/* CSS for PublicFooter component */
+.public-footer {
+    background-color: var(--mgp-surface-muted);
+    border-color: var(--mgp-border) !important;
+    color: var(--mgp-text);
+}
+
+.brand-heading {
+    color: var(--mgp-primary-dark);
+    letter-spacing: 0.05em;
+}
+
+.footer-section-title {
+    color: var(--mgp-text);
+}
+
+.footer-link {
+    color: var(--mgp-text-muted);
+    text-decoration: none;
+    min-height: 24px;
+    display: inline-block;
+}
+
+    .footer-link:hover {
+        color: var(--mgp-primary-dark);
+        text-decoration: underline;
+    }
+
+.status-indicator-dot {
+    width: 8px;
+    height: 8px;
+    display: inline-block;
+}

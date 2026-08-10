@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
-using MyGardenPlanner2026.Data;
+using MyGardenPlanner2026.Core.Entities;
 using System.Security.Claims;
 
 // This is a server-side AuthenticationStateProvider that revalidates the security stamp for the connected user

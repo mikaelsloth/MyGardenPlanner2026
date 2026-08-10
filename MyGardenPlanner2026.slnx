@@ -83,6 +83,11 @@
     <File Path="Documentation/Web Design Documents/Full source/24 Notifications og attention management.md" />
     <File Path="Documentation/Web Design Documents/Full source/25 Komponentnavngivning og design tokens.md" />
   </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path="LICENSE.txt" />
+    <File Path="Licensing Model Overview.txt" />
+    <File Path="README.md" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="MyGardenPlanner2026.Core/MyGardenPlanner2026.Core.csproj" />
     <Project Path="MyGardenPlanner2026.Infrastructure/MyGardenPlanner2026.Infrastructure.csproj" />

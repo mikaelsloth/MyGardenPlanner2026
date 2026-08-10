@@ -1,4 +1,4 @@
-namespace Microsoft.AspNetCore.Routing;
+namespace MyGardenPlanner2026.Components.Account;
 
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using MyGardenPlanner2026.Components.Account.Pages;
 using MyGardenPlanner2026.Components.Account.Pages.Manage;
-using MyGardenPlanner2026.Data;
+using MyGardenPlanner2026.Core.Entities;
 using System.Security.Claims;
 using System.Text.Json;
 

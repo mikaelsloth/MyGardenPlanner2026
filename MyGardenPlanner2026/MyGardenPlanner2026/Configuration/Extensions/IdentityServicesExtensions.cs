@@ -3,7 +3,8 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using MyGardenPlanner2026.Components.Account;
-using MyGardenPlanner2026.Data;
+using MyGardenPlanner2026.Core.Entities;
+using MyGardenPlanner2026.Infrastructure.Data;
 
 public static class IdentityServicesExtensions
 {
@@ -25,7 +26,7 @@ public static class IdentityServicesExtensions
             options.SignIn.RequireConfirmedAccount = true;
             options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
         })
-            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddEntityFrameworkStores<PlannerDbContext>()
             .AddSignInManager()
             .AddDefaultTokenProviders();
 

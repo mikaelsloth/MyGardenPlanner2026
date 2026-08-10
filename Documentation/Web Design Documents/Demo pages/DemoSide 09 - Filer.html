@@ -1,0 +1,1587 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MyGardenPlanner – Design demo 9: Billeder og dokumenter</title>
+
+  <style>
+    :root {
+      --mgp-primary: #3F6B4A;
+      --mgp-primary-dark: #2F5138;
+      --mgp-primary-soft: #DDE8D8;
+      --mgp-accent: #B86B4B;
+
+      --mgp-text: #243128;
+      --mgp-text-muted: #6F766D;
+
+      --mgp-bg: #FAF8F2;
+      --mgp-surface: #FFFFFF;
+      --mgp-surface-muted: #EFEAE0;
+      --mgp-border: #D8D2C7;
+
+      --mgp-danger: #9F3A38;
+      --mgp-warning-bg: #F8E8D8;
+
+      --space-2xs: .25rem;
+      --space-xs: .5rem;
+      --space-sm: .75rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2rem;
+      --space-2xl: 3rem;
+
+      --page-x: var(--space-lg);
+      --page-y: var(--space-xl);
+
+      --sidebar-width: 280px;
+      --content-max: 1220px;
+
+      --radius-sm: .45rem;
+      --radius-md: .75rem;
+      --radius-lg: 1.1rem;
+
+      --shadow-sm: 0 1px 2px rgba(36, 49, 40, .08);
+      --shadow-md: 0 12px 28px rgba(36, 49, 40, .10);
+
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+      --font-size-xs: .78rem;
+      --font-size-sm: .9rem;
+      --font-size-base: 1rem;
+      --font-size-md: 1.08rem;
+      --font-size-xl: clamp(1.35rem, 2.2vw, 2rem);
+      --font-size-xxl: clamp(2rem, 4vw, 3.25rem);
+
+      --line-height-tight: 1.15;
+      --line-height-base: 1.55;
+
+      --font-weight-normal: 400;
+      --font-weight-medium: 600;
+      --font-weight-bold: 750;
+
+      --letter-spacing-heading: -0.03em;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--mgp-text);
+      background: var(--mgp-bg);
+      font-family: var(--font-sans);
+      font-size: var(--font-size-base);
+      line-height: var(--line-height-base);
+    }
+
+    h1,
+    h2,
+    h3 {
+      color: var(--mgp-text);
+      line-height: var(--line-height-tight);
+      letter-spacing: var(--letter-spacing-heading);
+      font-weight: var(--font-weight-bold);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: var(--font-size-xxl);
+    }
+
+    h2 {
+      margin: 0 0 var(--space-md);
+      font-size: var(--font-size-xl);
+    }
+
+    h3 {
+      margin: 0;
+      font-size: var(--font-size-md);
+    }
+
+    p {
+      margin-top: 0;
+    }
+
+    code,
+    .mono {
+      font-family: var(--font-mono);
+      font-size: .92em;
+    }
+
+    .app-shell {
+      display: grid;
+      min-height: 100vh;
+      grid-template-columns: var(--sidebar-width) 1fr;
+      grid-template-rows: auto 1fr auto;
+      grid-template-areas:
+        "sidebar header"
+        "sidebar main"
+        "sidebar footer";
+    }
+
+    .sidebar {
+      grid-area: sidebar;
+      background: var(--mgp-surface);
+      border-right: 1px solid var(--mgp-border);
+      padding: var(--space-lg);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding-bottom: var(--space-lg);
+      border-bottom: 1px solid var(--mgp-border);
+      margin-bottom: var(--space-lg);
+      font-weight: var(--font-weight-bold);
+      letter-spacing: -.02em;
+    }
+
+    .brand-mark {
+      width: 2.3rem;
+      height: 2.3rem;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: linear-gradient(135deg, var(--mgp-primary), var(--mgp-primary-dark));
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-section-title {
+      color: var(--mgp-text-muted);
+      text-transform: uppercase;
+      font-size: var(--font-size-xs);
+      letter-spacing: .08em;
+      font-weight: var(--font-weight-bold);
+      margin: var(--space-lg) 0 var(--space-xs);
+    }
+
+    .nav-list {
+      display: grid;
+      gap: var(--space-2xs);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .nav-link {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      color: var(--mgp-text);
+      background: transparent;
+      border: 0;
+      text-align: left;
+      border-radius: var(--radius-sm);
+      padding: var(--space-xs) var(--space-sm);
+      font-size: .95rem;
+      font-weight: var(--font-weight-bold);
+      cursor: pointer;
+    }
+
+    .nav-link:hover {
+      background: var(--mgp-surface-muted);
+    }
+
+    .nav-link.active {
+      background: var(--mgp-primary-soft);
+      color: var(--mgp-primary-dark);
+    }
+
+    .header {
+      grid-area: header;
+      background: rgba(250, 248, 242, .88);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--mgp-border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-inner {
+      max-width: var(--content-max);
+      margin: 0 auto;
+      padding: var(--space-sm) var(--space-lg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+    }
+
+    .context-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: var(--font-weight-bold);
+    }
+
+    .context-subtitle {
+      margin: var(--space-2xs) 0 0;
+      color: var(--mgp-text-muted);
+      font-size: var(--font-size-sm);
+    }
+
+    main {
+      grid-area: main;
+      max-width: var(--content-max);
+      width: 100%;
+      margin: 0 auto;
+      padding: var(--page-y) var(--page-x) var(--space-2xl);
+    }
+
+    .footer {
+      grid-area: footer;
+      color: var(--mgp-text-muted);
+      border-top: 1px solid var(--mgp-border);
+      padding: var(--space-md) var(--space-lg);
+      text-align: center;
+      font-size: var(--font-size-sm);
+    }
+
+    .section {
+      margin-top: var(--space-xl);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: var(--space-md);
+      margin-bottom: var(--space-md);
+    }
+
+    .section-header p {
+      margin: var(--space-2xs) 0 0;
+      color: var(--mgp-text-muted);
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--mgp-surface), var(--mgp-primary-soft));
+      border: 1px solid var(--mgp-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: clamp(var(--space-lg), 3vw, var(--space-xl));
+      display: grid;
+      grid-template-columns: 1.35fr .95fr;
+      gap: var(--space-lg);
+      align-items: center;
+      margin-bottom: var(--space-lg);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      color: var(--mgp-primary-dark);
+      background: var(--mgp-primary-soft);
+      border: 1px solid rgba(63, 107, 74, .18);
+      border-radius: 999px;
+      padding: var(--space-2xs) var(--space-sm);
+      font-size: .84rem;
+      font-weight: var(--font-weight-bold);
+      margin-bottom: var(--space-sm);
+    }
+
+    .lead {
+      color: var(--mgp-text-muted);
+      max-width: 68ch;
+      font-size: var(--font-size-md);
+      line-height: var(--line-height-base);
+      margin-bottom: var(--space-lg);
+    }
+
+    .grid {
+      display: grid;
+      gap: var(--space-md);
+    }
+
+    .grid-comfortable {
+      gap: var(--space-lg);
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .stack-sm {
+      display: grid;
+      gap: var(--space-sm);
+    }
+
+    .stack-md {
+      display: grid;
+      gap: var(--space-md);
+    }
+
+    .card {
+      background: var(--mgp-surface);
+      border: 1px solid var(--mgp-border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      padding: var(--space-md);
+    }
+
+    .card-highlight {
+      background: var(--mgp-primary-soft);
+      border-color: rgba(63, 107, 74, .22);
+    }
+
+    .card-muted {
+      background: var(--mgp-surface-muted);
+      color: var(--mgp-text-muted);
+    }
+
+    .card-attention {
+      border-left: 5px solid var(--mgp-accent);
+    }
+
+    .btn-row,
+    .card-actions {
+      display: flex;
+      gap: var(--space-sm);
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .card-actions {
+      margin-top: var(--space-sm);
+      gap: var(--space-xs);
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid transparent;
+      border-radius: .65rem;
+      padding: var(--space-sm) var(--space-md);
+      font-weight: var(--font-weight-bold);
+      font-size: .95rem;
+      cursor: pointer;
+      transition: .15s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-xs);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--mgp-primary);
+      color: white;
+      border-color: var(--mgp-primary);
+    }
+
+    .btn-primary:hover {
+      background: var(--mgp-primary-dark);
+      border-color: var(--mgp-primary-dark);
+    }
+
+    .btn-secondary {
+      background: var(--mgp-surface);
+      color: var(--mgp-primary-dark);
+      border-color: var(--mgp-border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--mgp-surface-muted);
+      border-color: rgba(63, 107, 74, .28);
+    }
+
+    .btn-danger {
+      background: white;
+      color: var(--mgp-danger);
+      border-color: rgba(159, 58, 56, .35);
+    }
+
+    .btn-danger:hover {
+      background: #fff4f3;
+      border-color: rgba(159, 58, 56, .55);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--mgp-primary-dark);
+      border-color: transparent;
+      padding-inline: var(--space-xs);
+    }
+
+    .btn-ghost:hover {
+      background: var(--mgp-primary-soft);
+    }
+
+    .btn-sm {
+      padding: var(--space-xs) var(--space-sm);
+      font-size: var(--font-size-sm);
+    }
+
+    .btn:disabled,
+    .btn[aria-disabled="true"] {
+      opacity: .55;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .btn:focus-visible,
+    .media-card:focus-visible,
+    .thumb-tile:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(63, 107, 74, .18);
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      margin-top: var(--space-sm);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2xs);
+      border-radius: 999px;
+      padding: var(--space-2xs) var(--space-sm);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-bold);
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .badge-primary {
+      color: var(--mgp-primary-dark);
+      background: var(--mgp-primary-soft);
+      border-color: rgba(63, 107, 74, .18);
+    }
+
+    .badge-muted {
+      color: var(--mgp-text-muted);
+      background: var(--mgp-surface-muted);
+      border-color: var(--mgp-border);
+    }
+
+    .badge-accent {
+      color: #653521;
+      background: var(--mgp-warning-bg);
+      border-color: rgba(184, 107, 75, .22);
+    }
+
+    .badge-danger {
+      color: var(--mgp-danger);
+      background: #fff4f3;
+      border-color: rgba(159, 58, 56, .22);
+    }
+
+    .meta {
+      color: var(--mgp-text-muted);
+      font-size: var(--font-size-sm);
+      line-height: 1.4;
+      margin: var(--space-2xs) 0 0;
+    }
+
+    .numeric {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .demo-label {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      color: var(--mgp-text-muted);
+      font-family: var(--font-mono);
+      font-size: var(--font-size-xs);
+      background: var(--mgp-surface-muted);
+      border: 1px solid var(--mgp-border);
+      border-radius: 999px;
+      padding: var(--space-2xs) var(--space-sm);
+      margin-bottom: var(--space-sm);
+    }
+
+    /* Upload */
+
+    .upload-zone {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: var(--space-md);
+      align-items: center;
+      padding: var(--space-lg);
+      border: 1px dashed rgba(63, 107, 74, .35);
+      border-radius: var(--radius-lg);
+      background: var(--mgp-surface);
+    }
+
+    .upload-icon {
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: var(--mgp-primary-soft);
+      color: var(--mgp-primary-dark);
+      font-weight: var(--font-weight-bold);
+      font-size: 1.3rem;
+    }
+
+    .upload-zone.is-dragover {
+      border-color: var(--mgp-primary);
+      background: var(--mgp-primary-soft);
+    }
+
+    .upload-selected {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: var(--space-md);
+      align-items: center;
+    }
+
+    .progress {
+      height: .65rem;
+      background: var(--mgp-surface-muted);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--mgp-border);
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 62%;
+      background: var(--mgp-primary);
+    }
+
+    /* Media cards */
+
+    .media-card {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: var(--space-md);
+      align-items: start;
+      position: relative;
+    }
+
+    .media-card.media-card-previewable {
+      cursor: pointer;
+      transition:
+        transform .15s ease,
+        box-shadow .15s ease,
+        border-color .15s ease;
+    }
+
+    .media-card.media-card-previewable:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+      border-color: rgba(63, 107, 74, .28);
+    }
+
+    .media-card-actions-only {
+      cursor: default;
+    }
+
+    .media-card-restricted {
+      opacity: .88;
+    }
+
+    .thumbnail {
+      border-radius: .8rem;
+      min-height: 120px;
+      background:
+        radial-gradient(circle at 30% 20%, rgba(255,255,255,.75), transparent 25%),
+        linear-gradient(135deg, var(--mgp-primary-soft), #c5d7bf);
+      border: 1px solid rgba(63, 107, 74, .18);
+      display: grid;
+      place-items: center;
+      color: var(--mgp-primary-dark);
+      font-size: 2rem;
+      font-weight: var(--font-weight-bold);
+      text-align: center;
+      overflow: hidden;
+    }
+
+    .thumbnail-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      aspect-ratio: 1 / 1;
+      background: var(--mgp-primary-soft);
+    }
+
+    .thumbnail-filetype {
+      font-family: var(--font-mono);
+      letter-spacing: -.04em;
+    }
+
+    .thumbnail-processing {
+      background:
+        linear-gradient(90deg, var(--mgp-surface-muted), var(--mgp-primary-soft), var(--mgp-surface-muted));
+      background-size: 200% 100%;
+      animation: shimmer 1.3s linear infinite;
+      color: var(--mgp-text-muted);
+      font-size: var(--font-size-sm);
+    }
+
+    @keyframes shimmer {
+      to {
+        background-position: -200% 0;
+      }
+    }
+
+    .media-main {
+      display: grid;
+      gap: var(--space-sm);
+    }
+
+    .media-title-row {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-md);
+      align-items: start;
+    }
+
+    .media-title-row h3 {
+      margin-bottom: var(--space-2xs);
+    }
+
+    .media-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-sm);
+    }
+
+    .media-meta-item {
+      display: grid;
+      gap: var(--space-2xs);
+    }
+
+    .media-meta-label {
+      color: var(--mgp-text-muted);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-bold);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .media-restriction {
+      display: flex;
+      gap: var(--space-sm);
+      align-items: start;
+      padding: var(--space-sm);
+      border-radius: var(--radius-md);
+      background: var(--mgp-surface-muted);
+      border: 1px solid var(--mgp-border);
+    }
+
+    .lock-icon {
+      width: 1.8rem;
+      height: 1.8rem;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: white;
+      color: var(--mgp-text-muted);
+      border: 1px solid var(--mgp-border);
+      flex: 0 0 auto;
+    }
+
+    /* Thumbnail grid */
+
+    .thumbnail-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-md);
+    }
+
+    .thumb-tile {
+      background: var(--mgp-surface);
+      border: 1px solid var(--mgp-border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      padding: var(--space-sm);
+      display: grid;
+      gap: var(--space-sm);
+    }
+
+    .thumb-tile.is-clickable {
+      cursor: pointer;
+      transition:
+        transform .15s ease,
+        box-shadow .15s ease,
+        border-color .15s ease;
+    }
+
+    .thumb-tile.is-clickable:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+      border-color: rgba(63, 107, 74, .28);
+    }
+
+    .thumb-tile .thumbnail {
+      min-height: 150px;
+    }
+
+    /* Compact file rows */
+
+    .file-list {
+      overflow: hidden;
+      padding: 0;
+    }
+
+    .file-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto auto auto;
+      gap: var(--space-md);
+      align-items: center;
+      padding: var(--space-sm) var(--space-md);
+    }
+
+    .file-row + .file-row {
+      border-top: 1px solid var(--mgp-border);
+    }
+
+    .file-icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: .65rem;
+      display: grid;
+      place-items: center;
+      background: var(--mgp-primary-soft);
+      color: var(--mgp-primary-dark);
+      font-weight: var(--font-weight-bold);
+      font-family: var(--font-mono);
+      font-size: var(--font-size-xs);
+    }
+
+    /* Preview */
+
+    .preview-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 360px;
+      gap: var(--space-lg);
+      align-items: start;
+    }
+
+    .preview-stage {
+      min-height: 440px;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(63, 107, 74, .18);
+      background:
+        radial-gradient(circle at 25% 20%, rgba(255,255,255,.7), transparent 25%),
+        linear-gradient(135deg, var(--mgp-primary-soft), #c5d7bf);
+      display: grid;
+      place-items: center;
+      color: var(--mgp-primary-dark);
+      font-weight: var(--font-weight-bold);
+      text-align: center;
+      padding: var(--space-lg);
+    }
+
+    .preview-stage-large {
+      min-height: 640px;
+    }
+
+    .preview-toolbar {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-md);
+      align-items: center;
+      margin-bottom: var(--space-md);
+    }
+
+    .zoom-controls {
+      display: flex;
+      gap: var(--space-xs);
+      align-items: center;
+    }
+
+    .performance-list {
+      display: grid;
+      gap: var(--space-sm);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .performance-list li {
+      display: flex;
+      gap: var(--space-sm);
+      align-items: start;
+      padding: var(--space-sm);
+      border: 1px solid var(--mgp-border);
+      border-radius: var(--radius-md);
+      background: var(--mgp-surface);
+    }
+
+    .perf-dot {
+      width: .8rem;
+      height: .8rem;
+      border-radius: 50%;
+      background: var(--mgp-primary);
+      flex: 0 0 auto;
+      margin-top: .45rem;
+    }
+
+    .status-message {
+      display: flex;
+      gap: var(--space-sm);
+      align-items: start;
+      padding: var(--space-sm);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--mgp-border);
+      background: var(--mgp-surface);
+    }
+
+    .status-dot {
+      width: .75rem;
+      height: .75rem;
+      border-radius: 50%;
+      margin-top: .42rem;
+      flex: 0 0 auto;
+      background: var(--mgp-text-muted);
+    }
+
+    .status-success .status-dot {
+      background: var(--mgp-primary);
+    }
+
+    .status-warning .status-dot {
+      background: var(--mgp-accent);
+    }
+
+    .status-danger .status-dot {
+      background: var(--mgp-danger);
+    }
+
+    .status-message strong {
+      display: block;
+      font-weight: var(--font-weight-bold);
+    }
+
+    @media (max-width: 1040px) {
+      .preview-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 940px) {
+      :root {
+        --page-x: var(--space-md);
+        --page-y: var(--space-lg);
+      }
+
+      .app-shell {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "header"
+          "main"
+          "footer";
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .hero,
+      .grid-4,
+      .grid-3,
+      .grid-2,
+      .media-card,
+      .upload-zone,
+      .upload-selected {
+        grid-template-columns: 1fr;
+      }
+
+      .thumbnail-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .header-inner {
+        align-items: start;
+        flex-direction: column;
+        padding: var(--space-sm) var(--space-md);
+      }
+
+      .media-meta-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .file-row {
+        grid-template-columns: auto 1fr;
+        gap: var(--space-sm);
+      }
+
+      .file-row .btn {
+        grid-column: 1 / -1;
+        width: 100%;
+      }
+
+      .preview-stage,
+      .preview-stage-large {
+        min-height: 320px;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .sidebar,
+      .header,
+      .footer,
+      .btn-row,
+      .card-actions,
+      .upload-zone,
+      .preview-toolbar {
+        display: none !important;
+      }
+
+      .app-shell {
+        display: block;
+      }
+
+      main {
+        max-width: none;
+        padding: 0;
+      }
+
+      .card,
+      .hero,
+      .status-message {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Primær navigation">
+      <div class="brand">
+        <div class="brand-mark">✿</div>
+        <div>MyGardenPlanner</div>
+      </div>
+
+      <div class="nav-section-title">Medier</div>
+      <ul class="nav-list">
+        <li><button class="nav-link active" type="button">Demo 9</button></li>
+        <li><button class="nav-link" type="button">Upload</button></li>
+        <li><button class="nav-link" type="button">Media cards</button></li>
+        <li><button class="nav-link" type="button">Thumbnail grid</button></li>
+        <li><button class="nav-link" type="button">Preview</button></li>
+        <li><button class="nav-link" type="button">Performance</button></li>
+      </ul>
+    </aside>
+
+    <header class="header">
+      <div class="header-inner">
+        <div>
+          <p class="context-title">Design demo 9</p>
+          <p class="context-subtitle">Billeder, dokumenter, preview, download og performance</p>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-secondary" type="button">Vis filer</button>
+          <button class="btn btn-secondary" type="button">Upload</button>
+          <button class="btn btn-primary" type="button">Tilføj dokument</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <span class="eyebrow">Nordisk havearkitekt · demo 9</span>
+          <h1>Billeder og dokumenter</h1>
+          <p class="lead">
+            Denne demo viser principper for upload, thumbnails, preview, fuld størrelse,
+            download, restriktioner og performance. Hovedideen er: metadata og thumbnails først,
+            preview ved aktiv handling, original/download kun ved eksplicit handling.
+          </p>
+
+          <div class="btn-row">
+            <button class="btn btn-primary" type="button">Upload fil</button>
+            <button class="btn btn-secondary" type="button">Se preview</button>
+            <button class="btn btn-secondary" type="button">Download original</button>
+          </div>
+        </div>
+
+        <div class="card card-highlight stack-sm">
+          <span class="demo-label">designprincip</span>
+          <h3>Originalfilen hentes ikke automatisk</h3>
+          <p class="meta">
+            Lister viser kun metadata og thumbnails. Preview og download kræver aktiv brugerhandling.
+          </p>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Upload states</h2>
+            <p>Upload skal have tydelige states: empty, selected, uploading, success og error.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-2 grid-comfortable">
+          <div class="card stack-md">
+            <span class="demo-label">empty upload-zone</span>
+
+            <div class="upload-zone">
+              <div class="upload-icon">⇧</div>
+              <div>
+                <h3>Upload tegning eller dokument</h3>
+                <p class="meta">PDF, JPG, PNG eller WebP. Thumbnail oprettes automatisk.</p>
+              </div>
+              <button class="btn btn-secondary" type="button">Vælg fil</button>
+            </div>
+
+            <p class="meta">Drag-and-drop kan understøttes, men “Vælg fil” skal altid være synlig.</p>
+          </div>
+
+          <div class="card stack-md">
+            <span class="demo-label">selected file</span>
+
+            <div class="upload-selected">
+              <div class="file-icon">PDF</div>
+              <div>
+                <h3>Haveskitse maj.pdf</h3>
+                <p class="meta">PDF · 2,4 MB · tilknyttes Villa Solbakken</p>
+              </div>
+              <button class="btn btn-secondary" type="button">Fjern</button>
+            </div>
+
+            <div class="card-actions">
+              <button class="btn btn-primary" type="button">Upload fil</button>
+              <button class="btn btn-secondary" type="button">Annullér</button>
+            </div>
+          </div>
+
+          <div class="card stack-md">
+            <span class="demo-label">uploading</span>
+
+            <div class="upload-selected">
+              <div class="file-icon">IMG</div>
+              <div>
+                <h3>Referencefoto-bed.jpg</h3>
+                <p class="meta">Uploader og opretter thumbnails…</p>
+              </div>
+              <button class="btn btn-secondary" type="button">Annullér</button>
+            </div>
+
+            <div class="progress" aria-label="Uploadstatus">
+              <div class="progress-bar"></div>
+            </div>
+          </div>
+
+          <div class="card stack-md">
+            <span class="demo-label">success / error</span>
+
+            <div class="status-message status-success">
+              <span class="status-dot"></span>
+              <div>
+                <strong>Upload gennemført</strong>
+                <p class="meta">Referencefoto-bed.jpg er tilføjet. Medium thumbnail er klar.</p>
+              </div>
+            </div>
+
+            <div class="status-message status-danger">
+              <span class="status-dot"></span>
+              <div>
+                <strong>Upload mislykkedes</strong>
+                <p class="meta">Filen er for stor til preview. Prøv igen eller upload en mindre fil.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Media cards</h2>
+            <p>Kortene viser forskellen på previewable, actions-only, restricted og temporary.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-2 grid-comfortable">
+          <article class="card media-card media-card-previewable" tabindex="0">
+            <div class="thumbnail">
+              <div class="thumbnail-filetype">PDF</div>
+            </div>
+
+            <div class="media-main">
+              <div class="media-title-row">
+                <div>
+                  <span class="demo-label">previewable</span>
+                  <h3>Haveskitse maj.pdf</h3>
+                  <p class="meta">PDF · Tegning · Villa Solbakken</p>
+                </div>
+                <span class="badge badge-primary">Preview</span>
+              </div>
+
+              <div class="media-meta-grid">
+                <div class="media-meta-item">
+                  <span class="media-meta-label">Thumbnail</span>
+                  <span>Medium</span>
+                </div>
+                <div class="media-meta-item">
+                  <span class="media-meta-label">Størrelse</span>
+                  <span class="numeric">2,4 MB</span>
+                </div>
+                <div class="media-meta-item">
+                  <span class="media-meta-label">Status</span>
+                  <span>Permanent</span>
+                </div>
+              </div>
+
+              <div class="card-actions">
+                <button class="btn btn-primary" type="button">Vis</button>
+                <button class="btn btn-secondary" type="button">Åbn fuld størrelse</button>
+                <button class="btn btn-secondary" type="button">Download</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="card media-card media-card-actions-only">
+            <div class="thumbnail">
+              <div class="thumbnail-filetype">DOC</div>
+            </div>
+
+            <div class="media-main">
+              <div class="media-title-row">
+                <div>
+                  <span class="demo-label">actions-only</span>
+                  <h3>Kundebrief.docx</h3>
+                  <p class="meta">Word-dokument · Kundeinformation</p>
+                </div>
+                <span class="badge badge-muted">Ingen preview</span>
+              </div>
+
+              <p class="meta">
+                Denne filtype vises ikke direkte i appen. Brugeren kan downloade eller åbne originalen,
+                hvis rettighederne tillader det.
+              </p>
+
+              <div class="card-actions">
+                <button class="btn btn-secondary" type="button">Download</button>
+                <button class="btn btn-secondary" type="button">Åbn original</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="card media-card media-card-restricted">
+            <div class="thumbnail">
+              <div class="thumbnail-filetype">PDF</div>
+            </div>
+
+            <div class="media-main">
+              <div class="media-title-row">
+                <div>
+                  <span class="demo-label">restricted</span>
+                  <h3>Privat tilbud.pdf</h3>
+                  <p class="meta">PDF · Tilbud · Begrænset adgang</p>
+                </div>
+                <span class="badge badge-danger">Låst</span>
+              </div>
+
+              <div class="media-restriction">
+                <div class="lock-icon">🔒</div>
+                <div>
+                  <strong>Du kan se metadata, men ikke indholdet</strong>
+                  <p class="meta">Preview og download kræver en anden rolle i denne have.</p>
+                </div>
+              </div>
+
+              <div class="card-actions">
+                <button class="btn btn-secondary" type="button" disabled>Vis</button>
+                <button class="btn btn-secondary" type="button" disabled>Download</button>
+              </div>
+            </div>
+          </article>
+
+          <article class="card media-card card-attention">
+            <div class="thumbnail thumbnail-processing">
+              Thumbnail oprettes…
+            </div>
+
+            <div class="media-main">
+              <div class="media-title-row">
+                <div>
+                  <span class="demo-label">temporary / processing</span>
+                  <h3>Ny skitse.png</h3>
+                  <p class="meta">Billede · Uploadet i dag · Villa Solbakken</p>
+                </div>
+                <span class="badge badge-accent">Midlertidig</span>
+              </div>
+
+              <p class="meta">
+                Filen er midlertidig og udløber snart. Thumbnail er under behandling.
+              </p>
+
+              <div class="badge-row">
+                <span class="badge badge-accent">Udløber snart</span>
+                <span class="badge badge-muted">Small thumbnail mangler</span>
+              </div>
+
+              <div class="card-actions">
+                <button class="btn btn-primary" type="button">Gør permanent</button>
+                <button class="btn btn-secondary" type="button">Vis metadata</button>
+                <button class="btn btn-danger" type="button">Slet</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Thumbnail grid</h2>
+            <p>Grid bruger thumbnails — ikke originalfiler. Kun previewable tiles er klikbare.</p>
+          </div>
+        </div>
+
+        <div class="thumbnail-grid">
+          <div class="thumb-tile is-clickable" tabindex="0">
+            <div class="thumbnail">🌿</div>
+            <div>
+              <h3>Referencefoto-bed.jpg</h3>
+              <p class="meta">Image · Medium thumb</p>
+            </div>
+            <span class="badge badge-primary">Preview</span>
+          </div>
+
+          <div class="thumb-tile is-clickable" tabindex="0">
+            <div class="thumbnail">
+              <span class="thumbnail-filetype">PDF</span>
+            </div>
+            <div>
+              <h3>Haveskitse.pdf</h3>
+              <p class="meta">PDF · Medium thumb</p>
+            </div>
+            <span class="badge badge-primary">Preview</span>
+          </div>
+
+          <div class="thumb-tile">
+            <div class="thumbnail">
+              <span class="thumbnail-filetype">DOC</span>
+            </div>
+            <div>
+              <h3>Kundebrief.docx</h3>
+              <p class="meta">Ingen preview</p>
+            </div>
+            <span class="badge badge-muted">Download</span>
+          </div>
+
+          <div class="thumb-tile">
+            <div class="thumbnail">
+              <span class="thumbnail-filetype">ZIP</span>
+            </div>
+            <div>
+              <h3>Bilag.zip</h3>
+              <p class="meta">Ukendt preview</p>
+            </div>
+            <span class="badge badge-muted">Actions only</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Compact media list</h2>
+            <p>Lange lister skal være lette og hente small thumbnails eller filtypeikoner.</p>
+          </div>
+        </div>
+
+        <div class="card file-list">
+          <div class="file-row">
+            <div class="file-icon">PDF</div>
+            <div>
+              <h3>Haveskitse maj.pdf</h3>
+              <p class="meta">PDF · 2,4 MB · Permanent</p>
+            </div>
+            <span class="badge badge-primary">Preview</span>
+            <button class="btn btn-secondary btn-sm" type="button">Vis</button>
+            <button class="btn btn-secondary btn-sm" type="button">Download</button>
+          </div>
+
+          <div class="file-row">
+            <div class="file-icon">IMG</div>
+            <div>
+              <h3>Referencefoto-bed.jpg</h3>
+              <p class="meta">Image/jpeg · 860 KB · Small thumb</p>
+            </div>
+            <span class="badge badge-primary">Preview</span>
+            <button class="btn btn-secondary btn-sm" type="button">Vis</button>
+            <button class="btn btn-secondary btn-sm" type="button">Download</button>
+          </div>
+
+          <div class="file-row">
+            <div class="file-icon">DOC</div>
+            <div>
+              <h3>Kundebrief.docx</h3>
+              <p class="meta">Word · Preview ikke understøttet</p>
+            </div>
+            <span class="badge badge-muted">Ingen preview</span>
+            <button class="btn btn-secondary btn-sm" type="button" disabled>Vis</button>
+            <button class="btn btn-secondary btn-sm" type="button">Download</button>
+          </div>
+
+          <div class="file-row">
+            <div class="file-icon">PDF</div>
+            <div>
+              <h3>Privat tilbud.pdf</h3>
+              <p class="meta">PDF · Begrænset adgang</p>
+            </div>
+            <span class="badge badge-danger">Låst</span>
+            <button class="btn btn-secondary btn-sm" type="button" disabled>Vis</button>
+            <button class="btn btn-secondary btn-sm" type="button" disabled>Download</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Preview sidepanel</h2>
+            <p>Preview er en aktiv visning — ikke det samme som download af originalfilen.</p>
+          </div>
+        </div>
+
+        <div class="preview-layout">
+          <div class="card">
+            <div class="preview-toolbar">
+              <div>
+                <h3>Haveskitse maj.pdf</h3>
+                <p class="meta">Preview · PDF · Villa Solbakken</p>
+              </div>
+
+              <div class="zoom-controls">
+                <button class="btn btn-secondary btn-sm" type="button">−</button>
+                <span class="meta numeric">100%</span>
+                <button class="btn btn-secondary btn-sm" type="button">+</button>
+              </div>
+            </div>
+
+            <div class="preview-stage">
+              <div>
+                <div style="font-size:3rem;margin-bottom:var(--space-sm);">PDF</div>
+                <div>Previewområde</div>
+                <p class="meta">Her vises en kontrolleret preview-version — ikke nødvendigvis originalfilen.</p>
+              </div>
+            </div>
+          </div>
+
+          <aside class="card stack-md">
+            <span class="demo-label">preview panel</span>
+
+            <div>
+              <h3>Filinformation</h3>
+              <p class="meta">Metadata, status og handlinger er synlige uden at åbne originalen.</p>
+            </div>
+
+            <div class="media-meta-grid" style="grid-template-columns:1fr;">
+              <div class="media-meta-item">
+                <span class="media-meta-label">Filnavn</span>
+                <span>Haveskitse maj.pdf</span>
+              </div>
+              <div class="media-meta-item">
+                <span class="media-meta-label">Content type</span>
+                <span>application/pdf</span>
+              </div>
+              <div class="media-meta-item">
+                <span class="media-meta-label">Tilknytning</span>
+                <span>Villa Solbakken</span>
+              </div>
+              <div class="media-meta-item">
+                <span class="media-meta-label">Thumbnail</span>
+                <span>Large preview</span>
+              </div>
+            </div>
+
+            <div class="card-actions">
+              <button class="btn btn-primary" type="button">Åbn fuld størrelse</button>
+              <button class="btn btn-secondary" type="button">Download</button>
+              <button class="btn btn-secondary" type="button">Luk preview</button>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Full-size viewer placeholder</h2>
+            <p>Fuld størrelse er en eksplicit visning til tunge ressourcer, zoom og detaljer.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="preview-toolbar">
+            <div>
+              <h3>Referencefoto-bed.jpg</h3>
+              <p class="meta">Fuld størrelse · Image/jpeg · Originalvisning</p>
+            </div>
+
+            <div class="btn-row">
+              <button class="btn btn-secondary" type="button">Tilbage</button>
+              <button class="btn btn-secondary" type="button">Download original</button>
+            </div>
+          </div>
+
+          <div class="preview-stage preview-stage-large">
+            <div>
+              <div style="font-size:3rem;margin-bottom:var(--space-sm);">🌿</div>
+              <div>Fuld størrelse / original viewer</div>
+              <p class="meta">
+                Denne visning må gerne hente tungere data, fordi brugeren eksplicit har valgt den.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Performance-principper</h2>
+            <p>Performance er et UI-krav, ikke kun et teknisk krav.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card">
+            <span class="demo-label">thumbnail-kontrakt</span>
+            <h3>Small / Medium / Large</h3>
+            <ul class="performance-list">
+              <li>
+                <span class="perf-dot"></span>
+                <div>
+                  <strong>Small</strong>
+                  <p class="meta">Compact rows og små lister.</p>
+                </div>
+              </li>
+              <li>
+                <span class="perf-dot"></span>
+                <div>
+                  <strong>Medium</strong>
+                  <p class="meta">Media cards og thumbnail grids.</p>
+                </div>
+              </li>
+              <li>
+                <span class="perf-dot"></span>
+                <div>
+                  <strong>Large</strong>
+                  <p class="meta">Preview panel, ikke standardliste.</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="card">
+            <span class="demo-label">load-regler</span>
+            <h3>Hent kun det nødvendige</h3>
+            <ul class="performance-list">
+              <li>
+                <span class="perf-dot"></span>
+                <div>
+                  <strong>Metadata først</strong>
+                  <p class="meta">Filnavn, content type, ejer, status og størrelse kan vises uden originalfil.</p>
+                </div>
+              </li>
+              <li>
+                <span class="perf-dot"></span>
+                <div>
+                  <strong>Lazy thumbnails</strong>
+                  <p class="meta">Thumbnails uden for viewport bør ikke hentes før de skal bruges.</p>
+                </div>
+              </li>
+              <li>
+                <span class="perf-dot"></span>
+                <div>
+                  <strong>Original kun eksplicit</strong>
+                  <p class="meta">Originalfilen hentes ved “Åbn fuld størrelse” eller “Download”.</p>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Beslutningstabel</h2>
+            <p>Hvordan forskellige filtyper bør behandles i UI’et.</p>
+          </div>
+        </div>
+
+        <div class="card" style="overflow:auto;">
+          <table style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr>
+                <th style="text-align:left;border-bottom:1px solid var(--mgp-border);padding:var(--space-sm);">Filtype</th>
+                <th style="text-align:left;border-bottom:1px solid var(--mgp-border);padding:var(--space-sm);">Thumbnail</th>
+                <th style="text-align:left;border-bottom:1px solid var(--mgp-border);padding:var(--space-sm);">Preview</th>
+                <th style="text-align:left;border-bottom:1px solid var(--mgp-border);padding:var(--space-sm);">Fuld størrelse</th>
+                <th style="text-align:left;border-bottom:1px solid var(--mgp-border);padding:var(--space-sm);">Download</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">JPG / PNG / WebP</td>
+                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Ja</td>
+                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Ja</td>
+                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Eksplicit</td>
+                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Ja</td>
+              </tr>
+              <tr>
+                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">PDF</td>
+                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Ja, hvis genereret</td>
+                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Ja, hvis understøttet</td>
+                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Eksplicit</td>
+                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Ja</td>
+              </tr>
+              <tr>
+                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">DOCX / XLSX</td>
+                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Ikon/fallback</td>
+                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Ikke som standard</td>
+                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Åbn/download</td>
+                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Ja</td>
+              </tr>
+              <tr>
+                <td style="padding:var(--space-sm);">Restricted</td>
+                <td style="padding:var(--space-sm);">Evt. metadata/ikon</td>
+                <td style="padding:var(--space-sm);">Nej</td>
+                <td style="padding:var(--space-sm);">Nej</td>
+                <td style="padding:var(--space-sm);">Nej</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      © MyGardenPlanner · Design demo 9 · Billeder og dokumenter
+    </footer>
+  </div>
+</body>
+</html>

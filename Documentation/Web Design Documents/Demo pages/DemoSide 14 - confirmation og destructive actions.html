@@ -1,0 +1,1280 @@
+﻿<!doctype html>
+<html lang="da">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MyGardenPlanner – Design demo 13: Confirmation og destructive actions</title>
+
+    <style>
+        :root {
+            --mgp-primary: #3F6B4A;
+            --mgp-primary-dark: #2F5138;
+            --mgp-primary-soft: #DDE8D8;
+            --mgp-accent: #B86B4B;
+            --mgp-text: #243128;
+            --mgp-text-muted: #6F766D;
+            --mgp-bg: #FAF8F2;
+            --mgp-surface: #FFFFFF;
+            --mgp-surface-muted: #EFEAE0;
+            --mgp-border: #D8D2C7;
+            --mgp-danger: #9F3A38;
+            --mgp-danger-soft: #FFF4F3;
+            --mgp-warning-bg: #F8E8D8;
+            --space-2xs: .25rem;
+            --space-xs: .5rem;
+            --space-sm: .75rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-2xl: 3rem;
+            --page-x: var(--space-lg);
+            --page-y: var(--space-xl);
+            --sidebar-width: 280px;
+            --content-max: 1220px;
+            --radius-sm: .45rem;
+            --radius-md: .75rem;
+            --radius-lg: 1.1rem;
+            --shadow-sm: 0 1px 2px rgba(36, 49, 40, .08);
+            --shadow-md: 0 12px 28px rgba(36, 49, 40, .10);
+            --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+            --font-size-xs: .78rem;
+            --font-size-sm: .9rem;
+            --font-size-base: 1rem;
+            --font-size-md: 1.08rem;
+            --font-size-xl: clamp(1.35rem, 2.2vw, 2rem);
+            --font-size-xxl: clamp(2rem, 4vw, 3.25rem);
+            --line-height-tight: 1.15;
+            --line-height-base: 1.55;
+            --font-weight-medium: 600;
+            --font-weight-bold: 750;
+            --letter-spacing-heading: -0.03em;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--mgp-text);
+            background: var(--mgp-bg);
+            font-family: var(--font-sans);
+            font-size: var(--font-size-base);
+            line-height: var(--line-height-base);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--mgp-text);
+            line-height: var(--line-height-tight);
+            letter-spacing: var(--letter-spacing-heading);
+            font-weight: var(--font-weight-bold);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: var(--font-size-xxl);
+        }
+
+        h2 {
+            margin: 0 0 var(--space-md);
+            font-size: var(--font-size-xl);
+        }
+
+        h3 {
+            margin: 0;
+            font-size: var(--font-size-md);
+        }
+
+        p {
+            margin-top: 0;
+        }
+
+        code,
+        .mono {
+            font-family: var(--font-mono);
+            font-size: .92em;
+        }
+
+        .app-shell {
+            display: grid;
+            min-height: 100vh;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            grid-template-rows: auto 1fr auto;
+            grid-template-areas:
+                "sidebar header"
+                "sidebar main"
+                "sidebar footer";
+        }
+
+        .sidebar {
+            grid-area: sidebar;
+            background: var(--mgp-surface);
+            border-right: 1px solid var(--mgp-border);
+            padding: var(--space-lg);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding-bottom: var(--space-lg);
+            border-bottom: 1px solid var(--mgp-border);
+            margin-bottom: var(--space-lg);
+            font-weight: var(--font-weight-bold);
+            letter-spacing: -.02em;
+        }
+
+        .brand-mark {
+            width: 2.3rem;
+            height: 2.3rem;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: white;
+            background: linear-gradient(135deg, var(--mgp-primary), var(--mgp-primary-dark));
+            box-shadow: var(--shadow-sm);
+        }
+
+        .nav-section-title {
+            color: var(--mgp-text-muted);
+            text-transform: uppercase;
+            font-size: var(--font-size-xs);
+            letter-spacing: .08em;
+            font-weight: var(--font-weight-bold);
+            margin: var(--space-lg) 0 var(--space-xs);
+        }
+
+        .nav-list {
+            display: grid;
+            gap: var(--space-2xs);
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .nav-link {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            color: var(--mgp-text);
+            background: transparent;
+            border: 0;
+            text-align: left;
+            border-radius: var(--radius-sm);
+            padding: var(--space-xs) var(--space-sm);
+            font-size: .95rem;
+            font-weight: var(--font-weight-bold);
+            cursor: pointer;
+        }
+
+            .nav-link:hover {
+                background: var(--mgp-surface-muted);
+            }
+
+            .nav-link.active {
+                background: var(--mgp-primary-soft);
+                color: var(--mgp-primary-dark);
+            }
+
+        .header {
+            grid-area: header;
+            background: rgba(250, 248, 242, .88);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--mgp-border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-inner {
+            max-width: var(--content-max);
+            margin: 0 auto;
+            padding: var(--space-sm) var(--space-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-md);
+        }
+
+        .context-title {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: var(--font-weight-bold);
+        }
+
+        .context-subtitle {
+            margin: var(--space-2xs) 0 0;
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-sm);
+        }
+
+        main {
+            grid-area: main;
+            max-width: var(--content-max);
+            width: 100%;
+            margin: 0 auto;
+            padding: var(--page-y) var(--page-x) var(--space-2xl);
+        }
+
+        .footer {
+            grid-area: footer;
+            color: var(--mgp-text-muted);
+            border-top: 1px solid var(--mgp-border);
+            padding: var(--space-md) var(--space-lg);
+            text-align: center;
+            font-size: var(--font-size-sm);
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--mgp-surface), var(--mgp-primary-soft));
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: clamp(var(--space-lg), 3vw, var(--space-xl));
+            display: grid;
+            grid-template-columns: 1.35fr .95fr;
+            gap: var(--space-lg);
+            align-items: center;
+            margin-bottom: var(--space-lg);
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            color: var(--mgp-primary-dark);
+            background: var(--mgp-primary-soft);
+            border: 1px solid rgba(63, 107, 74, .18);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            font-size: .84rem;
+            font-weight: var(--font-weight-bold);
+            margin-bottom: var(--space-sm);
+        }
+
+        .lead {
+            color: var(--mgp-text-muted);
+            max-width: 68ch;
+            font-size: var(--font-size-md);
+            line-height: var(--line-height-base);
+            margin-bottom: var(--space-lg);
+        }
+
+        .section {
+            margin-top: var(--space-xl);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: var(--space-md);
+            margin-bottom: var(--space-md);
+        }
+
+            .section-header p {
+                margin: var(--space-2xs) 0 0;
+                color: var(--mgp-text-muted);
+            }
+
+        .grid {
+            display: grid;
+            gap: var(--space-md);
+        }
+
+        .grid-comfortable {
+            gap: var(--space-lg);
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .stack-sm {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .stack-md {
+            display: grid;
+            gap: var(--space-md);
+        }
+
+        .card {
+            background: var(--mgp-surface);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: var(--space-md);
+        }
+
+        .card-highlight {
+            background: var(--mgp-primary-soft);
+            border-color: rgba(63, 107, 74, .22);
+        }
+
+        .card-attention {
+            border-left: 5px solid var(--mgp-accent);
+        }
+
+        .card-danger-zone {
+            border-left: 5px solid var(--mgp-danger);
+            background: linear-gradient(90deg, var(--mgp-danger-soft), var(--mgp-surface));
+        }
+
+        .btn-row,
+        .dialog-actions,
+        .card-actions,
+        .inline-confirm-actions {
+            display: flex;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .dialog-actions {
+            justify-content: flex-end;
+            margin-top: var(--space-lg);
+        }
+
+        .card-actions,
+        .inline-confirm-actions {
+            margin-top: var(--space-sm);
+            gap: var(--space-xs);
+        }
+
+        .btn {
+            appearance: none;
+            border: 1px solid transparent;
+            border-radius: .65rem;
+            padding: var(--space-sm) var(--space-md);
+            font-weight: var(--font-weight-bold);
+            font-size: .95rem;
+            cursor: pointer;
+            transition: .15s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-xs);
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--mgp-primary);
+            color: white;
+            border-color: var(--mgp-primary);
+        }
+
+            .btn-primary:hover {
+                background: var(--mgp-primary-dark);
+                border-color: var(--mgp-primary-dark);
+            }
+
+        .btn-secondary {
+            background: var(--mgp-surface);
+            color: var(--mgp-primary-dark);
+            border-color: var(--mgp-border);
+        }
+
+            .btn-secondary:hover {
+                background: var(--mgp-surface-muted);
+                border-color: rgba(63, 107, 74, .28);
+            }
+
+        .btn-danger {
+            background: white;
+            color: var(--mgp-danger);
+            border-color: rgba(159, 58, 56, .35);
+        }
+
+            .btn-danger:hover {
+                background: var(--mgp-danger-soft);
+                border-color: rgba(159, 58, 56, .55);
+            }
+
+        .btn-danger-solid {
+            background: var(--mgp-danger);
+            color: white;
+            border-color: var(--mgp-danger);
+        }
+
+            .btn-danger-solid:hover {
+                filter: brightness(.95);
+            }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--mgp-primary-dark);
+            border-color: transparent;
+            padding-inline: var(--space-xs);
+        }
+
+            .btn-ghost:hover {
+                background: var(--mgp-primary-soft);
+            }
+
+        .btn-sm {
+            padding: var(--space-xs) var(--space-sm);
+            font-size: var(--font-size-sm);
+        }
+
+        .btn:disabled,
+        .btn[aria-disabled="true"] {
+            opacity: .55;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .btn-spinner {
+            width: 1em;
+            height: 1em;
+            border: 2px solid currentColor;
+            border-right-color: transparent;
+            border-radius: 999px;
+            animation: spin .7s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-xs);
+            margin-top: var(--space-sm);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2xs);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-bold);
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+        .badge-primary {
+            color: var(--mgp-primary-dark);
+            background: var(--mgp-primary-soft);
+            border-color: rgba(63, 107, 74, .18);
+        }
+
+        .badge-muted {
+            color: var(--mgp-text-muted);
+            background: var(--mgp-surface-muted);
+            border-color: var(--mgp-border);
+        }
+
+        .badge-accent {
+            color: #653521;
+            background: var(--mgp-warning-bg);
+            border-color: rgba(184, 107, 75, .22);
+        }
+
+        .badge-danger {
+            color: var(--mgp-danger);
+            background: var(--mgp-danger-soft);
+            border-color: rgba(159, 58, 56, .22);
+        }
+
+        .meta {
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-sm);
+            line-height: 1.4;
+            margin: var(--space-2xs) 0 0;
+        }
+
+        .demo-label {
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+            color: var(--mgp-text-muted);
+            font-family: var(--font-mono);
+            font-size: var(--font-size-xs);
+            background: var(--mgp-surface-muted);
+            border: 1px solid var(--mgp-border);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            margin-bottom: var(--space-sm);
+        }
+
+        /* Confirmation patterns */
+
+        .dialog-demo {
+            max-width: 560px;
+            margin: 0 auto;
+            background: var(--mgp-surface);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: var(--space-lg);
+        }
+
+        .dialog-header {
+            display: flex;
+            gap: var(--space-md);
+            align-items: start;
+            margin-bottom: var(--space-md);
+        }
+
+        .dialog-icon {
+            width: 2.75rem;
+            height: 2.75rem;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            flex: 0 0 auto;
+            font-weight: var(--font-weight-bold);
+        }
+
+        .dialog-icon-warning {
+            color: #653521;
+            background: var(--mgp-warning-bg);
+            border: 1px solid rgba(184, 107, 75, .22);
+        }
+
+        .dialog-icon-danger {
+            color: var(--mgp-danger);
+            background: var(--mgp-danger-soft);
+            border: 1px solid rgba(159, 58, 56, .22);
+        }
+
+        .dialog-body {
+            color: var(--mgp-text-muted);
+        }
+
+        .impact-list {
+            display: grid;
+            gap: var(--space-xs);
+            margin: var(--space-md) 0 0;
+            padding: 0;
+            list-style: none;
+        }
+
+            .impact-list li {
+                display: flex;
+                gap: var(--space-xs);
+                align-items: start;
+                color: var(--mgp-text);
+                font-size: var(--font-size-sm);
+            }
+
+                .impact-list li::before {
+                    content: "•";
+                    color: var(--mgp-accent);
+                    font-weight: var(--font-weight-bold);
+                }
+
+        .inline-confirm {
+            border: 1px solid rgba(184, 107, 75, .28);
+            border-radius: var(--radius-md);
+            background: var(--mgp-warning-bg);
+            padding: var(--space-sm);
+            display: grid;
+            gap: var(--space-xs);
+        }
+
+        .undo-status {
+            display: flex;
+            justify-content: space-between;
+            gap: var(--space-md);
+            align-items: center;
+            padding: var(--space-sm);
+            border: 1px solid rgba(63, 107, 74, .18);
+            border-radius: var(--radius-md);
+            background: var(--mgp-primary-soft);
+        }
+
+        .strong-confirm-input {
+            width: 100%;
+            border: 1px solid var(--mgp-border);
+            background: var(--mgp-surface);
+            color: var(--mgp-text);
+            border-radius: .65rem;
+            padding: var(--space-sm) var(--space-md);
+            font: inherit;
+            outline: none;
+            margin-top: var(--space-sm);
+        }
+
+            .strong-confirm-input:focus {
+                border-color: var(--mgp-danger);
+                box-shadow: 0 0 0 4px rgba(159, 58, 56, .10);
+            }
+
+        .object-preview {
+            display: grid;
+            gap: var(--space-xs);
+            padding: var(--space-sm);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            background: var(--mgp-surface-muted);
+            margin-top: var(--space-md);
+        }
+
+        .action-scale {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .action-scale-row {
+            display: grid;
+            grid-template-columns: 170px 1fr auto;
+            gap: var(--space-md);
+            align-items: center;
+            padding: var(--space-sm);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            background: var(--mgp-surface);
+        }
+
+        .status-message {
+            display: flex;
+            gap: var(--space-sm);
+            align-items: start;
+            padding: var(--space-sm);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--mgp-border);
+            background: var(--mgp-surface);
+        }
+
+        .status-dot {
+            width: .75rem;
+            height: .75rem;
+            border-radius: 50%;
+            margin-top: .42rem;
+            flex: 0 0 auto;
+            background: var(--mgp-text-muted);
+        }
+
+        .status-success .status-dot {
+            background: var(--mgp-primary);
+        }
+
+        .status-warning .status-dot {
+            background: var(--mgp-accent);
+        }
+
+        .status-danger .status-dot {
+            background: var(--mgp-danger);
+        }
+
+        .status-message strong {
+            display: block;
+            font-weight: var(--font-weight-bold);
+        }
+
+        @media (max-width: 940px) {
+            :root {
+                --page-x: var(--space-md);
+                --page-y: var(--space-lg);
+            }
+
+            .app-shell {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "header"
+                    "main"
+                    "footer";
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .hero,
+            .grid-3,
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .header-inner {
+                align-items: start;
+                flex-direction: column;
+                padding: var(--space-sm) var(--space-md);
+            }
+
+            .dialog-actions,
+            .btn-row,
+            .card-actions,
+            .inline-confirm-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+                .btn,
+                .dialog-actions .btn,
+                .card-actions .btn,
+                .inline-confirm-actions .btn {
+                    width: 100%;
+                }
+
+            .action-scale-row {
+                grid-template-columns: 1fr;
+            }
+
+            .undo-status {
+                align-items: stretch;
+                flex-direction: column;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .sidebar,
+            .header,
+            .footer,
+            .btn-row,
+            .dialog-actions,
+            .card-actions,
+            .inline-confirm-actions {
+                display: none !important;
+            }
+
+            .app-shell {
+                display: block;
+            }
+
+            main {
+                max-width: none;
+                padding: 0;
+            }
+
+            .card,
+            .hero,
+            .dialog-demo,
+            .status-message {
+                box-shadow: none;
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar" aria-label="Primær navigation">
+            <div class="brand">
+                <div class="brand-mark">✿</div>
+                <div>MyGardenPlanner</div>
+            </div>
+
+            <div class="nav-section-title">Confirmations</div>
+            <ul class="nav-list">
+                <li><button class="nav-link active" type="button">Demo 13</button></li>
+                <li><button class="nav-link" type="button">Arkivér</button></li>
+                <li><button class="nav-link" type="button">Fjern relation</button></li>
+                <li><button class="nav-link" type="button">Slet fil</button></li>
+                <li><button class="nav-link" type="button">Adgang</button></li>
+                <li><button class="nav-link" type="button">Danger zone</button></li>
+                <li><button class="nav-link" type="button">Undo</button></li>
+            </ul>
+        </aside>
+
+        <header class="header">
+            <div class="header-inner">
+                <div>
+                    <p class="context-title">Design demo 13</p>
+                    <p class="context-subtitle">Confirmation · destructive actions · arkivér, fjern og slet</p>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-secondary" type="button">Vis confirmation</button>
+                    <button class="btn btn-danger" type="button">Slet fil</button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section class="hero">
+                <div>
+                    <span class="eyebrow">Nordisk havearkitekt · demo 13</span>
+                    <h1>Confirmation og destructive actions</h1>
+                    <p class="lead">
+                        Denne demo viser forskellen på at arkivere, fjerne en relation, slette data,
+                        tilbagekalde adgang og håndtere permanent sletning. Destruktive handlinger skal være
+                        tydelige, proportionale og kontekstuelle.
+                    </p>
+
+                    <div class="btn-row">
+                        <button class="btn btn-secondary" type="button">Arkivér have</button>
+                        <button class="btn btn-danger" type="button">Slet fil</button>
+                    </div>
+                </div>
+
+                <div class="card card-highlight stack-sm">
+                    <span class="demo-label">hovedregel</span>
+                    <h3>Arkivér, fjern og slet er ikke det samme</h3>
+                    <p class="meta">
+                        Brug ordene konsekvent, så brugeren forstår om data bevares,
+                        relationen fjernes, eller data slettes.
+                    </p>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Proportional confirmation</h2>
+                        <p>Jo større konsekvens, jo stærkere confirmation.</p>
+                    </div>
+                </div>
+
+                <div class="card action-scale">
+                    <div class="action-scale-row">
+                        <div>
+                            <strong>Lav risiko</strong>
+                            <p class="meta">Ryd søgning eller fjern filter</p>
+                        </div>
+                        <p class="meta">Ingen confirmation. Handlingen er let reversibel eller ufarlig.</p>
+                        <button class="btn btn-secondary btn-sm" type="button">Ryd søgning</button>
+                    </div>
+
+                    <div class="action-scale-row">
+                        <div>
+                            <strong>Middel risiko</strong>
+                            <p class="meta">Fjern plante fra bed</p>
+                        </div>
+                        <p class="meta">Inline confirmation eller lille dialog, fordi relationen ændres.</p>
+                        <button class="btn btn-danger btn-sm" type="button">Fjern fra bed</button>
+                    </div>
+
+                    <div class="action-scale-row">
+                        <div>
+                            <strong>Høj risiko</strong>
+                            <p class="meta">Slet fil eller fjern adgang</p>
+                        </div>
+                        <p class="meta">Modal confirmation med objektets navn og konsekvens.</p>
+                        <button class="btn btn-danger btn-sm" type="button">Slet fil</button>
+                    </div>
+
+                    <div class="action-scale-row">
+                        <div>
+                            <strong>Meget høj risiko</strong>
+                            <p class="meta">Permanent sletning</p>
+                        </div>
+                        <p class="meta">Strong confirmation, evt. skriv navnet for at bekræfte.</p>
+                        <button class="btn btn-danger-solid btn-sm" type="button">Slet permanent</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Arkivér: soft delete</h2>
+                        <p>Arkivering skjuler objektet fra aktive oversigter, men bevarer data.</p>
+                    </div>
+                </div>
+
+                <div class="dialog-demo">
+                    <div class="dialog-header">
+                        <div class="dialog-icon dialog-icon-warning">↧</div>
+                        <div>
+                            <span class="demo-label">confirm-dialog · archive</span>
+                            <h2>Arkivér Villa Solbakken?</h2>
+                            <p class="dialog-body">
+                                Haven skjules fra aktive oversigter, men bevares med bede, filer og medlemmer.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="object-preview">
+                        <strong>Villa Solbakken</strong>
+                        <span class="meta">Kundehave · Aarhus N · 6 bede · 3 filer</span>
+                    </div>
+
+                    <ul class="impact-list">
+                        <li>Haven vises ikke længere under aktive haver.</li>
+                        <li>Haven kan findes igen under arkiverede haver.</li>
+                        <li>Data slettes ikke.</li>
+                    </ul>
+
+                    <div class="dialog-actions">
+                        <button class="btn btn-secondary" type="button">Annullér</button>
+                        <button class="btn btn-danger" type="button">Arkivér have</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Fjern relation</h2>
+                        <p>Fjern relation betyder ikke, at objektet slettes fra masterdata.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <div class="card stack-md">
+                        <span class="demo-label">inline-confirm</span>
+                        <div>
+                            <h3>Lavendel</h3>
+                            <p class="meta"><em>Lavandula angustifolia</em> · Staudehaven mod syd</p>
+                        </div>
+
+                        <div class="inline-confirm">
+                            <strong>Fjern Lavendel fra Staudehaven mod syd?</strong>
+                            <p class="meta">
+                                Planten fjernes kun fra dette bed. Den findes stadig i plantelisten.
+                            </p>
+
+                            <div class="inline-confirm-actions">
+                                <button class="btn btn-secondary btn-sm" type="button">Annullér</button>
+                                <button class="btn btn-danger btn-sm" type="button">Fjern fra bed</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">undo-status</span>
+                        <div class="undo-status">
+                            <div>
+                                <strong>Planten blev fjernet fra beddet</strong>
+                                <p class="meta">Lavendel findes stadig i plantelisten.</p>
+                            </div>
+                            <button class="btn btn-secondary btn-sm" type="button">Fortryd</button>
+                        </div>
+
+                        <p class="meta">
+                            Undo passer godt til reversible relationshandlinger, men ikke til permanent sletning.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Slet fil</h2>
+                        <p>Fil-sletning skal være tydelig, konkret og adskilt fra preview/download.</p>
+                    </div>
+                </div>
+
+                <div class="dialog-demo">
+                    <div class="dialog-header">
+                        <div class="dialog-icon dialog-icon-danger">!</div>
+                        <div>
+                            <span class="demo-label">confirm-dialog · delete file</span>
+                            <h2>Slet Haveskitse maj.pdf?</h2>
+                            <p class="dialog-body">
+                                Filen fjernes fra Villa Solbakken. Denne handling kan ikke fortrydes.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="object-preview">
+                        <strong>Haveskitse maj.pdf</strong>
+                        <span class="meta">PDF · Tegning · 2,4 MB · Villa Solbakken</span>
+                    </div>
+
+                    <ul class="impact-list">
+                        <li>Filen fjernes fra filoversigten.</li>
+                        <li>Preview og download bliver ikke længere tilgængelige.</li>
+                        <li>Der er ikke vist nogen gendan-mulighed i dette flow.</li>
+                    </ul>
+
+                    <div class="dialog-actions">
+                        <button class="btn btn-secondary" type="button">Annullér</button>
+                        <button class="btn btn-danger-solid" type="button">Slet fil</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Adgang og invitationer</h2>
+                        <p>Adgangsændringer skal forklare konsekvensen for personen og for data.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <div class="dialog-demo">
+                        <div class="dialog-header">
+                            <div class="dialog-icon dialog-icon-warning">✉</div>
+                            <div>
+                                <span class="demo-label">invitation</span>
+                                <h2>Tilbagekald invitation?</h2>
+                                <p class="dialog-body">
+                                    Invitationen til kunde@example.dk kan ikke længere bruges.
+                                </p>
+                            </div>
+                        </div>
+
+                        <ul class="impact-list">
+                            <li>Personen får ikke adgang til Villa Solbakken via denne invitation.</li>
+                            <li>Eksisterende haveindhold ændres ikke.</li>
+                        </ul>
+
+                        <div class="dialog-actions">
+                            <button class="btn btn-secondary" type="button">Annullér</button>
+                            <button class="btn btn-danger" type="button">Tilbagekald invitation</button>
+                        </div>
+                    </div>
+
+                    <div class="dialog-demo">
+                        <div class="dialog-header">
+                            <div class="dialog-icon dialog-icon-danger">−</div>
+                            <div>
+                                <span class="demo-label">member access</span>
+                                <h2>Fjern adgang?</h2>
+                                <p class="dialog-body">
+                                    Anne Solbakken mister adgang til Villa Solbakken.
+                                </p>
+                            </div>
+                        </div>
+
+                        <ul class="impact-list">
+                            <li>Anne kan ikke længere åbne haven.</li>
+                            <li>Eksisterende bede, filer og noter slettes ikke.</li>
+                        </ul>
+
+                        <div class="dialog-actions">
+                            <button class="btn btn-secondary" type="button">Annullér</button>
+                            <button class="btn btn-danger" type="button">Fjern adgang</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Strong confirmation</h2>
+                        <p>Permanent sletning kræver stærkere confirmation end almindelig arkivering.</p>
+                    </div>
+                </div>
+
+                <div class="dialog-demo">
+                    <div class="dialog-header">
+                        <div class="dialog-icon dialog-icon-danger">!</div>
+                        <div>
+                            <span class="demo-label">strong-confirmation</span>
+                            <h2>Slet Villa Solbakken permanent?</h2>
+                            <p class="dialog-body">
+                                Dette er en højrisiko-handling. Haven og relaterede data fjernes, hvis permanent sletning er tilladt.
+                                Denne handling kan ikke fortrydes.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="object-preview">
+                        <strong>Villa Solbakken</strong>
+                        <span class="meta">Kundehave · 6 bede · 3 filer · 2 medlemmer</span>
+                    </div>
+
+                    <label style="display:block;margin-top:var(--space-md);font-weight:var(--font-weight-bold);" for="confirmName">
+                        Skriv “Villa Solbakken” for at bekræfte
+                    </label>
+                    <input class="strong-confirm-input" id="confirmName" value="" placeholder="Villa Solbakken" />
+
+                    <div class="dialog-actions">
+                        <button class="btn btn-secondary" type="button">Annullér</button>
+                        <button class="btn btn-danger-solid" type="button" disabled>Slet permanent</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Danger zone</h2>
+                        <p>Destruktive handlinger bør adskilles fra almindelige gem/rediger-handlinger.</p>
+                    </div>
+                </div>
+
+                <div class="card card-danger-zone stack-md">
+                    <span class="demo-label">danger-zone</span>
+                    <div>
+                        <h3>Arkivering og sletning</h3>
+                        <p class="meta">
+                            Handlinger i denne sektion kan skjule eller fjerne data. Brug dem kun, når du er sikker.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-2">
+                        <div class="card">
+                            <h3>Arkivér have</h3>
+                            <p class="meta">Skjul haven fra aktive oversigter, men bevar data.</p>
+                            <div class="card-actions">
+                                <button class="btn btn-danger" type="button">Arkivér have</button>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3>Slet permanent</h3>
+                            <p class="meta">Permanent sletning bør kræve stærk confirmation.</p>
+                            <div class="card-actions">
+                                <button class="btn btn-danger-solid" type="button">Slet permanent</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Loading efter confirmation</h2>
+                        <p>Når brugeren bekræfter, skal den destruktive knap vise aktiv handling.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-3">
+                    <div class="card stack-md">
+                        <span class="demo-label">archive loading</span>
+                        <h3>Arkiverer…</h3>
+                        <button class="btn btn-danger" type="button" disabled>
+                            <span class="btn-spinner"></span>
+                            Arkiverer…
+                        </button>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">delete loading</span>
+                        <h3>Sletter…</h3>
+                        <button class="btn btn-danger-solid" type="button" disabled>
+                            <span class="btn-spinner"></span>
+                            Sletter…
+                        </button>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">access loading</span>
+                        <h3>Fjerner adgang…</h3>
+                        <button class="btn btn-danger" type="button" disabled>
+                            <span class="btn-spinner"></span>
+                            Fjerner adgang…
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Status efter handling</h2>
+                        <p>Efter destructive action skal brugeren få en rolig bekræftelse og bevare kontekst.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <div class="status-message status-success">
+                        <span class="status-dot"></span>
+                        <div>
+                            <strong>Haven er arkiveret</strong>
+                            <p class="meta">Villa Solbakken findes nu under arkiverede haver.</p>
+                        </div>
+                    </div>
+
+                    <div class="status-message status-success">
+                        <span class="status-dot"></span>
+                        <div>
+                            <strong>Filen er slettet</strong>
+                            <p class="meta">Haveskitse maj.pdf blev fjernet fra Villa Solbakken.</p>
+                        </div>
+                    </div>
+
+                    <div class="status-message status-warning">
+                        <span class="status-dot"></span>
+                        <div>
+                            <strong>Invitationen er tilbagekaldt</strong>
+                            <p class="meta">kunde@example.dk kan ikke længere bruge invitationen.</p>
+                        </div>
+                    </div>
+
+                    <div class="status-message status-success">
+                        <span class="status-dot"></span>
+                        <div>
+                            <strong>Planten er fjernet fra beddet</strong>
+                            <p class="meta">Lavendel findes stadig i plantelisten.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Beslutningstabel</h2>
+                        <p>Samlet guideline for destructive actions.</p>
+                    </div>
+                </div>
+
+                <div class="card" style="overflow:auto;">
+                    <table style="width:100%;border-collapse:collapse;">
+                        <thead>
+                            <tr>
+                                <th style="text-align:left;border-bottom:1px solid var(--mgp-border);padding:var(--space-sm);">Handling</th>
+                                <th style="text-align:left;border-bottom:1px solid var(--mgp-border);padding:var(--space-sm);">Type</th>
+                                <th style="text-align:left;border-bottom:1px solid var(--mgp-border);padding:var(--space-sm);">Confirmation</th>
+                                <th style="text-align:left;border-bottom:1px solid var(--mgp-border);padding:var(--space-sm);">Knaptekst</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Arkivér have</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Soft delete</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Modal/inline</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Arkivér have</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Fjern plante fra bed</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Fjern relation</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Inline/modal</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Fjern fra bed</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Slet fil</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Slet data</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Modal</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Slet fil</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Fjern adgang</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Adgang</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Modal</td>
+                                <td style="padding:var(--space-sm);border-bottom:1px solid var(--mgp-border);">Fjern adgang</td>
+                            </tr>
+                            <tr>
+                                <td style="padding:var(--space-sm);">Permanent sletning</td>
+                                <td style="padding:var(--space-sm);">Høj risiko</td>
+                                <td style="padding:var(--space-sm);">Strong confirmation</td>
+                                <td style="padding:var(--space-sm);">Slet permanent</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            © MyGardenPlanner · Design demo 13 · Confirmation og destructive actions
+        </footer>
+    </div>
+</body>
+</html>

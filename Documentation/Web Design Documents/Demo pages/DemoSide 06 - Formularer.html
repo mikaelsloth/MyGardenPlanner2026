@@ -1,0 +1,1290 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MyGardenPlanner – Design demo 6: Formularer</title>
+
+  <style>
+    :root {
+      --mgp-primary: #3F6B4A;
+      --mgp-primary-dark: #2F5138;
+      --mgp-primary-soft: #DDE8D8;
+      --mgp-accent: #B86B4B;
+
+      --mgp-text: #243128;
+      --mgp-text-muted: #6F766D;
+
+      --mgp-bg: #FAF8F2;
+      --mgp-surface: #FFFFFF;
+      --mgp-surface-muted: #EFEAE0;
+      --mgp-border: #D8D2C7;
+
+      --mgp-danger: #9F3A38;
+      --mgp-warning-bg: #F8E8D8;
+
+      --space-2xs: .25rem;
+      --space-xs: .5rem;
+      --space-sm: .75rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2rem;
+      --space-2xl: 3rem;
+      --space-3xl: 4rem;
+
+      --page-x: var(--space-lg);
+      --page-y: var(--space-xl);
+
+      --radius-sm: .45rem;
+      --radius-md: .75rem;
+      --radius-lg: 1.1rem;
+
+      --shadow-sm: 0 1px 2px rgba(36, 49, 40, .08);
+      --shadow-md: 0 12px 28px rgba(36, 49, 40, .10);
+
+      --content-max: 1220px;
+
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+      --font-size-xs: .78rem;
+      --font-size-sm: .9rem;
+      --font-size-base: 1rem;
+      --font-size-md: 1.08rem;
+      --font-size-xl: clamp(1.35rem, 2.2vw, 2rem);
+      --font-size-xxl: clamp(2rem, 4vw, 3.25rem);
+
+      --line-height-tight: 1.15;
+      --line-height-base: 1.55;
+
+      --font-weight-normal: 400;
+      --font-weight-medium: 600;
+      --font-weight-bold: 750;
+
+      --letter-spacing-heading: -0.03em;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--mgp-text);
+      background: var(--mgp-bg);
+      font-family: var(--font-sans);
+      font-size: var(--font-size-base);
+      line-height: var(--line-height-base);
+    }
+
+    h1,
+    h2,
+    h3 {
+      color: var(--mgp-text);
+      line-height: var(--line-height-tight);
+      letter-spacing: var(--letter-spacing-heading);
+      font-weight: var(--font-weight-bold);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: var(--font-size-xxl);
+    }
+
+    h2 {
+      margin: 0 0 var(--space-md);
+      font-size: var(--font-size-xl);
+    }
+
+    h3 {
+      margin: 0;
+      font-size: var(--font-size-md);
+    }
+
+    p {
+      margin-top: 0;
+    }
+
+    code,
+    .mono {
+      font-family: var(--font-mono);
+      font-size: .92em;
+    }
+
+    .app-shell {
+      display: grid;
+      min-height: 100vh;
+      grid-template-columns: 280px 1fr;
+      grid-template-rows: auto 1fr auto;
+      grid-template-areas:
+        "sidebar header"
+        "sidebar main"
+        "sidebar footer";
+    }
+
+    .sidebar {
+      grid-area: sidebar;
+      background: var(--mgp-surface);
+      border-right: 1px solid var(--mgp-border);
+      padding: var(--space-lg);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding-bottom: var(--space-lg);
+      border-bottom: 1px solid var(--mgp-border);
+      margin-bottom: var(--space-lg);
+      font-weight: var(--font-weight-bold);
+      letter-spacing: -.02em;
+    }
+
+    .brand-mark {
+      width: 2.3rem;
+      height: 2.3rem;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: linear-gradient(135deg, var(--mgp-primary), var(--mgp-primary-dark));
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-section-title {
+      color: var(--mgp-text-muted);
+      text-transform: uppercase;
+      font-size: var(--font-size-xs);
+      letter-spacing: .08em;
+      font-weight: var(--font-weight-bold);
+      margin: var(--space-lg) 0 var(--space-xs);
+    }
+
+    .nav-list {
+      display: grid;
+      gap: var(--space-2xs);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .nav-link {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      color: var(--mgp-text);
+      background: transparent;
+      border: 0;
+      text-align: left;
+      border-radius: var(--radius-sm);
+      padding: var(--space-xs) var(--space-sm);
+      font-size: .95rem;
+      font-weight: var(--font-weight-bold);
+      cursor: pointer;
+    }
+
+    .nav-link:hover {
+      background: var(--mgp-surface-muted);
+    }
+
+    .nav-link.active {
+      background: var(--mgp-primary-soft);
+      color: var(--mgp-primary-dark);
+    }
+
+    .header {
+      grid-area: header;
+      background: rgba(250, 248, 242, .88);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--mgp-border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-inner {
+      max-width: var(--content-max);
+      margin: 0 auto;
+      padding: var(--space-sm) var(--space-lg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+    }
+
+    .context-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: var(--font-weight-bold);
+    }
+
+    .context-subtitle {
+      margin: var(--space-2xs) 0 0;
+      color: var(--mgp-text-muted);
+      font-size: var(--font-size-sm);
+    }
+
+    main {
+      grid-area: main;
+      max-width: var(--content-max);
+      width: 100%;
+      margin: 0 auto;
+      padding: var(--page-y) var(--page-x) var(--space-2xl);
+    }
+
+    .footer {
+      grid-area: footer;
+      color: var(--mgp-text-muted);
+      border-top: 1px solid var(--mgp-border);
+      padding: var(--space-md) var(--space-lg);
+      text-align: center;
+      font-size: var(--font-size-sm);
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--mgp-surface), var(--mgp-primary-soft));
+      border: 1px solid var(--mgp-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: clamp(var(--space-lg), 3vw, var(--space-xl));
+      display: grid;
+      grid-template-columns: 1.4fr .9fr;
+      gap: var(--space-lg);
+      align-items: center;
+      margin-bottom: var(--space-lg);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      color: var(--mgp-primary-dark);
+      background: var(--mgp-primary-soft);
+      border: 1px solid rgba(63, 107, 74, .18);
+      border-radius: 999px;
+      padding: var(--space-2xs) var(--space-sm);
+      font-size: .84rem;
+      font-weight: var(--font-weight-bold);
+      margin-bottom: var(--space-sm);
+    }
+
+    .lead {
+      color: var(--mgp-text-muted);
+      max-width: 68ch;
+      font-size: var(--font-size-md);
+      line-height: var(--line-height-base);
+      margin-bottom: var(--space-lg);
+    }
+
+    .section {
+      margin-top: var(--space-xl);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: var(--space-md);
+      margin-bottom: var(--space-md);
+    }
+
+    .section-header p {
+      margin: var(--space-2xs) 0 0;
+      color: var(--mgp-text-muted);
+    }
+
+    .grid {
+      display: grid;
+      gap: var(--space-md);
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .stack-sm {
+      display: grid;
+      gap: var(--space-sm);
+    }
+
+    .card {
+      background: var(--mgp-surface);
+      border: 1px solid var(--mgp-border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      padding: var(--space-md);
+    }
+
+    .btn-row,
+    .form-actions {
+      display: flex;
+      gap: var(--space-sm);
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .form-actions {
+      margin-top: var(--space-lg);
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid transparent;
+      border-radius: .65rem;
+      padding: var(--space-sm) var(--space-md);
+      font-weight: var(--font-weight-bold);
+      font-size: .95rem;
+      cursor: pointer;
+      transition: .15s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-xs);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--mgp-primary);
+      color: white;
+      border-color: var(--mgp-primary);
+    }
+
+    .btn-primary:hover {
+      background: var(--mgp-primary-dark);
+      border-color: var(--mgp-primary-dark);
+    }
+
+    .btn-secondary {
+      background: var(--mgp-surface);
+      color: var(--mgp-primary-dark);
+      border-color: var(--mgp-border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--mgp-surface-muted);
+      border-color: rgba(63, 107, 74, .28);
+    }
+
+    .btn-danger {
+      background: white;
+      color: var(--mgp-danger);
+      border-color: rgba(159, 58, 56, .35);
+    }
+
+    .btn-danger:hover {
+      background: #fff4f3;
+      border-color: rgba(159, 58, 56, .55);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--mgp-primary-dark);
+      border-color: transparent;
+      padding-inline: var(--space-xs);
+    }
+
+    .btn-ghost:hover {
+      background: var(--mgp-primary-soft);
+    }
+
+    .btn:focus-visible,
+    .form-control:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: var(--mgp-primary);
+      box-shadow: 0 0 0 4px rgba(63, 107, 74, .16);
+    }
+
+    .field-label-placeholder {
+      visibility: hidden;
+      font-size: .92rem;
+      font-weight: var(--font-weight-bold);
+      line-height: 1.9;
+      min-height: 1.9em;
+    }
+
+    .button-aligned {
+      display: grid;
+      gap: var(--space-xs);
+      align-self: start;
+    }
+
+    .button-aligned .btn {
+      align-self: start;
+    }
+
+    .button-aligned .help-empty {
+      min-height: 1.25em;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2xs);
+      border-radius: 999px;
+      padding: var(--space-2xs) var(--space-sm);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-bold);
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .badge-primary {
+      color: var(--mgp-primary-dark);
+      background: var(--mgp-primary-soft);
+      border-color: rgba(63, 107, 74, .18);
+    }
+
+    .badge-muted {
+      color: var(--mgp-text-muted);
+      background: var(--mgp-surface-muted);
+      border-color: var(--mgp-border);
+    }
+
+    .badge-danger {
+      color: var(--mgp-danger);
+      background: #fff4f3;
+      border-color: rgba(159, 58, 56, .22);
+    }
+
+    .meta {
+      color: var(--mgp-text-muted);
+      font-size: var(--font-size-sm);
+      line-height: 1.4;
+      margin: var(--space-2xs) 0 0;
+    }
+
+    .numeric {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Forms */
+
+    .form {
+      display: grid;
+      gap: var(--space-lg);
+    }
+
+    .form-header {
+      display: grid;
+      gap: var(--space-xs);
+    }
+
+    .form-intro {
+      color: var(--mgp-text-muted);
+      max-width: 68ch;
+      margin: 0;
+    }
+
+    .form-section {
+      display: grid;
+      gap: var(--space-md);
+    }
+
+    .form-section-header {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-md);
+      align-items: start;
+    }
+
+    .form-section-error {
+      border-left: 5px solid var(--mgp-danger);
+    }
+
+    .form-grid {
+      display: grid;
+      gap: var(--space-md);
+    }
+
+    .form-grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .form-grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .form-grid-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .field {
+      display: grid;
+      gap: var(--space-xs);
+    }
+
+    .field label,
+    .check-row strong {
+      font-size: .92rem;
+      font-weight: var(--font-weight-bold);
+    }
+
+    .field-label {
+      display: flex;
+      gap: var(--space-xs);
+      align-items: baseline;
+      flex-wrap: wrap;
+    }
+
+    .form-control,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      border: 1px solid var(--mgp-border);
+      background: var(--mgp-surface);
+      color: var(--mgp-text);
+      border-radius: .65rem;
+      padding: var(--space-sm) var(--space-md);
+      font: inherit;
+      outline: none;
+    }
+
+    .form-textarea {
+      min-height: 7rem;
+      resize: vertical;
+    }
+
+    .help {
+      color: var(--mgp-text-muted);
+      font-size: .84rem;
+      min-height: 1.25em;
+    }
+
+    .help-empty {
+      visibility: hidden;
+    }
+
+    .field-message {
+      color: var(--mgp-danger);
+      font-size: var(--font-size-sm);
+      min-height: 1.25em;
+    }
+
+    .field-error .form-control,
+    .field-error .form-select,
+    .field-error .form-textarea {
+      border-color: var(--mgp-danger);
+      box-shadow: 0 0 0 4px rgba(159, 58, 56, .10);
+    }
+
+    .required-label,
+    .optional-label {
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-medium);
+      color: var(--mgp-text-muted);
+    }
+
+    .check-row {
+      display: flex;
+      gap: var(--space-sm);
+      align-items: start;
+      padding: var(--space-sm);
+      border: 1px solid var(--mgp-border);
+      border-radius: var(--radius-md);
+      background: var(--mgp-surface);
+    }
+
+    .check-row input {
+      margin-top: .25rem;
+      accent-color: var(--mgp-primary);
+    }
+
+    .option-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-sm);
+    }
+
+    .option-card {
+      display: flex;
+      gap: var(--space-sm);
+      align-items: start;
+      padding: var(--space-sm);
+      border: 1px solid var(--mgp-border);
+      border-radius: var(--radius-md);
+      background: var(--mgp-surface);
+    }
+
+    .option-card input {
+      margin-top: .25rem;
+      accent-color: var(--mgp-primary);
+    }
+
+    .upload-zone {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: var(--space-md);
+      align-items: center;
+      padding: var(--space-lg);
+      border: 1px dashed rgba(63, 107, 74, .35);
+      border-radius: var(--radius-lg);
+      background: var(--mgp-surface);
+    }
+
+    .upload-icon {
+      width: 2.75rem;
+      height: 2.75rem;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      background: var(--mgp-primary-soft);
+      color: var(--mgp-primary-dark);
+      font-weight: var(--font-weight-bold);
+      font-size: 1.3rem;
+    }
+
+    .filter-bar {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: var(--space-md);
+      align-items: start;
+    }
+
+    .status-message {
+      display: flex;
+      gap: var(--space-sm);
+      align-items: start;
+      padding: var(--space-sm);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--mgp-border);
+      background: var(--mgp-surface);
+    }
+
+    .status-dot {
+      width: .75rem;
+      height: .75rem;
+      border-radius: 50%;
+      margin-top: .42rem;
+      flex: 0 0 auto;
+      background: var(--mgp-text-muted);
+    }
+
+    .status-success .status-dot {
+      background: var(--mgp-primary);
+    }
+
+    .status-warning .status-dot {
+      background: var(--mgp-accent);
+    }
+
+    .status-danger .status-dot {
+      background: var(--mgp-danger);
+    }
+
+    .status-message strong {
+      display: block;
+      font-weight: var(--font-weight-bold);
+    }
+
+    .demo-label {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      color: var(--mgp-text-muted);
+      font-family: var(--font-mono);
+      font-size: var(--font-size-xs);
+      background: var(--mgp-surface-muted);
+      border: 1px solid var(--mgp-border);
+      border-radius: 999px;
+      padding: var(--space-2xs) var(--space-sm);
+      margin-bottom: var(--space-sm);
+    }
+
+    @media (max-width: 940px) {
+      :root {
+        --page-x: var(--space-md);
+        --page-y: var(--space-lg);
+      }
+
+      .app-shell {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "header"
+          "main"
+          "footer";
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .grid-4,
+      .grid-3,
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .header-inner {
+        align-items: start;
+        flex-direction: column;
+        padding: var(--space-sm) var(--space-md);
+      }
+
+      .form-grid-2,
+      .form-grid-3,
+      .form-grid-4,
+      .filter-bar,
+      .upload-zone,
+      .option-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-section-header {
+        flex-direction: column;
+      }
+
+      .form-actions .btn {
+        width: 100%;
+      }
+
+      .card {
+        padding: var(--space-sm);
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .sidebar,
+      .header,
+      .footer,
+      .form-actions,
+      .upload-zone,
+      .filter-bar {
+        display: none !important;
+      }
+
+      .app-shell {
+        display: block;
+      }
+
+      main {
+        max-width: none;
+        padding: 0;
+      }
+
+      .card,
+      .hero,
+      .status-message {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+
+      input,
+      textarea,
+      select {
+        border: 0 !important;
+        background: transparent !important;
+        padding: 0 !important;
+        box-shadow: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Primær navigation">
+      <div class="brand">
+        <div class="brand-mark">✿</div>
+        <div>MyGardenPlanner</div>
+      </div>
+
+      <div class="nav-section-title">Formularer</div>
+      <ul class="nav-list">
+        <li><button class="nav-link active" type="button">Demo 6</button></li>
+        <li><button class="nav-link" type="button">Simple form</button></li>
+        <li><button class="nav-link" type="button">Entity form</button></li>
+        <li><button class="nav-link" type="button">Planteform</button></li>
+        <li><button class="nav-link" type="button">Validering</button></li>
+        <li><button class="nav-link" type="button">Upload</button></li>
+        <li><button class="nav-link" type="button">Filter</button></li>
+      </ul>
+    </aside>
+
+    <header class="header">
+      <div class="header-inner">
+        <div>
+          <p class="context-title">Design demo 6</p>
+          <p class="context-subtitle">Formularer · opdateret alignment</p>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-secondary" type="button">Validering</button>
+          <button class="btn btn-secondary" type="button">Upload</button>
+          <button class="btn btn-primary" type="button">Entity form</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <span class="eyebrow">Nordisk havearkitekt · demo 6</span>
+          <h1>Formularer til MyGardenPlanner</h1>
+          <p class="lead">
+            Denne demo fokuserer kun på formularer. Felter reserverer nu også
+            hjælpetekst-/beskedplads, så input og dropdowns aligner pænt i samme række.
+          </p>
+
+          <div class="btn-row">
+            <button class="btn btn-primary" type="button">Gem ændringer</button>
+            <button class="btn btn-secondary" type="button">Annullér</button>
+          </div>
+        </div>
+
+        <div class="card stack-sm">
+          <span class="demo-label">formularprincip</span>
+          <h3>Stabil feltstruktur</h3>
+          <p class="meta">Alle felter har label, control og help/message-område — også når help-teksten er skjult.</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Simple form</h2>
+            <p>Kort formular til hurtig oprettelse. Dropdown aligner nu med tekstfeltet.</p>
+          </div>
+        </div>
+
+        <form class="card form">
+          <div class="form-header">
+            <h3>Opret materiale</h3>
+            <p class="form-intro">Angiv de vigtigste oplysninger. Flere detaljer kan tilføjes senere.</p>
+          </div>
+
+          <div class="form-grid form-grid-2">
+            <div class="field">
+              <label class="field-label" for="materialName">
+                <span>Materialenavn</span>
+                <span class="required-label">Påkrævet</span>
+              </label>
+              <input class="form-control" id="materialName" value="Chaussésten" />
+              <div class="help">Brug et kort og genkendeligt navn.</div>
+            </div>
+
+            <div class="field">
+              <label for="materialType">Materialetype</label>
+              <select class="form-select" id="materialType">
+                <option>Belægning</option>
+                <option>Jord</option>
+                <option>Træ</option>
+              </select>
+              <div class="help help-empty" aria-hidden="true">&nbsp;</div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="materialComment">
+              <span>Kommentar</span>
+              <span class="optional-label">Valgfri</span>
+            </label>
+            <textarea class="form-textarea" id="materialComment">Klassisk stenmateriale til stier, kanter og små belagte flader.</textarea>
+            <div class="help help-empty" aria-hidden="true">&nbsp;</div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" type="button">Gem materiale</button>
+            <button class="btn btn-secondary" type="button">Annullér</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Sectioned entity form</h2>
+            <p>Længere formular opdelt i logiske sektioner. Feltrækkerne har nu stabil alignment.</p>
+          </div>
+        </div>
+
+        <form class="form">
+          <section class="card form-section">
+            <div class="form-section-header">
+              <div>
+                <h3>Grundoplysninger</h3>
+                <p class="meta">Navn og kort beskrivelse af haven.</p>
+              </div>
+              <span class="badge badge-primary">Have</span>
+            </div>
+
+            <div class="form-grid form-grid-2">
+              <div class="field">
+                <label class="field-label" for="gardenName">
+                  <span>Havens navn</span>
+                  <span class="required-label">Påkrævet</span>
+                </label>
+                <input class="form-control" id="gardenName" value="Villa Solbakken" />
+                <div class="help">Brug et navn kunden kan genkende.</div>
+              </div>
+
+              <div class="field">
+                <label for="gardenType">Primær anvendelse</label>
+                <select class="form-select" id="gardenType">
+                  <option>Kundehave</option>
+                  <option>Privat have</option>
+                  <option>Demo</option>
+                </select>
+                <div class="help help-empty" aria-hidden="true">&nbsp;</div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="gardenDescription">Beskrivelse</label>
+              <textarea class="form-textarea" id="gardenDescription">Rolig villahave med fokus på staudebede, struktur og nem vedligeholdelse.</textarea>
+              <div class="help help-empty" aria-hidden="true">&nbsp;</div>
+            </div>
+          </section>
+
+          <section class="card form-section">
+            <div class="form-section-header">
+              <div>
+                <h3>Kunde og adresse</h3>
+                <p class="meta">Kontaktinformation kan tilføjes nu eller senere.</p>
+              </div>
+              <span class="badge badge-muted">Valgfri</span>
+            </div>
+
+            <div class="form-grid form-grid-3">
+              <div class="field">
+                <label for="customerName">Kontaktperson</label>
+                <input class="form-control" id="customerName" value="Anne Solbakken" />
+                <div class="help help-empty" aria-hidden="true">&nbsp;</div>
+              </div>
+
+              <div class="field">
+                <label for="postalCode">Postnummer</label>
+                <input class="form-control numeric" id="postalCode" value="8200" />
+                <div class="help help-empty" aria-hidden="true">&nbsp;</div>
+              </div>
+
+              <div class="field">
+                <label for="city">By</label>
+                <input class="form-control" id="city" value="Aarhus N" />
+                <div class="help help-empty" aria-hidden="true">&nbsp;</div>
+              </div>
+            </div>
+          </section>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" type="button">Gem have</button>
+            <button class="btn btn-secondary" type="button">Annullér</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Planteformular-sektion</h2>
+            <p>Eksempel på fagspecifik formular med ensartet help/message-plads.</p>
+          </div>
+        </div>
+
+        <form class="form">
+          <section class="card form-section">
+            <div class="form-section-header">
+              <div>
+                <h3>Navn og beskrivelse</h3>
+                <p class="meta">Almindeligt og latinsk navn samt kort beskrivelse.</p>
+              </div>
+              <span class="badge badge-primary">Plante</span>
+            </div>
+
+            <div class="form-grid form-grid-2">
+              <div class="field">
+                <label class="field-label" for="plantCommon">
+                  <span>Almindeligt navn</span>
+                  <span class="required-label">Påkrævet</span>
+                </label>
+                <input class="form-control" id="plantCommon" value="Lavendel" />
+                <div class="help help-empty" aria-hidden="true">&nbsp;</div>
+              </div>
+
+              <div class="field">
+                <label class="field-label" for="plantLatin">
+                  <span>Latinsk navn</span>
+                  <span class="optional-label">Valgfri</span>
+                </label>
+                <input class="form-control" id="plantLatin" value="Lavandula angustifolia" />
+                <div class="help help-empty" aria-hidden="true">&nbsp;</div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label for="plantDescription">Beskrivelse</label>
+              <textarea class="form-textarea" id="plantDescription">Duftende, tørketålende plante til solrige bede.</textarea>
+              <div class="help help-empty" aria-hidden="true">&nbsp;</div>
+            </div>
+          </section>
+
+          <section class="card form-section">
+            <div class="form-section-header">
+              <div>
+                <h3>Vækst og forhold</h3>
+                <p class="meta">Størrelse, lys, blomstring og hårdførhed.</p>
+              </div>
+            </div>
+
+            <div class="form-grid form-grid-4">
+              <div class="field">
+                <label for="height">Højde</label>
+                <input class="form-control numeric" id="height" value="30–60 cm" />
+                <div class="help help-empty" aria-hidden="true">&nbsp;</div>
+              </div>
+
+              <div class="field">
+                <label for="width">Bredde</label>
+                <input class="form-control numeric" id="width" value="30–45 cm" />
+                <div class="help help-empty" aria-hidden="true">&nbsp;</div>
+              </div>
+
+              <div class="field">
+                <label for="flowerStart">Blomstring start</label>
+                <select class="form-select" id="flowerStart">
+                  <option>Juni</option>
+                  <option>Juli</option>
+                </select>
+                <div class="help help-empty" aria-hidden="true">&nbsp;</div>
+              </div>
+
+              <div class="field">
+                <label for="flowerEnd">Blomstring slut</label>
+                <select class="form-select" id="flowerEnd">
+                  <option>August</option>
+                  <option>September</option>
+                </select>
+                <div class="help help-empty" aria-hidden="true">&nbsp;</div>
+              </div>
+            </div>
+
+            <div class="option-grid">
+              <label class="option-card">
+                <input type="radio" name="light" checked />
+                <span>
+                  <strong>Sol</strong>
+                  <span class="meta">Til åbne, varme placeringer.</span>
+                </span>
+              </label>
+
+              <label class="option-card">
+                <input type="radio" name="light" />
+                <span>
+                  <strong>Halvskygge</strong>
+                  <span class="meta">Til let skygge dele af dagen.</span>
+                </span>
+              </label>
+
+              <label class="option-card">
+                <input type="radio" name="light" />
+                <span>
+                  <strong>Skygge</strong>
+                  <span class="meta">Til skyggefulde placeringer.</span>
+                </span>
+              </label>
+            </div>
+
+            <label class="check-row">
+              <input type="checkbox" checked />
+              <span>
+                <strong>Vinterhårdfør</strong>
+                <span class="meta">Vis planten som egnet til kolde perioder.</span>
+              </span>
+            </label>
+          </section>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" type="button">Gem plante</button>
+            <button class="btn btn-secondary" type="button">Annullér</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Validering</h2>
+            <p>Fejl bruger samme reserverede message-område som help-tekster.</p>
+          </div>
+        </div>
+
+        <form class="form">
+          <section class="card form-section form-section-error">
+            <div class="form-section-header">
+              <div>
+                <h3>Grundoplysninger</h3>
+                <p class="meta">Ret felterne markeret med fejl.</p>
+              </div>
+              <span class="badge badge-danger">2 fejl</span>
+            </div>
+
+            <div class="form-grid form-grid-2">
+              <div class="field field-error">
+                <label class="field-label" for="invalidName">
+                  <span>Havens navn</span>
+                  <span class="required-label">Påkrævet</span>
+                </label>
+                <input class="form-control" id="invalidName" aria-invalid="true" value="" />
+                <div class="field-message">Havens navn skal udfyldes.</div>
+              </div>
+
+              <div class="field field-error">
+                <label for="invalidEmail">Kunde-email</label>
+                <input class="form-control" id="invalidEmail" aria-invalid="true" value="kunde@" />
+                <div class="field-message">Indtast en gyldig emailadresse.</div>
+              </div>
+            </div>
+          </section>
+
+          <div class="status-message status-danger">
+            <span class="status-dot"></span>
+            <div>
+              <strong>Formularen kan ikke gemmes endnu</strong>
+              <p class="meta">Ret fejlene i grundoplysninger og prøv igen.</p>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" type="button">Gem ændringer</button>
+            <button class="btn btn-secondary" type="button">Annullér</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Upload-formular</h2>
+            <p>Til tegninger, billeder og dokumenter.</p>
+          </div>
+        </div>
+
+        <div class="card form-section">
+          <div class="upload-zone">
+            <div class="upload-icon">⇧</div>
+            <div>
+              <strong>Upload tegning eller dokument</strong>
+              <p class="meta">PDF, JPG eller PNG. Thumbnail oprettes automatisk.</p>
+            </div>
+            <button class="btn btn-secondary" type="button">Vælg fil</button>
+          </div>
+
+          <div class="form-grid form-grid-2">
+            <div class="field">
+              <label for="fileOwner">Tilknyt til</label>
+              <select class="form-select" id="fileOwner">
+                <option>Villa Solbakken</option>
+                <option>Staudehaven mod syd</option>
+              </select>
+              <div class="help help-empty" aria-hidden="true">&nbsp;</div>
+            </div>
+
+            <div class="field">
+              <label for="fileType">Filtype</label>
+              <select class="form-select" id="fileType">
+                <option>Tegning</option>
+                <option>Referencefoto</option>
+                <option>Dokument</option>
+              </select>
+              <div class="help help-empty" aria-hidden="true">&nbsp;</div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn btn-primary" type="button">Upload fil</button>
+            <button class="btn btn-secondary" type="button">Annullér</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Filter- og søgeformular</h2>
+            <p>Kompakt formular til oversigter over planter, materialer eller filer.</p>
+          </div>
+        </div>
+
+        <div class="card filter-bar">
+          <div class="field">
+            <label for="search">Søg</label>
+            <input class="form-control" id="search" placeholder="Søg efter navn..." />
+            <div class="help help-empty" aria-hidden="true">&nbsp;</div>
+          </div>
+
+          <div class="field">
+            <label for="filterType">Type</label>
+            <select class="form-select" id="filterType">
+              <option>Alle</option>
+              <option>Stauder</option>
+              <option>Materialer</option>
+            </select>
+            <div class="help help-empty" aria-hidden="true">&nbsp;</div>
+          </div>
+
+          <div class="button-aligned">
+            <div class="field-label-placeholder" aria-hidden="true">Handling</div>
+            <button class="btn btn-secondary" type="button">Nulstil</button>
+            <div class="help help-empty" aria-hidden="true">&nbsp;</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Status efter gem</h2>
+            <p>Gemmeresultat vises som status message card.</p>
+          </div>
+        </div>
+
+        <div class="card stack-sm">
+          <div class="status-message status-success">
+            <span class="status-dot"></span>
+            <div>
+              <strong>Ændringer gemt</strong>
+              <p class="meta">Haveprofilen er opdateret.</p>
+            </div>
+          </div>
+
+          <div class="status-message status-warning">
+            <span class="status-dot"></span>
+            <div>
+              <strong>Supplerende oplysninger mangler</strong>
+              <p class="meta">Adresse og kontakt kan tilføjes senere.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      © MyGardenPlanner · Design demo 6 · Formularer
+    </footer>
+  </div>
+</body>
+</html>

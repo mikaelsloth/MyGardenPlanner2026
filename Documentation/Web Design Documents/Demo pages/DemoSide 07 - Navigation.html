@@ -1,0 +1,1161 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MyGardenPlanner – Design demo 7: Responsiv navigation</title>
+
+  <style>
+    :root {
+      /* Brand palette */
+      --mgp-primary: #3F6B4A;
+      --mgp-primary-dark: #2F5138;
+      --mgp-primary-soft: #DDE8D8;
+      --mgp-accent: #B86B4B;
+
+      /* Text */
+      --mgp-text: #243128;
+      --mgp-text-muted: #6F766D;
+
+      /* Surfaces */
+      --mgp-bg: #FAF8F2;
+      --mgp-surface: #FFFFFF;
+      --mgp-surface-muted: #EFEAE0;
+      --mgp-border: #D8D2C7;
+
+      /* States */
+      --mgp-danger: #9F3A38;
+      --mgp-warning-bg: #F8E8D8;
+
+      /* Spacing */
+      --space-2xs: .25rem;
+      --space-xs: .5rem;
+      --space-sm: .75rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2rem;
+      --space-2xl: 3rem;
+
+      --page-x: var(--space-lg);
+      --page-y: var(--space-xl);
+
+      /* Layout */
+      --sidebar-width: 280px;
+      --sidebar-collapsed-width: 76px;
+      --content-max: 1220px;
+
+      --radius-sm: .45rem;
+      --radius-md: .75rem;
+      --radius-lg: 1.1rem;
+
+      --shadow-sm: 0 1px 2px rgba(36, 49, 40, .08);
+      --shadow-md: 0 12px 28px rgba(36, 49, 40, .10);
+
+      /* Typography */
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+      --font-size-xs: .78rem;
+      --font-size-sm: .9rem;
+      --font-size-base: 1rem;
+      --font-size-md: 1.08rem;
+      --font-size-xl: clamp(1.35rem, 2.2vw, 2rem);
+      --font-size-xxl: clamp(2rem, 4vw, 3.25rem);
+
+      --line-height-tight: 1.15;
+      --line-height-base: 1.55;
+
+      --font-weight-normal: 400;
+      --font-weight-medium: 600;
+      --font-weight-bold: 750;
+
+      --letter-spacing-heading: -0.03em;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--mgp-text);
+      background: var(--mgp-bg);
+      font-family: var(--font-sans);
+      font-size: var(--font-size-base);
+      line-height: var(--line-height-base);
+    }
+
+    h1,
+    h2,
+    h3 {
+      color: var(--mgp-text);
+      line-height: var(--line-height-tight);
+      letter-spacing: var(--letter-spacing-heading);
+      font-weight: var(--font-weight-bold);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: var(--font-size-xxl);
+    }
+
+    h2 {
+      margin: 0 0 var(--space-md);
+      font-size: var(--font-size-xl);
+    }
+
+    h3 {
+      margin: 0;
+      font-size: var(--font-size-md);
+    }
+
+    p {
+      margin-top: 0;
+    }
+
+    code,
+    .mono {
+      font-family: var(--font-mono);
+      font-size: .92em;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      inline-size: 1px;
+      block-size: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+    }
+
+    /* Buttons */
+
+    .btn-row {
+      display: flex;
+      gap: var(--space-sm);
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid transparent;
+      border-radius: .65rem;
+      padding: var(--space-sm) var(--space-md);
+      font-weight: var(--font-weight-bold);
+      font-size: .95rem;
+      cursor: pointer;
+      transition: .15s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-xs);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--mgp-primary);
+      color: white;
+      border-color: var(--mgp-primary);
+    }
+
+    .btn-primary:hover {
+      background: var(--mgp-primary-dark);
+      border-color: var(--mgp-primary-dark);
+    }
+
+    .btn-secondary {
+      background: var(--mgp-surface);
+      color: var(--mgp-primary-dark);
+      border-color: var(--mgp-border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--mgp-surface-muted);
+      border-color: rgba(63, 107, 74, .28);
+    }
+
+    .btn-icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      padding: 0;
+      justify-content: center;
+    }
+
+    .btn:focus-visible,
+    .nav-link:focus-visible,
+    .context-tab:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(63, 107, 74, .18);
+    }
+
+    /* Badges */
+
+    .nav-badge {
+      margin-left: auto;
+      min-width: 1.35rem;
+      height: 1.35rem;
+      padding: 0 .35rem;
+      border-radius: 999px;
+      display: inline-grid;
+      place-items: center;
+      background: var(--mgp-warning-bg);
+      color: #653521;
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-bold);
+      border: 1px solid rgba(184, 107, 75, .22);
+    }
+
+    /* App shell */
+
+    .app-shell {
+      display: grid;
+      min-height: 100vh;
+      grid-template-columns: var(--sidebar-width) 1fr;
+      grid-template-rows: auto 1fr auto;
+      grid-template-areas:
+        "sidebar header"
+        "sidebar main"
+        "sidebar footer";
+      transition: grid-template-columns .18s ease;
+    }
+
+    /* Desktop collapsed sidebar state */
+
+    #sidebarCollapsed:checked ~ .app-shell {
+      grid-template-columns: var(--sidebar-collapsed-width) 1fr;
+    }
+
+    /* Sidebar */
+
+    .sidebar {
+      grid-area: sidebar;
+      background: var(--mgp-surface);
+      border-right: 1px solid var(--mgp-border);
+      padding: var(--space-lg);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      transition: padding .18s ease;
+    }
+
+    #sidebarCollapsed:checked ~ .app-shell .sidebar {
+      padding: var(--space-md) var(--space-sm);
+      overflow: visible;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding-bottom: var(--space-lg);
+      border-bottom: 1px solid var(--mgp-border);
+      margin-bottom: var(--space-lg);
+      font-weight: var(--font-weight-bold);
+      letter-spacing: -.02em;
+      min-height: 3.1rem;
+    }
+
+    .brand-mark {
+      width: 2.3rem;
+      height: 2.3rem;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: linear-gradient(135deg, var(--mgp-primary), var(--mgp-primary-dark));
+      box-shadow: var(--shadow-sm);
+      flex: 0 0 auto;
+    }
+
+    .brand-text {
+      white-space: nowrap;
+    }
+
+    .collapse-toggle {
+      margin-left: auto;
+    }
+
+    .collapse-control {
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: .65rem;
+      border: 1px solid var(--mgp-border);
+      background: var(--mgp-surface);
+      color: var(--mgp-primary-dark);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      font-weight: var(--font-weight-bold);
+    }
+
+    .collapse-control:hover {
+      background: var(--mgp-surface-muted);
+    }
+
+    .collapse-collapsed-icon {
+      display: none;
+    }
+
+    #sidebarCollapsed:checked ~ .app-shell .brand {
+      justify-content: center;
+      padding-bottom: var(--space-md);
+      margin-bottom: var(--space-md);
+    }
+
+    #sidebarCollapsed:checked ~ .app-shell .brand-text,
+    #sidebarCollapsed:checked ~ .app-shell .collapse-toggle {
+      display: none;
+    }
+
+    #sidebarCollapsed:checked ~ .app-shell .collapsed-toggle-row {
+      display: grid;
+    }
+
+    .collapsed-toggle-row {
+      display: none;
+      place-items: center;
+      margin-bottom: var(--space-md);
+    }
+
+    .nav-section-title {
+      color: var(--mgp-text-muted);
+      text-transform: uppercase;
+      font-size: var(--font-size-xs);
+      letter-spacing: .08em;
+      font-weight: var(--font-weight-bold);
+      margin: var(--space-lg) 0 var(--space-xs);
+    }
+
+    .nav-list {
+      display: grid;
+      gap: var(--space-2xs);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .nav-link {
+      position: relative;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      color: var(--mgp-text);
+      background: transparent;
+      border: 0;
+      text-align: left;
+      border-radius: var(--radius-sm);
+      padding: var(--space-xs) var(--space-sm);
+      font-size: .95rem;
+      font-weight: var(--font-weight-bold);
+      cursor: pointer;
+      text-decoration: none;
+      min-height: 2.5rem;
+    }
+
+    .nav-link:hover {
+      background: var(--mgp-surface-muted);
+    }
+
+    .nav-link.active {
+      background: var(--mgp-primary-soft);
+      color: var(--mgp-primary-dark);
+    }
+
+    .nav-icon {
+      width: 1.45rem;
+      display: inline-grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+
+    .nav-label {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    #sidebarCollapsed:checked ~ .app-shell .nav-section-title,
+    #sidebarCollapsed:checked ~ .app-shell .nav-label {
+      display: none;
+    }
+
+    #sidebarCollapsed:checked ~ .app-shell .nav-list {
+      gap: var(--space-xs);
+    }
+
+    #sidebarCollapsed:checked ~ .app-shell .nav-link {
+      justify-content: center;
+      padding: var(--space-xs);
+    }
+
+    #sidebarCollapsed:checked ~ .app-shell .nav-badge {
+      position: absolute;
+      top: .1rem;
+      right: .1rem;
+      min-width: .65rem;
+      width: .65rem;
+      height: .65rem;
+      padding: 0;
+      font-size: 0;
+      border-radius: 50%;
+    }
+
+    /* Tooltip-like label in collapsed mode */
+
+    #sidebarCollapsed:checked ~ .app-shell .nav-link::after {
+      content: attr(data-label);
+      position: absolute;
+      left: calc(100% + var(--space-xs));
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--mgp-text);
+      color: white;
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-sm);
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      box-shadow: var(--shadow-sm);
+      z-index: 20;
+    }
+
+    #sidebarCollapsed:checked ~ .app-shell .nav-link:hover::after,
+    #sidebarCollapsed:checked ~ .app-shell .nav-link:focus-visible::after {
+      opacity: 1;
+    }
+
+    /* Header */
+
+    .header {
+      grid-area: header;
+      background: rgba(250, 248, 242, .88);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--mgp-border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-inner {
+      max-width: var(--content-max);
+      margin: 0 auto;
+      padding: var(--space-sm) var(--space-lg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+    }
+
+    .context-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: var(--font-weight-bold);
+    }
+
+    .context-subtitle {
+      margin: var(--space-2xs) 0 0;
+      color: var(--mgp-text-muted);
+      font-size: var(--font-size-sm);
+    }
+
+    .mobile-menu-button {
+      display: none;
+    }
+
+    main {
+      grid-area: main;
+      max-width: var(--content-max);
+      width: 100%;
+      margin: 0 auto;
+      padding: var(--page-y) var(--page-x) var(--space-2xl);
+    }
+
+    .footer {
+      grid-area: footer;
+      color: var(--mgp-text-muted);
+      border-top: 1px solid var(--mgp-border);
+      padding: var(--space-md) var(--space-lg);
+      text-align: center;
+      font-size: var(--font-size-sm);
+    }
+
+    /* Cards and content */
+
+    .hero {
+      background: linear-gradient(135deg, var(--mgp-surface), var(--mgp-primary-soft));
+      border: 1px solid var(--mgp-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: clamp(var(--space-lg), 3vw, var(--space-xl));
+      display: grid;
+      grid-template-columns: 1.4fr .9fr;
+      gap: var(--space-lg);
+      align-items: center;
+      margin-bottom: var(--space-lg);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      color: var(--mgp-primary-dark);
+      background: var(--mgp-primary-soft);
+      border: 1px solid rgba(63, 107, 74, .18);
+      border-radius: 999px;
+      padding: var(--space-2xs) var(--space-sm);
+      font-size: .84rem;
+      font-weight: var(--font-weight-bold);
+      margin-bottom: var(--space-sm);
+    }
+
+    .lead {
+      color: var(--mgp-text-muted);
+      max-width: 68ch;
+      font-size: var(--font-size-md);
+      line-height: var(--line-height-base);
+      margin-bottom: var(--space-lg);
+    }
+
+    .section {
+      margin-top: var(--space-xl);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: var(--space-md);
+      margin-bottom: var(--space-md);
+    }
+
+    .section-header p {
+      margin: var(--space-2xs) 0 0;
+      color: var(--mgp-text-muted);
+    }
+
+    .grid {
+      display: grid;
+      gap: var(--space-md);
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .card {
+      background: var(--mgp-surface);
+      border: 1px solid var(--mgp-border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      padding: var(--space-md);
+    }
+
+    .card-highlight {
+      background: var(--mgp-primary-soft);
+      border-color: rgba(63, 107, 74, .22);
+    }
+
+    .meta {
+      color: var(--mgp-text-muted);
+      font-size: var(--font-size-sm);
+      line-height: 1.4;
+      margin: var(--space-2xs) 0 0;
+    }
+
+    .demo-label {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      color: var(--mgp-text-muted);
+      font-family: var(--font-mono);
+      font-size: var(--font-size-xs);
+      background: var(--mgp-surface-muted);
+      border: 1px solid var(--mgp-border);
+      border-radius: 999px;
+      padding: var(--space-2xs) var(--space-sm);
+      margin-bottom: var(--space-sm);
+    }
+
+    /* Context tabs */
+
+    .context-tabs {
+      display: flex;
+      gap: var(--space-xs);
+      overflow-x: auto;
+      padding-bottom: var(--space-xs);
+      border-bottom: 1px solid var(--mgp-border);
+      margin-bottom: var(--space-lg);
+    }
+
+    .context-tab {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--mgp-text-muted);
+      border-radius: 999px;
+      padding: var(--space-xs) var(--space-sm);
+      font-weight: var(--font-weight-bold);
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .context-tab:hover {
+      background: var(--mgp-surface-muted);
+    }
+
+    .context-tab.active {
+      background: var(--mgp-primary-soft);
+      color: var(--mgp-primary-dark);
+      border-color: rgba(63, 107, 74, .18);
+    }
+
+    /* Heavy content demo */
+
+    .list-toolbar {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: var(--space-md);
+      align-items: end;
+    }
+
+    .fake-input {
+      border: 1px solid var(--mgp-border);
+      background: var(--mgp-surface);
+      border-radius: .65rem;
+      padding: var(--space-sm) var(--space-md);
+      color: var(--mgp-text-muted);
+    }
+
+    .compact-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap: var(--space-md);
+      align-items: center;
+      padding: var(--space-sm) var(--space-md);
+    }
+
+    .compact-row + .compact-row {
+      border-top: 1px solid var(--mgp-border);
+    }
+
+    .numeric {
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Mobile drawer */
+
+    .drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(36, 49, 40, .24);
+      z-index: 30;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .18s ease;
+    }
+
+    .drawer {
+      position: fixed;
+      inset: 0 auto 0 0;
+      width: min(86vw, 340px);
+      background: var(--mgp-surface);
+      border-right: 1px solid var(--mgp-border);
+      padding: var(--space-lg);
+      z-index: 40;
+      box-shadow: var(--shadow-md);
+      transform: translateX(-100%);
+      transition: transform .18s ease;
+      overflow-y: auto;
+    }
+
+    .drawer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-md);
+      padding-bottom: var(--space-lg);
+      border-bottom: 1px solid var(--mgp-border);
+      margin-bottom: var(--space-lg);
+    }
+
+    #drawerOpen:checked ~ .drawer-backdrop {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #drawerOpen:checked ~ .drawer {
+      transform: translateX(0);
+    }
+
+    /* Responsive */
+
+    @media (max-width: 940px) {
+      :root {
+        --page-x: var(--space-md);
+        --page-y: var(--space-lg);
+      }
+
+      .app-shell,
+      #sidebarCollapsed:checked ~ .app-shell {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "header"
+          "main"
+          "footer";
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .mobile-menu-button {
+        display: inline-flex;
+      }
+
+      .header-inner {
+        align-items: center;
+        padding: var(--space-sm) var(--space-md);
+      }
+
+      .header-inner .desktop-actions {
+        display: none;
+      }
+
+      .hero {
+        grid-template-columns: 1fr;
+      }
+
+      .grid-4,
+      .grid-3,
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .list-toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .compact-row {
+        grid-template-columns: 1fr;
+        gap: var(--space-xs);
+      }
+    }
+
+    @media (min-width: 941px) {
+      .drawer,
+      .drawer-backdrop {
+        display: none;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .sidebar,
+      .header,
+      .footer,
+      .drawer,
+      .drawer-backdrop,
+      .btn-row {
+        display: none !important;
+      }
+
+      .app-shell,
+      #sidebarCollapsed:checked ~ .app-shell {
+        display: block;
+      }
+
+      main {
+        max-width: none;
+        padding: 0;
+      }
+
+      .card,
+      .hero {
+        box-shadow: none;
+        break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- CSS-only state controls for demo -->
+  <input class="visually-hidden" type="checkbox" id="sidebarCollapsed" />
+  <input class="visually-hidden" type="checkbox" id="drawerOpen" />
+
+  <!-- Mobile drawer backdrop -->
+  <label class="drawer-backdrop" for="drawerOpen" aria-hidden="true"></label>
+
+  <!-- Mobile / tablet drawer -->
+  <aside class="drawer" aria-label="Mobil navigation">
+    <div class="drawer-header">
+      <div class="brand" style="padding:0;border:0;margin:0;">
+        <div class="brand-mark">✿</div>
+        <div class="brand-text">MyGardenPlanner</div>
+      </div>
+
+      <label class="btn btn-secondary btn-icon" for="drawerOpen" aria-label="Luk menu">×</label>
+    </div>
+
+    <nav>
+      <div class="nav-section-title">Overblik</div>
+      <ul class="nav-list">
+        <li>
+          <button class="nav-link active" type="button">
+            <span class="nav-icon">⌂</span>
+            <span class="nav-label">Dashboard</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-link" type="button">
+            <span class="nav-icon">▦</span>
+            <span class="nav-label">Mine haver</span>
+          </button>
+        </li>
+      </ul>
+
+      <div class="nav-section-title">Arbejde</div>
+      <ul class="nav-list">
+        <li>
+          <button class="nav-link" type="button">
+            <span class="nav-icon">◌</span>
+            <span class="nav-label">Bede</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-link" type="button">
+            <span class="nav-icon">▧</span>
+            <span class="nav-label">Filer & tegninger</span>
+            <span class="nav-badge">2</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-link" type="button">
+            <span class="nav-icon">🌿</span>
+            <span class="nav-label">Planter</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-link" type="button">
+            <span class="nav-icon">▣</span>
+            <span class="nav-label">Materialer</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-link" type="button">
+            <span class="nav-icon">⌑</span>
+            <span class="nav-label">Butikker</span>
+          </button>
+        </li>
+      </ul>
+
+      <div class="nav-section-title">Konto</div>
+      <ul class="nav-list">
+        <li>
+          <button class="nav-link" type="button">
+            <span class="nav-icon">◷</span>
+            <span class="nav-label">Profil</span>
+          </button>
+        </li>
+        <li>
+          <button class="nav-link" type="button">
+            <span class="nav-icon">✉</span>
+            <span class="nav-label">Invitationer</span>
+            <span class="nav-badge">1</span>
+          </button>
+        </li>
+      </ul>
+    </nav>
+  </aside>
+
+  <div class="app-shell">
+    <!-- Desktop sidebar -->
+    <aside class="sidebar" aria-label="Primær navigation">
+      <div class="brand">
+        <div class="brand-mark">✿</div>
+        <div class="brand-text">MyGardenPlanner</div>
+
+        <div class="collapse-toggle">
+          <label class="collapse-control" for="sidebarCollapsed" title="Kollaps sidebar">‹</label>
+        </div>
+      </div>
+
+      <div class="collapsed-toggle-row">
+        <label class="collapse-control" for="sidebarCollapsed" title="Udvid sidebar">›</label>
+      </div>
+
+      <nav>
+        <div class="nav-section-title">Overblik</div>
+        <ul class="nav-list">
+          <li>
+            <button class="nav-link active" type="button" data-label="Dashboard">
+              <span class="nav-icon">⌂</span>
+              <span class="nav-label">Dashboard</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-link" type="button" data-label="Mine haver">
+              <span class="nav-icon">▦</span>
+              <span class="nav-label">Mine haver</span>
+            </button>
+          </li>
+        </ul>
+
+        <div class="nav-section-title">Arbejde</div>
+        <ul class="nav-list">
+          <li>
+            <button class="nav-link" type="button" data-label="Bede">
+              <span class="nav-icon">◌</span>
+              <span class="nav-label">Bede</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-link" type="button" data-label="Filer & tegninger">
+              <span class="nav-icon">▧</span>
+              <span class="nav-label">Filer & tegninger</span>
+              <span class="nav-badge">2</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-link" type="button" data-label="Planter">
+              <span class="nav-icon">🌿</span>
+              <span class="nav-label">Planter</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-link" type="button" data-label="Materialer">
+              <span class="nav-icon">▣</span>
+              <span class="nav-label">Materialer</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-link" type="button" data-label="Butikker">
+              <span class="nav-icon">⌑</span>
+              <span class="nav-label">Butikker</span>
+            </button>
+          </li>
+        </ul>
+
+        <div class="nav-section-title">Konto</div>
+        <ul class="nav-list">
+          <li>
+            <button class="nav-link" type="button" data-label="Profil">
+              <span class="nav-icon">◷</span>
+              <span class="nav-label">Profil</span>
+            </button>
+          </li>
+          <li>
+            <button class="nav-link" type="button" data-label="Invitationer">
+              <span class="nav-icon">✉</span>
+              <span class="nav-label">Invitationer</span>
+              <span class="nav-badge">1</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-inner">
+        <div class="btn-row">
+          <label class="btn btn-secondary btn-icon mobile-menu-button" for="drawerOpen" aria-label="Åbn menu">☰</label>
+
+          <div>
+            <p class="context-title">Design demo 7</p>
+            <p class="context-subtitle">Responsiv navigation · sidebar, rail og drawer</p>
+          </div>
+        </div>
+
+        <div class="btn-row desktop-actions">
+          <label class="btn btn-secondary" for="sidebarCollapsed">Skift sidebar</label>
+          <button class="btn btn-primary" type="button">Opret have</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main -->
+    <main>
+      <section class="hero">
+        <div>
+          <span class="eyebrow">Nordisk havearkitekt · demo 7</span>
+          <h1>Responsiv navigation</h1>
+          <p class="lead">
+            Denne demo viser desktop sidebar, valgfri collapsed sidebar/nav rail og mobil/tablet
+            off-canvas drawer. Collapse er et brugervalg, som senere kan gemmes i brugerens browser.
+          </p>
+
+          <div class="btn-row">
+            <label class="btn btn-primary" for="sidebarCollapsed">Test collapsed sidebar</label>
+            <label class="btn btn-secondary" for="drawerOpen">Test drawer</label>
+          </div>
+        </div>
+
+        <div class="card card-highlight">
+          <span class="demo-label">designbeslutning</span>
+          <h3>Expanded er standard</h3>
+          <p class="meta">
+            Collapsed sidebar er en valgfri desktop-tilstand til indholdstunge sider,
+            ikke en automatisk side-for-side opførsel.
+          </p>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Have-kontekst</h2>
+            <p>Eksempel på lokale context tabs inde på en havedetaljeside.</p>
+          </div>
+        </div>
+
+        <nav class="context-tabs" aria-label="Have-navigation">
+          <button class="context-tab active" type="button">Overblik</button>
+          <button class="context-tab" type="button">Bede</button>
+          <button class="context-tab" type="button">Filer</button>
+          <button class="context-tab" type="button">Medlemmer</button>
+          <button class="context-tab" type="button">Indstillinger</button>
+        </nav>
+
+        <div class="grid grid-3">
+          <div class="card">
+            <span class="demo-label">global navigation</span>
+            <h3>Sidebar / drawer</h3>
+            <p class="meta">Bruges til appens hovedområder: dashboard, haver, planter, materialer og filer.</p>
+          </div>
+
+          <div class="card">
+            <span class="demo-label">lokal navigation</span>
+            <h3>Context tabs</h3>
+            <p class="meta">Bruges inde på en konkret entity, fx Villa Solbakken, til overblik, bede og filer.</p>
+          </div>
+
+          <div class="card">
+            <span class="demo-label">opmærksomhed</span>
+            <h3>Badges</h3>
+            <p class="meta">Bruges sparsomt til reelle opmærksomhedspunkter som afventende invitationer.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Tung listevisning</h2>
+            <p>Eksempel på en side hvor collapsed sidebar kan give mere arbejdsplads.</p>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom: var(--space-md);">
+          <div class="list-toolbar">
+            <div>
+              <label class="meta" style="display:block;margin-bottom:var(--space-xs);font-weight:var(--font-weight-bold);">Søg</label>
+              <div class="fake-input">Søg efter plante, materiale eller fil...</div>
+            </div>
+
+            <button class="btn btn-secondary" type="button">Filter</button>
+            <button class="btn btn-primary" type="button">Opret ny</button>
+          </div>
+        </div>
+
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div class="compact-row">
+            <div>
+              <h3>Lavendel</h3>
+              <p class="meta">Lavandula angustifolia</p>
+            </div>
+            <span class="meta">Sol</span>
+            <span class="meta numeric">30–60 cm</span>
+            <button class="btn btn-secondary" type="button">Detaljer</button>
+          </div>
+
+          <div class="compact-row">
+            <div>
+              <h3>Staudehaven mod syd</h3>
+              <p class="meta">Bed #4 · Villa Solbakken</p>
+            </div>
+            <span class="meta">Planlagt</span>
+            <span class="meta numeric">3,50 × 1,20 m</span>
+            <button class="btn btn-secondary" type="button">Åbn</button>
+          </div>
+
+          <div class="compact-row">
+            <div>
+              <h3>Haveskitse maj.pdf</h3>
+              <p class="meta">PDF · midlertidig fil</p>
+            </div>
+            <span class="meta">Udløber snart</span>
+            <span class="meta numeric">2,4 MB</span>
+            <button class="btn btn-secondary" type="button">Vis</button>
+          </div>
+
+          <div class="compact-row">
+            <div>
+              <h3>Chaussésten</h3>
+              <p class="meta">Belægning · granit</p>
+            </div>
+            <span class="meta">Materiale</span>
+            <span class="meta numeric">10 × 10 × 10 cm</span>
+            <button class="btn btn-secondary" type="button">Detaljer</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Navigationstilstande</h2>
+            <p>De tre tilstande vi designer efter.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-3">
+          <div class="card">
+            <span class="demo-label">desktop default</span>
+            <h3>Expanded sidebar</h3>
+            <p class="meta">
+              Standardtilstand på desktop. Giver bedst overblik og kræver ikke ikonforståelse.
+            </p>
+          </div>
+
+          <div class="card">
+            <span class="demo-label">desktop optional</span>
+            <h3>Collapsed sidebar</h3>
+            <p class="meta">
+              Brugervalg til tunge sider. Viser ikon-rail, active state, dots/badges og hover-labels.
+            </p>
+          </div>
+
+          <div class="card">
+            <span class="demo-label">tablet / mobil</span>
+            <h3>Off-canvas drawer</h3>
+            <p class="meta">
+              Topbar med menu-knap. Drawer indeholder samme navigation som desktop-sidebar.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      © MyGardenPlanner · Design demo 7 · Responsiv navigation
+    </footer>
+  </div>
+</body>
+</html>

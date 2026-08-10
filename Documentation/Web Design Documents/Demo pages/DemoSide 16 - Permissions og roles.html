@@ -1,0 +1,1210 @@
+﻿<!doctype html>
+<html lang="da">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MyGardenPlanner – Demo15 Permissions og roles i UI</title>
+    <style>
+        :root {
+            --mgp-primary: #3F6B4A;
+            --mgp-primary-dark: #2F5138;
+            --mgp-primary-soft: #DDE8D8;
+            --mgp-accent: #B86B4B;
+            --mgp-text: #243128;
+            --mgp-text-muted: #6F766D;
+            --mgp-bg: #FAF8F2;
+            --mgp-surface: #fff;
+            --mgp-surface-muted: #EFEAE0;
+            --mgp-border: #D8D2C7;
+            --mgp-danger: #9F3A38;
+            --mgp-danger-soft: #FFF4F3;
+            --mgp-warning-bg: #F8E8D8;
+            --space-2xs: .25rem;
+            --space-xs: .5rem;
+            --space-sm: .75rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-2xl: 3rem;
+            --sidebar-width: 280px;
+            --content-max: 1220px;
+            --radius-sm: .45rem;
+            --radius-md: .75rem;
+            --radius-lg: 1.1rem;
+            --shadow-sm: 0 1px 2px rgba(36,49,40,.08);
+            --shadow-md: 0 12px 28px rgba(36,49,40,.10);
+            --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+            --font-size-xs: .78rem;
+            --font-size-sm: .9rem;
+            --font-size-base: 1rem;
+            --font-size-md: 1.08rem;
+            --font-size-xl: clamp(1.35rem,2.2vw,2rem);
+            --font-size-xxl: clamp(2rem,4vw,3.25rem);
+            --line-height-tight: 1.15;
+            --line-height-base: 1.55;
+            --font-weight-medium: 600;
+            --font-weight-bold: 750;
+            --letter-spacing-heading: -.03em;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--mgp-text);
+            background: var(--mgp-bg);
+            font-family: var(--font-sans);
+            font-size: var(--font-size-base);
+            line-height: var(--line-height-base);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--mgp-text);
+            line-height: var(--line-height-tight);
+            letter-spacing: var(--letter-spacing-heading);
+            font-weight: var(--font-weight-bold);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: var(--font-size-xxl);
+        }
+
+        h2 {
+            margin: 0 0 var(--space-md);
+            font-size: var(--font-size-xl);
+        }
+
+        h3 {
+            margin: 0;
+            font-size: var(--font-size-md);
+        }
+
+        p {
+            margin-top: 0;
+        }
+
+        .mono,
+        code {
+            font-family: var(--font-mono);
+            font-size: .92em;
+        }
+
+        .app-shell {
+            display: grid;
+            min-height: 100vh;
+            grid-template-columns: var(--sidebar-width) 1fr;
+            grid-template-rows: auto 1fr auto;
+            grid-template-areas:
+                "sidebar header"
+                "sidebar main"
+                "sidebar footer";
+        }
+
+        .sidebar {
+            grid-area: sidebar;
+            background: var(--mgp-surface);
+            border-right: 1px solid var(--mgp-border);
+            padding: var(--space-lg);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding-bottom: var(--space-lg);
+            border-bottom: 1px solid var(--mgp-border);
+            margin-bottom: var(--space-lg);
+            font-weight: var(--font-weight-bold);
+            letter-spacing: -.02em;
+        }
+
+        .brand-mark {
+            width: 2.3rem;
+            height: 2.3rem;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: #fff;
+            background: linear-gradient(135deg,var(--mgp-primary),var(--mgp-primary-dark));
+            box-shadow: var(--shadow-sm);
+        }
+
+        .nav-section-title {
+            color: var(--mgp-text-muted);
+            text-transform: uppercase;
+            font-size: var(--font-size-xs);
+            letter-spacing: .08em;
+            font-weight: var(--font-weight-bold);
+            margin: var(--space-lg) 0 var(--space-xs);
+        }
+
+        .nav-list {
+            display: grid;
+            gap: var(--space-2xs);
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .nav-link {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            color: var(--mgp-text);
+            background: transparent;
+            border: 0;
+            text-align: left;
+            border-radius: var(--radius-sm);
+            padding: var(--space-xs) var(--space-sm);
+            font-size: .95rem;
+            font-weight: var(--font-weight-bold);
+            cursor: pointer;
+        }
+
+            .nav-link:hover {
+                background: var(--mgp-surface-muted);
+            }
+
+            .nav-link.active {
+                background: var(--mgp-primary-soft);
+                color: var(--mgp-primary-dark);
+            }
+
+        .header {
+            grid-area: header;
+            background: rgba(250,248,242,.88);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--mgp-border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header-inner {
+            max-width: var(--content-max);
+            margin: 0 auto;
+            padding: var(--space-sm) var(--space-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--space-md);
+        }
+
+        .context-title {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: var(--font-weight-bold);
+        }
+
+        .context-subtitle {
+            margin: var(--space-2xs) 0 0;
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-sm);
+        }
+
+        main {
+            grid-area: main;
+            max-width: var(--content-max);
+            width: 100%;
+            margin: 0 auto;
+            padding: var(--space-xl) var(--space-lg) var(--space-2xl);
+        }
+
+        .footer {
+            grid-area: footer;
+            color: var(--mgp-text-muted);
+            border-top: 1px solid var(--mgp-border);
+            padding: var(--space-md) var(--space-lg);
+            text-align: center;
+            font-size: var(--font-size-sm);
+        }
+
+        .hero {
+            background: linear-gradient(135deg,var(--mgp-surface),var(--mgp-primary-soft));
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: clamp(var(--space-lg),3vw,var(--space-xl));
+            display: grid;
+            grid-template-columns: 1.35fr .95fr;
+            gap: var(--space-lg);
+            align-items: center;
+            margin-bottom: var(--space-lg);
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            color: var(--mgp-primary-dark);
+            background: var(--mgp-primary-soft);
+            border: 1px solid rgba(63,107,74,.18);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            font-size: .84rem;
+            font-weight: var(--font-weight-bold);
+            margin-bottom: var(--space-sm);
+        }
+
+        .lead {
+            color: var(--mgp-text-muted);
+            max-width: 68ch;
+            font-size: var(--font-size-md);
+            line-height: var(--line-height-base);
+            margin-bottom: var(--space-lg);
+        }
+
+        .section {
+            margin-top: var(--space-xl);
+        }
+
+        .section-header {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            gap: var(--space-md);
+            margin-bottom: var(--space-md);
+        }
+
+            .section-header p {
+                margin: var(--space-2xs) 0 0;
+                color: var(--mgp-text-muted);
+            }
+
+        .grid {
+            display: grid;
+            gap: var(--space-md);
+        }
+
+        .grid-comfortable {
+            gap: var(--space-lg);
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2,minmax(0,1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3,minmax(0,1fr));
+        }
+
+        .stack-sm {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .stack-md {
+            display: grid;
+            gap: var(--space-md);
+        }
+
+        .card {
+            background: var(--mgp-surface);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            padding: var(--space-md);
+        }
+
+        .card-highlight {
+            background: var(--mgp-primary-soft);
+            border-color: rgba(63,107,74,.22);
+        }
+
+        .card-restricted {
+            background: var(--mgp-surface-muted);
+            border-style: dashed;
+        }
+
+        .btn-row,
+        .card-actions,
+        .permission-actions {
+            display: flex;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .card-actions {
+            gap: var(--space-xs);
+            margin-top: var(--space-sm);
+        }
+
+        .btn {
+            appearance: none;
+            border: 1px solid transparent;
+            border-radius: .65rem;
+            padding: var(--space-sm) var(--space-md);
+            font-weight: var(--font-weight-bold);
+            font-size: .95rem;
+            cursor: pointer;
+            transition: .15s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-xs);
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--mgp-primary);
+            color: #fff;
+            border-color: var(--mgp-primary);
+        }
+
+            .btn-primary:hover {
+                background: var(--mgp-primary-dark);
+                border-color: var(--mgp-primary-dark);
+            }
+
+        .btn-secondary {
+            background: var(--mgp-surface);
+            color: var(--mgp-primary-dark);
+            border-color: var(--mgp-border);
+        }
+
+            .btn-secondary:hover {
+                background: var(--mgp-surface-muted);
+                border-color: rgba(63,107,74,.28);
+            }
+
+        .btn-danger {
+            background: #fff;
+            color: var(--mgp-danger);
+            border-color: rgba(159,58,56,.35);
+        }
+
+            .btn-danger:hover {
+                background: var(--mgp-danger-soft);
+                border-color: rgba(159,58,56,.55);
+            }
+
+        .btn-sm {
+            padding: var(--space-xs) var(--space-sm);
+            font-size: var(--font-size-sm);
+        }
+
+        .btn:disabled,
+        .btn[aria-disabled=true] {
+            opacity: .55;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--space-xs);
+            margin-top: var(--space-sm);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-2xs);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-bold);
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+
+        .badge-primary,
+        .badge-owner {
+            color: var(--mgp-primary-dark);
+            background: var(--mgp-primary-soft);
+            border-color: rgba(63,107,74,.18);
+        }
+
+        .badge-muted,
+        .badge-viewer {
+            color: var(--mgp-text-muted);
+            background: var(--mgp-surface-muted);
+            border-color: var(--mgp-border);
+        }
+
+        .badge-accent,
+        .badge-editor {
+            color: #653521;
+            background: var(--mgp-warning-bg);
+            border-color: rgba(184,107,75,.22);
+        }
+
+        .badge-danger {
+            color: var(--mgp-danger);
+            background: var(--mgp-danger-soft);
+            border-color: rgba(159,58,56,.22);
+        }
+
+        .meta {
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-sm);
+            line-height: 1.4;
+            margin: var(--space-2xs) 0 0;
+        }
+
+        .demo-label {
+            display: inline-flex;
+            align-items: center;
+            width: fit-content;
+            color: var(--mgp-text-muted);
+            font-family: var(--font-mono);
+            font-size: var(--font-size-xs);
+            background: var(--mgp-surface-muted);
+            border: 1px solid var(--mgp-border);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            margin-bottom: var(--space-sm);
+        }
+
+        .role-card-header,
+        .entity-row {
+            display: flex;
+            justify-content: space-between;
+            gap: var(--space-md);
+            align-items: start;
+        }
+
+        .role-card-header {
+            margin-bottom: var(--space-sm);
+        }
+
+        .entity-row {
+            padding: var(--space-sm);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            background: var(--mgp-surface);
+        }
+
+        .permission-hint {
+            display: flex;
+            gap: var(--space-sm);
+            align-items: start;
+            padding: var(--space-sm);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            background: var(--mgp-surface-muted);
+            color: var(--mgp-text-muted);
+        }
+
+        .lock-icon {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            background: #fff;
+            border: 1px solid var(--mgp-border);
+            flex: 0 0 auto;
+        }
+
+        .readonly-grid {
+            display: grid;
+            grid-template-columns: repeat(2,minmax(0,1fr));
+            gap: var(--space-md);
+        }
+
+        .readonly-field {
+            display: grid;
+            gap: var(--space-2xs);
+        }
+
+        .readonly-label {
+            color: var(--mgp-text-muted);
+            font-size: var(--font-size-xs);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            font-weight: var(--font-weight-bold);
+        }
+
+        .readonly-value {
+            border: 1px solid var(--mgp-border);
+            border-radius: .65rem;
+            padding: var(--space-sm) var(--space-md);
+            background: var(--mgp-surface-muted);
+        }
+
+        .form-control {
+            width: 100%;
+            border: 1px solid var(--mgp-border);
+            background: var(--mgp-surface);
+            color: var(--mgp-text);
+            border-radius: .65rem;
+            padding: var(--space-sm) var(--space-md);
+            font: inherit;
+        }
+
+            .form-control:disabled {
+                background: var(--mgp-surface-muted);
+                color: var(--mgp-text-muted);
+            }
+
+        .media-card {
+            display: grid;
+            grid-template-columns: 96px 1fr;
+            gap: var(--space-md);
+            align-items: start;
+        }
+
+        .thumbnail {
+            min-height: 96px;
+            border-radius: .8rem;
+            background: var(--mgp-primary-soft);
+            border: 1px solid rgba(63,107,74,.18);
+            display: grid;
+            place-items: center;
+            font-weight: var(--font-weight-bold);
+            color: var(--mgp-primary-dark);
+        }
+
+        .status-message {
+            display: flex;
+            gap: var(--space-sm);
+            align-items: start;
+            padding: var(--space-sm);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--mgp-border);
+            background: var(--mgp-surface);
+        }
+
+        .status-dot {
+            width: .75rem;
+            height: .75rem;
+            border-radius: 50%;
+            margin-top: .42rem;
+            flex: 0 0 auto;
+            background: var(--mgp-text-muted);
+        }
+
+        .status-success .status-dot {
+            background: var(--mgp-primary);
+        }
+
+        .status-warning .status-dot {
+            background: var(--mgp-accent);
+        }
+
+        .status-danger .status-dot {
+            background: var(--mgp-danger);
+        }
+
+        .status-message strong {
+            display: block;
+            font-weight: var(--font-weight-bold);
+        }
+
+        .matrix {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .matrix th,
+            .matrix td {
+                text-align: left;
+                border-bottom: 1px solid var(--mgp-border);
+                padding: var(--space-sm);
+                vertical-align: top;
+            }
+
+            .matrix th {
+                font-weight: var(--font-weight-bold);
+            }
+
+        @media(max-width:940px) {
+            .app-shell {
+                grid-template-columns: 1fr;
+                grid-template-areas:
+                    "header"
+                    "main"
+                    "footer";
+            }
+
+            .sidebar {
+                display: none;
+            }
+
+            .hero,
+            .grid-3,
+            .grid-2,
+            .readonly-grid,
+            .media-card {
+                grid-template-columns: 1fr;
+            }
+
+            .header-inner {
+                align-items: start;
+                flex-direction: column;
+                padding: var(--space-sm) var(--space-md);
+            }
+
+            .role-card-header,
+            .entity-row {
+                flex-direction: column;
+            }
+
+            .btn-row,
+            .card-actions,
+            .permission-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .sidebar,
+            .header,
+            .footer,
+            .btn-row,
+            .card-actions,
+            .permission-actions {
+                display: none !important;
+            }
+
+            .app-shell {
+                display: block;
+            }
+
+            main {
+                max-width: none;
+                padding: 0;
+            }
+
+            .card,
+            .hero,
+            .status-message {
+                box-shadow: none;
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="sidebar" aria-label="Primær navigation">
+            <div class="brand">
+                <div class="brand-mark">✿</div>
+                <div>MyGardenPlanner</div>
+            </div>
+
+            <div class="nav-section-title">Permissions</div>
+            <ul class="nav-list">
+                <li><button class="nav-link active" type="button">Demo 15</button></li>
+                <li><button class="nav-link" type="button">Roles</button></li>
+                <li><button class="nav-link" type="button">Actions</button></li>
+                <li><button class="nav-link" type="button">Read-only</button></li>
+                <li><button class="nav-link" type="button">Restricted files</button></li>
+                <li><button class="nav-link" type="button">Invitations</button></li>
+            </ul>
+        </aside>
+
+        <header class="header">
+            <div class="header-inner">
+                <div>
+                    <p class="context-title">Design demo 15</p>
+                    <p class="context-subtitle">Permissions og roles i UI · synlighed, handlinger og forklaring</p>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-secondary" type="button">Skift rolle</button>
+                    <button class="btn btn-primary" type="button">Invitér person</button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <section class="hero">
+                <div>
+                    <span class="eyebrow">Nordisk havearkitekt · demo 15</span>
+                    <h1>Permissions og roles i UI</h1>
+                    <p class="lead">
+                        Denne demo viser, hvordan samme have kan opleves som ejer, redaktør, læser og restricted bruger.
+                        Fokus er på at skelne mellem synlige handlinger, skjulte handlinger, disabled handlinger med forklaring
+                        og no-access states.
+                    </p>
+
+                    <div class="btn-row">
+                        <button class="btn btn-primary" type="button">Invitér person</button>
+                        <button class="btn btn-secondary" type="button">Se roller</button>
+                    </div>
+                </div>
+
+                <div class="card card-highlight stack-sm">
+                    <span class="demo-label">hovedregel</span>
+                    <h3>Backend beskytter — UI forklarer</h3>
+                    <p class="meta">
+                        Brugeren skal kun se relevante handlinger. Når en handling er forventet, men ikke tilladt,
+                        kan UI’et forklare hvorfor.
+                    </p>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Samme have, fire rolletilstande</h2>
+                        <p>Handlinger skifter efter rolle, men layoutet bevarer ro og struktur.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <article class="card">
+                        <div class="role-card-header">
+                            <div>
+                                <span class="demo-label">owner</span>
+                                <h3>Villa Solbakken</h3>
+                                <p class="meta">Fuld adgang til indhold og administration.</p>
+                            </div>
+                            <span class="badge badge-owner">Ejer</span>
+                        </div>
+
+                        <div class="badge-row">
+                            <span class="badge badge-primary">Kan redigere</span>
+                            <span class="badge badge-primary">Kan invitere</span>
+                            <span class="badge badge-primary">Kan arkivere</span>
+                        </div>
+
+                        <div class="card-actions">
+                            <button class="btn btn-primary btn-sm">Redigér</button>
+                            <button class="btn btn-secondary btn-sm">Invitér</button>
+                            <button class="btn btn-danger btn-sm">Arkivér</button>
+                        </div>
+                    </article>
+
+                    <article class="card">
+                        <div class="role-card-header">
+                            <div>
+                                <span class="demo-label">editor</span>
+                                <h3>Villa Solbakken</h3>
+                                <p class="meta">Kan arbejde med indhold, men ikke administrere medlemmer.</p>
+                            </div>
+                            <span class="badge badge-editor">Redaktør</span>
+                        </div>
+
+                        <div class="badge-row">
+                            <span class="badge badge-primary">Kan redigere</span>
+                            <span class="badge badge-muted">Medlemmer skjult</span>
+                        </div>
+
+                        <div class="card-actions">
+                            <button class="btn btn-primary btn-sm">Redigér</button>
+                            <button class="btn btn-secondary btn-sm">Upload fil</button>
+                        </div>
+                    </article>
+
+                    <article class="card">
+                        <div class="role-card-header">
+                            <div>
+                                <span class="demo-label">viewer</span>
+                                <h3>Villa Solbakken</h3>
+                                <p class="meta">Kan se haven, men ikke ændre data.</p>
+                            </div>
+                            <span class="badge badge-viewer">Læser</span>
+                        </div>
+
+                        <div class="badge-row">
+                            <span class="badge badge-muted">Læsevisning</span>
+                            <span class="badge badge-muted">Ingen redigering</span>
+                        </div>
+
+                        <div class="card-actions">
+                            <button class="btn btn-secondary btn-sm">Vis detaljer</button>
+                            <button class="btn btn-secondary btn-sm" disabled>Redigér</button>
+                        </div>
+
+                        <div class="permission-hint">
+                            <div class="lock-icon">i</div>
+                            <div>
+                                <strong>Redigering er ikke tilgængelig</strong>
+                                <p class="meta">Din rolle giver adgang til at se haven, men ikke ændre den.</p>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="card card-restricted">
+                        <div class="role-card-header">
+                            <div>
+                                <span class="demo-label">restricted</span>
+                                <h3>Villa Solbakken</h3>
+                                <p class="meta">Brugeren kan ikke åbne indholdet.</p>
+                            </div>
+                            <span class="badge badge-danger">Begrænset</span>
+                        </div>
+
+                        <div class="permission-hint">
+                            <div class="lock-icon">🔒</div>
+                            <div>
+                                <strong>Du har ikke adgang til denne have</strong>
+                                <p class="meta">Kontakt haveejeren, hvis du skal kunne se den.</p>
+                            </div>
+                        </div>
+
+                        <div class="card-actions">
+                            <button class="btn btn-secondary btn-sm">Kontakt haveejer</button>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Skjul, disable eller forklar?</h2>
+                        <p>Tre forskellige UI-valg afhængigt af om handlingen er irrelevant, forventet eller hele sektionen er utilgængelig.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-3">
+                    <div class="card stack-md">
+                        <span class="demo-label">hide</span>
+                        <h3>Skjul handling</h3>
+                        <p class="meta">Viewer ser ikke “Slet have”, fordi handlingen aldrig er relevant for rollen.</p>
+
+                        <div class="entity-row">
+                            <div>
+                                <strong>Villa Solbakken</strong>
+                                <p class="meta">Læsevisning</p>
+                            </div>
+                            <button class="btn btn-secondary btn-sm">Vis</button>
+                        </div>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">disabled with reason</span>
+                        <h3>Disable med forklaring</h3>
+                        <p class="meta">Download er forventet på et filkort, men ikke tilladt for rollen.</p>
+
+                        <button class="btn btn-secondary" disabled>Download original</button>
+
+                        <div class="permission-hint">
+                            <div class="lock-icon">i</div>
+                            <div>
+                                <strong>Download er ikke tilgængelig</strong>
+                                <p class="meta">Din rolle giver kun adgang til preview.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">restricted state</span>
+                        <h3>Forklar sektion</h3>
+                        <p class="meta">Hele filsektionen kan ikke vises, så vi bruger no-access state.</p>
+
+                        <div class="permission-hint">
+                            <div class="lock-icon">🔒</div>
+                            <div>
+                                <strong>Du har ikke adgang til filerne</strong>
+                                <p class="meta">Filerne er ikke tilgængelige for din rolle.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Read-only frem for disabled formular</h2>
+                        <p>Når hele formularen ikke kan redigeres, bør den vises som læsevisning.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <div class="card stack-md">
+                        <span class="demo-label">read-only section</span>
+                        <h3>Haveoplysninger</h3>
+
+                        <div class="readonly-grid">
+                            <div class="readonly-field">
+                                <span class="readonly-label">Havens navn</span>
+                                <div class="readonly-value">Villa Solbakken</div>
+                            </div>
+
+                            <div class="readonly-field">
+                                <span class="readonly-label">Rolle</span>
+                                <div class="readonly-value">Læser</div>
+                            </div>
+
+                            <div class="readonly-field">
+                                <span class="readonly-label">Lokation</span>
+                                <div class="readonly-value">Aarhus N</div>
+                            </div>
+
+                            <div class="readonly-field">
+                                <span class="readonly-label">Status</span>
+                                <div class="readonly-value">Aktiv</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">field-level disabled</span>
+                        <h3>Delvis begrænsning</h3>
+
+                        <label>
+                            <strong>Rolle</strong>
+                            <input class="form-control" value="Ejer" disabled />
+                        </label>
+
+                        <div class="permission-hint">
+                            <div class="lock-icon">i</div>
+                            <div>
+                                <strong>Rollen kan ikke ændres her</strong>
+                                <p class="meta">Ejerrollen kræver særskilt overdragelse.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Filer og dokumenter</h2>
+                        <p>Samme filkort kan have fuld adgang, preview-only eller restricted adgang.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-3">
+                    <article class="card media-card">
+                        <div class="thumbnail">PDF</div>
+                        <div>
+                            <span class="demo-label">full access</span>
+                            <h3>Haveskitse maj.pdf</h3>
+                            <p class="meta">PDF · 2,4 MB</p>
+
+                            <div class="card-actions">
+                                <button class="btn btn-primary btn-sm">Vis</button>
+                                <button class="btn btn-secondary btn-sm">Download</button>
+                                <button class="btn btn-danger btn-sm">Slet</button>
+                            </div>
+                        </div>
+                    </article>
+
+                    <article class="card media-card">
+                        <div class="thumbnail">PDF</div>
+                        <div>
+                            <span class="demo-label">preview only</span>
+                            <h3>Haveskitse maj.pdf</h3>
+                            <p class="meta">PDF · preview tilladt</p>
+
+                            <div class="card-actions">
+                                <button class="btn btn-primary btn-sm">Vis</button>
+                                <button class="btn btn-secondary btn-sm" disabled>Download</button>
+                            </div>
+
+                            <p class="meta">Download kræver en anden rolle.</p>
+                        </div>
+                    </article>
+
+                    <article class="card media-card card-restricted">
+                        <div class="thumbnail">🔒</div>
+                        <div>
+                            <span class="demo-label">restricted</span>
+                            <h3>Begrænset fil</h3>
+                            <p class="meta">Metadata kan vises, men indhold er låst.</p>
+
+                            <div class="permission-hint">
+                                <div class="lock-icon">🔒</div>
+                                <div>
+                                    <strong>Adgang begrænset</strong>
+                                    <p class="meta">Preview og download er ikke tilgængelige.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Medlemmer og invitationer</h2>
+                        <p>Invitationer skal vise både rolle og status — ikke kun email.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <div class="card stack-md">
+                        <span class="demo-label">member list · admin</span>
+                        <h3>Medlemmer</h3>
+
+                        <div class="entity-row">
+                            <div>
+                                <strong>Anne Solbakken</strong>
+                                <p class="meta">anne@example.dk</p>
+                                <div class="badge-row">
+                                    <span class="badge badge-viewer">Kunde</span>
+                                    <span class="badge badge-primary">Aktiv</span>
+                                </div>
+                            </div>
+
+                            <div class="card-actions">
+                                <button class="btn btn-secondary btn-sm">Skift rolle</button>
+                                <button class="btn btn-danger btn-sm">Fjern adgang</button>
+                            </div>
+                        </div>
+
+                        <div class="entity-row">
+                            <div>
+                                <strong>Mikael Sloth</strong>
+                                <p class="meta">mikael@example.dk</p>
+                                <div class="badge-row">
+                                    <span class="badge badge-owner">Ejer</span>
+                                    <span class="badge badge-primary">Aktiv</span>
+                                </div>
+                            </div>
+
+                            <button class="btn btn-secondary btn-sm" disabled>Kan ikke fjernes</button>
+                        </div>
+                    </div>
+
+                    <div class="card stack-md">
+                        <span class="demo-label">invitations</span>
+                        <h3>Invitationer</h3>
+
+                        <div class="entity-row">
+                            <div>
+                                <strong>kunde@example.dk</strong>
+                                <p class="meta">Invitation til Villa Solbakken</p>
+                                <div class="badge-row">
+                                    <span class="badge badge-viewer">Læser</span>
+                                    <span class="badge badge-accent">Afventer svar</span>
+                                </div>
+                            </div>
+
+                            <button class="btn btn-danger btn-sm">Tilbagekald</button>
+                        </div>
+
+                        <div class="entity-row">
+                            <div>
+                                <strong>partner@example.dk</strong>
+                                <p class="meta">Invitation til Villa Solbakken</p>
+                                <div class="badge-row">
+                                    <span class="badge badge-editor">Redaktør</span>
+                                    <span class="badge badge-muted">Udløbet</span>
+                                </div>
+                            </div>
+
+                            <button class="btn btn-secondary btn-sm">Send igen</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Permissions matrix</h2>
+                        <p>Eksempel på UI-beslutninger. De konkrete rolle-regler skal låses separat i domænet.</p>
+                    </div>
+                </div>
+
+                <div class="card" style="overflow:auto">
+                    <table class="matrix">
+                        <thead>
+                            <tr>
+                                <th>Handling</th>
+                                <th>Ejer</th>
+                                <th>Redaktør</th>
+                                <th>Læser</th>
+                                <th>Restricted</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Se have</td>
+                                <td>Ja</td>
+                                <td>Ja</td>
+                                <td>Ja</td>
+                                <td>No access</td>
+                            </tr>
+                            <tr>
+                                <td>Redigér have</td>
+                                <td>Ja</td>
+                                <td>Ja / efter regler</td>
+                                <td>Nej · read-only</td>
+                                <td>Nej</td>
+                            </tr>
+                            <tr>
+                                <td>Invitér medlemmer</td>
+                                <td>Ja</td>
+                                <td>Skjul</td>
+                                <td>Skjul</td>
+                                <td>Skjul</td>
+                            </tr>
+                            <tr>
+                                <td>Download filer</td>
+                                <td>Ja</td>
+                                <td>Ja / efter regler</td>
+                                <td>Preview-only eller disabled</td>
+                                <td>Nej</td>
+                            </tr>
+                            <tr>
+                                <td>Slet / arkivér</td>
+                                <td>Ja</td>
+                                <td>Evt. begrænset</td>
+                                <td>Skjul</td>
+                                <td>Skjul</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="section">
+                <div class="section-header">
+                    <div>
+                        <h2>Status og forklaringer</h2>
+                        <p>Permission-relaterede beskeder skal være rolige og handlingsorienterede.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-2 grid-comfortable">
+                    <div class="status-message status-warning">
+                        <span class="status-dot"></span>
+                        <div>
+                            <strong>Rollen er opdateret</strong>
+                            <p class="meta">Anne Solbakken har nu læseadgang til Villa Solbakken.</p>
+                        </div>
+                    </div>
+
+                    <div class="status-message status-danger">
+                        <span class="status-dot"></span>
+                        <div>
+                            <strong>Du har ikke adgang</strong>
+                            <p class="meta">Kontakt haveejeren, hvis du skal kunne se denne sektion.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            © MyGardenPlanner · Design demo 15 · Permissions og roles i UI
+        </footer>
+    </div>
+</body>
+</html>

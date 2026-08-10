@@ -1,0 +1,899 @@
+﻿<!doctype html>
+<html lang="da">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MyGardenPlanner – Demo22 Data density / compact mode</title>
+
+    <style>
+        :root {
+            --mgp-primary: #3F6B4A;
+            --mgp-primary-dark: #2F5138;
+            --mgp-primary-soft: #DDE8D8;
+            --mgp-accent: #B86B4B;
+            --mgp-text: #243128;
+            --mgp-text-muted: #6F766D;
+            --mgp-bg: #FAF8F2;
+            --mgp-surface: #FFFFFF;
+            --mgp-surface-muted: #EFEAE0;
+            --mgp-border: #D8D2C7;
+            --mgp-danger: #9F3A38;
+            --mgp-danger-soft: #FFF4F3;
+            --mgp-warning-bg: #F8E8D8;
+            --content-max: 1180px;
+            --radius-sm: .45rem;
+            --radius-md: .75rem;
+            --radius-lg: 1.1rem;
+            --shadow-sm: 0 1px 2px rgba(36, 49, 40, .08);
+            --shadow-md: 0 12px 28px rgba(36, 49, 40, .10);
+            --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+            --page-padding: 2rem;
+            --section-gap: 2rem;
+            --card-padding: 1rem;
+            --row-padding-y: .75rem;
+            --row-padding-x: 1rem;
+            --table-cell-padding: .75rem;
+            --control-height: 44px;
+            --metadata-lines: 3;
+        }
+
+        [data-density="comfortable"] {
+            --section-gap: 2.5rem;
+            --card-padding: 1.5rem;
+            --row-padding-y: 1rem;
+            --row-padding-x: 1.25rem;
+            --table-cell-padding: 1rem;
+            --metadata-lines: 4;
+        }
+
+        [data-density="default"] {
+            --section-gap: 2rem;
+            --card-padding: 1rem;
+            --row-padding-y: .75rem;
+            --row-padding-x: 1rem;
+            --table-cell-padding: .75rem;
+            --metadata-lines: 3;
+        }
+
+        [data-density="compact"] {
+            --section-gap: 1.25rem;
+            --card-padding: .75rem;
+            --row-padding-y: .45rem;
+            --row-padding-x: .75rem;
+            --table-cell-padding: .5rem;
+            --metadata-lines: 2;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--mgp-bg);
+            color: var(--mgp-text);
+            font-family: var(--font-sans);
+            line-height: 1.55;
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--mgp-text);
+            line-height: 1.15;
+            letter-spacing: -.03em;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(2rem, 4vw, 3.25rem);
+        }
+
+        h2 {
+            margin: 0 0 1rem;
+            font-size: clamp(1.35rem, 2vw, 2rem);
+        }
+
+        h3 {
+            margin: 0;
+            font-size: 1.05rem;
+        }
+
+        p {
+            margin-top: 0;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            font-size: .92em;
+        }
+
+        main {
+            max-width: var(--content-max);
+            width: 100%;
+            margin: 0 auto;
+            padding: var(--page-padding);
+        }
+
+        .section {
+            margin-top: var(--section-gap);
+        }
+
+        .hero,
+        .card,
+        .density-panel,
+        .density-row,
+        .table-wrap,
+        .decision {
+            background: var(--mgp-surface);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            padding: var(--card-padding);
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--mgp-surface), var(--mgp-primary-soft));
+            box-shadow: var(--shadow-md);
+            margin-bottom: var(--section-gap);
+        }
+
+        .lead,
+        .meta {
+            color: var(--mgp-text-muted);
+        }
+
+        .lead {
+            max-width: 72ch;
+            font-size: 1.08rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .badge-row,
+        .btn-row,
+        .actions {
+            display: flex;
+            gap: .5rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid var(--mgp-border);
+            background: var(--mgp-surface-muted);
+            color: var(--mgp-text-muted);
+            border-radius: 999px;
+            padding: .2rem .6rem;
+            font-size: .78rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .badge-primary {
+            color: var(--mgp-primary-dark);
+            background: var(--mgp-primary-soft);
+            border-color: rgba(63, 107, 74, .18);
+        }
+
+        .badge-warning {
+            color: #653521;
+            background: var(--mgp-warning-bg);
+            border-color: rgba(184, 107, 75, .22);
+        }
+
+        .badge-danger {
+            color: var(--mgp-danger);
+            background: var(--mgp-danger-soft);
+            border-color: rgba(159, 58, 56, .22);
+        }
+
+        .btn {
+            min-height: var(--control-height);
+            border: 1px solid var(--mgp-border);
+            background: var(--mgp-surface);
+            color: var(--mgp-primary-dark);
+            border-radius: .7rem;
+            padding: .6rem .9rem;
+            font: inherit;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: .4rem;
+        }
+
+        .btn-primary {
+            background: var(--mgp-primary);
+            border-color: var(--mgp-primary);
+            color: white;
+        }
+
+        .btn-danger {
+            color: var(--mgp-danger);
+            border-color: rgba(159, 58, 56, .35);
+        }
+
+        .demo-label {
+            display: inline-flex;
+            width: fit-content;
+            align-items: center;
+            color: var(--mgp-text-muted);
+            font-family: var(--font-mono);
+            font-size: .78rem;
+            background: var(--mgp-surface-muted);
+            border: 1px solid var(--mgp-border);
+            border-radius: 999px;
+            padding: .2rem .6rem;
+            margin-bottom: .75rem;
+        }
+
+        .density-switch {
+            display: inline-flex;
+            gap: .25rem;
+            padding: .25rem;
+            border: 1px solid var(--mgp-border);
+            background: var(--mgp-surface);
+            border-radius: .9rem;
+        }
+
+            .density-switch button {
+                min-height: 36px;
+                border: 0;
+                background: transparent;
+                color: var(--mgp-text-muted);
+                border-radius: .65rem;
+                padding: .45rem .75rem;
+                font-weight: 800;
+                cursor: pointer;
+            }
+
+                .density-switch button.active {
+                    background: var(--mgp-primary-soft);
+                    color: var(--mgp-primary-dark);
+                }
+
+        .plant-card {
+            display: grid;
+            gap: .75rem;
+            padding: var(--card-padding);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            background: var(--mgp-surface);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .plant-card-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: start;
+        }
+
+        .density-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 1rem;
+            align-items: center;
+            padding: var(--row-padding-y) var(--row-padding-x);
+            border-radius: var(--radius-md);
+        }
+
+        .row-title {
+            display: grid;
+            gap: .15rem;
+        }
+
+        .metadata {
+            color: var(--mgp-text-muted);
+            font-size: .92rem;
+            display: -webkit-box;
+            -webkit-line-clamp: var(--metadata-lines);
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .table-wrap {
+            overflow: auto;
+            padding: 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--mgp-surface);
+        }
+
+        th,
+        td {
+            text-align: left;
+            vertical-align: top;
+            border-bottom: 1px solid var(--mgp-border);
+            padding: var(--table-cell-padding);
+        }
+
+        th {
+            background: var(--mgp-surface-muted);
+            font-weight: 800;
+        }
+
+        .summary-card {
+            padding: var(--card-padding);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            background: var(--mgp-surface);
+        }
+
+            .summary-card strong {
+                display: block;
+                font-size: 1.5rem;
+                line-height: 1.1;
+                margin-bottom: .25rem;
+            }
+
+        .status-message {
+            display: flex;
+            gap: .75rem;
+            align-items: flex-start;
+            padding: 1rem;
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            background: var(--mgp-surface);
+        }
+
+        .status-dot {
+            width: .8rem;
+            height: .8rem;
+            border-radius: 999px;
+            margin-top: .45rem;
+            flex: 0 0 auto;
+            background: var(--mgp-danger);
+        }
+
+        .print-note {
+            border-left: 5px solid var(--mgp-accent);
+            background: var(--mgp-warning-bg);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+        }
+
+        .decision {
+            display: grid;
+            gap: .75rem;
+        }
+
+        .decision-row {
+            display: grid;
+            grid-template-columns: 170px 1fr 160px;
+            gap: .75rem;
+            align-items: center;
+            border: 1px solid var(--mgp-border);
+            background: var(--mgp-surface);
+            border-radius: var(--radius-md);
+            padding: .75rem;
+        }
+
+        .mobile-row {
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            background: var(--mgp-surface);
+            padding: .75rem;
+            display: grid;
+            gap: .35rem;
+        }
+
+        .mobile-actions {
+            margin-top: .5rem;
+            display: grid;
+            gap: .5rem;
+        }
+
+        @media (max-width: 900px) {
+            :root {
+                --page-padding: 1rem;
+            }
+
+            [data-density="compact"] {
+                --card-padding: .75rem;
+                --row-padding-y: .65rem;
+                --row-padding-x: .75rem;
+                --table-cell-padding: .65rem;
+            }
+
+            .grid-2,
+            .grid-3,
+            .decision-row,
+            .density-row {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-row,
+            .actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            main {
+                max-width: none;
+                padding: 0;
+            }
+
+            .btn-row,
+            .density-switch,
+            .actions {
+                display: none !important;
+            }
+
+            .hero,
+            .card,
+            .density-panel,
+            .density-row,
+            .table-wrap,
+            .decision,
+            .summary-card {
+                box-shadow: none;
+                break-inside: avoid;
+            }
+
+            :root {
+                --section-gap: 1rem;
+                --card-padding: .5rem;
+                --row-padding-y: .35rem;
+                --row-padding-x: .5rem;
+                --table-cell-padding: .4rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <section class="hero">
+            <span class="demo-label">Demo22</span>
+            <h1>Data density / compact mode</h1>
+            <p class="lead">
+                Denne demo viser tre density levels: comfortable, default og compact.
+                Tæthed ændrer spacing, metadata-prioritering og antal synlige handlinger —
+                men må ikke reducere accessibility, touch targets eller forståelighed.
+            </p>
+
+            <div class="btn-row">
+                <div class="density-switch" aria-label="Density switch demo">
+                    <button type="button">Comfortable</button>
+                    <button type="button" class="active">Default</button>
+                    <button type="button">Compact</button>
+                </div>
+                <button class="btn btn-primary" type="button">Opret plante</button>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Tre density levels</h2>
+
+            <div class="grid grid-3">
+                <article class="density-panel" data-density="comfortable">
+                    <span class="demo-label">comfortable</span>
+                    <h3>Comfortable</h3>
+                    <p class="meta">
+                        Bruges til overblik, browsing, dashboard, detail headers og forklarende UI.
+                    </p>
+
+                    <article class="plant-card">
+                        <div class="plant-card-header">
+                            <div>
+                                <h3>Lavendel</h3>
+                                <p class="metadata">
+                                    Lavandula angustifolia · Sol · Staude · 30–60 cm · juni–august.
+                                    God til tørre bede og rolig visuel browsing.
+                                </p>
+                            </div>
+                            <span class="badge badge-primary">Sol</span>
+                        </div>
+
+                        <div class="badge-row">
+                            <span class="badge">Duft</span>
+                            <span class="badge">Tørketålende</span>
+                            <span class="badge">Blå/lilla</span>
+                        </div>
+
+                        <div class="actions">
+                            <button class="btn btn-primary" type="button">Vis plante</button>
+                            <button class="btn" type="button">Tilføj til bed</button>
+                        </div>
+                    </article>
+                </article>
+
+                <article class="density-panel" data-density="default">
+                    <span class="demo-label">default</span>
+                    <h3>Default</h3>
+                    <p class="meta">
+                        Appens normale rytme til detail pages, related sections, almindelige lister og formularer.
+                    </p>
+
+                    <article class="plant-card">
+                        <div class="plant-card-header">
+                            <div>
+                                <h3>Lavendel</h3>
+                                <p class="metadata">
+                                    Lavandula angustifolia · Sol · Staude · 30–60 cm · juni–august.
+                                    Balanceret mellem læsbarhed og effektivitet.
+                                </p>
+                            </div>
+                            <span class="badge badge-primary">Sol</span>
+                        </div>
+
+                        <div class="badge-row">
+                            <span class="badge">Duft</span>
+                            <span class="badge">Tørketålende</span>
+                        </div>
+
+                        <div class="actions">
+                            <button class="btn btn-primary" type="button">Vis</button>
+                            <button class="btn" type="button">Tilføj</button>
+                        </div>
+                    </article>
+                </article>
+
+                <article class="density-panel" data-density="compact">
+                    <span class="demo-label">compact</span>
+                    <h3>Compact</h3>
+                    <p class="meta">
+                        Bruges til lange lister, søgeresultater, tabeller, print og dataarbejde.
+                    </p>
+
+                    <article class="plant-card">
+                        <div class="plant-card-header">
+                            <div>
+                                <h3>Lavendel</h3>
+                                <p class="metadata">
+                                    Lavandula angustifolia · Sol · Staude · 30–60 cm.
+                                </p>
+                            </div>
+                            <span class="badge badge-primary">Sol</span>
+                        </div>
+
+                        <div class="actions">
+                            <button class="btn btn-primary" type="button">Vis</button>
+                        </div>
+                    </article>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Compact rows til søgning og lange lister</h2>
+
+            <div class="grid grid-2">
+                <section class="card" data-density="default">
+                    <span class="demo-label">default rows</span>
+                    <h3>Default list</h3>
+
+                    <div class="grid" style="margin-top:1rem;">
+                        <div class="density-row">
+                            <div class="row-title">
+                                <strong>Lavendel</strong>
+                                <span class="metadata">Lavandula angustifolia · Sol · Staude · 30–60 cm · juni–august</span>
+                            </div>
+                            <div class="actions">
+                                <span class="badge">Staude</span>
+                                <button class="btn" type="button">Vis</button>
+                            </div>
+                        </div>
+
+                        <div class="density-row">
+                            <div class="row-title">
+                                <strong>Salvie</strong>
+                                <span class="metadata">Salvia officinalis · Sol · Krydderurt · 40–70 cm · juni–juli</span>
+                            </div>
+                            <div class="actions">
+                                <span class="badge">Krydderurt</span>
+                                <button class="btn" type="button">Vis</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="card" data-density="compact">
+                    <span class="demo-label">compact rows</span>
+                    <h3>Compact search results</h3>
+
+                    <div class="grid" style="margin-top:1rem;">
+                        <div class="density-row">
+                            <div class="row-title">
+                                <strong>Lavendel</strong>
+                                <span class="metadata">Lavandula angustifolia · Sol · Staude · 30–60 cm</span>
+                            </div>
+                            <button class="btn" type="button">Vis</button>
+                        </div>
+
+                        <div class="density-row">
+                            <div class="row-title">
+                                <strong>Salvie</strong>
+                                <span class="metadata">Salvia officinalis · Sol · 40–70 cm</span>
+                            </div>
+                            <button class="btn" type="button">Vis</button>
+                        </div>
+
+                        <div class="density-row">
+                            <div class="row-title">
+                                <strong>Storkenæb</strong>
+                                <span class="metadata">Geranium · Sol/halvskygge · 25–45 cm</span>
+                            </div>
+                            <button class="btn" type="button">Vis</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Tables og print-density</h2>
+
+            <div class="grid grid-2">
+                <section class="table-wrap" data-density="default">
+                    <table>
+                        <caption class="meta" style="padding: .75rem; text-align: left;">
+                            Default table spacing
+                        </caption>
+                        <thead>
+                            <tr>
+                                <th>Materiale</th>
+                                <th>Type</th>
+                                <th>Mængde</th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Chaussésten</td>
+                                <td>Belægning</td>
+                                <td>120 stk.</td>
+                                <td>Kant og sti</td>
+                            </tr>
+                            <tr>
+                                <td>Kompost</td>
+                                <td>Jord</td>
+                                <td>6 poser</td>
+                                <td>Jordforbedring</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section class="table-wrap" data-density="compact">
+                    <table>
+                        <caption class="meta" style="padding: .5rem; text-align: left;">
+                            Compact table / print-density
+                        </caption>
+                        <thead>
+                            <tr>
+                                <th>Materiale</th>
+                                <th>Type</th>
+                                <th>Mængde</th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Chaussésten</td>
+                                <td>Belægning</td>
+                                <td>120 stk.</td>
+                                <td>Kant og sti</td>
+                            </tr>
+                            <tr>
+                                <td>Kompost</td>
+                                <td>Jord</td>
+                                <td>6 poser</td>
+                                <td>Jordforbedring</td>
+                            </tr>
+                            <tr>
+                                <td>Lavasten</td>
+                                <td>Dækning</td>
+                                <td>4 poser</td>
+                                <td>Overflade</td>
+                            </tr>
+                            <tr>
+                                <td>Kantstål</td>
+                                <td>Afgrænsning</td>
+                                <td>12 m</td>
+                                <td>Bedkant</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+            </div>
+
+            <div class="print-note" style="margin-top:1rem;">
+                <strong>Print har sin egen dokumentations-density.</strong>
+                <p class="meta">
+                    Ved print skjules handlinger og navigation, mens tabeller og lister bliver mere kompakte.
+                </p>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Summary cards: ikke for kompakte</h2>
+
+            <div class="grid grid-3">
+                <article class="summary-card" data-density="comfortable">
+                    <strong>6</strong>
+                    <span class="meta">Bede</span>
+                    <p class="meta">Comfortable summary er nem at scanne på dashboard og detail overview.</p>
+                </article>
+
+                <article class="summary-card" data-density="default">
+                    <strong>3</strong>
+                    <span class="meta">Filer</span>
+                    <p class="meta">Default passer til de fleste detail pages.</p>
+                </article>
+
+                <article class="summary-card" data-density="compact">
+                    <strong>12</strong>
+                    <span class="meta">Planter</span>
+                    <p class="meta">Summary cards bør ikke presses for hårdt sammen.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Compact må ikke bruges til kritiske beskeder</h2>
+
+            <div class="grid grid-2">
+                <article class="status-message">
+                    <span class="status-dot" aria-hidden="true"></span>
+                    <div>
+                        <strong>Upload mislykkedes</strong>
+                        <p class="meta">
+                            Filen er for stor. Vælg en mindre fil, og prøv igen.
+                            Denne type besked skal være læsbar og må ikke gøres for kompakt.
+                        </p>
+                        <div class="actions" style="margin-top:.75rem;">
+                            <button class="btn btn-danger" type="button">Vælg anden fil</button>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <span class="demo-label">density rule</span>
+                    <h3>Undgå compact på kritiske flows</h3>
+                    <p class="meta">
+                        Confirmations, no-access, errors, onboarding og destructive actions skal bevare tydelighed,
+                        spacing og læsbarhed.
+                    </p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Mobil compact reducerer information — ikke touch targets</h2>
+
+            <div class="grid grid-2">
+                <article class="card" data-density="compact">
+                    <span class="demo-label">mobile compact</span>
+                    <h3>Plante i compact mobile row</h3>
+
+                    <div class="mobile-row">
+                        <strong>Lavendel</strong>
+                        <span class="metadata">Sol · Staude · 30–60 cm</span>
+                        <div class="mobile-actions">
+                            <button class="btn btn-primary" type="button">Vis plante</button>
+                        </div>
+                    </div>
+
+                    <p class="meta" style="margin-top:1rem;">
+                        Rækken er kortere, men knappen er stadig mindst 44 px høj.
+                    </p>
+                </article>
+
+                <article class="card">
+                    <span class="demo-label">accessibility</span>
+                    <h3>Compact må ikke bryde baseline</h3>
+                    <ul class="meta">
+                        <li>Touch targets skal stadig være store nok.</li>
+                        <li>Focus states skal stadig være tydelige.</li>
+                        <li>Labels og statusbeskeder må ikke skjules.</li>
+                        <li>Farve må ikke blive eneste signal.</li>
+                    </ul>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Density som tokens</h2>
+
+            <article class="card">
+                <p class="meta">
+                    Density bør styres med tokens/classes, så spacing ændres konsistent på tværs af komponenter.
+                </p>
+
+                <pre><code>:root {
+  --card-padding: 1rem;
+  --row-padding-y: .75rem;
+  --table-cell-padding: .75rem;
+}
+
+[data-density="comfortable"] {
+  --card-padding: 1.5rem;
+  --row-padding-y: 1rem;
+  --table-cell-padding: 1rem;
+}
+
+[data-density="compact"] {
+  --card-padding: .75rem;
+  --row-padding-y: .45rem;
+  --table-cell-padding: .5rem;
+}</code></pre>
+            </article>
+        </section>
+
+        <section class="section">
+            <h2>Beslutningstabel</h2>
+
+            <section class="decision">
+                <div class="decision-row">
+                    <strong>Dashboard</strong>
+                    <span>Overblik, status og navigation.</span>
+                    <span class="badge badge-primary">Comfortable</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Detail pages</strong>
+                    <span>Læsning, handling og relaterede sektioner.</span>
+                    <span class="badge badge-primary">Default</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Plantesøgning</strong>
+                    <span>Lange resultater, hurtig scanning og færre metadatafelter.</span>
+                    <span class="badge badge-primary">Compact rows</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Materialelister</strong>
+                    <span>Strukturerede data, mængder, pris og sammenligning.</span>
+                    <span class="badge badge-primary">Compact/table</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Errors/no-access</strong>
+                    <span>Kritisk eller forklarende information skal være tydelig.</span>
+                    <span class="badge badge-danger">Ikke compact</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Print</strong>
+                    <span>Dokumentation, tabeller og kompakte lister.</span>
+                    <span class="badge badge-warning">Print density</span>
+                </div>
+            </section>
+        </section>
+    </main>
+</body>
+</html>

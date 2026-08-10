@@ -1,0 +1,498 @@
+﻿<!doctype html>
+<html lang="da">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MyGardenPlanner - Demo18 Tables vs cards vs compact lists</title>
+
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            margin: 0;
+            background: #FAF8F2;
+            color: #243128;
+            line-height: 1.5;
+        }
+
+        main {
+            max-width: 1180px;
+            margin: auto;
+            padding: 32px 20px;
+        }
+
+        .hero,
+        .card,
+        .row,
+        .table-wrap,
+        .decision {
+            background: white;
+            border: 1px solid #D8D2C7;
+            border-radius: 14px;
+            box-shadow: 0 1px 2px rgba(36, 49, 40, .08);
+            padding: 18px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #fff, #DDE8D8);
+            margin-bottom: 24px;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            margin: 0;
+        }
+
+        h2 {
+            margin: 28px 0 12px;
+        }
+
+        .lead,
+        .meta {
+            color: #6F766D;
+        }
+
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .badge {
+            display: inline-flex;
+            border: 1px solid #D8D2C7;
+            background: #EFEAE0;
+            color: #6F766D;
+            border-radius: 999px;
+            padding: 3px 10px;
+            font-size: .78rem;
+            font-weight: 700;
+        }
+
+        .badge-primary {
+            background: #DDE8D8;
+            color: #2F5138;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .btn {
+            border: 1px solid #D8D2C7;
+            background: white;
+            color: #2F5138;
+            border-radius: 10px;
+            padding: 8px 12px;
+            font-weight: 700;
+        }
+
+        .btn-primary {
+            background: #3F6B4A;
+            color: white;
+            border-color: #3F6B4A;
+        }
+
+        .btn-danger {
+            color: #9F3A38;
+            border-color: rgba(159, 58, 56, .35);
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .rows {
+            display: grid;
+            gap: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th,
+        td {
+            text-align: left;
+            border-bottom: 1px solid #D8D2C7;
+            padding: 10px;
+            vertical-align: top;
+        }
+
+        th {
+            font-weight: 800;
+            background: #EFEAE0;
+        }
+
+        .table-wrap {
+            overflow: auto;
+            padding: 0;
+        }
+
+        .thumb-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .thumb {
+            aspect-ratio: 1 / 1;
+            border-radius: 12px;
+            background: #DDE8D8;
+            border: 1px solid rgba(63, 107, 74, .18);
+            display: grid;
+            place-items: center;
+            font-size: 2rem;
+        }
+
+        .decision {
+            display: grid;
+            gap: 10px;
+        }
+
+        .decision-row {
+            display: grid;
+            grid-template-columns: 180px 1fr 160px;
+            gap: 12px;
+            border: 1px solid #D8D2C7;
+            border-radius: 12px;
+            padding: 12px;
+            background: white;
+        }
+
+        .view-toggle {
+            display: inline-flex;
+            border: 1px solid #D8D2C7;
+            border-radius: 12px;
+            padding: 3px;
+            background: white;
+            gap: 3px;
+        }
+
+            .view-toggle span {
+                padding: 6px 10px;
+                border-radius: 9px;
+                font-weight: 700;
+                color: #6F766D;
+            }
+
+            .view-toggle .active {
+                background: #DDE8D8;
+                color: #2F5138;
+            }
+
+        .print-note {
+            border-left: 5px solid #B86B4B;
+            background: #F8E8D8;
+            padding: 12px;
+            border-radius: 12px;
+        }
+
+        @media(max-width: 900px) {
+            .grid-3,
+            .grid-2,
+            .thumb-grid,
+            .row,
+            .decision-row {
+                grid-template-columns: 1fr;
+            }
+
+            .actions .btn {
+                width: 100%;
+            }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .actions,
+            .view-toggle {
+                display: none;
+            }
+
+            .card,
+            .row,
+            .table-wrap,
+            .hero,
+            .decision {
+                box-shadow: none;
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <section class="hero">
+            <span class="badge badge-primary">Demo18</span>
+            <h1>Tables vs. cards vs. compact lists</h1>
+            <p class="lead">
+                Samme datatyper kan vises forskelligt alt efter opgaven:
+                browsing, hurtig scanning, sammenligning, print eller visuel genkendelse.
+            </p>
+        </section>
+
+        <h2>Cards: overblik og browsing</h2>
+
+        <div class="grid grid-3">
+            <article class="card">
+                <span class="badge badge-primary">Plante</span>
+                <h3>Lavendel</h3>
+                <p class="meta"><em>Lavandula angustifolia</em></p>
+                <p>Sol · Staude · 30-60 cm · juni-august</p>
+
+                <div>
+                    <span class="badge">Duft</span>
+                    <span class="badge">Tørketålende</span>
+                </div>
+
+                <div class="actions">
+                    <button class="btn btn-primary">Vis</button>
+                    <button class="btn">Tilføj</button>
+                </div>
+            </article>
+
+            <article class="card">
+                <span class="badge badge-primary">Have</span>
+                <h3>Villa Solbakken</h3>
+                <p class="meta">Kundehave · Aarhus N</p>
+                <p>6 bede · 3 filer · 2 medlemmer</p>
+
+                <div class="actions">
+                    <button class="btn btn-primary">Åbn</button>
+                    <button class="btn">Print</button>
+                </div>
+            </article>
+
+            <article class="card">
+                <span class="badge badge-primary">Bed</span>
+                <h3>Staudehaven mod syd</h3>
+                <p class="meta">3,50 × 1,20 m · Sol</p>
+                <p>God til visuel scanning og kontekst.</p>
+
+                <div class="actions">
+                    <button class="btn btn-primary">Åbn</button>
+                    <button class="btn btn-danger">Arkivér</button>
+                </div>
+            </article>
+        </div>
+
+        <h2>Compact rows: lange lister og søgeresultater</h2>
+
+        <div class="rows">
+            <div class="row">
+                <div>
+                    <h3>Lavendel</h3>
+                    <p class="meta">Lavandula angustifolia · Sol · Staude · 30-60 cm</p>
+                </div>
+                <div>
+                    <span class="badge">Staude</span>
+                    <button class="btn">Vis</button>
+                </div>
+            </div>
+
+            <div class="row">
+                <div>
+                    <h3>Salvie</h3>
+                    <p class="meta">Salvia officinalis · Sol · 40-70 cm</p>
+                </div>
+                <div>
+                    <span class="badge">Krydderurt</span>
+                    <button class="btn">Vis</button>
+                </div>
+            </div>
+
+            <div class="row">
+                <div>
+                    <h3>Storkenæb</h3>
+                    <p class="meta">Geranium · Sol/halvskygge · 25-45 cm</p>
+                </div>
+                <div>
+                    <span class="badge">Bunddække</span>
+                    <button class="btn">Vis</button>
+                </div>
+            </div>
+        </div>
+
+        <h2>Tables: sammenligning, tal og print</h2>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Navn</th>
+                        <th>Type</th>
+                        <th>Lys</th>
+                        <th>Højde</th>
+                        <th>Blomstring</th>
+                        <th>Note</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Lavendel</td>
+                        <td>Staude</td>
+                        <td>Sol</td>
+                        <td>30-60 cm</td>
+                        <td>Juni-august</td>
+                        <td>God til tørre bede.</td>
+                    </tr>
+                    <tr>
+                        <td>Salvie</td>
+                        <td>Krydderurt</td>
+                        <td>Sol</td>
+                        <td>40-70 cm</td>
+                        <td>Juni-juli</td>
+                        <td>Kan bruges i planteplan.</td>
+                    </tr>
+                    <tr>
+                        <td>Storkenæb</td>
+                        <td>Staude</td>
+                        <td>Sol/halvskygge</td>
+                        <td>25-45 cm</td>
+                        <td>Maj-juli</td>
+                        <td>Velegnet som bunddække.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>Thumbnail grid: billeder og filer</h2>
+
+        <div class="thumb-grid">
+            <article class="card">
+                <div class="thumb">PDF</div>
+                <h3>Haveskitse.pdf</h3>
+                <p class="meta">Preview-egnet dokument</p>
+            </article>
+
+            <article class="card">
+                <div class="thumb">🌿</div>
+                <h3>Referencefoto.jpg</h3>
+                <p class="meta">Visuel genkendelse</p>
+            </article>
+
+            <article class="card">
+                <div class="thumb">DOC</div>
+                <h3>Kundebrief.docx</h3>
+                <p class="meta">Actions-only dokument</p>
+            </article>
+
+            <article class="card">
+                <div class="thumb">🔒</div>
+                <h3>Privat tilbud.pdf</h3>
+                <p class="meta">Begrænset adgang</p>
+            </article>
+        </div>
+
+        <h2>View-mode toggle</h2>
+
+        <div class="card">
+            <div class="view-toggle">
+                <span class="active">Cards</span>
+                <span>Liste</span>
+                <span>Tabel</span>
+            </div>
+            <p class="meta">
+                Brug kun toggle, når flere visninger giver reel værdi.
+                Valget bør bevares i navigation state.
+            </p>
+        </div>
+
+        <h2>Mobilstrategi for tabeller</h2>
+
+        <div class="grid grid-2">
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Materiale</th>
+                            <th>Type</th>
+                            <th>Mål</th>
+                            <th>Note</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Chaussésten</td>
+                            <td>Belægning</td>
+                            <td>10 × 10 × 10 cm</td>
+                            <td>Kant og sti</td>
+                        </tr>
+                        <tr>
+                            <td>Kompost</td>
+                            <td>Jord</td>
+                            <td>40 L</td>
+                            <td>Jordforbedring</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3>Stacked mobile row</h3>
+                <p><strong>Chaussésten</strong></p>
+                <p class="meta">
+                    Type: Belægning<br>
+                    Mål: 10 × 10 × 10 cm<br>
+                    Note: Kant og sti
+                </p>
+            </div>
+        </div>
+
+        <h2>Print-note</h2>
+
+        <div class="print-note">
+            <strong>Cards på skærm kan blive til tabeller i print.</strong>
+            <p class="meta">
+                Materialelister, plantelister og dokumentation bør typisk printes som tabeller/lister.
+            </p>
+        </div>
+
+        <h2>Beslutningsmodel</h2>
+
+        <div class="decision">
+            <div class="decision-row">
+                <strong>Overblik / browsing</strong>
+                <span>Få eller mellem mange objekter, hvor kontekst og badges er vigtige.</span>
+                <span class="badge badge-primary">Cards</span>
+            </div>
+
+            <div class="decision-row">
+                <strong>Lange lister</strong>
+                <span>Søge- og filterresultater, hvor hurtig scanning er vigtig.</span>
+                <span class="badge badge-primary">Compact rows</span>
+            </div>
+
+            <div class="decision-row">
+                <strong>Sammenligning</strong>
+                <span>Tal, mål, priser, mængder, print og kolonnebaseret sammenligning.</span>
+                <span class="badge badge-primary">Table</span>
+            </div>
+
+            <div class="decision-row">
+                <strong>Visuelt indhold</strong>
+                <span>Billeder, tegninger, referencefotos og PDF-forsider.</span>
+                <span class="badge badge-primary">Thumbnail grid</span>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

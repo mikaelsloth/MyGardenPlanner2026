@@ -1,0 +1,754 @@
+﻿<!doctype html>
+<html lang="da">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MyGardenPlanner - Demo20 Mobile-specific interaction guidelines</title>
+
+    <style>
+        :root {
+            --primary: #3F6B4A;
+            --primary-dark: #2F5138;
+            --primary-soft: #DDE8D8;
+            --accent: #B86B4B;
+            --text: #243128;
+            --muted: #6F766D;
+            --bg: #FAF8F2;
+            --surface: #fff;
+            --surface-muted: #EFEAE0;
+            --border: #D8D2C7;
+            --danger: #9F3A38;
+            --danger-soft: #FFF4F3;
+            --warning: #F8E8D8;
+            --shadow: 0 12px 28px rgba(36,49,40,.10);
+            --r: 16px;
+            --font: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            line-height: 1.5;
+        }
+
+        main {
+            max-width: 1180px;
+            margin: auto;
+            padding: 32px 20px;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 4vw, 3.2rem);
+            line-height: 1.1;
+            margin: 0;
+        }
+
+        h2 {
+            margin: 32px 0 12px;
+        }
+
+        h3 {
+            margin: 0;
+        }
+
+        .lead,
+        .meta {
+            color: var(--muted);
+        }
+
+        .hero,
+        .card,
+        .phone,
+        .table-wrap,
+        .decision {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            box-shadow: 0 1px 2px rgba(36,49,40,.08);
+            padding: 18px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #fff, var(--primary-soft));
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+        }
+
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid var(--border);
+            background: var(--surface-muted);
+            color: var(--muted);
+            border-radius: 999px;
+            padding: 3px 10px;
+            font-size: .78rem;
+            font-weight: 800;
+        }
+
+        .badge-primary {
+            background: var(--primary-soft);
+            color: var(--primary-dark);
+            border-color: rgba(63,107,74,.18);
+        }
+
+        .badge-danger {
+            background: var(--danger-soft);
+            color: var(--danger);
+            border-color: rgba(159,58,56,.22);
+        }
+
+        .btn-row,
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .btn {
+            min-height: 44px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--primary-dark);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+        }
+
+        .btn-danger {
+            color: var(--danger);
+            border-color: rgba(159,58,56,.35);
+        }
+
+        .icon-btn {
+            width: 44px;
+            height: 44px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+            display: grid;
+            place-items: center;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        .phone {
+            max-width: 390px;
+            margin: auto;
+            padding: 0;
+            overflow: hidden;
+            border-radius: 28px;
+            border: 10px solid #243128;
+            background: var(--bg);
+        }
+
+        .phone-top {
+            position: sticky;
+            top: 0;
+            background: rgba(250,248,242,.95);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 12px;
+            display: grid;
+            grid-template-columns: 44px 1fr 44px;
+            gap: 8px;
+            align-items: center;
+            z-index: 2;
+        }
+
+        .phone-content {
+            padding: 14px;
+            display: grid;
+            gap: 14px;
+        }
+
+        .mobile-section {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .mobile-actions {
+            display: grid;
+            gap: 10px;
+        }
+
+        .filter-mobile {
+            display: grid;
+            gap: 10px;
+        }
+
+        .input {
+            width: 100%;
+            min-height: 44px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 10px;
+            margin-top: 6px;
+            font: inherit;
+        }
+
+        .chips {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: #fff;
+            padding: 4px 10px;
+            font-size: .85rem;
+            font-weight: 800;
+        }
+
+        .drawer {
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            background: #fff;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .drawer-head,
+        .drawer-foot {
+            padding: 14px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .drawer-foot {
+            border-bottom: 0;
+            border-top: 1px solid var(--border);
+            background: var(--surface-muted);
+        }
+
+        .drawer-body {
+            padding: 14px;
+            display: grid;
+            gap: 14px;
+        }
+
+        .check-list {
+            display: grid;
+            gap: 8px;
+        }
+
+            .check-list label {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+            }
+
+        .stacked-row {
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: #fff;
+            padding: 14px;
+            display: grid;
+            gap: 6px;
+        }
+
+        .preview {
+            height: 520px;
+            background: #243128;
+            color: #fff;
+            border-radius: 28px;
+            overflow: hidden;
+            display: grid;
+            grid-template-rows: auto 1fr auto;
+        }
+
+        .preview-top,
+        .preview-bottom {
+            padding: 12px;
+            display: grid;
+            grid-template-columns: 44px 1fr 44px;
+            gap: 10px;
+            align-items: center;
+            background: rgba(0,0,0,.35);
+        }
+
+        .preview-body {
+            display: grid;
+            place-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .confirm {
+            border: 1px solid rgba(159,58,56,.25);
+            background: #fff;
+            border-radius: 18px;
+            padding: 18px;
+            display: grid;
+            gap: 12px;
+        }
+
+        .toast {
+            position: relative;
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            padding: 12px;
+        }
+
+        .toast-area {
+            position: relative;
+            min-height: 220px;
+            border: 1px dashed var(--border);
+            border-radius: 16px;
+            background: linear-gradient(135deg, #fff, var(--surface-muted));
+            padding: 14px;
+        }
+
+        .toast-stack {
+            position: absolute;
+            left: 14px;
+            right: 14px;
+            bottom: 14px;
+            display: grid;
+            gap: 8px;
+        }
+
+        .decision {
+            display: grid;
+            gap: 10px;
+        }
+
+        .decision-row {
+            display: grid;
+            grid-template-columns: 190px 1fr 170px;
+            gap: 12px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 12px;
+            background: #fff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+            padding: 10px;
+            vertical-align: top;
+        }
+
+        th {
+            background: var(--surface-muted);
+        }
+
+        .table-wrap {
+            overflow: auto;
+            padding: 0;
+        }
+
+        .full-width-actions {
+            display: grid;
+            gap: 10px;
+        }
+
+            .full-width-actions .btn {
+                width: 100%;
+            }
+
+        @media(max-width: 900px) {
+            main {
+                padding: 20px 14px;
+            }
+
+            .grid-3,
+            .grid-2,
+            .decision-row {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-row,
+            .actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .phone {
+                max-width: none;
+            }
+
+            .drawer-foot {
+                flex-direction: column;
+            }
+
+                .drawer-foot .btn {
+                    width: 100%;
+                }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .phone-top,
+            .actions,
+            .btn-row,
+            .drawer,
+            .preview,
+            .toast-area {
+                display: none;
+            }
+
+            .hero,
+            .card,
+            .phone,
+            .decision,
+            .table-wrap {
+                box-shadow: none;
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <section class="hero">
+            <span class="badge badge-primary">Demo20</span>
+            <h1>Mobile-specific interaction guidelines</h1>
+            <p class="lead">
+                Mobil er touch-first. Denne demo viser kompakt topbar, fuldbreddeknapper,
+                filter drawer, stacked table rows, full-screen media preview, mobile confirmation,
+                toast-placering og collapsible sektioner.
+            </p>
+
+            <div class="btn-row">
+                <button class="btn btn-primary">Primær handling</button>
+                <button class="btn">Sekundær handling</button>
+            </div>
+        </section>
+
+        <h2>Mobil detail page i én kolonne</h2>
+
+        <div class="grid grid-2">
+            <section class="phone" aria-label="Mobil detail page">
+                <div class="phone-top">
+                    <button class="icon-btn">‹</button>
+                    <strong>Villa Solbakken</strong>
+                    <button class="icon-btn">⋯</button>
+                </div>
+
+                <div class="phone-content">
+                    <section class="mobile-section">
+                        <span class="badge badge-primary">Aktiv</span>
+                        <h3>Villa Solbakken</h3>
+                        <p class="meta">Kundehave · Aarhus N · 3 filer</p>
+
+                        <div class="mobile-actions">
+                            <button class="btn btn-primary">Redigér have</button>
+                            <button class="btn">Upload fil</button>
+                        </div>
+                    </section>
+
+                    <section class="mobile-section">
+                        <h3>Nøgletal</h3>
+                        <p class="meta">6 bede · 3 filer · 2 medlemmer · 1 invitation afventer</p>
+                    </section>
+
+                    <section class="mobile-section">
+                        <h3>Bede</h3>
+                        <p class="meta">Handlinger er tæt på sektionen.</p>
+                        <button class="btn">Opret bed</button>
+                    </section>
+
+                    <details class="mobile-section" open>
+                        <summary>
+                            <strong>Medlemmer</strong>
+                            <span class="meta"> · 2 aktive · 1 invitation</span>
+                        </summary>
+                        <p class="meta">Åben som default på grund af attention state.</p>
+                    </details>
+
+                    <details class="mobile-section">
+                        <summary>
+                            <strong>Arkivering og sletning</strong>
+                            <span class="meta"> · avancerede handlinger</span>
+                        </summary>
+
+                        <div class="mobile-actions" style="margin-top:10px">
+                            <button class="btn btn-danger">Arkivér have</button>
+                            <button class="btn btn-danger">Slet permanent</button>
+                        </div>
+                    </details>
+                </div>
+            </section>
+
+            <section class="card">
+                <h3>Principper vist her</h3>
+                <ul>
+                    <li>Kompakt sticky topbar med tilbagevej og menu.</li>
+                    <li>Detail page bliver én kolonne.</li>
+                    <li>Primære handlinger er store og fuld bredde.</li>
+                    <li>Sekundære sidekort bliver sektioner/collapsibles.</li>
+                    <li>Attention-sektioner er åbne, mens danger kan være collapsed.</li>
+                </ul>
+            </section>
+        </div>
+
+        <h2>Filter som drawer / bottom sheet</h2>
+
+        <div class="grid grid-2">
+            <section class="card filter-mobile">
+                <label>
+                    <strong>Søg planter</strong>
+                    <input class="input" value="lavendel">
+                </label>
+
+                <div class="grid grid-2">
+                    <button class="btn">Filtrer</button>
+                    <button class="btn">Sortér</button>
+                </div>
+
+                <div class="chips">
+                    <span class="chip">Sol ×</span>
+                    <span class="chip">Staude ×</span>
+                </div>
+
+                <p class="meta">
+                    På mobil er søgning synlig, mens flere filtre flyttes i drawer.
+                </p>
+            </section>
+
+            <section class="drawer">
+                <div class="drawer-head">
+                    <h3>Filtrer planter</h3>
+                    <button class="icon-btn">×</button>
+                </div>
+
+                <div class="drawer-body">
+                    <div>
+                        <strong>Lys</strong>
+                        <div class="check-list">
+                            <label><input type="checkbox" checked> Sol</label>
+                            <label><input type="checkbox"> Halvskygge</label>
+                            <label><input type="checkbox"> Skygge</label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <strong>Type</strong>
+                        <div class="check-list">
+                            <label><input type="checkbox" checked> Staude</label>
+                            <label><input type="checkbox"> Busk</label>
+                            <label><input type="checkbox"> Græs</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="drawer-foot">
+                    <button class="btn">Nulstil</button>
+                    <button class="btn btn-primary">Anvend filtre</button>
+                </div>
+            </section>
+        </div>
+
+        <h2>Tables bliver stacked rows</h2>
+
+        <div class="grid grid-2">
+            <section class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Materiale</th>
+                            <th>Type</th>
+                            <th>Mål</th>
+                            <th>Pris</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Chaussésten</td>
+                            <td>Belægning</td>
+                            <td>10 × 10 × 10 cm</td>
+                            <td>4,50 kr/stk.</td>
+                        </tr>
+                        <tr>
+                            <td>Kompost</td>
+                            <td>Jord</td>
+                            <td>40 L</td>
+                            <td>49 kr.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <section class="grid">
+                <article class="stacked-row">
+                    <strong>Chaussésten</strong>
+                    <span class="meta">Type: Belægning</span>
+                    <span class="meta">Mål: 10 × 10 × 10 cm</span>
+                    <span class="meta">Pris: 4,50 kr/stk.</span>
+                </article>
+
+                <article class="stacked-row">
+                    <strong>Kompost</strong>
+                    <span class="meta">Type: Jord</span>
+                    <span class="meta">Mål: 40 L</span>
+                    <span class="meta">Pris: 49 kr.</span>
+                </article>
+            </section>
+        </div>
+
+        <h2>Media preview som full-screen</h2>
+
+        <div class="grid grid-2">
+            <section class="card">
+                <h3>Filkort</h3>
+                <p class="meta">
+                    På mobil bør preview bruge hele skærmen frem for et klemt panel.
+                </p>
+                <button class="btn btn-primary">Vis preview</button>
+            </section>
+
+            <section class="preview">
+                <div class="preview-top">
+                    <button class="icon-btn">‹</button>
+                    <strong>Haveskitse maj.pdf</strong>
+                    <button class="icon-btn">⋯</button>
+                </div>
+
+                <div class="preview-body">
+                    <div>
+                        <h3>PDF preview</h3>
+                        <p class="meta" style="color:#ddd">
+                            Full-screen preview med tydelig luk/tilbage og download nederst.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="preview-bottom">
+                    <span></span>
+                    <button class="btn btn-primary">Download</button>
+                    <span></span>
+                </div>
+            </section>
+        </div>
+
+        <h2>Mobile confirmation med fuldbreddeknapper</h2>
+
+        <section class="confirm">
+            <span class="badge badge-danger">Destructive action</span>
+            <h3>Slet fil?</h3>
+            <p class="meta">
+                “Haveskitse maj.pdf” fjernes fra Villa Solbakken.
+                Denne handling kan ikke fortrydes.
+            </p>
+
+            <div class="full-width-actions">
+                <button class="btn">Annullér</button>
+                <button class="btn btn-danger">Slet fil</button>
+            </div>
+        </section>
+
+        <h2>Toast på mobil må ikke bære kritisk information</h2>
+
+        <div class="toast-area">
+            <section class="card">
+                <h3>Brugeren arbejder videre</h3>
+                <p class="meta">
+                    Toast ligger nederst, men må ikke dække vigtige handlinger
+                    eller være eneste feedback for fejl.
+                </p>
+                <button class="btn btn-primary">Gem</button>
+            </section>
+
+            <div class="toast-stack">
+                <div class="toast">
+                    <strong>Link kopieret.</strong>
+                    <p class="meta">Egnet toast: kort og ikke-kritisk.</p>
+                </div>
+
+                <div class="toast" style="border-style:dashed">
+                    <strong>Upload fejlede.</strong>
+                    <p class="meta">Ikke egnet som toast alene. Skal være inline.</p>
+                </div>
+            </div>
+        </div>
+
+        <h2>Beslutningstabel</h2>
+
+        <section class="decision">
+            <div class="decision-row">
+                <strong>Filter</strong>
+                <span>Desktop toolbar bliver drawer/bottom sheet.</span>
+                <span class="badge badge-primary">Drawer</span>
+            </div>
+
+            <div class="decision-row">
+                <strong>Tables</strong>
+                <span>Tabeller bliver stacked rows eller cards.</span>
+                <span class="badge badge-primary">Rows/cards</span>
+            </div>
+
+            <div class="decision-row">
+                <strong>Preview</strong>
+                <span>Media preview åbnes som full-screen på mobil.</span>
+                <span class="badge badge-primary">Full-screen</span>
+            </div>
+
+            <div class="decision-row">
+                <strong>Actions</strong>
+                <span>Formular-, upload- og confirmation-actions er fuld bredde.</span>
+                <span class="badge badge-primary">44px+ targets</span>
+            </div>
+
+            <div class="decision-row">
+                <strong>Hover</strong>
+                <span>Ingen funktionalitet må afhænge af hover.</span>
+                <span class="badge badge-primary">Tap only</span>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

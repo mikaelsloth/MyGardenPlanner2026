@@ -1,0 +1,886 @@
+﻿<!doctype html>
+<html lang="da">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MyGardenPlanner – Demo23 Notifications og attention management</title>
+
+    <style>
+        :root {
+            --mgp-primary: #3F6B4A;
+            --mgp-primary-dark: #2F5138;
+            --mgp-primary-soft: #DDE8D8;
+            --mgp-accent: #B86B4B;
+            --mgp-text: #243128;
+            --mgp-text-muted: #6F766D;
+            --mgp-bg: #FAF8F2;
+            --mgp-surface: #FFFFFF;
+            --mgp-surface-muted: #EFEAE0;
+            --mgp-border: #D8D2C7;
+            --mgp-danger: #9F3A38;
+            --mgp-danger-soft: #FFF4F3;
+            --mgp-warning-bg: #F8E8D8;
+            --mgp-info-soft: #E7EEF0;
+            --content-max: 1180px;
+            --radius-sm: .45rem;
+            --radius-md: .75rem;
+            --radius-lg: 1.1rem;
+            --shadow-sm: 0 1px 2px rgba(36,49,40,.08);
+            --shadow-md: 0 12px 28px rgba(36,49,40,.10);
+            --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+            --space-2xs: .25rem;
+            --space-xs: .5rem;
+            --space-sm: .75rem;
+            --space-md: 1rem;
+            --space-lg: 1.5rem;
+            --space-xl: 2rem;
+            --space-2xl: 3rem;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--mgp-bg);
+            color: var(--mgp-text);
+            font-family: var(--font-sans);
+            line-height: 1.55;
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--mgp-text);
+            line-height: 1.15;
+            letter-spacing: -.03em;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(2rem, 4vw, 3.25rem);
+        }
+
+        h2 {
+            margin: 0 0 var(--space-md);
+            font-size: clamp(1.35rem, 2vw, 2rem);
+        }
+
+        h3 {
+            margin: 0;
+            font-size: 1.05rem;
+        }
+
+        p {
+            margin-top: 0;
+        }
+
+        code {
+            font-family: var(--font-mono);
+            font-size: .92em;
+        }
+
+        main {
+            max-width: var(--content-max);
+            width: 100%;
+            margin: 0 auto;
+            padding: var(--space-xl) var(--space-lg) var(--space-2xl);
+        }
+
+        .section {
+            margin-top: var(--space-xl);
+        }
+
+        .hero,
+        .card,
+        .status-message,
+        .attention-row,
+        .banner,
+        .notification-card,
+        .decision {
+            background: var(--mgp-surface);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            padding: var(--space-lg);
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--mgp-surface), var(--mgp-primary-soft));
+            box-shadow: var(--shadow-md);
+            margin-bottom: var(--space-xl);
+        }
+
+        .lead,
+        .meta {
+            color: var(--mgp-text-muted);
+        }
+
+        .lead {
+            max-width: 72ch;
+            font-size: 1.08rem;
+            margin-bottom: var(--space-lg);
+        }
+
+        .grid {
+            display: grid;
+            gap: var(--space-md);
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .stack {
+            display: grid;
+            gap: var(--space-md);
+        }
+
+        .demo-label {
+            display: inline-flex;
+            width: fit-content;
+            align-items: center;
+            color: var(--mgp-text-muted);
+            font-family: var(--font-mono);
+            font-size: .78rem;
+            background: var(--mgp-surface-muted);
+            border: 1px solid var(--mgp-border);
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            margin-bottom: var(--space-sm);
+        }
+
+        .btn-row,
+        .card-actions,
+        .badge-row {
+            display: flex;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .card-actions {
+            margin-top: var(--space-sm);
+            gap: var(--space-xs);
+        }
+
+        .btn {
+            min-height: 44px;
+            border: 1px solid var(--mgp-border);
+            background: var(--mgp-surface);
+            color: var(--mgp-primary-dark);
+            border-radius: .7rem;
+            padding: var(--space-sm) var(--space-md);
+            font: inherit;
+            font-weight: 800;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-xs);
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--mgp-primary);
+            border-color: var(--mgp-primary);
+            color: white;
+        }
+
+        .btn-danger {
+            color: var(--mgp-danger);
+            border-color: rgba(159,58,56,.35);
+        }
+
+        .btn-ghost {
+            border-color: transparent;
+            background: transparent;
+            color: var(--mgp-primary-dark);
+            padding-inline: var(--space-xs);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid transparent;
+            border-radius: 999px;
+            padding: var(--space-2xs) var(--space-sm);
+            font-size: .78rem;
+            font-weight: 800;
+            white-space: nowrap;
+        }
+
+        .badge-neutral {
+            color: var(--mgp-text-muted);
+            background: var(--mgp-surface-muted);
+            border-color: var(--mgp-border);
+        }
+
+        .badge-primary {
+            color: var(--mgp-primary-dark);
+            background: var(--mgp-primary-soft);
+            border-color: rgba(63,107,74,.18);
+        }
+
+        .badge-warning {
+            color: #653521;
+            background: var(--mgp-warning-bg);
+            border-color: rgba(184,107,75,.22);
+        }
+
+        .badge-danger {
+            color: var(--mgp-danger);
+            background: var(--mgp-danger-soft);
+            border-color: rgba(159,58,56,.22);
+        }
+
+        .badge-info {
+            color: #55717A;
+            background: var(--mgp-info-soft);
+            border-color: rgba(85,113,122,.22);
+        }
+
+        .attention-scale {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .attention-row {
+            display: grid;
+            grid-template-columns: 140px 1fr 180px;
+            gap: var(--space-md);
+            align-items: center;
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+        }
+
+            .attention-row.level-0 {
+                border-left: 5px solid var(--mgp-border);
+            }
+
+            .attention-row.level-1 {
+                border-left: 5px solid var(--mgp-primary);
+            }
+
+            .attention-row.level-2 {
+                border-left: 5px solid var(--mgp-accent);
+            }
+
+            .attention-row.level-3 {
+                border-left: 5px solid var(--mgp-danger);
+            }
+
+        .status-message {
+            display: flex;
+            gap: var(--space-sm);
+            align-items: flex-start;
+            box-shadow: none;
+            border-radius: var(--radius-md);
+        }
+
+            .status-message.section-attention {
+                border-left: 5px solid var(--mgp-accent);
+            }
+
+            .status-message.danger-attention {
+                border-left: 5px solid var(--mgp-danger);
+            }
+
+        .status-dot {
+            width: .8rem;
+            height: .8rem;
+            border-radius: 999px;
+            margin-top: .45rem;
+            flex: 0 0 auto;
+            background: var(--mgp-primary);
+        }
+
+        .status-warning .status-dot {
+            background: var(--mgp-accent);
+        }
+
+        .status-danger .status-dot {
+            background: var(--mgp-danger);
+        }
+
+        .status-info .status-dot {
+            background: #55717A;
+        }
+
+        .banner {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: var(--space-md);
+            align-items: center;
+            border-left: 6px solid var(--mgp-danger);
+            background: linear-gradient(90deg, var(--mgp-danger-soft), var(--mgp-surface));
+        }
+
+        .object-card {
+            display: grid;
+            gap: var(--space-sm);
+            padding: var(--space-md);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            background: var(--mgp-surface);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .object-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            gap: var(--space-md);
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: var(--space-md);
+        }
+
+        .summary-card {
+            padding: var(--space-md);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            background: var(--mgp-surface);
+            box-shadow: var(--shadow-sm);
+        }
+
+            .summary-card.attention {
+                border-left: 5px solid var(--mgp-accent);
+            }
+
+            .summary-card.danger {
+                border-left: 5px solid var(--mgp-danger);
+            }
+
+            .summary-card strong {
+                display: block;
+                font-size: 1.75rem;
+                line-height: 1.1;
+                margin-bottom: var(--space-xs);
+            }
+
+        details {
+            background: var(--mgp-surface);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            overflow: hidden;
+        }
+
+            details.attention {
+                border-left: 5px solid var(--mgp-accent);
+            }
+
+            details.danger {
+                border-left: 5px solid var(--mgp-danger);
+            }
+
+        summary {
+            cursor: pointer;
+            min-height: 44px;
+            padding: var(--space-md);
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: var(--space-md);
+            align-items: center;
+            font-weight: 800;
+        }
+
+        .details-body {
+            padding: 0 var(--space-md) var(--space-md);
+            border-top: 1px solid var(--mgp-border);
+        }
+
+        .notification-list {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .notification-card {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: var(--space-md);
+            align-items: center;
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+        }
+
+        .notification-icon {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            font-weight: 900;
+            background: var(--mgp-surface-muted);
+            color: var(--mgp-text-muted);
+            border: 1px solid var(--mgp-border);
+        }
+
+        .notification-card.warning .notification-icon {
+            background: var(--mgp-warning-bg);
+            color: #653521;
+            border-color: rgba(184,107,75,.22);
+        }
+
+        .notification-card.danger .notification-icon {
+            background: var(--mgp-danger-soft);
+            color: var(--mgp-danger);
+            border-color: rgba(159,58,56,.22);
+        }
+
+        .decision {
+            display: grid;
+            gap: var(--space-sm);
+        }
+
+        .decision-row {
+            display: grid;
+            grid-template-columns: 180px 1fr 180px;
+            gap: var(--space-md);
+            align-items: center;
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            padding: var(--space-md);
+            background: var(--mgp-surface);
+        }
+
+        .nav-demo {
+            display: flex;
+            gap: var(--space-sm);
+            flex-wrap: wrap;
+            align-items: center;
+            padding: var(--space-md);
+            border: 1px solid var(--mgp-border);
+            border-radius: var(--radius-md);
+            background: var(--mgp-surface);
+        }
+
+        .nav-item {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-xs);
+            border: 1px solid var(--mgp-border);
+            border-radius: 999px;
+            padding: var(--space-xs) var(--space-sm);
+            background: var(--mgp-surface);
+            color: var(--mgp-text);
+            font-weight: 800;
+        }
+
+        @media (max-width: 900px) {
+            main {
+                padding: var(--space-lg) var(--space-md) var(--space-2xl);
+            }
+
+            .grid-2,
+            .grid-3,
+            .summary-grid,
+            .attention-row,
+            .decision-row,
+            .notification-card,
+            .banner {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-row,
+            .card-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+                .btn,
+                .btn-row .btn,
+                .card-actions .btn {
+                    width: 100%;
+                }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            main {
+                max-width: none;
+                padding: 0;
+            }
+
+            .btn-row,
+            .card-actions {
+                display: none !important;
+            }
+
+            .hero,
+            .card,
+            .status-message,
+            .attention-row,
+            .banner,
+            .notification-card,
+            .decision,
+            .summary-card,
+            details {
+                box-shadow: none;
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <section class="hero">
+            <span class="demo-label">Demo23</span>
+            <h1>Notifications og attention management</h1>
+            <p class="lead">
+                Denne demo viser et roligt attention-system til MyGardenPlanner:
+                attention levels, badges, inline status, section attention, global banner,
+                grouped notifications og collapsed sections, hvor status stadig er synlig.
+            </p>
+
+            <div class="btn-row">
+                <button class="btn btn-primary" type="button">Gennemgå attention</button>
+                <button class="btn" type="button">Se alle hændelser</button>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Attention levels</h2>
+
+            <div class="attention-scale">
+                <div class="attention-row level-0">
+                    <strong>Level 0</strong>
+                    <div>
+                        <h3>Neutral status</h3>
+                        <p class="meta">Almindelige tilstande, der ikke kræver opmærksomhed.</p>
+                    </div>
+                    <span class="badge badge-neutral">Aktiv</span>
+                </div>
+
+                <div class="attention-row level-1">
+                    <strong>Level 1</strong>
+                    <div>
+                        <h3>Lav opmærksomhed</h3>
+                        <p class="meta">Relevant information, men ingen handling nødvendig lige nu.</p>
+                    </div>
+                    <span class="badge badge-primary">Thumbnail oprettes</span>
+                </div>
+
+                <div class="attention-row level-2">
+                    <strong>Level 2</strong>
+                    <div>
+                        <h3>Middel opmærksomhed</h3>
+                        <p class="meta">Brugeren bør se informationen og kan have en relevant handling.</p>
+                    </div>
+                    <span class="badge badge-warning">Invitation afventer</span>
+                </div>
+
+                <div class="attention-row level-3">
+                    <strong>Level 3</strong>
+                    <div>
+                        <h3>Høj opmærksomhed</h3>
+                        <p class="meta">Noget påvirker brugerens mulighed for at arbejde eller kræver handling.</p>
+                    </div>
+                    <span class="badge badge-danger">Upload fejlede</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Badges: status og klassifikation — ikke almindelig metadata</h2>
+
+            <div class="grid grid-3">
+                <article class="object-card">
+                    <div class="object-card-header">
+                        <div>
+                            <h3>Villa Solbakken</h3>
+                            <p class="meta">Kundehave · Aarhus N</p>
+                        </div>
+                        <span class="badge badge-neutral">Aktiv</span>
+                    </div>
+                    <p class="meta">Neutral status: ingen stærk attention.</p>
+                </article>
+
+                <article class="object-card">
+                    <div class="object-card-header">
+                        <div>
+                            <h3>kunde@example.dk</h3>
+                            <p class="meta">Invitation til Villa Solbakken</p>
+                        </div>
+                        <span class="badge badge-warning">Afventer</span>
+                    </div>
+                    <p class="meta">Middel attention: brugeren bør kunne se status.</p>
+                </article>
+
+                <article class="object-card">
+                    <div class="object-card-header">
+                        <div>
+                            <h3>Referencefoto-bed.jpg</h3>
+                            <p class="meta">Billede · Uploadet i dag</p>
+                        </div>
+                        <span class="badge badge-danger">Fejlede</span>
+                    </div>
+                    <p class="meta">Høj attention: kræver forklaring og handling.</p>
+                    <div class="card-actions">
+                        <button class="btn btn-danger" type="button">Prøv igen</button>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Inline status tæt på årsagen</h2>
+
+            <div class="grid grid-2">
+                <article class="status-message section-attention status-warning">
+                    <span class="status-dot" aria-hidden="true"></span>
+                    <div>
+                        <strong>Invitation afventer svar</strong>
+                        <p class="meta">kunde@example.dk er inviteret som læser og har endnu ikke accepteret.</p>
+                        <div class="card-actions">
+                            <button class="btn" type="button">Se invitationer</button>
+                            <button class="btn" type="button">Tilbagekald invitation</button>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="status-message danger-attention status-danger">
+                    <span class="status-dot" aria-hidden="true"></span>
+                    <div>
+                        <strong>Upload mislykkedes</strong>
+                        <p class="meta">Filen er for stor. Vælg en mindre fil, og prøv igen.</p>
+                        <div class="card-actions">
+                            <button class="btn btn-danger" type="button">Vælg anden fil</button>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Global banner kun til globale eller blokerende forhold</h2>
+
+            <section class="banner">
+                <div>
+                    <span class="demo-label">global banner · level 3</span>
+                    <h3>Abonnement kræver handling</h3>
+                    <p class="meta">
+                        Opdater betaling for at fortsætte med at bruge delte haver og invitationer.
+                    </p>
+                </div>
+
+                <button class="btn btn-danger" type="button">Opdater betaling</button>
+            </section>
+        </section>
+
+        <section class="section">
+            <h2>Summary cards med attention counts</h2>
+
+            <div class="summary-grid">
+                <article class="summary-card">
+                    <strong>6</strong>
+                    <span class="meta">Bede</span>
+                </article>
+
+                <article class="summary-card">
+                    <strong>3</strong>
+                    <span class="meta">Filer</span>
+                </article>
+
+                <article class="summary-card attention">
+                    <strong>1</strong>
+                    <span class="meta">Invitation afventer</span>
+                </article>
+
+                <article class="summary-card danger">
+                    <strong>2</strong>
+                    <span class="meta">Filer kræver handling</span>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Attention og collapsed sections</h2>
+
+            <div class="grid grid-2">
+                <details class="attention" open>
+                    <summary>
+                        <span>
+                            Medlemmer · 2 aktive · 1 invitation afventer
+                            <br>
+                            <span class="meta">Åben som default, fordi der er attention.</span>
+                        </span>
+                        <span class="badge badge-warning">Attention</span>
+                    </summary>
+
+                    <div class="details-body">
+                        <div class="notification-list" style="margin-top:1rem;">
+                            <article class="notification-card warning">
+                                <div class="notification-icon">!</div>
+                                <div>
+                                    <strong>Invitation afventer svar</strong>
+                                    <p class="meta">kunde@example.dk er inviteret som læser.</p>
+                                </div>
+                                <button class="btn" type="button">Se</button>
+                            </article>
+                        </div>
+                    </div>
+                </details>
+
+                <details>
+                    <summary>
+                        <span>
+                            Print og eksport · ingen handling nødvendig
+                            <br>
+                            <span class="meta">Collapsed som default, fordi der ikke er attention.</span>
+                        </span>
+                        <span class="badge badge-neutral">Neutral</span>
+                    </summary>
+
+                    <div class="details-body">
+                        <p class="meta" style="margin-top:1rem;">
+                            Print og eksport er sekundære handlinger og behøver ikke optage plads,
+                            medmindre brugeren aktivt åbner sektionen.
+                        </p>
+                        <div class="card-actions">
+                            <button class="btn" type="button">Print haveoverblik</button>
+                        </div>
+                    </div>
+                </details>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Grouped notifications frem for alarm-fatigue</h2>
+
+            <div class="grid grid-2">
+                <section class="card">
+                    <span class="demo-label">dårligt mønster</span>
+                    <h3>For mange separate warnings</h3>
+                    <div class="notification-list" style="margin-top:1rem;">
+                        <article class="notification-card warning">
+                            <div class="notification-icon">!</div>
+                            <div>
+                                <strong>Fil A udløber snart</strong>
+                                <p class="meta">Kræver evt. handling.</p>
+                            </div>
+                        </article>
+
+                        <article class="notification-card warning">
+                            <div class="notification-icon">!</div>
+                            <div>
+                                <strong>Fil B udløber snart</strong>
+                                <p class="meta">Kræver evt. handling.</p>
+                            </div>
+                        </article>
+
+                        <article class="notification-card warning">
+                            <div class="notification-icon">!</div>
+                            <div>
+                                <strong>Fil C udløber snart</strong>
+                                <p class="meta">Kræver evt. handling.</p>
+                            </div>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="card">
+                    <span class="demo-label">bedre mønster</span>
+                    <h3>Samlet attention summary</h3>
+                    <article class="notification-card warning" style="margin-top:1rem;">
+                        <div class="notification-icon">3</div>
+                        <div>
+                            <strong>3 filer udløber snart</strong>
+                            <p class="meta">Gennemgå filerne og gør dem permanente, hvis de skal bevares.</p>
+                        </div>
+                        <button class="btn" type="button">Gennemgå</button>
+                    </article>
+                </section>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Navigation med diskret attention</h2>
+
+            <div class="nav-demo" aria-label="Navigation attention example">
+                <span class="nav-item">Overblik</span>
+                <span class="nav-item">Bede</span>
+                <span class="nav-item">Filer <span class="badge badge-warning">2</span></span>
+                <span class="nav-item">Medlemmer <span class="badge badge-warning">1</span></span>
+                <span class="nav-item">Aktivitet</span>
+            </div>
+
+            <p class="meta" style="margin-top:1rem;">
+                Navigation kan vise counts, men bør ikke føles som en alarmcentral.
+            </p>
+        </section>
+
+        <section class="section">
+            <h2>Attention matrix</h2>
+
+            <section class="decision">
+                <div class="decision-row">
+                    <strong>Aktiv have</strong>
+                    <span>Almindelig objektstatus.</span>
+                    <span class="badge badge-neutral">Level 0 · badge</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Thumbnail oprettes</strong>
+                    <span>Systemet arbejder, men det er ikke en fejl.</span>
+                    <span class="badge badge-primary">Level 1 · object</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Invitation afventer</strong>
+                    <span>Relevant status, der kan kræve opfølgning.</span>
+                    <span class="badge badge-warning">Level 2 · section</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Fil udløber snart</strong>
+                    <span>Brugeren bør kunne handle, fx gøre filen permanent.</span>
+                    <span class="badge badge-warning">Level 2 · inline</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Upload fejlede</strong>
+                    <span>Handling mislykkedes og kræver forklaring/retry.</span>
+                    <span class="badge badge-danger">Level 3 · inline</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Betaling kræver handling</strong>
+                    <span>Påvirker adgang/funktioner på tværs af appen.</span>
+                    <span class="badge badge-danger">Level 3 · banner</span>
+                </div>
+            </section>
+        </section>
+
+        <section class="section">
+            <h2>Beslutningspunkter</h2>
+
+            <section class="card">
+                <ul class="meta">
+                    <li><strong>Attention skal være sparsom:</strong> Ikke alle statusser er notifications.</li>
+                    <li><strong>Attention skal være forklarende:</strong> Teksten skal fortælle, hvad der sker og hvorfor.</li>
+                    <li><strong>Attention skal være handlingsorienteret:</strong> Hvis brugeren kan gøre noget, skal næste handling være tydelig.</li>
+                    <li><strong>Attention skal være kontekstuel:</strong> Vis beskeden tæt på årsagen.</li>
+                    <li><strong>Attention må ikke skjules:</strong> Collapsed sections skal stadig vise status i headeren.</li>
+                    <li><strong>Rød og orange skal bruges sparsomt:</strong> Ellers mister farverne betydning.</li>
+                </ul>
+            </section>
+        </section>
+    </main>
+</body>
+</html>

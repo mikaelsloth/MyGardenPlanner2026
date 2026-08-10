@@ -1,0 +1,1025 @@
+﻿<!doctype html>
+<html lang="da">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MyGardenPlanner – Demo24 Komponentnavngivning og design tokens</title>
+
+    <style>
+        :root {
+            /* Semantic color tokens */
+            --mgp-color-primary: #3F6B4A;
+            --mgp-color-primary-dark: #2F5138;
+            --mgp-color-primary-soft: #DDE8D8;
+            --mgp-color-accent: #B86B4B;
+            --mgp-color-bg: #FAF8F2;
+            --mgp-color-surface: #FFFFFF;
+            --mgp-color-surface-muted: #EFEAE0;
+            --mgp-color-border: #D8D2C7;
+            --mgp-color-text: #243128;
+            --mgp-color-text-muted: #6F766D;
+            --mgp-color-danger: #9F3A38;
+            --mgp-color-danger-soft: #FFF4F3;
+            --mgp-color-warning-bg: #F8E8D8;
+            --mgp-color-info-soft: #E7EEF0;
+            /* Spacing tokens */
+            --mgp-space-2xs: .25rem;
+            --mgp-space-xs: .5rem;
+            --mgp-space-sm: .75rem;
+            --mgp-space-md: 1rem;
+            --mgp-space-lg: 1.5rem;
+            --mgp-space-xl: 2rem;
+            --mgp-space-2xl: 3rem;
+            /* Radius tokens */
+            --mgp-radius-sm: .45rem;
+            --mgp-radius-md: .75rem;
+            --mgp-radius-lg: 1.1rem;
+            --mgp-radius-pill: 999px;
+            /* Shadow tokens */
+            --mgp-shadow-sm: 0 1px 2px rgba(36, 49, 40, .08);
+            --mgp-shadow-md: 0 12px 28px rgba(36, 49, 40, .10);
+            /* Typography tokens */
+            --mgp-font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --mgp-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+            --mgp-font-size-xs: .78rem;
+            --mgp-font-size-sm: .9rem;
+            --mgp-font-size-base: 1rem;
+            --mgp-font-size-md: 1.08rem;
+            --mgp-font-size-xl: clamp(1.35rem, 2vw, 2rem);
+            --mgp-font-size-xxl: clamp(2rem, 4vw, 3.25rem);
+            --mgp-line-height-tight: 1.15;
+            --mgp-line-height-base: 1.55;
+            --mgp-font-weight-medium: 600;
+            --mgp-font-weight-bold: 750;
+            /* Layout tokens */
+            --mgp-content-max: 1180px;
+            --mgp-page-padding: var(--mgp-space-xl);
+            --mgp-section-gap: var(--mgp-space-xl);
+            /* Accessibility tokens */
+            --mgp-focus-ring-color: var(--mgp-color-primary-dark);
+            --mgp-focus-ring-width: 3px;
+            --mgp-focus-ring-offset: 3px;
+            --mgp-touch-target-min: 44px;
+            /* Density tokens */
+            --mgp-density-card-padding: var(--mgp-space-md);
+            --mgp-density-row-padding-y: var(--mgp-space-sm);
+            --mgp-density-row-padding-x: var(--mgp-space-md);
+            --mgp-density-table-cell-padding: var(--mgp-space-sm);
+        }
+
+        [data-density="comfortable"] {
+            --mgp-density-card-padding: var(--mgp-space-lg);
+            --mgp-density-row-padding-y: var(--mgp-space-md);
+            --mgp-density-row-padding-x: var(--mgp-space-lg);
+            --mgp-density-table-cell-padding: var(--mgp-space-md);
+        }
+
+        [data-density="compact"] {
+            --mgp-density-card-padding: var(--mgp-space-sm);
+            --mgp-density-row-padding-y: var(--mgp-space-xs);
+            --mgp-density-row-padding-x: var(--mgp-space-sm);
+            --mgp-density-table-cell-padding: var(--mgp-space-xs);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: var(--mgp-color-bg);
+            color: var(--mgp-color-text);
+            font-family: var(--mgp-font-sans);
+            font-size: var(--mgp-font-size-base);
+            line-height: var(--mgp-line-height-base);
+        }
+
+        :focus-visible {
+            outline: var(--mgp-focus-ring-width) solid var(--mgp-focus-ring-color);
+            outline-offset: var(--mgp-focus-ring-offset);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--mgp-color-text);
+            line-height: var(--mgp-line-height-tight);
+            letter-spacing: -.03em;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: var(--mgp-font-size-xxl);
+        }
+
+        h2 {
+            margin: 0 0 var(--mgp-space-md);
+            font-size: var(--mgp-font-size-xl);
+        }
+
+        h3 {
+            margin: 0;
+            font-size: var(--mgp-font-size-md);
+        }
+
+        p {
+            margin-top: 0;
+        }
+
+        code,
+        pre {
+            font-family: var(--mgp-font-mono);
+            font-size: .92em;
+        }
+
+        pre {
+            overflow: auto;
+            background: var(--mgp-color-surface-muted);
+            border: 1px solid var(--mgp-color-border);
+            border-radius: var(--mgp-radius-md);
+            padding: var(--mgp-space-md);
+            margin: 0;
+        }
+
+        main {
+            max-width: var(--mgp-content-max);
+            margin: 0 auto;
+            padding: var(--mgp-page-padding);
+        }
+
+        .section {
+            margin-top: var(--mgp-section-gap);
+        }
+
+        .hero,
+        .card,
+        .component-card,
+        .token-card,
+        .spec-card,
+        .decision {
+            background: var(--mgp-color-surface);
+            border: 1px solid var(--mgp-color-border);
+            border-radius: var(--mgp-radius-lg);
+            box-shadow: var(--mgp-shadow-sm);
+            padding: var(--mgp-density-card-padding);
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--mgp-color-surface), var(--mgp-color-primary-soft));
+            box-shadow: var(--mgp-shadow-md);
+            margin-bottom: var(--mgp-section-gap);
+        }
+
+        .lead,
+        .meta {
+            color: var(--mgp-color-text-muted);
+        }
+
+        .lead {
+            max-width: 72ch;
+            font-size: var(--mgp-font-size-md);
+            margin-bottom: var(--mgp-space-lg);
+        }
+
+        .grid {
+            display: grid;
+            gap: var(--mgp-space-md);
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .stack {
+            display: grid;
+            gap: var(--mgp-space-md);
+        }
+
+        .demo-label {
+            display: inline-flex;
+            width: fit-content;
+            align-items: center;
+            color: var(--mgp-color-text-muted);
+            font-family: var(--mgp-font-mono);
+            font-size: var(--mgp-font-size-xs);
+            background: var(--mgp-color-surface-muted);
+            border: 1px solid var(--mgp-color-border);
+            border-radius: var(--mgp-radius-pill);
+            padding: var(--mgp-space-2xs) var(--mgp-space-sm);
+            margin-bottom: var(--mgp-space-sm);
+        }
+
+        .btn-row,
+        .badge-row,
+        .card-actions {
+            display: flex;
+            gap: var(--mgp-space-sm);
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .card-actions {
+            margin-top: var(--mgp-space-sm);
+            gap: var(--mgp-space-xs);
+        }
+
+        .btn {
+            min-height: var(--mgp-touch-target-min);
+            appearance: none;
+            border: 1px solid var(--mgp-color-border);
+            border-radius: .7rem;
+            background: var(--mgp-color-surface);
+            color: var(--mgp-color-primary-dark);
+            padding: var(--mgp-space-sm) var(--mgp-space-md);
+            font: inherit;
+            font-weight: var(--mgp-font-weight-bold);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--mgp-space-xs);
+            white-space: nowrap;
+        }
+
+        .btn--primary {
+            background: var(--mgp-color-primary);
+            border-color: var(--mgp-color-primary);
+            color: white;
+        }
+
+        .btn--danger {
+            color: var(--mgp-color-danger);
+            border-color: rgba(159, 58, 56, .35);
+        }
+
+        .btn--ghost {
+            border-color: transparent;
+            background: transparent;
+            color: var(--mgp-color-primary-dark);
+        }
+
+        .icon-button {
+            width: var(--mgp-touch-target-min);
+            height: var(--mgp-touch-target-min);
+            border: 1px solid var(--mgp-color-border);
+            border-radius: .7rem;
+            background: var(--mgp-color-surface);
+            color: var(--mgp-color-primary-dark);
+            font-weight: 900;
+            display: grid;
+            place-items: center;
+            cursor: pointer;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid transparent;
+            border-radius: var(--mgp-radius-pill);
+            padding: var(--mgp-space-2xs) var(--mgp-space-sm);
+            font-size: var(--mgp-font-size-xs);
+            font-weight: var(--mgp-font-weight-bold);
+            white-space: nowrap;
+        }
+
+        .badge--neutral {
+            color: var(--mgp-color-text-muted);
+            background: var(--mgp-color-surface-muted);
+            border-color: var(--mgp-color-border);
+        }
+
+        .badge--primary {
+            color: var(--mgp-color-primary-dark);
+            background: var(--mgp-color-primary-soft);
+            border-color: rgba(63, 107, 74, .18);
+        }
+
+        .badge--warning {
+            color: #653521;
+            background: var(--mgp-color-warning-bg);
+            border-color: rgba(184, 107, 75, .22);
+        }
+
+        .badge--danger {
+            color: var(--mgp-color-danger);
+            background: var(--mgp-color-danger-soft);
+            border-color: rgba(159, 58, 56, .22);
+        }
+
+        .component-card {
+            display: grid;
+            gap: var(--mgp-space-sm);
+            border-radius: var(--mgp-radius-md);
+        }
+
+        .component-card__header {
+            display: flex;
+            justify-content: space-between;
+            gap: var(--mgp-space-md);
+            align-items: start;
+        }
+
+        .token-grid {
+            display: grid;
+            gap: var(--mgp-space-md);
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .token-card {
+            border-radius: var(--mgp-radius-md);
+            padding: var(--mgp-space-md);
+            display: grid;
+            gap: var(--mgp-space-xs);
+        }
+
+        .swatch {
+            height: 3rem;
+            border-radius: var(--mgp-radius-md);
+            border: 1px solid var(--mgp-color-border);
+        }
+
+        .swatch--primary {
+            background: var(--mgp-color-primary);
+        }
+
+        .swatch--surface {
+            background: var(--mgp-color-surface-muted);
+        }
+
+        .swatch--danger {
+            background: var(--mgp-color-danger-soft);
+        }
+
+        .swatch--warning {
+            background: var(--mgp-color-warning-bg);
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 190px 1fr auto;
+            gap: var(--mgp-space-md);
+            align-items: center;
+            padding: var(--mgp-density-row-padding-y) var(--mgp-density-row-padding-x);
+            border: 1px solid var(--mgp-color-border);
+            border-radius: var(--mgp-radius-md);
+            background: var(--mgp-color-surface);
+        }
+
+        .table-wrap {
+            overflow: auto;
+            border: 1px solid var(--mgp-color-border);
+            border-radius: var(--mgp-radius-lg);
+            background: var(--mgp-color-surface);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            text-align: left;
+            vertical-align: top;
+            border-bottom: 1px solid var(--mgp-color-border);
+            padding: var(--mgp-density-table-cell-padding);
+        }
+
+        th {
+            background: var(--mgp-color-surface-muted);
+            font-weight: var(--mgp-font-weight-bold);
+        }
+
+        .status-message {
+            display: flex;
+            gap: var(--mgp-space-sm);
+            align-items: flex-start;
+            padding: var(--mgp-space-md);
+            border: 1px solid var(--mgp-color-border);
+            border-radius: var(--mgp-radius-md);
+            background: var(--mgp-color-surface);
+        }
+
+        .status-message--warning {
+            border-left: 5px solid var(--mgp-color-accent);
+        }
+
+        .status-message--danger {
+            border-left: 5px solid var(--mgp-color-danger);
+        }
+
+        .status-dot {
+            width: .8rem;
+            height: .8rem;
+            margin-top: .45rem;
+            border-radius: var(--mgp-radius-pill);
+            background: var(--mgp-color-primary);
+            flex: 0 0 auto;
+        }
+
+        .status-message--warning .status-dot {
+            background: var(--mgp-color-accent);
+        }
+
+        .status-message--danger .status-dot {
+            background: var(--mgp-color-danger);
+        }
+
+        .spec-card {
+            display: grid;
+            gap: var(--mgp-space-md);
+        }
+
+        .spec-row {
+            display: grid;
+            grid-template-columns: 170px 1fr;
+            gap: var(--mgp-space-md);
+            padding-bottom: var(--mgp-space-sm);
+            border-bottom: 1px solid var(--mgp-color-border);
+        }
+
+        .spec-label {
+            color: var(--mgp-color-text-muted);
+            font-size: var(--mgp-font-size-xs);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            font-weight: var(--mgp-font-weight-bold);
+        }
+
+        .decision {
+            display: grid;
+            gap: var(--mgp-space-sm);
+        }
+
+        .decision-row {
+            display: grid;
+            grid-template-columns: 180px 1fr 180px;
+            gap: var(--mgp-space-md);
+            align-items: center;
+            border: 1px solid var(--mgp-color-border);
+            border-radius: var(--mgp-radius-md);
+            padding: var(--mgp-space-md);
+            background: var(--mgp-color-surface);
+        }
+
+        @media (max-width: 900px) {
+            main {
+                padding: var(--mgp-space-lg) var(--mgp-space-md) var(--mgp-space-2xl);
+            }
+
+            .grid-2,
+            .grid-3,
+            .token-grid,
+            .row,
+            .spec-row,
+            .decision-row {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-row,
+            .card-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+                .btn,
+                .btn-row .btn,
+                .card-actions .btn {
+                    width: 100%;
+                }
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            main {
+                max-width: none;
+                padding: 0;
+            }
+
+            .btn-row,
+            .card-actions {
+                display: none !important;
+            }
+
+            .hero,
+            .card,
+            .component-card,
+            .token-card,
+            .spec-card,
+            .decision,
+            .row,
+            .status-message {
+                box-shadow: none;
+                break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main>
+        <section class="hero">
+            <span class="demo-label">Demo24</span>
+            <h1>Komponentnavngivning og design tokens</h1>
+            <p class="lead">
+                Denne demo samler designguiden i en komponentordbog og et token-system.
+                Komponentnavne beskriver formål frem for udseende, og tokens beskriver
+                designbeslutninger frem for tilfældige værdier.
+            </p>
+
+            <div class="btn-row">
+                <button class="btn btn--primary" type="button">Se komponentordbog</button>
+                <button class="btn" type="button">Se tokens</button>
+                <button class="icon-button" type="button" aria-label="Åbn flere handlinger">⋯</button>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Komponenthierarki</h2>
+
+            <div class="grid grid-3">
+                <article class="card">
+                    <span class="demo-label">level 1</span>
+                    <h3>Primitives</h3>
+                    <p class="meta">
+                        Små byggesten uden domæneviden.
+                    </p>
+                    <div class="badge-row">
+                        <span class="badge badge--neutral">Button</span>
+                        <span class="badge badge--neutral">Badge</span>
+                        <span class="badge badge--neutral">FormField</span>
+                        <span class="badge badge--neutral">IconButton</span>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <span class="demo-label">level 2</span>
+                    <h3>Patterns</h3>
+                    <p class="meta">
+                        Genbrugelige UI-mønstre sammensat af primitives.
+                    </p>
+                    <div class="badge-row">
+                        <span class="badge badge--primary">EntityCard</span>
+                        <span class="badge badge--primary">FilterDrawer</span>
+                        <span class="badge badge--primary">StatusMessage</span>
+                        <span class="badge badge--primary">ConfirmDialog</span>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <span class="demo-label">level 3</span>
+                    <h3>Domain components</h3>
+                    <p class="meta">
+                        MyGardenPlanner-specifikke komponenter med domænedata og regler.
+                    </p>
+                    <div class="badge-row">
+                        <span class="badge badge--warning">GardenCard</span>
+                        <span class="badge badge--warning">PlantRow</span>
+                        <span class="badge badge--warning">FilePreviewCard</span>
+                        <span class="badge badge--warning">InvitationStatusCard</span>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Komponentordbog</h2>
+
+            <div class="grid grid-2">
+                <article class="component-card">
+                    <div class="component-card__header">
+                        <div>
+                            <span class="demo-label">pattern component</span>
+                            <h3>EntityCard</h3>
+                            <p class="meta">
+                                Bruges til et afgrænset objekt som have, bed, plante eller materiale.
+                            </p>
+                        </div>
+                        <span class="badge badge--primary">Pattern</span>
+                    </div>
+
+                    <div class="badge-row">
+                        <span class="badge badge--neutral">default</span>
+                        <span class="badge badge--warning">attention</span>
+                        <span class="badge badge--danger">restricted</span>
+                        <span class="badge badge--neutral">archived</span>
+                    </div>
+
+                    <div class="card-actions">
+                        <button class="btn btn--primary" type="button">Vis</button>
+                        <button class="btn" type="button">Redigér</button>
+                    </div>
+                </article>
+
+                <article class="component-card">
+                    <div class="component-card__header">
+                        <div>
+                            <span class="demo-label">feedback component</span>
+                            <h3>StatusMessage</h3>
+                            <p class="meta">
+                                Viser inline feedback tæt på årsagen.
+                            </p>
+                        </div>
+                        <span class="badge badge--primary">Feedback</span>
+                    </div>
+
+                    <div class="status-message status-message--warning">
+                        <span class="status-dot" aria-hidden="true"></span>
+                        <div>
+                            <strong>Invitation afventer svar</strong>
+                            <p class="meta">kunde@example.dk er inviteret som læser.</p>
+                        </div>
+                    </div>
+                </article>
+
+                <article class="component-card">
+                    <div class="component-card__header">
+                        <div>
+                            <span class="demo-label">interaction component</span>
+                            <h3>FilterDrawer</h3>
+                            <p class="meta">
+                                Bruges på mobil eller små skærme til at samle filtre.
+                            </p>
+                        </div>
+                        <span class="badge badge--primary">Overlay</span>
+                    </div>
+
+                    <div class="badge-row">
+                        <span class="badge badge--neutral">mobile</span>
+                        <span class="badge badge--neutral">focus management</span>
+                        <span class="badge badge--neutral">apply/reset</span>
+                    </div>
+
+                    <div class="card-actions">
+                        <button class="btn" type="button">Åbn filter</button>
+                    </div>
+                </article>
+
+                <article class="component-card">
+                    <div class="component-card__header">
+                        <div>
+                            <span class="demo-label">domain component</span>
+                            <h3>InvitationStatusCard</h3>
+                            <p class="meta">
+                                Viser email, rolle, status og invitationens handlinger.
+                            </p>
+                        </div>
+                        <span class="badge badge--warning">Domain</span>
+                    </div>
+
+                    <div class="row">
+                        <strong>kunde@example.dk</strong>
+                        <span class="meta">Læser · Afventer svar</span>
+                        <span class="badge badge--warning">Afventer</span>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Variants og states</h2>
+
+            <div class="grid grid-2">
+                <article class="card">
+                    <span class="demo-label">variants</span>
+                    <h3>Variants beskriver intention</h3>
+                    <p class="meta">
+                        Brug <code>warning</code>, <code>danger</code> og <code>restricted</code>
+                        frem for farvenavne som orange eller rød.
+                    </p>
+
+                    <div class="badge-row">
+                        <span class="badge badge--neutral">neutral</span>
+                        <span class="badge badge--primary">primary</span>
+                        <span class="badge badge--warning">warning</span>
+                        <span class="badge badge--danger">danger</span>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <span class="demo-label">states</span>
+                    <h3>States beskriver tilstand</h3>
+                    <p class="meta">
+                        State er ikke det samme som variant. State er komponentens aktuelle tilstand.
+                    </p>
+
+                    <div class="badge-row">
+                        <span class="badge badge--neutral">loading</span>
+                        <span class="badge badge--neutral">selected</span>
+                        <span class="badge badge--neutral">expanded</span>
+                        <span class="badge badge--neutral">collapsed</span>
+                        <span class="badge badge--neutral">archived</span>
+                        <span class="badge badge--neutral">processing</span>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Token taxonomy</h2>
+
+            <div class="grid grid-3">
+                <article class="card">
+                    <span class="demo-label">global tokens</span>
+                    <h3>Global</h3>
+                    <p class="meta">
+                        Rå fundamentværdier som farveskala, spacing-skala og fontfamilier.
+                    </p>
+                    <pre><code>--color-green-600
+--space-4
+--radius-3</code></pre>
+                </article>
+
+                <article class="card">
+                    <span class="demo-label">semantic tokens</span>
+                    <h3>Semantic</h3>
+                    <p class="meta">
+                        Betydning i UI’et. Det er disse tokens komponenter primært bør bruge.
+                    </p>
+                    <pre><code>--mgp-color-primary
+--mgp-color-bg
+--mgp-color-text-muted</code></pre>
+                </article>
+
+                <article class="card">
+                    <span class="demo-label">component tokens</span>
+                    <h3>Component</h3>
+                    <p class="meta">
+                        Komponentspecifikke beslutninger for padding, radius, fokus og tæthed.
+                    </p>
+                    <pre><code>--mgp-density-card-padding
+--mgp-touch-target-min
+--mgp-focus-ring-color</code></pre>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Token eksempler</h2>
+
+            <div class="token-grid">
+                <article class="token-card">
+                    <div class="swatch swatch--primary"></div>
+                    <strong>--mgp-color-primary</strong>
+                    <span class="meta">Primær handling og brand</span>
+                </article>
+
+                <article class="token-card">
+                    <div class="swatch swatch--surface"></div>
+                    <strong>--mgp-color-surface-muted</strong>
+                    <span class="meta">Dæmpede flader og badges</span>
+                </article>
+
+                <article class="token-card">
+                    <div class="swatch swatch--warning"></div>
+                    <strong>--mgp-color-warning-bg</strong>
+                    <span class="meta">Attention level 2</span>
+                </article>
+
+                <article class="token-card">
+                    <div class="swatch swatch--danger"></div>
+                    <strong>--mgp-color-danger-soft</strong>
+                    <span class="meta">Danger og fejlbaggrund</span>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Density via tokens</h2>
+
+            <div class="grid grid-2">
+                <article class="card" data-density="comfortable">
+                    <span class="demo-label">comfortable</span>
+                    <h3>GardenCard</h3>
+                    <p class="meta">
+                        Comfortable density bruger mere luft omkring kort og metadata.
+                    </p>
+                    <div class="card-actions">
+                        <button class="btn btn--primary" type="button">Åbn have</button>
+                    </div>
+                </article>
+
+                <article class="card" data-density="compact">
+                    <span class="demo-label">compact</span>
+                    <h3>CompactEntityRow</h3>
+                    <div class="row">
+                        <strong>Lavendel</strong>
+                        <span class="meta">Sol · Staude · 30–60 cm</span>
+                        <button class="btn" type="button">Vis</button>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Component spec card</h2>
+
+            <article class="spec-card">
+                <span class="demo-label">component documentation template</span>
+                <h3>StatusMessage</h3>
+
+                <div class="spec-row">
+                    <span class="spec-label">Formål</span>
+                    <span>Viser inline feedback tæt på årsagen.</span>
+                </div>
+
+                <div class="spec-row">
+                    <span class="spec-label">Brug når</span>
+                    <span>En handling lykkes, fejler, kræver opmærksomhed eller forklarer en tilstand.</span>
+                </div>
+
+                <div class="spec-row">
+                    <span class="spec-label">Brug ikke når</span>
+                    <span>Beskeden er en kort, ikke-kritisk bekræftelse som “Link kopieret”. Brug toast i stedet.</span>
+                </div>
+
+                <div class="spec-row">
+                    <span class="spec-label">Variants</span>
+                    <span>success, info, warning, danger, processing, restricted</span>
+                </div>
+
+                <div class="spec-row">
+                    <span class="spec-label">States</span>
+                    <span>default, loading, dismissed</span>
+                </div>
+
+                <div class="spec-row">
+                    <span class="spec-label">Accessibility</span>
+                    <span>Skal have tekst. Farve og ikon er supplement. <code>role="alert"</code> bruges kun ved vigtige fejl.</span>
+                </div>
+
+                <div class="spec-row">
+                    <span class="spec-label">Mobile</span>
+                    <span>Fuld bredde. Handlinger stackes.</span>
+                </div>
+
+                <div class="spec-row">
+                    <span class="spec-label">Print</span>
+                    <span>Vises kun, hvis beskeden er relevant for dokumentation.</span>
+                </div>
+            </article>
+        </section>
+
+        <section class="section">
+            <h2>CSS class naming</h2>
+
+            <div class="grid grid-2">
+                <article class="card">
+                    <span class="demo-label">recommended</span>
+                    <h3>BEM-lignende komponentklasser</h3>
+                    <pre><code>.status-message
+.status-message--warning
+.status-message--danger
+
+.entity-card
+.entity-card--archived
+.entity-card--restricted
+
+.badge
+.badge--warning
+.badge--danger</code></pre>
+                </article>
+
+                <article class="card">
+                    <span class="demo-label">avoid</span>
+                    <h3>Undgå udseende-baserede navne</h3>
+                    <pre><code>.green-box
+.orange-pill
+.big-card
+.small-red-panel</code></pre>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Foreslået projektstruktur</h2>
+
+            <div class="grid grid-2">
+                <article class="card">
+                    <span class="demo-label">components</span>
+                    <h3>Komponentmapper</h3>
+                    <pre><code>/Components
+  /Foundation
+    Button.razor
+    IconButton.razor
+    Badge.razor
+
+  /Feedback
+    StatusMessage.razor
+    EmptyState.razor
+    NoAccessState.razor
+
+  /DataDisplay
+    EntityCard.razor
+    CompactEntityRow.razor
+    DataTable.razor
+
+  /Overlays
+    ConfirmDialog.razor
+    FilterDrawer.razor
+
+  /Domain
+    /Gardens
+      GardenCard.razor
+    /Files
+      FilePreviewCard.razor</code></pre>
+                </article>
+
+                <article class="card">
+                    <span class="demo-label">styles</span>
+                    <h3>Token- og CSS-filer</h3>
+                    <pre><code>/wwwroot/css
+  tokens.css
+  base.css
+  components.css
+  print.css</code></pre>
+
+                    <p class="meta">
+                        Start simpelt. Split først tokens og komponent-CSS, når filerne bliver store.
+                    </p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Undgå component explosion</h2>
+
+            <div class="grid grid-2">
+                <article class="card">
+                    <span class="demo-label">dårligt</span>
+                    <h3>For mange specialkomponenter</h3>
+                    <pre><code>GardenGreenCard
+GardenArchivedGreenCard
+GardenArchivedSmallCard
+GardenArchivedCompactCard</code></pre>
+                </article>
+
+                <article class="card">
+                    <span class="demo-label">bedre</span>
+                    <h3>Én komponent med variants/states</h3>
+                    <pre><code>GardenCard
+  variant="default"
+  state="archived"
+  density="compact"</code></pre>
+                </article>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Beslutningstabel</h2>
+
+            <section class="decision">
+                <div class="decision-row">
+                    <strong>Navngivning</strong>
+                    <span>Komponentnavne beskriver formål, ikke udseende.</span>
+                    <span class="badge badge--primary">StatusMessage</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Komponentniveau</strong>
+                    <span>Primitives, patterns og domain components holdes adskilt.</span>
+                    <span class="badge badge--primary">3 niveauer</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Variants</strong>
+                    <span>Variants beskriver intention, fx warning, danger, restricted.</span>
+                    <span class="badge badge--warning">Intention</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>States</strong>
+                    <span>States beskriver aktuel tilstand, fx loading, archived, processing.</span>
+                    <span class="badge badge--neutral">Tilstand</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Tokens</strong>
+                    <span>Tokens opdeles i global, semantic og component tokens.</span>
+                    <span class="badge badge--primary">Token taxonomy</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Accessibility</strong>
+                    <span>Focus ring og touch target er tokens, ikke tilfældige værdier.</span>
+                    <span class="badge badge--primary">Baseline</span>
+                </div>
+
+                <div class="decision-row">
+                    <strong>Density</strong>
+                    <span>Density styres via token overrides, ikke separate komponentkopier.</span>
+                    <span class="badge badge--primary">Token override</span>
+                </div>
+            </section>
+        </section>
+    </main>
+</body>
+</html>

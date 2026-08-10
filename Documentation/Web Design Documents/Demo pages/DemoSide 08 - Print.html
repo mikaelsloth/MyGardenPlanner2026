@@ -1,0 +1,1185 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MyGardenPlanner – Design demo 8: Print-principper</title>
+
+  <style>
+    :root {
+      --mgp-primary: #3F6B4A;
+      --mgp-primary-dark: #2F5138;
+      --mgp-primary-soft: #DDE8D8;
+      --mgp-accent: #B86B4B;
+
+      --mgp-text: #243128;
+      --mgp-text-muted: #6F766D;
+
+      --mgp-bg: #FAF8F2;
+      --mgp-surface: #FFFFFF;
+      --mgp-surface-muted: #EFEAE0;
+      --mgp-border: #D8D2C7;
+
+      --mgp-danger: #9F3A38;
+      --mgp-warning-bg: #F8E8D8;
+
+      --space-2xs: .25rem;
+      --space-xs: .5rem;
+      --space-sm: .75rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2rem;
+      --space-2xl: 3rem;
+
+      --page-x: var(--space-lg);
+      --page-y: var(--space-xl);
+
+      --sidebar-width: 280px;
+      --content-max: 1220px;
+
+      --radius-sm: .45rem;
+      --radius-md: .75rem;
+      --radius-lg: 1.1rem;
+
+      --shadow-sm: 0 1px 2px rgba(36, 49, 40, .08);
+      --shadow-md: 0 12px 28px rgba(36, 49, 40, .10);
+
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+      --font-size-xs: .78rem;
+      --font-size-sm: .9rem;
+      --font-size-base: 1rem;
+      --font-size-md: 1.08rem;
+      --font-size-xl: clamp(1.35rem, 2.2vw, 2rem);
+      --font-size-xxl: clamp(2rem, 4vw, 3.25rem);
+
+      --line-height-tight: 1.15;
+      --line-height-base: 1.55;
+
+      --font-weight-normal: 400;
+      --font-weight-medium: 600;
+      --font-weight-bold: 750;
+
+      --letter-spacing-heading: -0.03em;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--mgp-text);
+      background: var(--mgp-bg);
+      font-family: var(--font-sans);
+      font-size: var(--font-size-base);
+      line-height: var(--line-height-base);
+    }
+
+    h1,
+    h2,
+    h3 {
+      color: var(--mgp-text);
+      line-height: var(--line-height-tight);
+      letter-spacing: var(--letter-spacing-heading);
+      font-weight: var(--font-weight-bold);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: var(--font-size-xxl);
+    }
+
+    h2 {
+      margin: 0 0 var(--space-md);
+      font-size: var(--font-size-xl);
+    }
+
+    h3 {
+      margin: 0;
+      font-size: var(--font-size-md);
+    }
+
+    p {
+      margin-top: 0;
+    }
+
+    code,
+    .mono {
+      font-family: var(--font-mono);
+      font-size: .92em;
+    }
+
+    .print-only {
+      display: none;
+    }
+
+    .screen-only {
+      display: initial;
+    }
+
+    .app-shell {
+      display: grid;
+      min-height: 100vh;
+      grid-template-columns: var(--sidebar-width) 1fr;
+      grid-template-rows: auto 1fr auto;
+      grid-template-areas:
+        "sidebar header"
+        "sidebar main"
+        "sidebar footer";
+    }
+
+    .sidebar {
+      grid-area: sidebar;
+      background: var(--mgp-surface);
+      border-right: 1px solid var(--mgp-border);
+      padding: var(--space-lg);
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      padding-bottom: var(--space-lg);
+      border-bottom: 1px solid var(--mgp-border);
+      margin-bottom: var(--space-lg);
+      font-weight: var(--font-weight-bold);
+      letter-spacing: -.02em;
+    }
+
+    .brand-mark {
+      width: 2.3rem;
+      height: 2.3rem;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: linear-gradient(135deg, var(--mgp-primary), var(--mgp-primary-dark));
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-section-title {
+      color: var(--mgp-text-muted);
+      text-transform: uppercase;
+      font-size: var(--font-size-xs);
+      letter-spacing: .08em;
+      font-weight: var(--font-weight-bold);
+      margin: var(--space-lg) 0 var(--space-xs);
+    }
+
+    .nav-list {
+      display: grid;
+      gap: var(--space-2xs);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .nav-link {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+      color: var(--mgp-text);
+      background: transparent;
+      border: 0;
+      text-align: left;
+      border-radius: var(--radius-sm);
+      padding: var(--space-xs) var(--space-sm);
+      font-size: .95rem;
+      font-weight: var(--font-weight-bold);
+      cursor: pointer;
+    }
+
+    .nav-link:hover {
+      background: var(--mgp-surface-muted);
+    }
+
+    .nav-link.active {
+      background: var(--mgp-primary-soft);
+      color: var(--mgp-primary-dark);
+    }
+
+    .header {
+      grid-area: header;
+      background: rgba(250, 248, 242, .88);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--mgp-border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-inner {
+      max-width: var(--content-max);
+      margin: 0 auto;
+      padding: var(--space-sm) var(--space-lg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+    }
+
+    .context-title {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: var(--font-weight-bold);
+    }
+
+    .context-subtitle {
+      margin: var(--space-2xs) 0 0;
+      color: var(--mgp-text-muted);
+      font-size: var(--font-size-sm);
+    }
+
+    main {
+      grid-area: main;
+      max-width: var(--content-max);
+      width: 100%;
+      margin: 0 auto;
+      padding: var(--page-y) var(--page-x) var(--space-2xl);
+    }
+
+    .footer {
+      grid-area: footer;
+      color: var(--mgp-text-muted);
+      border-top: 1px solid var(--mgp-border);
+      padding: var(--space-md) var(--space-lg);
+      text-align: center;
+      font-size: var(--font-size-sm);
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--mgp-surface), var(--mgp-primary-soft));
+      border: 1px solid var(--mgp-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: clamp(var(--space-lg), 3vw, var(--space-xl));
+      display: grid;
+      grid-template-columns: 1.4fr .9fr;
+      gap: var(--space-lg);
+      align-items: center;
+      margin-bottom: var(--space-lg);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      color: var(--mgp-primary-dark);
+      background: var(--mgp-primary-soft);
+      border: 1px solid rgba(63, 107, 74, .18);
+      border-radius: 999px;
+      padding: var(--space-2xs) var(--space-sm);
+      font-size: .84rem;
+      font-weight: var(--font-weight-bold);
+      margin-bottom: var(--space-sm);
+    }
+
+    .lead {
+      color: var(--mgp-text-muted);
+      max-width: 68ch;
+      font-size: var(--font-size-md);
+      line-height: var(--line-height-base);
+      margin-bottom: var(--space-lg);
+    }
+
+    .section {
+      margin-top: var(--space-xl);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: var(--space-md);
+      margin-bottom: var(--space-md);
+    }
+
+    .section-header p {
+      margin: var(--space-2xs) 0 0;
+      color: var(--mgp-text-muted);
+    }
+
+    .grid {
+      display: grid;
+      gap: var(--space-md);
+    }
+
+    .grid-comfortable {
+      gap: var(--space-lg);
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .grid-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .card {
+      background: var(--mgp-surface);
+      border: 1px solid var(--mgp-border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      padding: var(--space-md);
+    }
+
+    .card-lg {
+      padding: var(--space-lg);
+    }
+
+    .card-highlight {
+      background: var(--mgp-primary-soft);
+      border-color: rgba(63, 107, 74, .22);
+    }
+
+    .card-attention {
+      border-left: 5px solid var(--mgp-accent);
+    }
+
+    .btn-row {
+      display: flex;
+      gap: var(--space-sm);
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid transparent;
+      border-radius: .65rem;
+      padding: var(--space-sm) var(--space-md);
+      font-weight: var(--font-weight-bold);
+      font-size: .95rem;
+      cursor: pointer;
+      transition: .15s ease;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-xs);
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: var(--mgp-primary);
+      color: white;
+      border-color: var(--mgp-primary);
+    }
+
+    .btn-primary:hover {
+      background: var(--mgp-primary-dark);
+      border-color: var(--mgp-primary-dark);
+    }
+
+    .btn-secondary {
+      background: var(--mgp-surface);
+      color: var(--mgp-primary-dark);
+      border-color: var(--mgp-border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--mgp-surface-muted);
+      border-color: rgba(63, 107, 74, .28);
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+      margin-top: var(--space-sm);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2xs);
+      border-radius: 999px;
+      padding: var(--space-2xs) var(--space-sm);
+      font-size: var(--font-size-xs);
+      font-weight: var(--font-weight-bold);
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+
+    .badge-primary {
+      color: var(--mgp-primary-dark);
+      background: var(--mgp-primary-soft);
+      border-color: rgba(63, 107, 74, .18);
+    }
+
+    .badge-muted {
+      color: var(--mgp-text-muted);
+      background: var(--mgp-surface-muted);
+      border-color: var(--mgp-border);
+    }
+
+    .badge-accent {
+      color: #653521;
+      background: var(--mgp-warning-bg);
+      border-color: rgba(184, 107, 75, .22);
+    }
+
+    .meta {
+      color: var(--mgp-text-muted);
+      font-size: var(--font-size-sm);
+      line-height: 1.4;
+      margin: var(--space-2xs) 0 0;
+    }
+
+    .numeric {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .demo-label {
+      display: inline-flex;
+      align-items: center;
+      width: fit-content;
+      color: var(--mgp-text-muted);
+      font-family: var(--font-mono);
+      font-size: var(--font-size-xs);
+      background: var(--mgp-surface-muted);
+      border: 1px solid var(--mgp-border);
+      border-radius: 999px;
+      padding: var(--space-2xs) var(--space-sm);
+      margin-bottom: var(--space-sm);
+    }
+
+    .status-message {
+      display: flex;
+      gap: var(--space-sm);
+      align-items: start;
+      padding: var(--space-sm);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--mgp-border);
+      background: var(--mgp-surface);
+    }
+
+    .status-dot {
+      width: .75rem;
+      height: .75rem;
+      border-radius: 50%;
+      margin-top: .42rem;
+      flex: 0 0 auto;
+      background: var(--mgp-text-muted);
+    }
+
+    .status-success .status-dot {
+      background: var(--mgp-primary);
+    }
+
+    .status-warning .status-dot {
+      background: var(--mgp-accent);
+    }
+
+    .status-message strong {
+      display: block;
+      font-weight: var(--font-weight-bold);
+    }
+
+    .context-tabs {
+      display: flex;
+      gap: var(--space-xs);
+      overflow-x: auto;
+      padding-bottom: var(--space-xs);
+      border-bottom: 1px solid var(--mgp-border);
+      margin-bottom: var(--space-lg);
+    }
+
+    .context-tab {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--mgp-text-muted);
+      border-radius: 999px;
+      padding: var(--space-xs) var(--space-sm);
+      font-weight: var(--font-weight-bold);
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .context-tab.active {
+      background: var(--mgp-primary-soft);
+      color: var(--mgp-primary-dark);
+      border-color: rgba(63, 107, 74, .18);
+    }
+
+    .print-summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: var(--space-md);
+    }
+
+    .print-summary-item {
+      display: grid;
+      gap: var(--space-2xs);
+    }
+
+    .print-summary-label {
+      color: var(--mgp-text-muted);
+      font-size: var(--font-size-xs);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-weight: var(--font-weight-bold);
+    }
+
+    .print-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--mgp-surface);
+      border: 1px solid var(--mgp-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .print-table th,
+    .print-table td {
+      text-align: left;
+      border-bottom: 1px solid var(--mgp-border);
+      padding: var(--space-sm);
+      vertical-align: top;
+    }
+
+    .print-table th {
+      font-weight: var(--font-weight-bold);
+      background: var(--mgp-surface-muted);
+      color: var(--mgp-text);
+    }
+
+    .print-table tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .readonly-form {
+      display: grid;
+      gap: var(--space-md);
+    }
+
+    .readonly-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-md);
+    }
+
+    .readonly-field {
+      display: grid;
+      gap: var(--space-2xs);
+    }
+
+    .readonly-label {
+      color: var(--mgp-text-muted);
+      font-size: var(--font-size-xs);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      font-weight: var(--font-weight-bold);
+    }
+
+    .readonly-value {
+      border: 1px solid var(--mgp-border);
+      border-radius: .65rem;
+      padding: var(--space-sm) var(--space-md);
+      background: var(--mgp-surface);
+    }
+
+    .print-footer {
+      display: none;
+    }
+
+    @media (max-width: 940px) {
+      :root {
+        --page-x: var(--space-md);
+        --page-y: var(--space-lg);
+      }
+
+      .app-shell {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "header"
+          "main"
+          "footer";
+      }
+
+      .sidebar {
+        display: none;
+      }
+
+      .hero,
+      .grid-4,
+      .grid-3,
+      .grid-2,
+      .print-summary,
+      .readonly-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .header-inner {
+        align-items: start;
+        flex-direction: column;
+        padding: var(--space-sm) var(--space-md);
+      }
+    }
+
+    /* ============================================================
+       PRINT PRINCIPLES
+       Print er dokumentvisning – ikke screenshot af appen.
+    ============================================================ */
+
+    @media print {
+      @page {
+        size: A4;
+        margin: 16mm;
+      }
+
+      body {
+        background: white !important;
+        color: #111 !important;
+        font-size: 10.5pt;
+        line-height: 1.4;
+      }
+
+      .screen-only,
+      .sidebar,
+      .header,
+      .footer,
+      .btn,
+      .btn-row,
+      .context-tabs,
+      .filter-bar,
+      .upload-zone,
+      .card-actions,
+      .form-actions {
+        display: none !important;
+      }
+
+      .print-only {
+        display: block !important;
+      }
+
+      .app-shell {
+        display: block !important;
+      }
+
+      main {
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+
+      .hero {
+        display: block !important;
+        border: 0 !important;
+        padding: 0 0 10pt !important;
+        margin-bottom: 12pt !important;
+        background: white !important;
+      }
+
+      .card,
+      .status-message {
+        box-shadow: none !important;
+        border: 1px solid #ccc !important;
+        background: white !important;
+        break-inside: avoid;
+      }
+
+      .card {
+        padding: 10pt !important;
+        margin-bottom: 10pt;
+      }
+
+      .section {
+        margin-top: 16pt !important;
+      }
+
+      .grid,
+      .grid-2,
+      .grid-3,
+      .grid-4 {
+        display: block !important;
+      }
+
+      .grid > * {
+        margin-bottom: 10pt;
+      }
+
+      h1,
+      h2,
+      h3 {
+        color: #111 !important;
+        break-after: avoid;
+      }
+
+      h1 {
+        font-size: 22pt;
+      }
+
+      h2 {
+        font-size: 15pt;
+        margin-bottom: 8pt;
+      }
+
+      h3 {
+        font-size: 11.5pt;
+      }
+
+      .lead,
+      .meta {
+        color: #333 !important;
+      }
+
+      .badge {
+        background: white !important;
+        color: #111 !important;
+        border: 1px solid #999 !important;
+      }
+
+      .demo-label,
+      .eyebrow {
+        background: white !important;
+        color: #111 !important;
+        border: 1px solid #999 !important;
+      }
+
+      .print-summary {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8pt;
+        margin: 10pt 0 12pt;
+      }
+
+      .print-summary-item {
+        border: 1px solid #ccc;
+        padding: 6pt;
+        break-inside: avoid;
+      }
+
+      .print-table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 1px solid #999;
+        margin-top: 8pt;
+        break-inside: auto;
+      }
+
+      .print-table th,
+      .print-table td {
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+        padding: 5pt 4pt;
+        vertical-align: top;
+      }
+
+      .print-table th {
+        background: white !important;
+        color: #111 !important;
+        font-weight: 700;
+        border-bottom: 1px solid #999;
+      }
+
+      .print-avoid-break {
+        break-inside: avoid;
+      }
+
+      .print-page-break {
+        break-before: page;
+      }
+
+      .readonly-value {
+        border: 0 !important;
+        padding: 0 !important;
+        background: transparent !important;
+      }
+
+      .readonly-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8pt 14pt;
+      }
+
+      .print-footer {
+        display: block !important;
+        margin-top: 24pt;
+        padding-top: 8pt;
+        border-top: 1px solid #ccc;
+        font-size: 9pt;
+        color: #555;
+      }
+
+      a::after {
+        content: "";
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Primær navigation">
+      <div class="brand">
+        <div class="brand-mark">✿</div>
+        <div>MyGardenPlanner</div>
+      </div>
+
+      <div class="nav-section-title">Print-demo</div>
+      <ul class="nav-list">
+        <li><button class="nav-link active" type="button">Haveoverblik</button></li>
+        <li><button class="nav-link" type="button">Bede</button></li>
+        <li><button class="nav-link" type="button">Planter</button></li>
+        <li><button class="nav-link" type="button">Materialer</button></li>
+        <li><button class="nav-link" type="button">Filer</button></li>
+      </ul>
+
+      <div class="nav-section-title">Print scope</div>
+      <ul class="nav-list">
+        <li><button class="nav-link" type="button">Hele siden</button></li>
+        <li><button class="nav-link" type="button">Materialeliste</button></li>
+        <li><button class="nav-link" type="button">Kundeoverblik</button></li>
+      </ul>
+    </aside>
+
+    <header class="header">
+      <div class="header-inner">
+        <div>
+          <p class="context-title">Design demo 8</p>
+          <p class="context-subtitle">Print-principper · dokumentvisning frem for app-screenshot</p>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn btn-secondary" type="button">Forhåndsvis print</button>
+          <button class="btn btn-secondary" type="button">Download PDF</button>
+          <button class="btn btn-primary" type="button">Print haveoverblik</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="print-only">
+        <h1>Villa Solbakken – Haveoverblik</h1>
+        <p class="meta">MyGardenPlanner · Kundehave · Aarhus N</p>
+      </div>
+
+      <section class="hero print-avoid-break">
+        <div>
+          <span class="eyebrow">Nordisk havearkitekt · demo 8</span>
+          <h1>Print-principper</h1>
+          <p class="lead">
+            Denne demo viser, hvordan en skærmvisning kan blive til en printvenlig dokumentvisning.
+            Navigation, handlinger og arbejds-UI fjernes, mens indhold, metadata, tabeller og noter bevares.
+          </p>
+
+          <div class="btn-row screen-only">
+            <button class="btn btn-primary" type="button">Print</button>
+            <button class="btn btn-secondary" type="button">Gem som PDF</button>
+          </div>
+        </div>
+
+        <div class="card card-highlight">
+          <span class="demo-label">printregel</span>
+          <h3>Print er dokumentation</h3>
+          <p class="meta">
+            Print skal ikke ligne et screenshot af appen. Det skal ligne et roligt dokument, der kan deles eller arkiveres.
+          </p>
+        </div>
+      </section>
+
+      <section class="section print-avoid-break">
+        <div class="section-header">
+          <div>
+            <h2>Haveoverblik</h2>
+            <p>Kundevendt overblik med centrale metadata.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="print-summary">
+            <div class="print-summary-item">
+              <span class="print-summary-label">Have</span>
+              <strong>Villa Solbakken</strong>
+              <p class="meta">Kundehave</p>
+            </div>
+
+            <div class="print-summary-item">
+              <span class="print-summary-label">Lokation</span>
+              <strong>Aarhus N</strong>
+              <p class="meta">8200</p>
+            </div>
+
+            <div class="print-summary-item">
+              <span class="print-summary-label">Bede</span>
+              <strong class="numeric">6</strong>
+              <p class="meta">aktive bede</p>
+            </div>
+
+            <div class="print-summary-item">
+              <span class="print-summary-label">Filer</span>
+              <strong class="numeric">3</strong>
+              <p class="meta">2 midlertidige</p>
+            </div>
+          </div>
+
+          <p>
+            Rolig villahave med fokus på staudebede, struktur og nem vedligeholdelse.
+            Printversionen bevarer indholdet, men skjuler interaktive handlinger.
+          </p>
+
+          <div class="badge-row">
+            <span class="badge badge-primary">Aktiv</span>
+            <span class="badge badge-muted">Kundehave</span>
+            <span class="badge badge-accent">2 filer udløber snart</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section print-avoid-break">
+        <div class="section-header">
+          <div>
+            <h2>Context tabs på skærm</h2>
+            <p>Tabs er nyttige på skærm, men skjules i print.</p>
+          </div>
+        </div>
+
+        <nav class="context-tabs screen-only" aria-label="Have-navigation">
+          <button class="context-tab active" type="button">Overblik</button>
+          <button class="context-tab" type="button">Bede</button>
+          <button class="context-tab" type="button">Filer</button>
+          <button class="context-tab" type="button">Medlemmer</button>
+          <button class="context-tab" type="button">Indstillinger</button>
+        </nav>
+
+        <div class="grid grid-3">
+          <div class="card">
+            <span class="demo-label">skærm</span>
+            <h3>Tabs hjælper navigation</h3>
+            <p class="meta">På skærm opdeles en havedetaljeside i lokale underområder.</p>
+          </div>
+
+          <div class="card">
+            <span class="demo-label">print</span>
+            <h3>Print viser indhold</h3>
+            <p class="meta">Print bør vise relevante sektioner samlet frem for kun den aktive tab.</p>
+          </div>
+
+          <div class="card">
+            <span class="demo-label">regel</span>
+            <h3>Tabs skjules</h3>
+            <p class="meta">Navigation skjules, men indholdet bevares som dokumentsektioner.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section print-avoid-break">
+        <div class="section-header">
+          <div>
+            <h2>Bede</h2>
+            <p>Cards på skærm bliver simple bordered sections i print.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <article class="card">
+            <h3>Staudehaven mod syd</h3>
+            <p class="meta">Bed #4 · Solrigt område</p>
+            <p>Solrigt bed med lavendel, salvie og prydgræsser.</p>
+            <div class="badge-row">
+              <span class="badge badge-muted numeric">3,50 × 1,20 m</span>
+              <span class="badge badge-muted">Stauder</span>
+              <span class="badge badge-primary">Aktiv</span>
+            </div>
+          </article>
+
+          <article class="card card-attention">
+            <h3>Skyggebed ved terrasse</h3>
+            <p class="meta">Bed #2 · Delvis skygge</p>
+            <p>Bed med fokus på bladformer, bunddække og rolige grønne nuancer.</p>
+            <div class="badge-row">
+              <span class="badge badge-muted numeric">2,20 × 1,00 m</span>
+              <span class="badge badge-muted">Skygge</span>
+              <span class="badge badge-accent">Afventer plantevalg</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="section print-page-break">
+        <div class="section-header">
+          <div>
+            <h2>Printvenlig planteliste</h2>
+            <p>På print er tabeller ofte bedre end cards til lange lister.</p>
+          </div>
+        </div>
+
+        <table class="print-table">
+          <thead>
+            <tr>
+              <th>Navn</th>
+              <th>Latinsk navn</th>
+              <th>Lys</th>
+              <th>Højde</th>
+              <th>Blomstring</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Lavendel</td>
+              <td><em>Lavandula angustifolia</em></td>
+              <td>Sol</td>
+              <td class="numeric">30–60 cm</td>
+              <td>Juni–august</td>
+            </tr>
+            <tr>
+              <td>Salvie</td>
+              <td><em>Salvia officinalis</em></td>
+              <td>Sol</td>
+              <td class="numeric">40–70 cm</td>
+              <td>Juni–juli</td>
+            </tr>
+            <tr>
+              <td>Storkenæb</td>
+              <td><em>Geranium</em></td>
+              <td>Sol/halvskygge</td>
+              <td class="numeric">25–45 cm</td>
+              <td>Maj–juli</td>
+            </tr>
+            <tr>
+              <td>Prydgræs</td>
+              <td><em>Sesleria autumnalis</em></td>
+              <td>Sol</td>
+              <td class="numeric">30–50 cm</td>
+              <td>August–oktober</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>Materialeliste</h2>
+            <p>Et andet eksempel på en printvenlig tabel.</p>
+          </div>
+        </div>
+
+        <table class="print-table">
+          <thead>
+            <tr>
+              <th>Materiale</th>
+              <th>Type</th>
+              <th>Standardmål</th>
+              <th>Farve</th>
+              <th>Note</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Chaussésten</td>
+              <td>Belægning</td>
+              <td class="numeric">10 × 10 × 10 cm</td>
+              <td>Grå</td>
+              <td>Klassisk kant og sti.</td>
+            </tr>
+            <tr>
+              <td>Kompost</td>
+              <td>Jordforbedring</td>
+              <td class="numeric">40 L</td>
+              <td>Mørk</td>
+              <td>Til forbedring af plantebede.</td>
+            </tr>
+            <tr>
+              <td>Stålkanter</td>
+              <td>Kantafgrænsning</td>
+              <td class="numeric">200 cm</td>
+              <td>Rust</td>
+              <td>Skaber skarp afgrænsning.</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section print-avoid-break">
+        <div class="section-header">
+          <div>
+            <h2>Formular som læsevisning</h2>
+            <p>Inputfelter bør printes som data, ikke som redigerings-UI.</p>
+          </div>
+        </div>
+
+        <div class="card readonly-form">
+          <div class="readonly-grid">
+            <div class="readonly-field">
+              <span class="readonly-label">Havens navn</span>
+              <div class="readonly-value">Villa Solbakken</div>
+            </div>
+
+            <div class="readonly-field">
+              <span class="readonly-label">Primær anvendelse</span>
+              <div class="readonly-value">Kundehave</div>
+            </div>
+
+            <div class="readonly-field">
+              <span class="readonly-label">Kontaktperson</span>
+              <div class="readonly-value">Anne Solbakken</div>
+            </div>
+
+            <div class="readonly-field">
+              <span class="readonly-label">Lokation</span>
+              <div class="readonly-value">Aarhus N · 8200</div>
+            </div>
+          </div>
+
+          <div class="readonly-field">
+            <span class="readonly-label">Beskrivelse</span>
+            <div class="readonly-value">
+              Rolig villahave med fokus på staudebede, struktur og nem vedligeholdelse.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section print-avoid-break">
+        <div class="section-header">
+          <div>
+            <h2>Status og noter</h2>
+            <p>Statusbeskeder kan printes, hvis teksten har dokumentationsværdi.</p>
+          </div>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="status-message status-success">
+            <span class="status-dot"></span>
+            <div>
+              <strong>Haveoverblik klar</strong>
+              <p class="meta">Alle centrale oplysninger er tilgængelige for print.</p>
+            </div>
+          </div>
+
+          <div class="status-message status-warning">
+            <span class="status-dot"></span>
+            <div>
+              <strong>Supplerende oplysninger mangler</strong>
+              <p class="meta">Adresse og kundens kontaktoplysninger kan tilføjes senere.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="print-footer">
+        MyGardenPlanner · Villa Solbakken · Print-demo · Side genereret fra design demo 8
+      </div>
+    </main>
+
+    <footer class="footer">
+      © MyGardenPlanner · Design demo 8 · Print-principper
+    </footer>
+  </div>
+</body>
+</html>

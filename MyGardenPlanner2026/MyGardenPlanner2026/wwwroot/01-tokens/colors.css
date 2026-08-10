@@ -1,0 +1,56 @@
+/* ==========================================================================
+   01-Tokens: Colors (Nordisk Havearkitekt Palette)
+   ========================================================================== */
+
+:root {
+  /* --- 1. GLOBAL COLOR TOKENS (Primitiver) --- */
+  --mgp-color-green-500:   #3F6B4A; /* Primær grøn */
+  --mgp-color-green-700:   #2F5138; /* Mørk grøn (hover) */
+  --mgp-color-green-100:   #DDE8D8; /* Lys salvie */
+  --mgp-color-terracotta:  #B86B4B; /* Terracotta accent */
+  --mgp-color-charcoal:    #243128; /* Mørk tekstgrøn */
+  --mgp-color-sand-100:    #FAF8F2; /* Varm sand baggrund */
+  --mgp-color-sand-200:    #EFEAE0; /* Dæmpet flade */
+  --mgp-color-sand-300:    #D8D2C7; /* Border farve */
+  --mgp-color-white:       #FFFFFF;
+  --mgp-color-gray-500:    #8A8F86; /* Arkiveret neutral */
+  --mgp-color-gray-600:    #6F766D; /* Muted tekst */
+  --mgp-color-red-600:     #9F3A38; /* Danger rød */
+  --mgp-color-red-100:     #FFF4F3; /* Danger soft bg */
+
+  /* --- 2. SEMANTIC COLOR TOKENS (Intention & WCAG) --- */
+  --mgp-primary:           var(--mgp-color-green-500);
+  --mgp-primary-dark:      var(--mgp-color-green-700);
+  --mgp-primary-soft:      var(--mgp-color-green-100);
+  --mgp-accent:            var(--mgp-color-terracotta);
+
+  --mgp-bg:                var(--mgp-color-sand-100);
+  --mgp-surface:           var(--mgp-color-white);
+  --mgp-surface-muted:     var(--mgp-color-sand-200);
+
+  --mgp-text:              var(--mgp-color-charcoal);
+  --mgp-text-muted:        var(--mgp-color-gray-600);
+
+  --mgp-border:            var(--mgp-color-sand-300);
+  --mgp-border-hover:      rgba(63, 107, 74, 0.28);
+  --mgp-focus-ring:        rgba(63, 107, 74, 0.18);
+
+  /* States & Feedback */
+  --mgp-danger:            var(--mgp-color-red-600);
+  --mgp-danger-bg:         var(--mgp-color-red-100);
+  --mgp-danger-border:      rgba(159, 58, 56, 0.35);
+  --mgp-danger-border-hover: rgba(159, 58, 56, 0.55);
+  --mgp-warning-bg:        #F8E8D8;
+  --mgp-success-bg:        #E4EFE1;
+  --mgp-state-archived:    var(--mgp-color-gray-500);
+
+  /* Transitions & Highlights */
+  --mgp-highlight-bg:      rgba(63, 107, 74, 0.15);
+  --mgp-highlight-fade-duration: 2.5s;
+
+  /* --- 3. COMPONENT COLOR TOKENS --- */
+  --mgp-button-primary-bg:   var(--mgp-primary);
+  --mgp-button-primary-text: var(--mgp-surface);
+  --mgp-card-bg:             var(--mgp-surface);
+  --mgp-card-border:         var(--mgp-border);
+}

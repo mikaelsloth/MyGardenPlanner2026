@@ -216,6 +216,36 @@ For at undgå komponenteksplosion håndteres dynamisk opførsel via fælles, sta
 * **Mobile & Print:** Wrapper linjer pænt på mobil. Skjules ved print.
 * **Relaterede komponenter:** `FilterChip`, `FilterBar`.
 
+##### 11. `PublicLayout`
+* **Dokumentnavn:** `PublicLayout`
+* **Formål / Usage:** Layout-shell for offentligt tilgængelige sider (uden for login/dashboard-kontekst).
+* **Variants:** `standard`, `centered-auth` (til login/register).
+* **States:** `desktop`, `mobile` (off-canvas navigation).
+* **Tokens:** `--mgp-bg`, `--mgp-surface`, `--mgp-border`, `--mgp-mobile-header-height` (56px).
+* **Accessibility:** Indeholder `main`-landemærke og "Spring til hovedindhold"-link (`.sr-only`).
+* **Mobile & Print:** Skifter til sticky mobile header + `NavDrawer` på skærme < 940px. Skjuler navigation ved print.
+* **Relaterede komponenter:** `PublicHeader`, `PublicFooter`, `NavDrawer`.
+
+##### 12. `PublicHeader`
+* **Dokumentnavn:** `PublicHeader`
+* **Formål / Usage:** Topbar med logo, primær offentlig navigation, skift af abonnementer, og direkte "Log ind / Opret"-knapper.
+* **Variants:** `sticky`.
+* **States:** `default`, `scrolled`.
+* **Tokens:** `--mgp-surface`, `--mgp-border`, `--mgp-primary-dark`, `--mgp-touch-target-min`.
+* **Accessibility:** Tastaturnavigation med synlig focus ring. Touch targets min 44px.
+* **Mobile & Print:** Skifter til hamburger-menu for `NavDrawer` på mobil.
+* **Relaterede komponenter:** `PublicLayout`, `Button`, `NavDrawer`.
+
+##### 13. `PublicFooter`
+* **Dokumentnavn:** `PublicFooter`
+* **Formål / Usage:** Offentlig bundsektion med ophavsret, hurtige links, juridisk info og abonnement-genveje.
+* **Variants:** `standard`.
+* **States:** `default`.
+* **Tokens:** `--mgp-surface-muted`, `--mgp-text`, `--mgp-text-muted`, `--mgp-border`.
+* **Accessibility:** Semantisk `<footer>`-element med strukturerede linklister (`<ul>`).
+* **Mobile & Print:** Stabeles i 1 kolonne på mobil. Udskrives som simpel tekst.
+* **Relaterede komponenter:** `PublicLayout`.
+
 ---
 
 #### C. Feedback Components
@@ -622,6 +652,46 @@ For at undgå komponenteksplosion håndteres dynamisk opførsel via fælles, sta
 * **Accessibility:** Indeholder handlingsknap ("Tilbagekald invitation") med klar advarsel.
 * **Mobile & Print:** Stackes på mobil. Skjules ved eksterne print.
 * **Relaterede komponenter:** `RoleBadge`, `ConfirmDialog`.
+
+##### 11. `PricingCard`
+* **Dokumentnavn:** `PricingCard`
+* **Formål / Usage:** Præsentation af et enkelt abonnementsniveau hentet fra databasen (f.eks. Free, Havenørd, Pro-Gartner).
+* **Variants:** `standard`, `featured` (fremhævet med accent-border og badge), `compact`.
+* **States:** `default`, `hover`, `active-plan` (hvis brugeren allerede har abonnementet).
+* **Tokens:** `--mgp-surface`, `--mgp-border`, `--mgp-primary`, `--mgp-accent`, `--mgp-surface-muted`, `--shadow-md`.
+* **Accessibility:** Tydelig prisoppstilling (`.numeric`) og eksplicit handlingsknap ("Vælg abonnement").
+* **Mobile & Print:** Fuld bredde på mobil.
+* **Relaterede komponenter:** `PricingFeatureMatrix`, `Badge`, `Button`.
+
+##### 12. `PricingFeatureMatrix`
+* **Dokumentnavn:** `PricingFeatureMatrix`
+* **Formål / Usage:** Detaljeret sammenligningstabel over funktioner pr. abonnementstype (hentes fra DB).
+* **Variants:** `table`.
+* **States:** `default`, `loading`.
+* **Tokens:** `--mgp-surface`, `--mgp-border`, `--mgp-surface-muted`, `--mgp-primary-dark`.
+* **Accessibility:** Semantisk `<table>` struktur med `scope="col"` og `scope="row"`.
+* **Mobile & Print:** Konverteres til stacked kort pr. tier på mobilskærme (< 768px).
+* **Relaterede komponenter:** `DataTable`, `PricingCard`, `Badge`.
+
+##### 13. `HeroBanner`
+* **Dokumentnavn:** `HeroBanner`
+* **Formål / Usage:** Hovedfokussektion på landing page med overskrift, underoverskrift, opfordring til handling (CTA) og visuel illustration.
+* **Variants:** `standard`, `split-media`.
+* **States:** `default`.
+* **Tokens:** `--mgp-primary-soft`, `--mgp-primary-dark`, `--mgp-text`, `--mgp-space-2xl`.
+* **Accessibility:** Indeholder sidens `<h1>`. Primær knap benytter `.btn-primary`.
+* **Mobile & Print:** Tekst og CTA stabeles vertikalt over illustration på mobil.
+* **Relaterede komponenter:** `Button`, `Stack`.
+
+##### 14. `FeatureCard`
+* **Dokumentnavn:** `FeatureCard`
+* **Formål / Usage:** Præsentation af platformens nøglefunktioner (Layer 1 Master Data, Layer 2 Design, Layer 3 Eksekvering).
+* **Variants:** `standard`, `icon-top`.
+* **States:** `default`, `hover`.
+* **Tokens:** `--mgp-surface`, `--mgp-border`, `--shadow-sm`.
+* **Accessibility:** Strukturerede overskrifter (`<h3>`).
+* **Mobile & Print:** 1 kolonne på mobil.
+* **Relaterede komponenter:** `Card`, `Stack`.
 
 ---
 

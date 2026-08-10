@@ -1,0 +1,72 @@
+/* ==========================================================================
+   02-Base: Accessibility Baseline (WCAG 2.1 / 2.2 AA)
+   ========================================================================== */
+
+/* 1. Global Focus Visible State */
+:focus-visible {
+  outline: var(--mgp-focus-outline-width) solid var(--mgp-primary-dark) !important;
+  outline-offset: var(--mgp-focus-outline-offset) !important;
+  box-shadow: 0 0 0 4px var(--mgp-focus-ring) !important;
+}
+
+.btn:focus-visible,
+.card-clickable:focus-within,
+.compact-entity-link:focus-visible {
+  outline: var(--mgp-focus-outline-width) solid var(--mgp-primary-dark) !important;
+  outline-offset: var(--mgp-focus-outline-offset) !important;
+}
+
+/* 2. Minimum Touch Target Enforcement */
+.btn,
+.icon-button,
+.context-tab,
+.nav-link-item,
+.form-control,
+.form-select {
+  min-height: var(--mgp-touch-target-min, 44px);
+}
+
+.icon-button {
+  width: var(--mgp-touch-target-min, 44px);
+  height: var(--mgp-touch-target-min, 44px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+/* 3. Screen Reader Only Helper */
+.sr-only,
+.visually-hidden-focusable:not(:focus):not(:focus-within) {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* 4. Reduced Motion Preference Override */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .skeleton-line,
+  .skeleton-block,
+  .skeleton-icon,
+  .skeleton-pill,
+  .skeleton-thumbnail,
+  .btn-spinner {
+    animation: none !important;
+    background: var(--mgp-surface-muted) !important;
+  }
+}

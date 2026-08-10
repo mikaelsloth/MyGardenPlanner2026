@@ -1,0 +1,45 @@
+/* ==========================================================================
+   02-Base: Reset & Global Baseline
+   ========================================================================== */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--mgp-font-sans);
+  font-size: var(--font-size-base);
+  line-height: var(--mgp-line-height-base);
+  color: var(--mgp-text);
+  background-color: var(--mgp-bg);
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+main {
+  padding: var(--mgp-page-y) var(--mgp-page-x) var(--mgp-space-2xl);
+}
+
+/* Headings */
+h1, .h1, h2, .h2, h3, .h3 {
+  line-height: var(--mgp-line-height-tight);
+  letter-spacing: var(--mgp-letter-spacing-heading);
+  color: var(--mgp-text);
+  margin-top: 0;
+}
+
+h1, .h1 { font-size: var(--font-size-xxl); font-weight: var(--font-weight-heavy); }
+h2, .h2 { font-size: var(--font-size-xl);  font-weight: var(--font-weight-heavy); }
+h3, .h3 { font-size: var(--font-size-md);  font-weight: var(--font-weight-heavy); }
+
+p {
+  margin-top: 0;
+  margin-bottom: var(--mgp-space-md);
+  max-width: 68ch;
+}
+
+/* Common Layout Elements */
+.section {
+  margin-top: var(--mgp-space-xl);
+}

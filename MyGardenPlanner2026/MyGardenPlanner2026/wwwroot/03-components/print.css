@@ -1,0 +1,159 @@
+/* ==========================================================================
+   03-Components: Print Principles & PrintTable (@media print)
+   ========================================================================== */
+
+.print-only {
+  display: none !important;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #111111 !important;
+    font-size: 10.5pt;
+    line-height: 1.4;
+  }
+
+  /* Skjul interaktive-, navigations- og transient-elementer */
+  .screen-only,
+  .sidebar,
+  .desktop-sidebar,
+  .mobile-header,
+  .nav-drawer,
+  .drawer-backdrop,
+  .filter-drawer,
+  .filter-bar,
+  .btn,
+  .btn-row,
+  .card-actions,
+  .form-actions,
+  .form-actions-split,
+  .upload-zone,
+  .media-preview-panel,
+  .toast-stack,
+  .toast,
+  .skeleton-card,
+  .skeleton-row,
+  .skeleton-media,
+  .inline-loading,
+  .btn-spinner,
+  .empty-state,
+  .archive-banner,
+  .danger-zone {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .app-shell {
+    display: block !important;
+  }
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  /* Flatten Layout Grids to 1-Column */
+  .grid,
+  .form-grid,
+  .form-grid-2,
+  .form-grid-3,
+  .form-grid-4,
+  .detail-layout-grid,
+  .summary-grid {
+    display: block !important;
+  }
+
+  .grid > *,
+  .form-grid > *,
+  .detail-layout-grid > * {
+    margin-bottom: 12pt;
+  }
+
+  /* Flat Cards & Container Borders */
+  .card,
+  .status-message,
+  .read-only-section {
+    box-shadow: none !important;
+    border: 1px solid #cccccc !important;
+    background: #ffffff !important;
+    break-inside: avoid;
+  }
+
+  .badge,
+  .attention-badge,
+  .badge-role {
+    background: #ffffff !important;
+    color: #111111 !important;
+    border: 1px solid #999999 !important;
+  }
+
+  /* Form Controls as Plain Text */
+  input,
+  textarea,
+  select {
+    border: 0 !important;
+    background: transparent !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    appearance: none;
+  }
+
+  .help,
+  .help-empty,
+  .field-message {
+    display: none !important;
+  }
+
+  a::after {
+    content: "";
+  }
+
+  /* Page Break Rules */
+  h1, h2, h3 {
+    break-after: avoid;
+  }
+
+  .print-avoid-break {
+    break-inside: avoid;
+  }
+
+  .print-page-break {
+    break-before: page;
+  }
+
+  /* Print Specific Table */
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .print-table th,
+  .print-table td {
+    text-align: left;
+    border-bottom: 1px solid #dddddd;
+    padding: 6pt 4pt;
+    vertical-align: top;
+  }
+
+  .print-table th {
+    font-weight: 700;
+  }
+
+  .print-footer {
+    display: block !important;
+    margin-top: 24pt;
+    padding-top: 8pt;
+    border-top: 1px solid #cccccc;
+    font-size: 9pt;
+    color: #555555;
+  }
+}

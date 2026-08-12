@@ -1,0 +1,42 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Subscriptions
+
+<div class="card card-entity pricing-card @(Tier.IsFeatured ? "pricing-card-featured" : string.Empty)"
+     data-density="default">
+    @if (Tier.IsFeatured)
+    {
+        <span class="badge-role badge-primary pricing-card-badge">Mest populær</span>
+    }
+
+    <div class="card-header pricing-card-header">
+        <h3 class="pricing-card-title">@Tier.Name</h3>
+    </div>
+
+    <p class="card-description pricing-card-description">@Tier.Description</p>
+
+    <p class="pricing-card-price">
+        <span class="numeric pricing-card-price-amount">@FormattedPrice</span>
+        <span class="pricing-card-price-suffix">@PriceSuffix</span>
+    </p>
+    <p class="pricing-card-vat-note">Priser er ekskl. moms.</p>
+
+    @if (Tier.IncludedFeatures.Count > 0)
+    {
+        <ul class="list-unstyled pricing-card-feature-list">
+            @foreach (var feature in Tier.IncludedFeatures)
+            {
+                <li class="pricing-card-feature">
+                    <i class="bi bi-check-lg pricing-card-feature-icon" aria-hidden="true"></i>
+                    <span>@feature</span>
+                </li>
+            }
+        </ul>
+    }
+
+    <div class="card-actions pricing-card-actions">
+        <button type="button"
+                class="btn w-100 @(Tier.IsFeatured ? "btn-primary" : "btn-secondary")"
+                @onclick="HandleSelectAsync">
+            Vælg @Tier.Name
+        </button>
+    </div>
+</div>

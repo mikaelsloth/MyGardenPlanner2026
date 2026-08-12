@@ -5,14 +5,25 @@ using MyGardenPlanner2026.Infrastructure.Data;
 
 public static class DatabaseServicesExtensions
 {
-    public static IServiceCollection AddDatabaseServices(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddDatabaseServices(this IServiceCollection services, IConfiguration configuration, string? provider)
     {
-        var connectionString = configuration.GetConnectionString("DefaultConnection")
-            ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-
-        services.AddDbContext<PlannerDbContext>(options =>
-            options.UseSqlite(connectionString)); // UseSqlServer til produktion
-
+        services.AddDbContextFactory<PlannerDbContext>(options =>
+        {
+            switch (provider)
+            {
+                case "SqlExpressConnection":
+                    options.UseSqlServer(
+                        configuration.GetConnectionString("SqlExpressConnection"),
+                        sql => sql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
+                    break;
+                case "SqliteConnection":
+                    options.UseSqlite(
+                        configuration.GetConnectionString("SqliteConnection"));
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unknown DatabaseProvider: \"{provider}\"");
+            }
+        });
         services.AddDatabaseDeveloperPageExceptionFilter();
 
         return services;

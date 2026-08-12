@@ -3,6 +3,8 @@
 MyGardenPlanner is an application for planning, designing, and executing garden projects.
 The system is built with a clear layered architecture that separates **design**, **decision**, and **execution**, allowing projects to evolve over time without losing history or oversight.
 
+Note for license compliance: The application is strictly Non-Commercial until this repo is made private **and** an official website exists.
+
 ---
 
 ## License

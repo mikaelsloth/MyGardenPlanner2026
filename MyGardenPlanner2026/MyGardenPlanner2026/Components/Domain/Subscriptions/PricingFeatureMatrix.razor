@@ -1,0 +1,47 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Subscriptions
+
+<div class="pricing-matrix">
+    <div class="table-responsive d-none d-md-block">
+        <table class="data-table data-table-compact pricing-matrix-table" data-density="compact">
+            <thead>
+                <tr>
+                    <th scope="col">Egenskab</th>
+                    @foreach (var tier in Tiers)
+                    {
+                        <th scope="col">@tier.Name</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var featureKey in FeatureKeys)
+                {
+                    <tr>
+                        <th scope="row">@featureKey</th>
+                        @foreach (var tier in Tiers)
+                        {
+                            <td class="numeric">@GetLimitValue(tier, featureKey)</td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pricing-matrix-stacked d-md-none">
+        @foreach (var tier in Tiers)
+        {
+            <div class="card card-entity pricing-matrix-stacked-card">
+                <h4 class="pricing-matrix-stacked-title">@tier.Name</h4>
+                <ul class="list-unstyled pricing-matrix-stacked-list">
+                    @foreach (var featureKey in FeatureKeys)
+                    {
+                        <li class="pricing-matrix-stacked-row">
+                            <span class="pricing-matrix-stacked-label">@featureKey</span>
+                            <span class="numeric">@GetLimitValue(tier, featureKey)</span>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </div>
+</div>

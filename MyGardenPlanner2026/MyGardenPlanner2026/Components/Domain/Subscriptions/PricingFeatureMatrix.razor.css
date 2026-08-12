@@ -1,0 +1,39 @@
+/* CSS for PricingFeatureMatrix component */
+.pricing-matrix-table th[scope="row"] {
+    text-align: left;
+    font-weight: var(--font-weight-medium);
+    color: var(--mgp-text);
+}
+
+.pricing-matrix-stacked {
+    display: grid;
+    gap: var(--mgp-space-md);
+}
+
+.pricing-matrix-stacked-title {
+    margin: 0 0 var(--mgp-space-sm) 0;
+    font-size: var(--font-size-md);
+}
+
+.pricing-matrix-stacked-list {
+    display: grid;
+    gap: var(--mgp-space-2xs);
+    margin: 0;
+    padding: 0;
+}
+
+.pricing-matrix-stacked-row {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--mgp-space-2xs) 0;
+    border-bottom: 1px solid var(--mgp-border);
+    font-size: var(--font-size-sm);
+}
+
+    .pricing-matrix-stacked-row:last-child {
+        border-bottom: none;
+    }
+
+.pricing-matrix-stacked-label {
+    color: var(--mgp-text-muted);
+}

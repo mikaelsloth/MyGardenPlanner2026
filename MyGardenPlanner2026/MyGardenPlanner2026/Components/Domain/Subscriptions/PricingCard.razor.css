@@ -1,0 +1,67 @@
+/* CSS for PricingCard component */
+.pricing-card {
+    position: relative;
+    display: grid;
+    gap: var(--mgp-space-md);
+    text-align: left;
+}
+
+.pricing-card-featured {
+    border-color: var(--mgp-accent);
+    box-shadow: 0 0 0 3px rgba(184, 107, 75, 0.18);
+}
+
+.pricing-card-badge {
+    position: absolute;
+    top: calc(var(--mgp-space-md) * -0.5);
+    right: var(--mgp-space-md);
+}
+
+.pricing-card-title {
+    margin: 0;
+    font-size: var(--font-size-lg);
+}
+
+.pricing-card-price {
+    display: flex;
+    align-items: baseline;
+    gap: var(--mgp-space-2xs);
+    margin: 0;
+}
+
+.pricing-card-price-amount {
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-heavy);
+    color: var(--mgp-text);
+}
+
+.pricing-card-price-suffix {
+    color: var(--mgp-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.pricing-card-vat-note {
+    margin: 0;
+    font-size: var(--font-size-xs);
+    color: var(--mgp-text-muted);
+}
+
+.pricing-card-feature-list {
+    display: grid;
+    gap: var(--mgp-space-xs);
+    margin: 0;
+    padding: 0;
+}
+
+.pricing-card-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--mgp-space-xs);
+    color: var(--mgp-text);
+    font-size: var(--font-size-sm);
+}
+
+.pricing-card-feature-icon {
+    color: var(--mgp-primary);
+    margin-top: 0.15rem;
+}

@@ -1,0 +1,20 @@
+/* CSS for FeatureCard component */
+.feature-card {
+    display: grid;
+    gap: var(--mgp-space-sm);
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+    .feature-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+    }
+
+.feature-card-badge {
+    justify-self: start;
+}
+
+.feature-card-title {
+    margin: 0;
+    font-size: var(--font-size-md);
+}

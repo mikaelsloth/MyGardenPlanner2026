@@ -1,0 +1,44 @@
+/* CSS for HeroBanner component */
+.hero-banner {
+    background: var(--mgp-primary-soft);
+    padding: var(--mgp-space-2xl) 0;
+}
+
+.hero-banner-title {
+    color: var(--mgp-text);
+    font-size: var(--font-size-xxl);
+    font-weight: var(--font-weight-heavy);
+    margin-bottom: var(--mgp-space-md);
+}
+
+.hero-banner-subtitle {
+    color: var(--mgp-text-muted);
+    font-size: var(--font-size-md);
+    max-width: 52ch;
+    margin-bottom: var(--mgp-space-lg);
+}
+
+.hero-banner-actions {
+    display: flex;
+    gap: var(--mgp-space-sm);
+    flex-wrap: wrap;
+}
+
+.hero-banner-placeholder {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: var(--radius-lg);
+    background: var(--mgp-surface);
+    border: 1px solid var(--mgp-border);
+}
+
+@media (max-width: 640px) {
+    .hero-banner {
+        padding: var(--mgp-space-xl) 0;
+    }
+
+    .hero-banner-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

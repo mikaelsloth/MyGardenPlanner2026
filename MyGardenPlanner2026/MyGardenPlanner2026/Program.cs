@@ -7,12 +7,17 @@ var provider = builder.Configuration["DatabaseProvider"];
 builder.Services
     .AddBlazorServices()
     .AddDatabaseServices(builder.Configuration, provider)
-    .AddIdentityServices();
+    .AddIdentityServices()
+    .AddSubscriptionCatalogServices();
 
 var app = builder.Build();
 
 Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
 Console.WriteLine($"DatabaseProvider: {provider}");
+
+// 1.1 Add seeds in development
+if (app.Environment.IsDevelopment())
+    await app.Services.AddDatabaseSeeds();
 
 // 2. HTTP Request Pipeline (Middleware)
 app.UseWebPipeline();

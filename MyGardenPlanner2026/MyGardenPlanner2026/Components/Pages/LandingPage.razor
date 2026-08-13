@@ -1,0 +1,66 @@
+﻿@page "/"
+@layout MyGardenPlanner2026.Components.Layout.PublicLayout
+
+<PageTitle>MyGardenPlanner – Planlæg din drømmehave</PageTitle>
+
+<HeroBanner />
+
+<section class="section landing-features">
+    <div class="container-fluid px-3 px-md-4">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <FeatureCard AccessLevel="GardenAccessLevel.HaveArkitekt"
+                             Title="Stamdata & Planter"
+                             Description="Byg dit fundament: planter, materialer og butikker — alt hvad din have skal bruge." />
+            </div>
+            <div class="col-md-4">
+                <FeatureCard AccessLevel="GardenAccessLevel.BedDesigner"
+                             Title="Beddesign & Materialer"
+                             Description="Skitsér bedforslag med variationer og estimerede mængder — uden at forpligte dig endnu." />
+            </div>
+            <div class="col-md-4">
+                <FeatureCard AccessLevel="GardenAccessLevel.Planlaegger"
+                             Title="Projekter & Tidslinje"
+                             Description="Omsæt planer til handling: budget, tidsforbrug og fremdrift i din have." />
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section landing-pricing">
+    <div class="container-fluid px-3 px-md-4">
+        <h2 class="landing-section-title">Abonnementer der passer til dit behov</h2>
+        <div class="row g-4">
+            @if (featuredTiers is null)
+            {
+                @for (var i = 0; i < 3; i++)
+                {
+                    <div class="col-md-4">
+                        <div class="skeleton-card" aria-hidden="true">
+                            <div class="skeleton-line skeleton-title"></div>
+                            <div class="skeleton-line skeleton-meta"></div>
+                            <div class="skeleton-block"></div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                @foreach (var tier in featuredTiers)
+                {
+                    <div class="col-md-4">
+                        <PricingCard Tier="tier" OnSelectPlan="HandleSelectPlan" />
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</section>
+
+<section class="section landing-cta">
+    <div class="container-fluid px-3 px-md-4 landing-cta-inner">
+        <h2 class="landing-cta-title">Klar til at planlægge din have?</h2>
+        <p class="landing-cta-subtitle">Opret en gratis konto på få minutter — ingen kreditkort krævet.</p>
+        <a href="/register" class="btn btn-primary btn-lg">Opret gratis konto</a>
+    </div>
+</section>

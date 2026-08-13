@@ -1,0 +1,29 @@
+/* CSS for LandingPage component */
+.landing-section-title {
+    text-align: center;
+    margin-bottom: var(--mgp-space-xl);
+}
+
+.landing-pricing {
+    background: var(--mgp-surface-muted);
+    padding: var(--mgp-space-2xl) 0;
+}
+
+.landing-cta {
+    padding: var(--mgp-space-2xl) 0;
+}
+
+.landing-cta-inner {
+    text-align: center;
+    display: grid;
+    gap: var(--mgp-space-sm);
+    justify-items: center;
+}
+
+.landing-cta-title {
+    margin: 0;
+}
+
+.landing-cta-subtitle {
+    color: var(--mgp-text-muted);
+}

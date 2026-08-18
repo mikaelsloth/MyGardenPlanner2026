@@ -3,4 +3,6 @@
 public partial class PublicLayout
 {
     private bool isMobileMenuOpen;
+
+    private void CloseMobileMenu() => isMobileMenuOpen = false;
 }

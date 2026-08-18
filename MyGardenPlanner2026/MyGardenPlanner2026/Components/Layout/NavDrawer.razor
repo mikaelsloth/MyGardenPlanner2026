@@ -1,0 +1,35 @@
+﻿@namespace MyGardenPlanner2026.Components.Layout
+
+@if (IsOpen)
+{
+    <div class="drawer-backdrop" @onclick="HandleClose"></div>
+}
+
+<nav class="nav-drawer @(IsOpen ? "open" : string.Empty)"
+     aria-label="Mobilnavigation"
+     tabindex="-1"
+     @ref="drawerElement"
+     @onkeydown="HandleKeyDown">
+    <ul class="list-unstyled d-flex flex-column gap-2 nav-drawer-list">
+        <li>
+            <NavLink class="nav-link-item" href="/" Match="NavLinkMatch.All" @onclick="HandleClose">
+                Forside
+            </NavLink>
+        </li>
+        <li>
+            <NavLink class="nav-link-item" href="/pricing" @onclick="HandleClose">
+                Priser &amp; Abonnement
+            </NavLink>
+        </li>
+        <li>
+            <a class="nav-link-item" href="/login" @onclick="HandleClose">
+                Log ind
+            </a>
+        </li>
+        <li>
+            <a class="nav-link-item" href="/register" @onclick="HandleClose">
+                Opret bruger
+            </a>
+        </li>
+    </ul>
+</nav>

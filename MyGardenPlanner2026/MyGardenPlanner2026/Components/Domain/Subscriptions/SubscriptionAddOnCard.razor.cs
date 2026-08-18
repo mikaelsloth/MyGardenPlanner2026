@@ -13,4 +13,5 @@ public partial class SubscriptionAddOnCard
 
     private string FormattedAnnualPrice => AddOn.AnnualPrice.ToString("C2", DanishCulture);
     private string FormattedMonthlyPrice => AddOn.MonthlyPrice.ToString("C2", DanishCulture);
+    private string FormattedPerpetualPrice => AddOn.PerpetualPrice.ToString("C2", DanishCulture);
 }

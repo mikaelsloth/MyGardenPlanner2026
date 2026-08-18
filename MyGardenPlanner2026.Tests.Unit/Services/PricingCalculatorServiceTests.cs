@@ -117,9 +117,13 @@ public class PricingCalculatorServiceTests : TestDbContext
     }
 
     [Fact]
-    public async Task CalculateAsync_PerpetualBillingCycle_ThrowsNotSupportedException()
+    public async Task CalculateAsync_PerpetualBillingCycle_UsesPerpetualBasePriceAndAddOnPrices()
     {
         await SeedAllAsync();
+
+        using var seededContext = CreateDbContext();
+        var bedforslagAddOn = seededContext.SubscriptionAddOns.Single(a => a.Type == AddOnType.BedforslagNiveau2);
+
         var service = new PricingCalculatorService(CreateDbContextFactory());
 
         var request = new PricingCalculationRequestDto(
@@ -128,10 +132,33 @@ public class PricingCalculatorServiceTests : TestDbContext
             BillingCycle.Perpetual,
             ActiveGardens: 1,
             ArchivedGardens: 0,
+            AddOnQuantities: new Dictionary<int, int> { [bedforslagAddOn.Id] = 1 });
+
+        var result = await service.CalculateAsync(request, TestContext.Current.CancellationToken);
+
+        result.BasePricePerGarden.Should().Be(840m); // SubscriptionTier.PerpetualPrice for Lag1/Admin
+        result.GardenSubtotal.Should().Be(840m);
+        result.AddOnsTotal.Should().Be(450m); // Bedforslag Perpetual-pris
+        result.Total.Should().Be(840m + 450m);
+    }
+
+    [Fact]
+    public async Task CalculateAsync_PerpetualBillingCycle_AppliesSameVolumeDiscountTrapAsAnnual()
+    {
+        await SeedAllAsync();
+        var service = new PricingCalculatorService(CreateDbContextFactory());
+
+        var request = new PricingCalculationRequestDto(
+            GardenAccessLevel.BedDesigner,
+            AccessCategory.Editor,
+            BillingCycle.Perpetual,
+            ActiveGardens: 6,
+            ArchivedGardens: 0,
             AddOnQuantities: new Dictionary<int, int>());
 
-        var act = async () => await service.CalculateAsync(request, TestContext.Current.CancellationToken);
+        var result = await service.CalculateAsync(request, TestContext.Current.CancellationToken);
 
-        await act.Should().ThrowAsync<NotSupportedException>();
+        result.DiscountMultiplier.Should().Be(0.80m); // Samme trappe som Annual-testen
+        result.BasePricePerGarden.Should().Be(300m);  // SubscriptionTier.PerpetualPrice for Lag2/Editor
     }
 }

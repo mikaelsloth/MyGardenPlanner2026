@@ -25,6 +25,7 @@ public class PricingCalculatorTests : BunitContext
                 UnitDescription = "Pakke med 2 bedforslag",
                 AnnualPrice = 180m,
                 MonthlyPrice = 15m,
+                PerpetualPrice = 450m,
                 DisplayOrder = 1
             }
         ]);
@@ -42,6 +43,18 @@ public class PricingCalculatorTests : BunitContext
 
         Services.AddSingleton(addOnCatalog);
         Services.AddSingleton(calculatorService);
+    }
+
+    [Fact]
+    public void PricingCalculator_BillingCycleSelect_IncludesAllThreeCycles()
+    {
+        RegisterFakes();
+
+        var cut = Render<PricingCalculator>();
+        var options = cut.FindAll("#calc-cycle option");
+
+        options.Should().HaveCount(3);
+        options.Select(o => o.TextContent).Should().Contain(["Årligt", "Månedligt", "Engangsbeløb"]);
     }
 
     [Fact]

@@ -31,4 +31,17 @@ public class SubscriptionAddOnSeederTests : TestDbContext
         var count = await context.SubscriptionAddOns.CountAsync(TestContext.Current.CancellationToken);
         count.Should().Be(5);
     }
+
+    [Fact]
+    public async Task SeedAsync_BedforslagAddOn_HasCorrectPerpetualPrice()
+    {
+        var seeder = new SubscriptionAddOnSeeder(CreateDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
+        await seeder.SeedAsync(TestContext.Current.CancellationToken);
+
+        using var context = CreateDbContext();
+        var addOn = await context.SubscriptionAddOns
+            .SingleAsync(a => a.Type == Core.Entities.Common.AddOnType.BedforslagNiveau2, TestContext.Current.CancellationToken);
+
+        addOn.PerpetualPrice.Should().Be(450m);
+    }
 }

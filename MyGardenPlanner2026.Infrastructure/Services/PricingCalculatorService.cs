@@ -8,7 +8,8 @@ using MyGardenPlanner2026.Infrastructure.Data;
 
 /// <summary>
 /// Beregner have-abonnementspris jf. Prismatrix.md, tabel 1-3.
-/// Understøtter kun Annual/Monthly, da trapperabat og tilkøb ikke har perpetual-priser.
+/// Volumenrabatten (tabel 2) er en cyklus-agnostisk procentsats og anvendes derfor
+/// på tværs af Annual/Monthly/Perpetual basispriser. Understøtter alle tre BillingCycle-værdier.
 /// </summary>
 public sealed class PricingCalculatorService(
     IDbContextFactory<PlannerDbContext> contextFactory) : IPricingCalculatorService
@@ -21,12 +22,6 @@ public sealed class PricingCalculatorService(
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-
-        if (request.BillingCycle == BillingCycle.Perpetual)
-        {
-            throw new NotSupportedException(
-                "PricingCalculator understøtter ikke Perpetual: have-trapperabat og tilkøb har ingen perpetual-priser i Prismatrix.");
-        }
 
         if (request.ActiveGardens < 0 || request.ArchivedGardens < 0)
         {
@@ -42,9 +37,13 @@ public sealed class PricingCalculatorService(
             ?? throw new InvalidOperationException(
                 $"Intet abonnement fundet for {request.Level} / {request.AccessCategory}.");
 
-        var basePricePerGarden = request.BillingCycle == BillingCycle.Annual
-            ? tier.AnnualPrice
-            : tier.MonthlyPrice;
+        var basePricePerGarden = request.BillingCycle switch
+        {
+            BillingCycle.Annual => tier.AnnualPrice,
+            BillingCycle.Monthly => tier.MonthlyPrice,
+            BillingCycle.Perpetual => tier.PerpetualPrice,
+            _ => throw new ArgumentOutOfRangeException(nameof(request), "Ukendt BillingCycle.")
+        };
 
         var archivedWeight = request.AccessCategory == AccessCategory.Administrator
             ? ArchivedGardenWeightForAdministrator
@@ -82,9 +81,14 @@ public sealed class PricingCalculatorService(
                 var addOn = addOns.SingleOrDefault(a => a.Id == addOnId)
                     ?? throw new InvalidOperationException($"Tilkøb med Id {addOnId} findes ikke.");
 
-                var unitPrice = request.BillingCycle == BillingCycle.Annual
-                    ? addOn.AnnualPrice
-                    : addOn.MonthlyPrice;
+                // Add-ons gælder altid pr. have (ikke ganget med antal haver).
+                var unitPrice = request.BillingCycle switch
+                {
+                    BillingCycle.Annual => addOn.AnnualPrice,
+                    BillingCycle.Monthly => addOn.MonthlyPrice,
+                    BillingCycle.Perpetual => addOn.PerpetualPrice,
+                    _ => throw new ArgumentOutOfRangeException(nameof(request), "Ukendt BillingCycle.")
+                };
 
                 var lineTotal = unitPrice * quantity;
                 addOnsTotal += lineTotal;

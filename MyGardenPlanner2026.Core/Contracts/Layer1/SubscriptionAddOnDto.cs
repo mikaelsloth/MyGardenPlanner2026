@@ -8,4 +8,5 @@ public sealed record SubscriptionAddOnDto(
     string Name,
     string UnitDescription,
     decimal AnnualPrice,
-    decimal MonthlyPrice);
+    decimal MonthlyPrice,
+    decimal PerpetualPrice);

@@ -10,9 +10,11 @@ using Xunit;
 public class SubscriptionAddOnCardTests : BunitContext
 {
     [Fact]
-    public void SubscriptionAddOnCard_RendersNameUnitAndPrices()
+    public void SubscriptionAddOnCard_RendersNameUnitAndAllThreePrices()
     {
-        var dto = new SubscriptionAddOnDto(1, AddOnType.BedforslagNiveau2, "Bedforslag (Niveau 2)", "Pakke med 2 bedforslag", 180m, 15m);
+        var dto = new SubscriptionAddOnDto(
+            1, AddOnType.BedforslagNiveau2, "Bedforslag (Niveau 2)", "Pakke med 2 bedforslag",
+            AnnualPrice: 180m, MonthlyPrice: 15m, PerpetualPrice: 450m);
 
         var cut = Render<SubscriptionAddOnCard>(p => p.Add(x => x.AddOn, dto));
 
@@ -20,5 +22,6 @@ public class SubscriptionAddOnCardTests : BunitContext
         cut.Markup.Should().Contain("Pakke med 2 bedforslag");
         cut.Markup.Should().Contain("180,00 kr.");
         cut.Markup.Should().Contain("15,00 kr.");
+        cut.Markup.Should().Contain("450,00 kr.");
     }
 }

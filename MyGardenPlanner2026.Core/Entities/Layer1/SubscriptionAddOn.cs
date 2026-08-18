@@ -16,6 +16,7 @@ public class SubscriptionAddOn
 
     public decimal AnnualPrice { get; set; }
     public decimal MonthlyPrice { get; set; }
+    public decimal PerpetualPrice { get; set; }
 
     public int DisplayOrder { get; set; }
 }

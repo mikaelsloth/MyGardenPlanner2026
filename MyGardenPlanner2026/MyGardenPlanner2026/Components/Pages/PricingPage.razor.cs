@@ -14,6 +14,6 @@ public partial class PricingPage
     {
         addOns = [.. AddOnCatalog.GetDefaultAddOns()
             .OrderBy(a => a.DisplayOrder)
-            .Select(a => new SubscriptionAddOnDto(a.Id, a.Type, a.Name, a.UnitDescription, a.AnnualPrice, a.MonthlyPrice))];
+            .Select(a => new SubscriptionAddOnDto(a.Id, a.Type, a.Name, a.UnitDescription, a.AnnualPrice, a.MonthlyPrice, a.PerpetualPrice))];
     }
 }

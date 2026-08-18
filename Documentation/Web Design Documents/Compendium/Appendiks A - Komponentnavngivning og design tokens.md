@@ -693,6 +693,56 @@ For at undgå komponenteksplosion håndteres dynamisk opførsel via fælles, sta
 * **Mobile & Print:** 1 kolonne på mobil.
 * **Relaterede komponenter:** `Card`, `Stack`.
 
+##### 15. `PricingMatrixTable`
+* **Dokumentnavn:** `PricingMatrixTable`
+* **Formål / Usage:** Visning af basistakster pr. bruger baseret på Niveau (Lag 1-3) og Adgangskategori (Admin, Editor, Viewer+, Viewer) med cyklus-velger (Årlig, Månedlig, Perpetual).
+* **Variants:** `read-only`, `interactive-select`.
+* **States:** `default`, `loading`.
+* **Tokens:** `--mgp-surface`, `--mgp-border`, `--mgp-primary-soft`, `--mgp-density-compact`.
+* **Accessibility:** Semantisk `<table>` med `scope="col"` og `scope="row"`.
+* **Mobile & Print:** Skifter til harmonika/kortudgave pr. lag på skærme < 768px.
+* **Relaterede komponenter:** `DataTable`, `PricingCalculator`, `Badge`.
+
+##### 16. `GardenVolumeDiscountTable`
+* **Dokumentnavn:** `GardenVolumeDiscountTable`
+* **Formål / Usage:** Præsentation af volumintrappen for antal haver samt forklarende regler for arkiverede havers vægtning (0,25 have for Admin vs. 1,0 for øvrige).
+* **Variants:** `standard`, `compact`.
+* **States:** `default`.
+* **Tokens:** `--mgp-surface`, `--mgp-border`, `--mgp-accent`, `--mgp-surface-muted`.
+* **Accessibility:** Tydelige procentangivelser med `.numeric` klassen.
+* **Mobile & Print:** Stabeles som compact rows på mobil.
+* **Relaterede komponenter:** `DataTable`, `PricingCalculator`, `PermissionHint`.
+
+##### 17. `SubscriptionAddOnCard`
+* **Dokumentnavn:** `SubscriptionAddOnCard`
+* **Formål / Usage:** Præsentation af tilkøbsmoduler (Bedforslag, Bede, Artefaktpakke A & B) med angivelse af enhed, månedlig og årlig pris.
+* **Variants:** `standard`, `selectable`.
+* **States:** `default`, `hover`, `selected`.
+* **Tokens:** `--mgp-surface`, `--mgp-border`, `--mgp-primary`, `--shadow-sm`.
+* **Accessibility:** Inkluderer synlig label og pris.
+* **Mobile & Print:** Fuld bredde på mobil.
+* **Relaterede komponenter:** `Card`, `PricingCalculator`, `Badge`.
+
+##### 18. `PricingCalculator`
+* **Dokumentnavn:** `PricingCalculator`
+* **Formål / Usage:** Interaktiv beregner hvor brugeren kan sammensætte sin konfiguration (Lag, Rolle, Betalingsfrekvens, Aktive/Arkiverede haver samt Tilkøb) og se den beregnede samlede pris samt besparelse.
+* **Variants:** `widget`, `full-page`.
+* **States:** `calculating`, `ready`.
+* **Tokens:** `--mgp-surface`, `--mgp-border`, `--mgp-primary-soft`, `--mgp-primary-dark`, `--mgp-accent`.
+* **Accessibility:** Formularfelter bundet op med ARIA-labels og live region for opdateret totalsum.
+* **Mobile & Print:** 1-kolonne formular-flow på mobil.
+* **Relaterede komponenter:** `FormField`, `PricingMatrixTable`, `SubscriptionAddOnCard`, `Button`.
+
+##### 19. `BasePriceMatrixEditor`
+* **Dokumentnavn:** `BasePriceMatrixEditor`
+* **Formål / Usage:** Admin-komponent til inline redigering af priser pr. Niveau, Adgangskategori og Betalingsfrekvens.
+* **Variants:** `editable-table`.
+* **States:** `default`, `editing`, `saving`, `error`.
+* **Tokens:** `--mgp-surface`, `--mgp-border`, `--mgp-danger`, `--mgp-focus-ring`.
+* **Accessibility:** Hvert inputfelt har eksplicit `aria-label` bestående af Lag + Rolle + Frekvens.
+* **Mobile & Print:** Kun tilgængelig på desktop/tablet i admin-panelet.
+* **Relaterede komponenter:** `DataTable`, `FormField`, `Button`, `StatusMessage`.
+
 ---
 
 ## 2. Design Tokens Arkitektur

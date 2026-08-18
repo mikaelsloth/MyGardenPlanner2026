@@ -1,0 +1,13 @@
+/* CSS for PricingCalculator component */
+.pricing-calculator {
+    display: grid;
+    gap: var(--mgp-space-md);
+}
+
+.pricing-calculator-addons-title {
+    margin-top: var(--mgp-space-md);
+}
+
+.pricing-calculator-result {
+    margin-top: var(--mgp-space-md);
+}

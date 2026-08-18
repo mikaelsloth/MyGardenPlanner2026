@@ -51,4 +51,15 @@ public class SubscriptionPricingServiceTests : TestDbContext
         haveArkitektTier.Price.Should().Be(14m);
         haveArkitektTier.BillingCycle.Should().Be(BillingCycle.Monthly);
     }
+
+    [Fact]
+    public async Task GetAllTiersAsync_Returns12Tiers()
+    {
+        await SeedAsync();
+        var service = new SubscriptionPricingService(CreateDbContextFactory());
+
+        var result = await service.GetAllTiersAsync(BillingCycle.Annual, TestContext.Current.CancellationToken);
+
+        result.Should().HaveCount(12);
+    }
 }

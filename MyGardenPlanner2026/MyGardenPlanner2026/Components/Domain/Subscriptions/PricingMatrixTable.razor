@@ -1,0 +1,53 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Subscriptions
+@using System.Globalization
+
+<div class="pricing-matrix-table-wrapper">
+    <div class="context-tabs" role="tablist" aria-label="Betalingscyklus">
+        @foreach (var cycle in cycleOptions)
+        {
+            <button type="button"
+                    role="tab"
+                    class="context-tab @(selectedCycle == cycle ? "active" : string.Empty)"
+                    aria-selected="@(selectedCycle == cycle)"
+                    @onclick="() => SelectCycleAsync(cycle)">
+                @CycleLabel(cycle)
+            </button>
+        }
+    </div>
+
+    @if (tiers is null)
+    {
+        <div class="skeleton-table" aria-hidden="true">
+            <div class="skeleton-line skeleton-title"></div>
+            <div class="skeleton-line skeleton-meta"></div>
+        </div>
+    }
+    else
+    {
+        @foreach (var group in GroupedTiers)
+        {
+            <h3 class="pricing-matrix-level-title">@group.Key.ToDisplayName()</h3>
+            <div class="table-responsive">
+                <table class="data-table" data-density="compact">
+                    <thead>
+                        <tr>
+                            <th scope="col">Adgangskategori</th>
+                            <th scope="col">Pris</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var tier in group.OrderByDescending(t => t.AccessCategory))
+                        {
+                            <tr>
+                                <th scope="row">@tier.AccessCategory</th>
+                                <td class="numeric">
+                                    @tier.Price.ToString("C2", DanishCulture) @PriceSuffix(selectedCycle)
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+</div>

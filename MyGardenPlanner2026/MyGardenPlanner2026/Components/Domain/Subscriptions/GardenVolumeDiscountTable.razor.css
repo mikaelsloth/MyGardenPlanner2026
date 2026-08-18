@@ -1,0 +1,5 @@
+/* CSS for GardenVolumeDiscountTable component */
+.garden-volume-discount-table {
+    display: grid;
+    gap: var(--mgp-space-md);
+}

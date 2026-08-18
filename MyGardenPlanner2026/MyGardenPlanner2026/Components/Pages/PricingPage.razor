@@ -1,0 +1,30 @@
+﻿@page "/pricing"
+@layout MyGardenPlanner2026.Components.Layout.PublicLayout
+
+<PageTitle>Priser & Abonnement – MyGardenPlanner</PageTitle>
+
+<section class="section">
+    <div class="container-fluid px-3 px-md-4">
+        <h1>Priser & Abonnement</h1>
+        <p class="card-description">Alle priser er ekskl. moms.</p>
+
+        <h2 class="section-title">Basisabonnement pr. bruger</h2>
+        <PricingMatrixTable />
+
+        <h2 class="section-title">Have-abonnement (trapperabat)</h2>
+        <GardenVolumeDiscountTable />
+
+        <h2 class="section-title">Tilkøbsmoduler</h2>
+        <div class="row g-4">
+            @foreach (var addOn in addOns)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <SubscriptionAddOnCard AddOn="addOn" />
+                </div>
+            }
+        </div>
+
+        <h2 class="section-title">Beregn din pris</h2>
+        <PricingCalculator />
+    </div>
+</section>

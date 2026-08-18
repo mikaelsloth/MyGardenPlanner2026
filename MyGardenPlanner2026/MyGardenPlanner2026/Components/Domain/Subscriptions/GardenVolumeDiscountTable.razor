@@ -1,0 +1,37 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Subscriptions
+
+<div class="garden-volume-discount-table">
+    <div class="table-responsive">
+        <table class="data-table" data-density="compact">
+            <thead>
+                <tr>
+                    <th scope="col">Antal haver</th>
+                    <th scope="col">Pris pr. have</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (tiers is not null)
+                {
+                    @foreach (var tier in tiers)
+                    {
+                        <tr>
+                            <th scope="row">@RangeLabel(tier)</th>
+                            <td class="numeric">@((tier.PriceMultiplier * 100).ToString("0")) % af basispris</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="status-message status-info status-section" role="status">
+        <span class="status-dot" aria-hidden="true"></span>
+        <div class="status-message-text">
+            <p>
+                Arkiverede haver tæller kun med <strong>25%</strong> af deres vægt for administratorer,
+                men fuldt ud (<strong>100%</strong>) for øvrige adgangskategorier, når antallet af haver
+                afgør trapperabatten.
+            </p>
+        </div>
+    </div>
+</div>

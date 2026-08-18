@@ -7,7 +7,14 @@ public static class DatabaseSeedExtensions
     public static async Task AddDatabaseSeeds(this IServiceProvider services)
     {
         using var scope = services.CreateScope();
-        var seeder = scope.ServiceProvider.GetRequiredService<SubscriptionTierSeeder>();
-        await seeder.SeedAsync();
+
+        var tierSeeder = scope.ServiceProvider.GetRequiredService<SubscriptionTierSeeder>();
+        await tierSeeder.SeedAsync();
+
+        var volumeDiscountSeeder = scope.ServiceProvider.GetRequiredService<GardenVolumeDiscountSeeder>();
+        await volumeDiscountSeeder.SeedAsync();
+
+        var addOnSeeder = scope.ServiceProvider.GetRequiredService<SubscriptionAddOnSeeder>();
+        await addOnSeeder.SeedAsync();
     }
 }

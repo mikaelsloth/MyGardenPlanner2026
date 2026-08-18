@@ -7,4 +7,8 @@ public interface ISubscriptionPricingService
     Task<IReadOnlyList<SubscriptionTierDto>> GetFeaturedTiersAsync(
         BillingCycle cycle,
         CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyList<SubscriptionTierDto>> GetAllTiersAsync(
+        BillingCycle cycle,
+        CancellationToken cancellationToken = default);
 }

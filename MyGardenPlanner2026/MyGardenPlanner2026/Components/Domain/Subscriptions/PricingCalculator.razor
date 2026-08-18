@@ -1,0 +1,100 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Subscriptions
+@using System.Globalization
+
+<div class="pricing-calculator card" data-density="default">
+    <h3>Beregn din pris</h3>
+
+    <div class="form-grid form-grid-2">
+        <div class="field">
+            <label class="field-label" for="calc-level">Lag</label>
+            <select id="calc-level" class="form-select" @bind="selectedLevel">
+                @foreach (var level in Enum.GetValues<GardenAccessLevel>())
+                {
+                    <option value="@level">@level.ToDisplayName()</option>
+                }
+            </select>
+        </div>
+
+        <div class="field">
+            <label class="field-label" for="calc-category">Adgangskategori</label>
+            <select id="calc-category" class="form-select" @bind="selectedCategory">
+                @foreach (var category in Enum.GetValues<AccessCategory>())
+                {
+                    <option value="@category">@category</option>
+                }
+            </select>
+        </div>
+
+        <div class="field">
+            <label class="field-label" for="calc-cycle">Betalingscyklus</label>
+            <select id="calc-cycle" class="form-select" @bind="selectedCycle">
+                <option value="@BillingCycle.Annual">Årligt</option>
+                <option value="@BillingCycle.Monthly">Månedligt</option>
+            </select>
+        </div>
+
+        <div class="field">
+            <label class="field-label" for="calc-active">Aktive haver</label>
+            <input id="calc-active" type="number" min="0" class="form-control" @bind="activeGardens" />
+        </div>
+
+        <div class="field">
+            <label class="field-label" for="calc-archived">Arkiverede haver</label>
+            <input id="calc-archived" type="number" min="0" class="form-control" @bind="archivedGardens" />
+        </div>
+    </div>
+
+    <h4 class="pricing-calculator-addons-title">Tilkøb</h4>
+    <div class="form-grid form-grid-2">
+        @foreach (var addOn in addOns)
+        {
+            <div class="field">
+                <label class="field-label" for="@($"addon-{addOn.Id}")">@addOn.Name</label>
+                <input id="@($"addon-{addOn.Id}")"
+                       type="number"
+                       min="0"
+                       class="form-control"
+                       value="@GetQuantity(addOn.Id)"
+                       @onchange="e => SetQuantity(addOn.Id, Convert.ToInt32(e.Value))" />
+            </div>
+        }
+    </div>
+
+    <div class="form-actions">
+        <button type="button" class="btn btn-primary" @onclick="CalculateAsync">Beregn pris</button>
+    </div>
+
+    @if (errorMessage is not null)
+    {
+        <div class="status-message status-danger status-form" role="alert">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div class="status-message-text"><p>@errorMessage</p></div>
+        </div>
+    }
+
+    @if (result is not null)
+    {
+        <div class="summary-grid pricing-calculator-result">
+            <div class="summary-card">
+                <span class="summary-card-label">Vægtet antal haver</span>
+                <span class="summary-card-value numeric">@result.WeightedGardenCount.ToString("0.##")</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-card-label">Rabat-trappe</span>
+                <span class="summary-card-value numeric">@((result.DiscountMultiplier * 100).ToString("0")) %</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-card-label">Have-subtotal</span>
+                <span class="summary-card-value numeric">@result.GardenSubtotal.ToString("C2", DanishCulture)</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-card-label">Tilkøb i alt</span>
+                <span class="summary-card-value numeric">@result.AddOnsTotal.ToString("C2", DanishCulture)</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-card-label">Total</span>
+                <span class="summary-card-value numeric">@result.Total.ToString("C2", DanishCulture)</span>
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,5 @@
+/* CSS for PricingPage component */
+.section-title {
+    margin-top: var(--mgp-space-2xl);
+    margin-bottom: var(--mgp-space-md);
+}

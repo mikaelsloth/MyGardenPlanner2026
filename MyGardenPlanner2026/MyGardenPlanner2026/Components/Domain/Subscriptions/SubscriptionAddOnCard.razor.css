@@ -1,0 +1,17 @@
+/* CSS for SubscriptionAddOnCard component */
+.addon-card {
+    display: grid;
+    gap: var(--mgp-space-xs);
+}
+
+.addon-card-title {
+    margin: 0;
+    font-size: var(--font-size-md);
+}
+
+.addon-card-prices {
+    display: flex;
+    gap: var(--mgp-space-sm);
+    color: var(--mgp-text-muted);
+    font-size: var(--font-size-sm);
+}

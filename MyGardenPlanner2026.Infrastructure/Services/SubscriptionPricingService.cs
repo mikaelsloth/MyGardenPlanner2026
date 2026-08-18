@@ -27,4 +27,18 @@ public sealed class SubscriptionPricingService(IDbContextFactory<PlannerDbContex
             .OrderBy(t => t.Level)
             .Select(t => t.ToDto(cycle))];
     }
+
+    public async Task<IReadOnlyList<SubscriptionTierDto>> GetAllTiersAsync(
+    BillingCycle cycle,
+    CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var tiers = await context.SubscriptionTiers
+            .OrderBy(t => t.Level)
+            .ThenByDescending(t => t.AccessCategory)
+            .ToListAsync(cancellationToken);
+
+        return [.. tiers.Select(t => t.ToDto(cycle))];
+    }
 }

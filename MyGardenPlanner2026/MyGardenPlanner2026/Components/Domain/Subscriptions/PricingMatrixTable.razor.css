@@ -1,0 +1,9 @@
+/* CSS for PricingMatrixTable component */
+.pricing-matrix-table-wrapper {
+    display: grid;
+    gap: var(--mgp-space-lg);
+}
+
+.pricing-matrix-level-title {
+    margin-bottom: var(--mgp-space-sm);
+}

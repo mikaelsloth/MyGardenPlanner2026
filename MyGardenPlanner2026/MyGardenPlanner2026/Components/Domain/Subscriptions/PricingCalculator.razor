@@ -49,7 +49,7 @@
     <div class="form-grid form-grid-2">
         @foreach (var addOn in addOns)
         {
-            <div class="field">
+            <div class="field" @key="addOn.Id">
                 <label class="field-label" for="@($"addon-{addOn.Id}")">@addOn.Name</label>
                 <input id="@($"addon-{addOn.Id}")"
                        type="number"

@@ -11,12 +11,12 @@ public partial class PricingCalculator
     private static readonly CultureInfo DanishCulture = new("da-DK");
 
     [Inject]
-    private ISubscriptionAddOnCatalog AddOnCatalog { get; set; } = default!;
+    private ISubscriptionAddOnService AddOnService { get; set; } = default!;
 
     [Inject]
     private IPricingCalculatorService CalculatorService { get; set; } = default!;
 
-    private IReadOnlyList<SubscriptionAddOn> addOns = [];
+    private IReadOnlyList<SubscriptionAddOnDto> addOns = [];
     private readonly Dictionary<int, int> addOnQuantities = [];
 
     private GardenAccessLevel selectedLevel = GardenAccessLevel.HaveArkitekt;
@@ -28,9 +28,9 @@ public partial class PricingCalculator
     private PricingCalculationResultDto? result;
     private string? errorMessage;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        addOns = [.. AddOnCatalog.GetDefaultAddOns().OrderBy(a => a.DisplayOrder)];
+        addOns = await AddOnService.GetAllAddOnsAsync();
 
         foreach (var addOn in addOns)
         {
@@ -60,7 +60,7 @@ public partial class PricingCalculator
 
             result = await CalculatorService.CalculateAsync(request);
         }
-        catch (Exception ex) when (ex is InvalidOperationException or NotSupportedException or ArgumentOutOfRangeException)
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentOutOfRangeException)
         {
             errorMessage = ex.Message;
         }

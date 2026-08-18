@@ -17,6 +17,7 @@ public static class SubscriptionServicesExtensions
         services.AddScoped<SubscriptionAddOnSeeder>();
 
         services.AddScoped<ISubscriptionPricingService, SubscriptionPricingService>();
+        services.AddScoped<ISubscriptionAddOnService, SubscriptionAddOnService>();
         services.AddScoped<IPricingCalculatorService, PricingCalculatorService>();
 
         return services;

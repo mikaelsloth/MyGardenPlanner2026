@@ -10,6 +10,9 @@
     <!-- Header -->
     <PublicHeader @bind-IsMobileMenuOpen="isMobileMenuOpen" />
 
+    <!-- Mobile Navigation Drawer -->
+    <NavDrawer IsOpen="isMobileMenuOpen" OnClose="CloseMobileMenu" />
+
     <!-- Main Content Area -->
     <main id="main-content" class="public-main-content flex-grow-1">
         @Body

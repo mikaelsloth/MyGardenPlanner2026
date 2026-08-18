@@ -1,0 +1,15 @@
+/* CSS for NavDrawer component */
+.nav-drawer-list {
+    margin: 0;
+    padding: 0;
+}
+
+.nav-drawer .nav-link-item {
+    min-height: var(--mgp-touch-target-min, 44px);
+    display: flex;
+    align-items: center;
+}
+
+.nav-drawer:focus-visible {
+    outline: none;
+}

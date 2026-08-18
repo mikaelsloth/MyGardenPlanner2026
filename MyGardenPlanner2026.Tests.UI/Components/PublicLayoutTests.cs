@@ -61,5 +61,6 @@ public class PublicLayoutTests : BunitContext
         // Assert - Verificer tilstedeværelse af underkomponenter
         Assert.NotNull(cut.FindComponent<PublicHeader>());
         Assert.NotNull(cut.FindComponent<PublicFooter>());
+        Assert.NotNull(cut.FindComponent<NavDrawer>());
     }
 }

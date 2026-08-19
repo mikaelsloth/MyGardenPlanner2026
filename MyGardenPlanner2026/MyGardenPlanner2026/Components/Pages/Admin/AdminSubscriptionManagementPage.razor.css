@@ -1,0 +1,9 @@
+/* CSS for AdminSubscriptionManagementPage component */
+.admin-subscription-page {
+    padding-top: var(--mgp-page-y);
+    padding-bottom: var(--mgp-page-y);
+}
+
+.admin-tab-content {
+    margin-top: var(--mgp-space-lg);
+}

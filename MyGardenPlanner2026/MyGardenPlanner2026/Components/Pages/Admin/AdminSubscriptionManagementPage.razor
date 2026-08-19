@@ -1,0 +1,48 @@
+﻿@page "/admin/subscriptions"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy = MyGardenPlanner2026.Configuration.Extensions.AuthorizationServicesExtensions.RequireGlobalAdminPolicy)]
+@rendermode InteractiveServer
+
+<PageTitle>Administrer abonnementer – MyGardenPlanner</PageTitle>
+
+<div class="container-fluid px-3 px-md-4 admin-subscription-page">
+    <h1>Administrer abonnementer</h1>
+    <p class="card-description">Redigér basispriser, volumenrabatter og tilkøbsmoduler. Alle priser er ekskl. moms.</p>
+
+    @if (statusMessage is not null)
+    {
+        <div class="status-message status-success status-page" role="status" aria-live="polite">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div class="status-message-text"><p>@statusMessage</p></div>
+        </div>
+    }
+
+    <div class="context-tabs" role="tablist" aria-label="Administrationsområder">
+        <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.BasePrices ? "active" : string.Empty)"
+                aria-selected="@(activeTab == AdminTab.BasePrices)" @onclick="() => SelectTab(AdminTab.BasePrices)">
+            Basispriser
+        </button>
+        <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.VolumeDiscounts ? "active" : string.Empty)"
+                aria-selected="@(activeTab == AdminTab.VolumeDiscounts)" @onclick="() => SelectTab(AdminTab.VolumeDiscounts)">
+            Volumen-rabatter
+        </button>
+        <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.AddOns ? "active" : string.Empty)"
+                aria-selected="@(activeTab == AdminTab.AddOns)" @onclick="() => SelectTab(AdminTab.AddOns)">
+            Tilkøbsmoduler
+        </button>
+    </div>
+
+    <div class="admin-tab-content">
+        @switch (activeTab)
+        {
+            case AdminTab.BasePrices:
+                <BasePriceMatrixEditor OnStatusMessage="SetStatusMessage" />
+                break;
+            case AdminTab.VolumeDiscounts:
+                <VolumeDiscountEditor OnStatusMessage="SetStatusMessage" />
+                break;
+            case AdminTab.AddOns:
+                <AddOnEditor OnStatusMessage="SetStatusMessage" />
+                break;
+        }
+    </div>
+</div>

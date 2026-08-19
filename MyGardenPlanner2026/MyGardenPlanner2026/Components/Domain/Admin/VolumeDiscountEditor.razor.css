@@ -1,0 +1,5 @@
+/* CSS for VolumeDiscountEditor component */
+.volume-discount-editor {
+    display: grid;
+    gap: var(--mgp-space-lg);
+}

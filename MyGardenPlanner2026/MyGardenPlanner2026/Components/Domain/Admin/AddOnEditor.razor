@@ -1,0 +1,134 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Admin
+@using System.Globalization
+
+<div class="add-on-editor" data-density="default">
+    @if (errorMessage is not null)
+    {
+        <div class="status-message status-danger status-section" role="alert">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div class="status-message-text"><p>@errorMessage</p></div>
+        </div>
+    }
+
+    <div class="table-responsive">
+        <table class="data-table" data-density="compact">
+            <thead>
+                <tr>
+                    <th scope="col">Type</th>
+                    <th scope="col">Navn</th>
+                    <th scope="col">Enhed</th>
+                    <th scope="col">Årlig (kr.)</th>
+                    <th scope="col">Månedlig (kr.)</th>
+                    <th scope="col">Perpetual (kr.)</th>
+                    <th scope="col">Handling</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var addOn in addOns)
+                {
+                    <tr @key="addOn.Id">
+                        <td>@addOn.Type</td>
+                        <td>
+                            <label class="sr-only" for="@($"name-{addOn.Id}")">Navn</label>
+                            <input id="@($"name-{addOn.Id}")" class="form-control"
+                                   value="@nameEdits[addOn.Id]"
+                                   @onchange="e => nameEdits[addOn.Id] = Convert.ToString(e.Value) ?? string.Empty" />
+                        </td>
+                        <td>
+                            <label class="sr-only" for="@($"unit-{addOn.Id}")">Enhed</label>
+                            <input id="@($"unit-{addOn.Id}")" class="form-control"
+                                   value="@unitEdits[addOn.Id]"
+                                   @onchange="e => unitEdits[addOn.Id] = Convert.ToString(e.Value) ?? string.Empty" />
+                        </td>
+                        <td>
+                            <label class="sr-only" for="@($"annual-{addOn.Id}")">Årlig pris</label>
+                            <input id="@($"annual-{addOn.Id}")" type="number" step="0.01" min="0" class="form-control"
+                                   value="@annualEdits[addOn.Id].ToString("0.00", CultureInfo.InvariantCulture)"
+                                   @onchange="e => annualEdits[addOn.Id] = ParseDecimal(e.Value)" />
+                        </td>
+                        <td>
+                            <label class="sr-only" for="@($"monthly-{addOn.Id}")">Månedlig pris</label>
+                            <input id="@($"monthly-{addOn.Id}")" type="number" step="0.01" min="0" class="form-control"
+                                   value="@monthlyEdits[addOn.Id].ToString("0.00", CultureInfo.InvariantCulture)"
+                                   @onchange="e => monthlyEdits[addOn.Id] = ParseDecimal(e.Value)" />
+                        </td>
+                        <td>
+                            <label class="sr-only" for="@($"perpetual-{addOn.Id}")">Perpetual-pris</label>
+                            <input id="@($"perpetual-{addOn.Id}")" type="number" step="0.01" min="0" class="form-control"
+                                   value="@perpetualEdits[addOn.Id].ToString("0.00", CultureInfo.InvariantCulture)"
+                                   @onchange="e => perpetualEdits[addOn.Id] = ParseDecimal(e.Value)" />
+                        </td>
+                        <td class="btn-row">
+                            <button type="button" class="btn btn-primary btn-sm" @onclick="() => SaveExistingAsync(addOn.Id)">Gem</button>
+                            <button type="button" class="btn btn-danger btn-sm" @onclick="() => DeleteAsync(addOn.Id)">Slet</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="form-section">
+        <h4 class="h6">Tilføj nyt tilkøb</h4>
+        <div class="form-grid form-grid-3">
+            <div class="field">
+                <label class="field-label" for="new-type">Type</label>
+                <select id="new-type" class="form-select" @bind="newType">
+                    @foreach (var type in Enum.GetValues<AddOnType>())
+                    {
+                        <option value="@type">@type</option>
+                    }
+                </select>
+            </div>
+            <div class="field">
+                <label class="field-label" for="new-name">Navn</label>
+                <input id="new-name" class="form-control" @bind="newName" />
+            </div>
+            <div class="field">
+                <label class="field-label" for="new-unit">Enhed / Pakkestørrelse</label>
+                <input id="new-unit" class="form-control" @bind="newUnitDescription" />
+            </div>
+            <div class="field">
+                <label class="field-label" for="new-annual">Årlig pris</label>
+                <input id="new-annual" type="number" step="0.01" min="0" class="form-control"
+                       value="@newAnnualPrice.ToString("0.00", CultureInfo.InvariantCulture)"
+                       @onchange="e => newAnnualPrice = ParseDecimal(e.Value)" />
+            </div>
+            <div class="field">
+                <label class="field-label" for="new-monthly">Månedlig pris</label>
+                <input id="new-monthly" type="number" step="0.01" min="0" class="form-control"
+                       value="@newMonthlyPrice.ToString("0.00", CultureInfo.InvariantCulture)"
+                       @onchange="e => newMonthlyPrice = ParseDecimal(e.Value)" />
+            </div>
+            <div class="field">
+                <label class="field-label" for="new-perpetual">Perpetual-pris</label>
+                <input id="new-perpetual" type="number" step="0.01" min="0" class="form-control"
+                       value="@newPerpetualPrice.ToString("0.00", CultureInfo.InvariantCulture)"
+                       @onchange="e => newPerpetualPrice = ParseDecimal(e.Value)" />
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="button" class="btn btn-primary" @onclick="AddNewAsync">Tilføj tilkøb</button>
+        </div>
+    </div>
+
+    <div class="danger-zone">
+        <div class="danger-zone-header">Nulstil tilkøbsmoduler</div>
+        <p class="card-description">
+            Fjerner alle nuværende tilkøb og genindsætter standardkataloget fra Prismatrix.md.
+        </p>
+
+        @if (showResetConfirm)
+        {
+            <div class="inline-confirm">
+                <span>Er du sikker? Alle nuværende tilkøb slettes permanent.</span>
+                <button type="button" class="btn btn-danger btn-sm" @onclick="ConfirmResetAsync">Ja, nulstil</button>
+                <button type="button" class="btn btn-secondary btn-sm" @onclick="CancelReset">Annullér</button>
+            </div>
+        }
+        else
+        {
+            <button type="button" class="btn btn-danger" @onclick="RequestReset">Nulstil til standardkatalog</button>
+        }
+    </div>
+</div>

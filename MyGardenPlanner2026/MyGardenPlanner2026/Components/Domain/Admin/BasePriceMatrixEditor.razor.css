@@ -1,0 +1,5 @@
+/* CSS for BasePriceMatrixEditor component */
+.base-price-matrix-editor {
+    display: grid;
+    gap: var(--mgp-space-md);
+}

@@ -1,0 +1,5 @@
+/* CSS for AddOnEditor component */
+.add-on-editor {
+    display: grid;
+    gap: var(--mgp-space-lg);
+}

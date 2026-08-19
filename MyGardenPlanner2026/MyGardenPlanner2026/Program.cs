@@ -8,6 +8,7 @@ builder.Services
     .AddBlazorServices()
     .AddDatabaseServices(builder.Configuration, provider)
     .AddIdentityServices()
+    .AddAuthorizationServices()
     .AddSubscriptionCatalogServices();
 
 var app = builder.Build();

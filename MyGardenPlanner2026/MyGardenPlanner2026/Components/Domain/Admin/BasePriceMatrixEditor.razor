@@ -1,0 +1,59 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Admin
+@using System.Globalization
+
+<div class="base-price-matrix-editor" data-density="default">
+    @if (errorMessage is not null)
+    {
+        <div class="status-message status-danger status-section" role="alert">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div class="status-message-text"><p>@errorMessage</p></div>
+        </div>
+    }
+
+    <div class="table-responsive">
+        <table class="data-table" data-density="compact">
+            <thead>
+                <tr>
+                    <th scope="col">Lag</th>
+                    <th scope="col">Adgangskategori</th>
+                    <th scope="col">Årlig (kr.)</th>
+                    <th scope="col">Månedlig (kr.)</th>
+                    <th scope="col">Perpetual (kr.)</th>
+                    <th scope="col">Handling</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var tier in tiers)
+                {
+                    <tr @key="tier.Id">
+                        <td>@tier.Level.ToDisplayName()</td>
+                        <td>@tier.AccessCategory</td>
+                        <td>
+                            <label class="sr-only" for="@($"annual-{tier.Id}")">Årlig pris for @tier.Name</label>
+                            <input id="@($"annual-{tier.Id}")" type="number" step="0.01" min="0" class="form-control"
+                                   value="@annualEdits[tier.Id].ToString("0.00", CultureInfo.InvariantCulture)"
+                                   @onchange="e => annualEdits[tier.Id] = ParseDecimal(e.Value)" />
+                        </td>
+                        <td>
+                            <label class="sr-only" for="@($"monthly-{tier.Id}")">Månedlig pris for @tier.Name</label>
+                            <input id="@($"monthly-{tier.Id}")" type="number" step="0.01" min="0" class="form-control"
+                                   value="@monthlyEdits[tier.Id].ToString("0.00", CultureInfo.InvariantCulture)"
+                                   @onchange="e => monthlyEdits[tier.Id] = ParseDecimal(e.Value)" />
+                        </td>
+                        <td>
+                            <label class="sr-only" for="@($"perpetual-{tier.Id}")">Perpetual-pris for @tier.Name</label>
+                            <input id="@($"perpetual-{tier.Id}")" type="number" step="0.01" min="0" class="form-control"
+                                   value="@perpetualEdits[tier.Id].ToString("0.00", CultureInfo.InvariantCulture)"
+                                   @onchange="e => perpetualEdits[tier.Id] = ParseDecimal(e.Value)" />
+                        </td>
+                        <td>
+                            <button type="button" class="btn btn-primary btn-sm" @onclick="() => SaveTierAsync(tier.Id)">
+                                Gem
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,104 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Admin
+@using System.Globalization
+
+<div class="volume-discount-editor" data-density="default">
+    @if (errorMessage is not null)
+    {
+        <div class="status-message status-danger status-section" role="alert">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div class="status-message-text"><p>@errorMessage</p></div>
+        </div>
+    }
+
+    <div class="table-responsive">
+        <table class="data-table" data-density="compact">
+            <thead>
+                <tr>
+                    <th scope="col">Min. haver</th>
+                    <th scope="col">Max. haver</th>
+                    <th scope="col">Rabat-multiplikator</th>
+                    <th scope="col">Handling</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var tier in tiers)
+                {
+                    <tr @key="tier.Id">
+                        <td>
+                            <label class="sr-only" for="@($"min-{tier.Id}")">Min. haver</label>
+                            <input id="@($"min-{tier.Id}")" type="number" min="1" class="form-control"
+                                   value="@minEdits[tier.Id]"
+                                   @onchange="e => minEdits[tier.Id] = ParseInt(e.Value)" />
+                        </td>
+                        <td>
+                            <label class="sr-only" for="@($"max-{tier.Id}")">Max. haver (tom = åben)</label>
+                            <input id="@($"max-{tier.Id}")" type="number" min="1" class="form-control"
+                                   value="@maxEdits[tier.Id]"
+                                   @onchange="e => maxEdits[tier.Id] = ParseNullableInt(e.Value)" />
+                        </td>
+                        <td>
+                            <label class="sr-only" for="@($"mult-{tier.Id}")">Rabat-multiplikator</label>
+                            <input id="@($"mult-{tier.Id}")" type="number" step="0.01" min="0" max="1" class="form-control"
+                                   value="@multiplierEdits[tier.Id].ToString("0.00", CultureInfo.InvariantCulture)"
+                                   @onchange="e => multiplierEdits[tier.Id] = ParseDecimal(e.Value)" />
+                        </td>
+                        <td class="btn-row">
+                            <button type="button" class="btn btn-primary btn-sm" @onclick="() => SaveExistingAsync(tier.Id)">Gem</button>
+                            <button type="button" class="btn btn-danger btn-sm" @onclick="() => DeleteAsync(tier.Id)">Slet</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="form-section">
+        <h4 class="h6">Tilføj ny trappe</h4>
+        <div class="form-grid form-grid-3">
+            <div class="field">
+                <label class="field-label" for="new-min">Min. haver</label>
+                <input id="new-min" type="number" min="1" class="form-control"
+                       value="@newMinGardens" @onchange="e => newMinGardens = ParseInt(e.Value)" />
+                <p class="help">Første have i trappen.</p>
+            </div>
+            <div class="field">
+                <label class="field-label" for="new-max">
+                    Max. haver <span class="optional-label">(valgfri)</span>
+                </label>
+                <input id="new-max" type="number" min="1" class="form-control"
+                       @onchange="e => newMaxGardens = ParseNullableInt(e.Value)" />
+                <p class="help">Tom = åben trappe (ingen øvre grænse).</p>
+            </div>
+            <div class="field">
+                <label class="field-label" for="new-mult">Rabat-multiplikator</label>
+                <input id="new-mult" type="number" step="0.01" min="0" max="1" class="form-control"
+                       value="@newPriceMultiplier.ToString("0.00", CultureInfo.InvariantCulture)"
+                       @onchange="e => newPriceMultiplier = ParseDecimal(e.Value)" />
+                <p class="help">Fx 0,90 for 90% af basisprisen.</p>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button id="add-tier" type="button" class="btn btn-primary" @onclick="AddNewAsync">Tilføj trappe</button>
+        </div>
+    </div>
+
+    <div class="danger-zone">
+        <div class="danger-zone-header">Nulstil volumenrabat</div>
+        <p class="card-description">
+            Fjerner alle nuværende trapper og genindsætter standardkataloget fra Prismatrix.md.
+        </p>
+
+        @if (showResetConfirm)
+        {
+            <div class="inline-confirm">
+                <span>Er du sikker? Alle nuværende trapper slettes permanent.</span>
+                <button type="button" class="btn btn-danger btn-sm" @onclick="ConfirmResetAsync">Ja, nulstil</button>
+                <button type="button" class="btn btn-secondary btn-sm" @onclick="CancelReset">Annullér</button>
+            </div>
+        }
+        else
+        {
+            <button type="button" class="btn btn-danger" @onclick="RequestReset">Nulstil til standardkatalog</button>
+        }
+    </div>
+</div>

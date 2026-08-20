@@ -1,0 +1,109 @@
+/* CSS for AuthPageShell component */
+.auth-shell {
+    padding: var(--mgp-space-2xl) 0;
+}
+
+.auth-shell-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--mgp-space-xl);
+    align-items: stretch;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 var(--mgp-page-x);
+}
+
+.auth-brand-panel {
+    background: var(--mgp-primary-soft);
+    border-radius: var(--radius-lg);
+    padding: var(--mgp-space-xl);
+    display: flex;
+    align-items: center;
+}
+
+.auth-brand-panel-inner {
+    display: grid;
+    gap: var(--mgp-space-md);
+}
+
+.auth-brand-badge {
+    display: inline-block;
+    width: fit-content;
+    font-weight: var(--font-weight-bold);
+    color: var(--mgp-primary-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: var(--font-size-xs);
+}
+
+.auth-brand-title {
+    margin: 0;
+    color: var(--mgp-text);
+    font-size: var(--font-size-xl);
+}
+
+.auth-brand-subtitle {
+    color: var(--mgp-text-muted);
+    margin: 0;
+}
+
+.auth-brand-feature-list {
+    display: grid;
+    gap: var(--mgp-space-sm);
+    margin: 0;
+    padding: 0;
+}
+
+.auth-brand-feature {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--mgp-space-xs);
+    color: var(--mgp-text);
+}
+
+    .auth-brand-feature i {
+        color: var(--mgp-primary);
+        margin-top: 0.2rem;
+    }
+
+.auth-form-panel {
+    display: flex;
+    align-items: center;
+}
+
+.auth-form-panel-inner {
+    width: 100%;
+    padding: var(--mgp-space-xl);
+    display: grid;
+    gap: var(--mgp-space-md);
+}
+
+.auth-form-header {
+    display: grid;
+    gap: var(--mgp-space-2xs);
+}
+
+.auth-form-title {
+    margin: 0;
+}
+
+.auth-form-subtitle {
+    color: var(--mgp-text-muted);
+    margin: 0;
+}
+
+@media (max-width: 939.98px) {
+    .auth-shell-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .auth-brand-panel {
+        display: none;
+    }
+}
+
+@media (max-width: 640px) {
+    .auth-form-panel-inner {
+        padding: var(--mgp-space-lg);
+    }
+}

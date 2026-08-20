@@ -1,0 +1,42 @@
+﻿@namespace MyGardenPlanner2026.Components.Layout
+
+<div class="auth-shell">
+    <div class="auth-shell-grid">
+        <section class="auth-brand-panel" aria-hidden="true">
+            <div class="auth-brand-panel-inner">
+                <span class="auth-brand-badge">MyGardenPlanner</span>
+                <h2 class="auth-brand-title">Planlæg, design og dyrk din drømmehave</h2>
+                <p class="auth-brand-subtitle">
+                    Saml havetegninger, plantelister og budgetter ét sted – fra første idé til fuldt flor.
+                </p>
+                <ul class="list-unstyled auth-brand-feature-list">
+                    <li class="auth-brand-feature">
+                        <i class="bi bi-check-lg" aria-hidden="true"></i>
+                        <span>Fuld oversigt over dine haveprojekter</span>
+                    </li>
+                    <li class="auth-brand-feature">
+                        <i class="bi bi-check-lg" aria-hidden="true"></i>
+                        <span>Botanisk opslag med korrekte plantedata</span>
+                    </li>
+                    <li class="auth-brand-feature">
+                        <i class="bi bi-check-lg" aria-hidden="true"></i>
+                        <span>Dit eget billedarkiv for havens udvikling</span>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section class="auth-form-panel">
+            <div class="auth-form-panel-inner card">
+                <div class="auth-form-header">
+                    <h1 class="auth-form-title">@Title</h1>
+                    @if (!string.IsNullOrWhiteSpace(Subtitle))
+                    {
+                        <p class="auth-form-subtitle">@Subtitle</p>
+                    }
+                </div>
+                @ChildContent
+            </div>
+        </section>
+    </div>
+</div>

@@ -1,0 +1,23 @@
+/* CSS for PageHeader component */
+.page-header {
+    display: grid;
+    gap: var(--mgp-space-xs);
+    max-width: 68ch;
+    margin-bottom: var(--mgp-space-xl);
+}
+
+.page-header-title {
+    margin: 0;
+}
+
+.page-header-intro {
+    color: var(--mgp-text-muted);
+    font-size: var(--font-size-md);
+    margin: 0;
+}
+
+.page-header-meta {
+    color: var(--mgp-text-muted);
+    font-size: var(--font-size-sm);
+    margin: 0;
+}

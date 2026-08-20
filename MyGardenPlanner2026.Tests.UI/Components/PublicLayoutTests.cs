@@ -1,6 +1,7 @@
 ﻿namespace MyGardenPlanner2026.Tests.UI.Components;
 
 using Bunit;
+using FluentAssertions;
 using MyGardenPlanner2026.Components.Layout;
 using Xunit;
 
@@ -62,5 +63,14 @@ public class PublicLayoutTests : BunitContext
         Assert.NotNull(cut.FindComponent<PublicHeader>());
         Assert.NotNull(cut.FindComponent<PublicFooter>());
         Assert.NotNull(cut.FindComponent<NavDrawer>());
+    }
+
+    [Fact]
+    public void PublicFooter_RendersLinksToTermsAndPrivacy()
+    {
+        var cut = Render<PublicFooter>();
+
+        cut.Find("a[href='/terms']").TextContent.Should().Contain("Handelsbetingelser");
+        cut.Find("a[href='/privacy']").TextContent.Should().Contain("Privatlivspolitik");
     }
 }

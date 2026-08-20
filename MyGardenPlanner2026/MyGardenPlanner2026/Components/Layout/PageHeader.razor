@@ -1,0 +1,13 @@
+﻿@namespace MyGardenPlanner2026.Components.Layout
+
+<header class="page-header">
+    <h1 class="page-header-title">@Title</h1>
+    @if (!string.IsNullOrWhiteSpace(Intro))
+    {
+        <p class="page-header-intro">@Intro</p>
+    }
+    @if (!string.IsNullOrWhiteSpace(LastUpdated))
+    {
+        <p class="page-header-meta">Sidst opdateret: @LastUpdated</p>
+    }
+</header>

@@ -1,0 +1,51 @@
+﻿@page "/about"
+@layout MyGardenPlanner2026.Components.Layout.PublicLayout
+
+<PageTitle>Om platformen – MyGardenPlanner</PageTitle>
+
+<section class="section">
+    <div class="container-fluid px-3 px-md-4">
+        <PageHeader Title="Om MyGardenPlanner"
+                    Intro="MyGardenPlanner er skabt til haveejeren, der vil have styr på sine projekter. Fra den første spæde idé i januar til det fulde flor i juli – her samler vi budgetter, plantelister og billeder ét sted." />
+
+        <div class="row g-4">
+            @foreach (var feature in Features)
+            {
+                <div class="col-md-6 col-lg-3">
+                    <div class="card card-entity h-100" data-density="default">
+                        <h3 class="h5">@feature.Title</h3>
+                        <p class="card-description">@feature.Description</p>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="section stack-md">
+            <h2>Teknologi</h2>
+            <p>
+                MyGardenPlanner er bygget på ASP.NET Core Blazor og .NET, med EF Core og SQL Server som datalag.
+                Brugerfladen følger MGP Design System og Bootstrap 5, så oplevelsen er ensartet og responsiv på tværs af enheder.
+            </p>
+        </div>
+
+        <div class="section stack-md">
+            <h2>Krediteringer</h2>
+            <ul>
+                <li>Botaniske data leveres via <a href="https://perenual.com" target="_blank" rel="noopener noreferrer">Perenual API</a>.</li>
+                <li>Ikoner fra <a href="https://icons.getbootstrap.com" target="_blank" rel="noopener noreferrer">Bootstrap Icons</a>.</li>
+                <li>Layout-framework: <a href="https://getbootstrap.com" target="_blank" rel="noopener noreferrer">Bootstrap 5</a>.</li>
+            </ul>
+        </div>
+
+        <div class="section stack-md">
+            <h2>Kontakt</h2>
+            <p>
+                Har du spørgsmål, feedback eller brug for hjælp? Skriv til os på
+                <a href="mailto:kontakt@mygardenplanner.dk">kontakt@mygardenplanner.dk</a>.
+            </p>
+            <p class="meta">
+                Bemærk: e-mailadressen ovenfor er et forslag – indsæt jeres reelle kontaktadresse før udgivelse.
+            </p>
+        </div>
+    </div>
+</section>

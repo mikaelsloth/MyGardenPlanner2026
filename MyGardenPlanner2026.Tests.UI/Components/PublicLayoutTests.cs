@@ -17,10 +17,10 @@ public class PublicLayoutTests : BunitContext
         Assert.NotNull(brandLink);
         Assert.Contains("MyGardenPlanner", brandLink.TextContent);
 
-        var loginButton = cut.Find("a[href='/login']");
+        var loginButton = cut.Find("a[href='/account/login']");
         Assert.Contains("Log ind", loginButton.TextContent);
 
-        var registerButton = cut.Find("a[href='/register']");
+        var registerButton = cut.Find("a[href='/account/register']");
         Assert.Contains("Opret bruger", registerButton.TextContent);
     }
 

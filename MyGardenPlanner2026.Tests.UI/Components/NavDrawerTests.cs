@@ -34,8 +34,8 @@ public class NavDrawerTests : BunitContext
 
         cut.Find("a[href='/']").TextContent.Should().Contain("Forside");
         cut.Find("a[href='/pricing']").TextContent.Should().Contain("Priser");
-        cut.Find("a[href='/login']").TextContent.Should().Contain("Log ind");
-        cut.Find("a[href='/register']").TextContent.Should().Contain("Opret bruger");
+        cut.Find("a[href='/account/login']").TextContent.Should().Contain("Log ind");
+        cut.Find("a[href='/account/register']").TextContent.Should().Contain("Opret bruger");
     }
 
     [Fact]

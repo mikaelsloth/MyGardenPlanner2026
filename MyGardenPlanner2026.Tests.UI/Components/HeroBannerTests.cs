@@ -21,7 +21,7 @@ public class HeroBannerTests : BunitContext
     {
         var cut = Render<HeroBanner>();
 
-        var primary = cut.Find("a[href='/register']");
+        var primary = cut.Find("a[href='/account/register']");
         primary.ClassList.Should().Contain("btn-primary");
         primary.TextContent.Should().Contain("Opret gratis konto");
 

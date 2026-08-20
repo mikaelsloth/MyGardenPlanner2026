@@ -246,6 +246,25 @@ For at undgå komponenteksplosion håndteres dynamisk opførsel via fælles, sta
 * **Mobile & Print:** Stabeles i 1 kolonne på mobil. Udskrives som simpel tekst.
 * **Relaterede komponenter:** `PublicLayout`.
 
+##### 14. `AuthPageShell`
+* **Dokumentnavn:** `AuthPageShell`
+* **Formål / Usage:** Split-panel wrapper til autentificeringssider (Login, Register), der matcher landing page-æstetikken med et brand-panel og et formular-panel.
+* **Variants:** `standard`.
+* **States:** `default`.
+* **Tokens:** `--mgp-primary-soft`, `--mgp-primary-dark`, `--mgp-primary`, `--mgp-text`, `--mgp-text-muted`, `--mgp-surface`, `--mgp-space-xl`, `--radius-lg`.
+* **Accessibility:** Brand-panel er `aria-hidden="true"` (rent dekorativt); formular-indhold (`ChildContent`) bærer al fokuserbar interaktion uændret fra det underliggende Identity-flow.
+* **Mobile & Print:** Brand-panelet skjules helt under 940px, så kun formularen vises i fuld bredde. Ikke relevant for print.
+* **Relaterede komponenter:** `PublicLayout`, `StatusMessage`, `Card`.
+
+##### 15. `PageHeader`
+* **Dokumentnavn:** `PageHeader`
+* **Formål / Usage:** Genanvendelig sideoverskrift til offentlige indholdssider (About, Terms, Privacy) med titel, valgfri intro-tekst og valgfri "sidst opdateret"-meta.
+* **Variants:** `standard`.
+* **States:** `default`.
+* **Tokens:** `--mgp-text`, `--mgp-text-muted`, `--font-size-md`, `--font-size-sm`, `--mgp-space-xs`, `--mgp-space-xl`.
+* **Accessibility:** Indeholder sidens `<h1>`; intro og meta er ren tekst uden farve-afhængighed.
+* **Mobile & Print:** Maks-bredde 68ch bevares på tværs af skærmstørrelser for læsbarhed.
+* **Relaterede komponenter:** `PublicLayout`, `DetailHeader` (samme mønster, men til offentlige sider frem for detail pages).
 ---
 
 #### C. Feedback Components

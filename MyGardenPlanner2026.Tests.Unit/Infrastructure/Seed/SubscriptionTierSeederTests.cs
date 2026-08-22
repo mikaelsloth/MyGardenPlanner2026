@@ -10,7 +10,7 @@ public class SubscriptionTierSeederTests : TestDbContext
     [Fact]
     public async Task SeedAsync_OnEmptyDatabase_InsertsAllTwelveTiers()
     {
-        var seeder = new SubscriptionTierSeeder(CreateDbContextFactory(), new DefaultSubscriptionTierCatalog());
+        var seeder = new SubscriptionTierSeeder(CreateAdminDbContextFactory(), new DefaultSubscriptionTierCatalog());
 
         await seeder.SeedAsync(TestContext.Current.CancellationToken);
 
@@ -22,7 +22,7 @@ public class SubscriptionTierSeederTests : TestDbContext
     [Fact]
     public async Task SeedAsync_WhenDataAlreadyExists_DoesNotDuplicate()
     {
-        var seeder = new SubscriptionTierSeeder(CreateDbContextFactory(), new DefaultSubscriptionTierCatalog());
+        var seeder = new SubscriptionTierSeeder(CreateAdminDbContextFactory(), new DefaultSubscriptionTierCatalog());
         await seeder.SeedAsync(TestContext.Current.CancellationToken);
 
         await seeder.SeedAsync(TestContext.Current.CancellationToken);
@@ -35,7 +35,7 @@ public class SubscriptionTierSeederTests : TestDbContext
     [Fact]
     public async Task SeedAsync_FlagsExactlyOneFeaturedTierPerLevel()
     {
-        var seeder = new SubscriptionTierSeeder(CreateDbContextFactory(), new DefaultSubscriptionTierCatalog());
+        var seeder = new SubscriptionTierSeeder(CreateAdminDbContextFactory(), new DefaultSubscriptionTierCatalog());
         await seeder.SeedAsync(TestContext.Current.CancellationToken);
 
         using var context = CreateDbContext();

@@ -1,6 +1,12 @@
 <Solution>
-  <Folder Name="/Documentation/" />
+  <Folder Name="/Documentation/">
+    <File Path="Documentation/Database/01-CreateAdminSchemaAndUsers.sql" />
+  </Folder>
   <Folder Name="/Documentation/Architecture/" />
+  <Folder Name="/Documentation/Database/">
+    <File Path="Documentation/Database/01-CreateAdminSchemaAndUsers.sql" />
+    <File Path="Documentation/Database/01-Undo-CreateAdminSchemaAndUsers.sql" />
+  </Folder>
   <Folder Name="/Documentation/Web Design Documents/" />
   <Folder Name="/Documentation/Web Design Documents/Compendium/">
     <File Path="Documentation/Web Design Documents/Compendium/01-Farvepalette.md" />
@@ -84,6 +90,7 @@
     <File Path="Documentation/Web Design Documents/Full source/25 Komponentnavngivning og design tokens.md" />
   </Folder>
   <Folder Name="/Solution Items/">
+    <File Path="global.json" />
     <File Path="LICENSE.txt" />
     <File Path="Licensing Model Overview.txt" />
     <File Path="README.md" />

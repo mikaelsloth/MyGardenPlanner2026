@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
 
 public sealed class GardenVolumeDiscountSeeder(
-    IDbContextFactory<PlannerDbContext> contextFactory,
+    IAdminDbContextFactory contextFactory,
     IGardenVolumeDiscountCatalog catalog)
 {
     public async Task SeedAsync(CancellationToken cancellationToken = default)

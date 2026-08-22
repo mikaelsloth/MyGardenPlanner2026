@@ -38,6 +38,18 @@ public abstract class TestDbContext : IDisposable
         return new PooledDbContextFactory<PlannerDbContext>(options);
     }
 
+    protected IAdminDbContextFactory CreateAdminDbContextFactory()
+    {
+        var options = new DbContextOptionsBuilder<PlannerDbContext>()
+            .UseSqlite(_connection)
+            .EnableSensitiveDataLogging()
+            .LogTo(Console.WriteLine, LogLevel.Information)
+            .Options;
+
+        var pooled = new PooledDbContextFactory<PlannerDbContext>(options);
+        return new AdminDbContextFactory(pooled);
+    }
+
     protected PlannerDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<PlannerDbContext>()

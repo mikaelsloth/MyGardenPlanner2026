@@ -9,7 +9,7 @@ using MyGardenPlanner2026.Infrastructure.Data;
 /// Opretter ALDRIG nye rækker — det er seederens ansvar.
 /// </summary>
 public sealed class SubscriptionTierAdminService(
-    IDbContextFactory<PlannerDbContext> contextFactory) : ISubscriptionTierAdminService
+    IAdminDbContextFactory contextFactory) : ISubscriptionTierAdminService
 {
     public async Task<IReadOnlyList<SubscriptionTierAdminDto>> GetAllTiersAsync(
         CancellationToken cancellationToken = default)

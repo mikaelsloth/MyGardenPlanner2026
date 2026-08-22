@@ -10,7 +10,7 @@ public class SubscriptionAddOnSeederTests : TestDbContext
     [Fact]
     public async Task SeedAsync_OnEmptyDatabase_InsertsAllFiveAddOns()
     {
-        var seeder = new SubscriptionAddOnSeeder(CreateDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
+        var seeder = new SubscriptionAddOnSeeder(CreateAdminDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
 
         await seeder.SeedAsync(TestContext.Current.CancellationToken);
 
@@ -22,7 +22,7 @@ public class SubscriptionAddOnSeederTests : TestDbContext
     [Fact]
     public async Task SeedAsync_WhenDataAlreadyExists_DoesNotDuplicate()
     {
-        var seeder = new SubscriptionAddOnSeeder(CreateDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
+        var seeder = new SubscriptionAddOnSeeder(CreateAdminDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
         await seeder.SeedAsync(TestContext.Current.CancellationToken);
 
         await seeder.SeedAsync(TestContext.Current.CancellationToken);
@@ -35,7 +35,7 @@ public class SubscriptionAddOnSeederTests : TestDbContext
     [Fact]
     public async Task SeedAsync_BedforslagAddOn_HasCorrectPerpetualPrice()
     {
-        var seeder = new SubscriptionAddOnSeeder(CreateDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
+        var seeder = new SubscriptionAddOnSeeder(CreateAdminDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
         await seeder.SeedAsync(TestContext.Current.CancellationToken);
 
         using var context = CreateDbContext();

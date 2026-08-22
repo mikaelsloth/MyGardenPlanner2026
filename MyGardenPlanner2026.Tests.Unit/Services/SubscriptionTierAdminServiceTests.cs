@@ -11,7 +11,7 @@ public class SubscriptionTierAdminServiceTests : TestDbContext
 {
     private async Task SeedAsync()
     {
-        var seeder = new SubscriptionTierSeeder(CreateDbContextFactory(), new DefaultSubscriptionTierCatalog());
+        var seeder = new SubscriptionTierSeeder(CreateAdminDbContextFactory(), new DefaultSubscriptionTierCatalog());
         await seeder.SeedAsync(TestContext.Current.CancellationToken);
     }
 
@@ -19,7 +19,7 @@ public class SubscriptionTierAdminServiceTests : TestDbContext
     public async Task GetAllTiersAsync_Returns12Tiers()
     {
         await SeedAsync();
-        var service = new SubscriptionTierAdminService(CreateDbContextFactory());
+        var service = new SubscriptionTierAdminService(CreateAdminDbContextFactory());
 
         var result = await service.GetAllTiersAsync(TestContext.Current.CancellationToken);
 
@@ -30,7 +30,7 @@ public class SubscriptionTierAdminServiceTests : TestDbContext
     public async Task UpdateTierAsync_UpdatesAllThreePricesAndPersists()
     {
         await SeedAsync();
-        var service = new SubscriptionTierAdminService(CreateDbContextFactory());
+        var service = new SubscriptionTierAdminService(CreateAdminDbContextFactory());
 
         var tiers = await service.GetAllTiersAsync(TestContext.Current.CancellationToken);
         var target = tiers.Single(t => t.Level == GardenAccessLevel.HaveArkitekt && t.AccessCategory == AccessCategory.Administrator);
@@ -50,7 +50,7 @@ public class SubscriptionTierAdminServiceTests : TestDbContext
     public async Task UpdateTierAsync_NonExistentId_ThrowsInvalidOperationException()
     {
         await SeedAsync();
-        var service = new SubscriptionTierAdminService(CreateDbContextFactory());
+        var service = new SubscriptionTierAdminService(CreateAdminDbContextFactory());
 
         var act = async () => await service.UpdateTierAsync(
             new SubscriptionTierUpdateDto(999, 1m, 1m, 1m), TestContext.Current.CancellationToken);

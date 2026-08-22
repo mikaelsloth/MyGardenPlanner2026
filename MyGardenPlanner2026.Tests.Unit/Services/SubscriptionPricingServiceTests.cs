@@ -11,7 +11,7 @@ public class SubscriptionPricingServiceTests : TestDbContext
 {
     private async Task SeedAsync()
     {
-        var seeder = new SubscriptionTierSeeder(CreateDbContextFactory(), new DefaultSubscriptionTierCatalog());
+        var seeder = new SubscriptionTierSeeder(CreateAdminDbContextFactory(), new DefaultSubscriptionTierCatalog());
         await seeder.SeedAsync(TestContext.Current.CancellationToken);
     }
 

@@ -5,6 +5,8 @@ using MyGardenPlanner2026.Core.Entities.Layer1;
 
 public partial class PlannerDbContext
 {
+    public const string AdminSchema = "admin";
+
     public DbSet<SubscriptionTier> SubscriptionTiers => Set<SubscriptionTier>();
     public DbSet<GardenVolumeDiscountTier> GardenVolumeDiscountTiers => Set<GardenVolumeDiscountTier>();
     public DbSet<SubscriptionAddOn> SubscriptionAddOns => Set<SubscriptionAddOn>();
@@ -20,6 +22,7 @@ public partial class PlannerDbContext
     {
         modelBuilder.Entity<SubscriptionAddOn>(entity =>
         {
+            entity.ToTable("SubscriptionAddOns", AdminSchema);
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(150);
             entity.Property(e => e.UnitDescription).IsRequired().HasMaxLength(200);
@@ -31,6 +34,7 @@ public partial class PlannerDbContext
     {
         modelBuilder.Entity<GardenVolumeDiscountTier>(entity =>
         {
+            entity.ToTable("GardenVolumeDiscountTiers", AdminSchema);
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.MinGardens).IsUnique();
         });
@@ -40,6 +44,7 @@ public partial class PlannerDbContext
     {
         modelBuilder.Entity<SubscriptionTier>(entity =>
         {
+            entity.ToTable("SubscriptionTiers", AdminSchema);
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Description).HasMaxLength(500);

@@ -11,7 +11,7 @@ public class SubscriptionAddOnAdminServiceTests : TestDbContext
 {
     private async Task SeedAsync()
     {
-        var seeder = new SubscriptionAddOnSeeder(CreateDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
+        var seeder = new SubscriptionAddOnSeeder(CreateAdminDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
         await seeder.SeedAsync(TestContext.Current.CancellationToken);
     }
 
@@ -19,7 +19,7 @@ public class SubscriptionAddOnAdminServiceTests : TestDbContext
     public async Task SaveAsync_UpdateExisting_ChangesNameAndPrices()
     {
         await SeedAsync();
-        var service = new SubscriptionAddOnAdminService(CreateDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
+        var service = new SubscriptionAddOnAdminService(CreateAdminDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
 
         var existing = (await service.GetAllAsync(TestContext.Current.CancellationToken))
             .Single(a => a.Type == AddOnType.BedforslagNiveau2);
@@ -39,7 +39,7 @@ public class SubscriptionAddOnAdminServiceTests : TestDbContext
     public async Task SaveAsync_DuplicateType_ThrowsInvalidOperationException()
     {
         await SeedAsync();
-        var service = new SubscriptionAddOnAdminService(CreateDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
+        var service = new SubscriptionAddOnAdminService(CreateAdminDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
 
         var act = async () => await service.SaveAsync(
             new SubscriptionAddOnUpsertDto(null, AddOnType.BedforslagNiveau2, "Duplikat", "Enhed", 1m, 1m, 1m),
@@ -52,7 +52,7 @@ public class SubscriptionAddOnAdminServiceTests : TestDbContext
     public async Task DeleteAsync_RemovesAddOn()
     {
         await SeedAsync();
-        var service = new SubscriptionAddOnAdminService(CreateDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
+        var service = new SubscriptionAddOnAdminService(CreateAdminDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
 
         var existing = (await service.GetAllAsync(TestContext.Current.CancellationToken))
             .Single(a => a.Type == AddOnType.ArtefaktpakkeB);
@@ -67,7 +67,7 @@ public class SubscriptionAddOnAdminServiceTests : TestDbContext
     public async Task ResetToDefaultAsync_RestoresFiveDefaultAddOns()
     {
         await SeedAsync();
-        var service = new SubscriptionAddOnAdminService(CreateDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
+        var service = new SubscriptionAddOnAdminService(CreateAdminDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
 
         var existing = (await service.GetAllAsync(TestContext.Current.CancellationToken))
             .Single(a => a.Type == AddOnType.ArtefaktpakkeB);

@@ -6,7 +6,7 @@ using MyGardenPlanner2026.Core.Entities.Common;
 /// Basisabonnement for én kombination af GardenAccessLevel og AccessCategory.
 /// Svarer til én række i Prismatrix.md, tabel 1. Priser er DKK ekskl. moms.
 /// </summary>
-public class SubscriptionTier
+public class SubscriptionTier : ISoftDelete
 {
     public int Id { get; set; }
 
@@ -23,12 +23,10 @@ public class SubscriptionTier
     public bool IsFeatured { get; set; }
     public int DisplayOrder { get; set; }
 
-    /// <summary>Danske feature-tekster til checkliste, i visningsrækkefølge.</summary>
     public List<string> IncludedFeatures { get; set; } = [];
-
-    /// <summary>
-    /// Kvotegrænser for artefakter på dette Lag (fx "Planlagte bede" -> "50").
-    /// Ens på tværs af AccessCategory for samme Level i v1 (bevidst denormaliseret).
-    /// </summary>
     public Dictionary<string, string> FeatureLimits { get; set; } = [];
+
+    public bool IsDeleted { get; set; }
+    public DateTimeOffset? DeletedAtUtc { get; set; }
+    public string? DeletedBy { get; set; }
 }

@@ -2,6 +2,7 @@
 
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Infrastructure.Data;
@@ -14,7 +15,6 @@ public abstract class TestDbContext : IDisposable
 
     protected TestDbContext()
     {
-        // Opret in-memory SQLite forbindelse
         _connection = new SqliteConnection("Filename=:memory:");
         _connection.Open();
 
@@ -59,8 +59,30 @@ public abstract class TestDbContext : IDisposable
             .Options;
         return new(options);
     }
+
+    /// <summary>Bruges til at teste SaveChangesInterceptors (fx SoftDeleteInterceptor) mod SQLite.</summary>
+    protected PlannerDbContext CreateDbContextWithInterceptors(params IInterceptor[] interceptors)
+    {
+        var options = new DbContextOptionsBuilder<PlannerDbContext>()
+            .UseSqlite(_connection)
+            .AddInterceptors(interceptors)
+            .EnableSensitiveDataLogging()
+            .LogTo(Console.WriteLine, LogLevel.Information)
+            .Options;
+        return new(options);
+    }
+
     public void Dispose()
     {
         _connection.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            _connection?.Dispose();
+        }
     }
 }

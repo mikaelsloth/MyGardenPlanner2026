@@ -3,18 +3,25 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using MyGardenPlanner2026.Infrastructure.Data;
+using MyGardenPlanner2026.Infrastructure.Interceptors;
 
 public static class DatabaseServicesExtensions
 {
     public static IServiceCollection AddDatabaseServices(this IServiceCollection services, IConfiguration configuration, string? provider)
     {
-        services.AddDbContextFactory<PlannerDbContext>(options =>
-            ConfigureProvider(options, configuration, provider, admin: false));
+        services.AddSingleton<SoftDeleteInterceptor>();
 
-        services.AddSingleton<IAdminDbContextFactory>(_ =>
+        services.AddDbContextFactory<PlannerDbContext>((sp, options) =>
+        {
+            ConfigureProvider(options, configuration, provider, admin: false);
+            options.AddInterceptors(sp.GetRequiredService<SoftDeleteInterceptor>());
+        });
+
+        services.AddSingleton<IAdminDbContextFactory>(sp =>
         {
             var optionsBuilder = new DbContextOptionsBuilder<PlannerDbContext>();
             ConfigureProvider(optionsBuilder, configuration, provider, admin: true);
+            optionsBuilder.AddInterceptors(sp.GetRequiredService<SoftDeleteInterceptor>());
 
             var pooled = new PooledDbContextFactory<PlannerDbContext>(optionsBuilder.Options);
             return new AdminDbContextFactory(pooled);

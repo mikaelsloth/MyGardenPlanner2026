@@ -1,6 +1,7 @@
 ﻿namespace MyGardenPlanner2026.Configuration.Extensions;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using MyGardenPlanner2026.Infrastructure.Data;
 using MyGardenPlanner2026.Infrastructure.Interceptors;
@@ -50,5 +51,11 @@ public static class DatabaseServicesExtensions
             default:
                 throw new InvalidOperationException($"Unknown DatabaseProvider: \"{provider}\"");
         }
+
+        // Kendt EF Core-begrænsning: periode-kolonner på Temporal Tables (ValidFromUtc/
+        // ValidToUtc) kan udløse en falsk-positiv PendingModelChangesWarning, selvom
+        // migrationer og model-snapshot er korrekt synkroniserede. Undertrykkelsen sker
+        // her (options-niveau, før pooling), da OnConfiguring er forbudt på pooled contexts.
+        options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
     }
 }

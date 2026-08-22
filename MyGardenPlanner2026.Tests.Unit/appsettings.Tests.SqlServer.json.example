@@ -1,0 +1,3 @@
+{
+  "TestSqlServerConnection": "Server=.\\SQLEXPRESS;Trusted_Connection=True;TrustServerCertificate=True;"
+}

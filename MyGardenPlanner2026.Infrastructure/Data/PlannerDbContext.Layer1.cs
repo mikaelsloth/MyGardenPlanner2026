@@ -11,18 +11,35 @@ public partial class PlannerDbContext
     public DbSet<GardenVolumeDiscountTier> GardenVolumeDiscountTiers => Set<GardenVolumeDiscountTier>();
     public DbSet<SubscriptionAddOn> SubscriptionAddOns => Set<SubscriptionAddOn>();
 
-    private static void ConfigureLayer1(ModelBuilder modelBuilder)
+    /// <summary>
+    /// Temporal Tables understøttes kun af SQL Server. På SQLite (unit-tests) springes
+    /// IsTemporal() over — schema, nøgler og øvrig konfiguration anvendes uændret.
+    /// Instansmetode (ikke static), da Database.IsSqlServer() kræver context-instansen.
+    /// </summary>
+    private void ConfigureLayer1(ModelBuilder modelBuilder)
     {
-        SubscriptionTierConfig(modelBuilder);
-        GardenVolumeDiscountTierConfig(modelBuilder);
-        SubscriptionAddOnConfig(modelBuilder);
+        var useTemporalTables = Database.IsSqlServer();
+
+        SubscriptionTierConfig(modelBuilder, useTemporalTables);
+        GardenVolumeDiscountTierConfig(modelBuilder, useTemporalTables);
+        SubscriptionAddOnConfig(modelBuilder, useTemporalTables);
     }
 
-    private static void SubscriptionAddOnConfig(ModelBuilder modelBuilder)
+    private static void SubscriptionAddOnConfig(ModelBuilder modelBuilder, bool useTemporalTables)
     {
         modelBuilder.Entity<SubscriptionAddOn>(entity =>
         {
-            entity.ToTable("SubscriptionAddOns", AdminSchema);
+            entity.ToTable("SubscriptionAddOns", AdminSchema, b =>
+            {
+                if (useTemporalTables)
+                {
+                    b.IsTemporal(t =>
+                    {
+                        t.HasPeriodStart("ValidFromUtc");
+                        t.HasPeriodEnd("ValidToUtc");
+                    });
+                }
+            });
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(150);
             entity.Property(e => e.UnitDescription).IsRequired().HasMaxLength(200);
@@ -30,21 +47,41 @@ public partial class PlannerDbContext
         });
     }
 
-    private static void GardenVolumeDiscountTierConfig(ModelBuilder modelBuilder)
+    private static void GardenVolumeDiscountTierConfig(ModelBuilder modelBuilder, bool useTemporalTables)
     {
         modelBuilder.Entity<GardenVolumeDiscountTier>(entity =>
         {
-            entity.ToTable("GardenVolumeDiscountTiers", AdminSchema);
+            entity.ToTable("GardenVolumeDiscountTiers", AdminSchema, b =>
+            {
+                if (useTemporalTables)
+                {
+                    b.IsTemporal(t =>
+                    {
+                        t.HasPeriodStart("ValidFromUtc");
+                        t.HasPeriodEnd("ValidToUtc");
+                    });
+                }
+            });
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.MinGardens).IsUnique();
         });
     }
 
-    private static void SubscriptionTierConfig(ModelBuilder modelBuilder)
+    private static void SubscriptionTierConfig(ModelBuilder modelBuilder, bool useTemporalTables)
     {
         modelBuilder.Entity<SubscriptionTier>(entity =>
         {
-            entity.ToTable("SubscriptionTiers", AdminSchema);
+            entity.ToTable("SubscriptionTiers", AdminSchema, b =>
+            {
+                if (useTemporalTables)
+                {
+                    b.IsTemporal(t =>
+                    {
+                        t.HasPeriodStart("ValidFromUtc");
+                        t.HasPeriodEnd("ValidToUtc");
+                    });
+                }
+            });
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Description).HasMaxLength(500);

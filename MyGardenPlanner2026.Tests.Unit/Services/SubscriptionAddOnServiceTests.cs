@@ -9,7 +9,7 @@ public class SubscriptionAddOnServiceTests : TestDbContext
 {
     private async Task SeedAsync()
     {
-        var seeder = new SubscriptionAddOnSeeder(CreateDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
+        var seeder = new SubscriptionAddOnSeeder(CreateAdminDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
         await seeder.SeedAsync(TestContext.Current.CancellationToken);
     }
 

@@ -10,7 +10,7 @@ public class GardenVolumeDiscountSeederTests : TestDbContext
     [Fact]
     public async Task SeedAsync_OnEmptyDatabase_InsertsAllSevenTiers()
     {
-        var seeder = new GardenVolumeDiscountSeeder(CreateDbContextFactory(), new DefaultGardenVolumeDiscountCatalog());
+        var seeder = new GardenVolumeDiscountSeeder(CreateAdminDbContextFactory(), new DefaultGardenVolumeDiscountCatalog());
 
         await seeder.SeedAsync(TestContext.Current.CancellationToken);
 
@@ -22,7 +22,7 @@ public class GardenVolumeDiscountSeederTests : TestDbContext
     [Fact]
     public async Task SeedAsync_WhenDataAlreadyExists_DoesNotDuplicate()
     {
-        var seeder = new GardenVolumeDiscountSeeder(CreateDbContextFactory(), new DefaultGardenVolumeDiscountCatalog());
+        var seeder = new GardenVolumeDiscountSeeder(CreateAdminDbContextFactory(), new DefaultGardenVolumeDiscountCatalog());
         await seeder.SeedAsync(TestContext.Current.CancellationToken);
 
         await seeder.SeedAsync(TestContext.Current.CancellationToken);
@@ -35,7 +35,7 @@ public class GardenVolumeDiscountSeederTests : TestDbContext
     [Fact]
     public async Task SeedAsync_LastTier_HasNullMaxGardens()
     {
-        var seeder = new GardenVolumeDiscountSeeder(CreateDbContextFactory(), new DefaultGardenVolumeDiscountCatalog());
+        var seeder = new GardenVolumeDiscountSeeder(CreateAdminDbContextFactory(), new DefaultGardenVolumeDiscountCatalog());
         await seeder.SeedAsync(TestContext.Current.CancellationToken);
 
         using var context = CreateDbContext();

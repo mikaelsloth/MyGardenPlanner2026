@@ -6,7 +6,7 @@ using MyGardenPlanner2026.Core.Entities.Layer1;
 using MyGardenPlanner2026.Infrastructure.Data;
 
 public sealed class SubscriptionAddOnAdminService(
-    IDbContextFactory<PlannerDbContext> contextFactory,
+    IAdminDbContextFactory contextFactory,
     ISubscriptionAddOnCatalog defaultCatalog) : ISubscriptionAddOnAdminService
 {
     public async Task<IReadOnlyList<SubscriptionAddOnDto>> GetAllAsync(

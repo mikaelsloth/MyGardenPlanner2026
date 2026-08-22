@@ -12,13 +12,13 @@ public class PricingCalculatorServiceTests : TestDbContext
 {
     private async Task SeedAllAsync()
     {
-        var tierSeeder = new SubscriptionTierSeeder(CreateDbContextFactory(), new DefaultSubscriptionTierCatalog());
+        var tierSeeder = new SubscriptionTierSeeder(CreateAdminDbContextFactory(), new DefaultSubscriptionTierCatalog());
         await tierSeeder.SeedAsync(TestContext.Current.CancellationToken);
 
-        var volumeSeeder = new GardenVolumeDiscountSeeder(CreateDbContextFactory(), new DefaultGardenVolumeDiscountCatalog());
+        var volumeSeeder = new GardenVolumeDiscountSeeder(CreateAdminDbContextFactory(), new DefaultGardenVolumeDiscountCatalog());
         await volumeSeeder.SeedAsync(TestContext.Current.CancellationToken);
 
-        var addOnSeeder = new SubscriptionAddOnSeeder(CreateDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
+        var addOnSeeder = new SubscriptionAddOnSeeder(CreateAdminDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
         await addOnSeeder.SeedAsync(TestContext.Current.CancellationToken);
     }
 

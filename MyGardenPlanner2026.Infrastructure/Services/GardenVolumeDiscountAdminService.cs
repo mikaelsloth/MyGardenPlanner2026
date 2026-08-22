@@ -6,7 +6,7 @@ using MyGardenPlanner2026.Core.Entities.Layer1;
 using MyGardenPlanner2026.Infrastructure.Data;
 
 public sealed class GardenVolumeDiscountAdminService(
-    IDbContextFactory<PlannerDbContext> contextFactory,
+    IAdminDbContextFactory contextFactory,
     IGardenVolumeDiscountCatalog defaultCatalog) : IGardenVolumeDiscountAdminService
 {
     public async Task<IReadOnlyList<GardenVolumeDiscountTierDto>> GetAllAsync(

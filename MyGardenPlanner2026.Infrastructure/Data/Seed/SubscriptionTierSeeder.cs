@@ -8,7 +8,7 @@ using MyGardenPlanner2026.Core.Contracts.Layer1;
 /// Erstattes senere af admin-CRUD; seederen kan da nedgraderes til kun dev/test-brug.
 /// </summary>
 public sealed class SubscriptionTierSeeder(
-    IDbContextFactory<PlannerDbContext> contextFactory,
+    IAdminDbContextFactory contextFactory,
     ISubscriptionTierCatalog catalog)
 {
     public async Task SeedAsync(CancellationToken cancellationToken = default)

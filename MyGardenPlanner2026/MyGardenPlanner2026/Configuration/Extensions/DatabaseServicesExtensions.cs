@@ -11,18 +11,25 @@ public static class DatabaseServicesExtensions
     public static IServiceCollection AddDatabaseServices(this IServiceCollection services, IConfiguration configuration, string? provider)
     {
         services.AddSingleton<SoftDeleteInterceptor>();
+        services.AddSingleton<AuditLoggingInterceptor>();
 
         services.AddDbContextFactory<PlannerDbContext>((sp, options) =>
         {
             ConfigureProvider(options, configuration, provider, admin: false);
-            options.AddInterceptors(sp.GetRequiredService<SoftDeleteInterceptor>());
+            // Rækkefølgen er bevidst: SoftDeleteInterceptor konverterer Delete -> Modified
+            // FØR AuditLoggingInterceptor læser ChangeTracker-tilstanden.
+            options.AddInterceptors(
+                sp.GetRequiredService<SoftDeleteInterceptor>(),
+                sp.GetRequiredService<AuditLoggingInterceptor>());
         });
 
         services.AddSingleton<IAdminDbContextFactory>(sp =>
         {
             var optionsBuilder = new DbContextOptionsBuilder<PlannerDbContext>();
             ConfigureProvider(optionsBuilder, configuration, provider, admin: true);
-            optionsBuilder.AddInterceptors(sp.GetRequiredService<SoftDeleteInterceptor>());
+            optionsBuilder.AddInterceptors(
+                sp.GetRequiredService<SoftDeleteInterceptor>(),
+                sp.GetRequiredService<AuditLoggingInterceptor>());
 
             var pooled = new PooledDbContextFactory<PlannerDbContext>(optionsBuilder.Options);
             return new AdminDbContextFactory(pooled);
@@ -52,10 +59,6 @@ public static class DatabaseServicesExtensions
                 throw new InvalidOperationException($"Unknown DatabaseProvider: \"{provider}\"");
         }
 
-        // Kendt EF Core-begrænsning: periode-kolonner på Temporal Tables (ValidFromUtc/
-        // ValidToUtc) kan udløse en falsk-positiv PendingModelChangesWarning, selvom
-        // migrationer og model-snapshot er korrekt synkroniserede. Undertrykkelsen sker
-        // her (options-niveau, før pooling), da OnConfiguring er forbudt på pooled contexts.
         options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
     }
 }

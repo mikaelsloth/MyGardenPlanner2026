@@ -8,6 +8,8 @@
     <File Path="Documentation/Database/01-Undo-CreateAdminSchemaAndUsers.sql" />
     <File Path="Documentation/Database/03-AddWindowsUserToDbCreator.sql" />
     <File Path="Documentation/Database/03-Undo-AddWindowsUserToDbCreator.sql" />
+    <File Path="Documentation/Database/04-RestrictAuditLogsToInsertOnly.sql" />
+    <File Path="Documentation/Database/04-Undo-RestrictAuditLogsToInsertOnly.sql" />
   </Folder>
   <Folder Name="/Documentation/Web Design Documents/" />
   <Folder Name="/Documentation/Web Design Documents/Compendium/">

@@ -9,4 +9,4 @@ public sealed record PricingCalculationRequestDto(
     BillingCycle BillingCycle,
     int ActiveGardens,
     int ArchivedGardens,
-    IReadOnlyDictionary<int, int> AddOnQuantities);
+    IReadOnlyDictionary<Guid, int> AddOnQuantities);

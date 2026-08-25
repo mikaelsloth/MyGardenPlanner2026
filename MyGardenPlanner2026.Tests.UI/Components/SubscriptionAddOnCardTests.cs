@@ -13,7 +13,7 @@ public class SubscriptionAddOnCardTests : BunitContext
     public void SubscriptionAddOnCard_RendersNameUnitAndAllThreePrices()
     {
         var dto = new SubscriptionAddOnDto(
-            1, AddOnType.BedforslagNiveau2, "Bedforslag (Niveau 2)", "Pakke med 2 bedforslag",
+            Guid.NewGuid(), AddOnType.BedforslagNiveau2, "Bedforslag (Niveau 2)", "Pakke med 2 bedforslag",
             AnnualPrice: 180m, MonthlyPrice: 15m, PerpetualPrice: 450m);
 
         var cut = Render<SubscriptionAddOnCard>(p => p.Add(x => x.AddOn, dto));

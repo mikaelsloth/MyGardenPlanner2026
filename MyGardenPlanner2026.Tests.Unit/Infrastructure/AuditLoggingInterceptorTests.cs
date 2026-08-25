@@ -42,6 +42,24 @@ public class AuditLoggingInterceptorTests : TestDbContext
     }
 
     [Fact]
+    public async Task AddingGuidKeyedEntity_ResolvesEntityIdImmediately_WithoutPendingFixup()
+    {
+        var user = FakeUser();
+        using var context = CreateDbContextWithInterceptors(
+            new SoftDeleteInterceptor(user), new AuditLoggingInterceptor(user));
+
+        var tier = new GardenVolumeDiscountTier { MinGardens = 801, MaxGardens = 900, PriceMultiplier = 0.20m };
+        context.GardenVolumeDiscountTiers.Add(tier);
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        using var verifyContext = CreateDbContext();
+        var log = await verifyContext.AuditLogs.SingleAsync(TestContext.Current.CancellationToken);
+
+        log.EntityId.Should().Be(tier.Id.ToString());
+        log.EntityId.Should().NotBe("(afventer)");
+    }
+
+    [Fact]
     public async Task UpdatingProtectedEntity_WritesUpdateAuditLogWithOldAndNewValues()
     {
         var user = FakeUser();

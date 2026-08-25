@@ -10,7 +10,7 @@ public class SubscriptionTierMapperTests
 {
     private static SubscriptionTier CreateTier() => new()
     {
-        Id = 1,
+        Id = Guid.NewGuid(),
         Level = GardenAccessLevel.BedDesigner,
         AccessCategory = AccessCategory.Editor,
         Name = "Bed Designer · Editor",

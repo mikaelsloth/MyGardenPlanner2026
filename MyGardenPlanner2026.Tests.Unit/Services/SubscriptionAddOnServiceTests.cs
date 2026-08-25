@@ -23,7 +23,7 @@ public class SubscriptionAddOnServiceTests : TestDbContext
 
         result.Should().HaveCount(5);
         result.Select(a => a.Id).Should().OnlyHaveUniqueItems();
-        result.Should().OnlyContain(a => a.Id > 0);
+        result.Should().OnlyContain(a => a.Id != Guid.Empty);
     }
 
     [Fact]

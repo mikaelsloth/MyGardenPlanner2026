@@ -7,7 +7,7 @@ using MyGardenPlanner2026.Core.Entities.Common;
 /// </summary>
 public class SubscriptionAddOn : ISoftDelete
 {
-    public int Id { get; set; }
+    public Guid Id { get; init; } = Guid.CreateVersion7();
 
     public AddOnType Type { get; set; }
 

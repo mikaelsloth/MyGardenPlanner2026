@@ -6,11 +6,14 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MyGardenPlanner2026.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class AddSubscriptionTier : Migration
+    public partial class NewInitialEntry : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.EnsureSchema(
+                name: "admin");
+
             migrationBuilder.CreateTable(
                 name: "AspNetRoles",
                 columns: table => new
@@ -51,6 +54,56 @@ namespace MyGardenPlanner2026.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AuditLogs",
+                schema: "admin",
+                columns: table => new
+                {
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    UserId = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UserEmail = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
+                    IpAddress = table.Column<string>(type: "nvarchar(45)", maxLength: 45, nullable: true),
+                    Action = table.Column<int>(type: "int", nullable: false),
+                    EntityName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    EntityId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    OldValues = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    NewValues = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TimestampUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AuditLogs", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "GardenVolumeDiscountTiers",
+                schema: "admin",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    MinGardens = table.Column<int>(type: "int", nullable: false),
+                    MaxGardens = table.Column<int>(type: "int", nullable: true),
+                    PriceMultiplier = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ValidFromUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
+                        .Annotation("SqlServer:TemporalIsPeriodStartColumn", true),
+                    ValidToUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
+                        .Annotation("SqlServer:TemporalIsPeriodEndColumn", true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GardenVolumeDiscountTiers", x => x.Id);
+                })
+                .Annotation("SqlServer:IsTemporal", true)
+                .Annotation("SqlServer:TemporalHistoryTableName", "GardenVolumeDiscountTiersHistory")
+                .Annotation("SqlServer:TemporalHistoryTableSchema", "admin")
+                .Annotation("SqlServer:TemporalPeriodEndColumnName", "ValidToUtc")
+                .Annotation("SqlServer:TemporalPeriodStartColumnName", "ValidFromUtc");
+
+            migrationBuilder.CreateTable(
                 name: "Plants",
                 columns: table => new
                 {
@@ -65,11 +118,42 @@ namespace MyGardenPlanner2026.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "SubscriptionTiers",
+                name: "SubscriptionAddOns",
+                schema: "admin",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Type = table.Column<int>(type: "int", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
+                    UnitDescription = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
+                    AnnualPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    MonthlyPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    PerpetualPrice = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
+                    DisplayOrder = table.Column<int>(type: "int", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ValidFromUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
+                        .Annotation("SqlServer:TemporalIsPeriodStartColumn", true),
+                    ValidToUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
+                        .Annotation("SqlServer:TemporalIsPeriodEndColumn", true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SubscriptionAddOns", x => x.Id);
+                })
+                .Annotation("SqlServer:IsTemporal", true)
+                .Annotation("SqlServer:TemporalHistoryTableName", "SubscriptionAddOnsHistory")
+                .Annotation("SqlServer:TemporalHistoryTableSchema", "admin")
+                .Annotation("SqlServer:TemporalPeriodEndColumnName", "ValidToUtc")
+                .Annotation("SqlServer:TemporalPeriodStartColumnName", "ValidFromUtc");
+
+            migrationBuilder.CreateTable(
+                name: "SubscriptionTiers",
+                schema: "admin",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Level = table.Column<int>(type: "int", nullable: false),
                     AccessCategory = table.Column<int>(type: "int", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
@@ -80,12 +164,24 @@ namespace MyGardenPlanner2026.Infrastructure.Migrations
                     IsFeatured = table.Column<bool>(type: "bit", nullable: false),
                     DisplayOrder = table.Column<int>(type: "int", nullable: false),
                     IncludedFeatures = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    FeatureLimits = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    FeatureLimits = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    DeletedAtUtc = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    DeletedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ValidFromUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
+                        .Annotation("SqlServer:TemporalIsPeriodStartColumn", true),
+                    ValidToUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
+                        .Annotation("SqlServer:TemporalIsPeriodEndColumn", true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_SubscriptionTiers", x => x.Id);
-                });
+                })
+                .Annotation("SqlServer:IsTemporal", true)
+                .Annotation("SqlServer:TemporalHistoryTableName", "SubscriptionTiersHistory")
+                .Annotation("SqlServer:TemporalHistoryTableSchema", "admin")
+                .Annotation("SqlServer:TemporalPeriodEndColumnName", "ValidToUtc")
+                .Annotation("SqlServer:TemporalPeriodStartColumnName", "ValidFromUtc");
 
             migrationBuilder.CreateTable(
                 name: "AspNetRoleClaims",
@@ -257,7 +353,34 @@ namespace MyGardenPlanner2026.Infrastructure.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AuditLogs_EntityName_EntityId",
+                schema: "admin",
+                table: "AuditLogs",
+                columns: new[] { "EntityName", "EntityId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AuditLogs_TimestampUtc",
+                schema: "admin",
+                table: "AuditLogs",
+                column: "TimestampUtc");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GardenVolumeDiscountTiers_MinGardens",
+                schema: "admin",
+                table: "GardenVolumeDiscountTiers",
+                column: "MinGardens",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SubscriptionAddOns_Type",
+                schema: "admin",
+                table: "SubscriptionAddOns",
+                column: "Type",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_SubscriptionTiers_Level_AccessCategory",
+                schema: "admin",
                 table: "SubscriptionTiers",
                 columns: new[] { "Level", "AccessCategory" },
                 unique: true);
@@ -285,10 +408,38 @@ namespace MyGardenPlanner2026.Infrastructure.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
+                name: "AuditLogs",
+                schema: "admin");
+
+            migrationBuilder.DropTable(
+                name: "GardenVolumeDiscountTiers",
+                schema: "admin")
+                .Annotation("SqlServer:IsTemporal", true)
+                .Annotation("SqlServer:TemporalHistoryTableName", "GardenVolumeDiscountTiersHistory")
+                .Annotation("SqlServer:TemporalHistoryTableSchema", "admin")
+                .Annotation("SqlServer:TemporalPeriodEndColumnName", "ValidToUtc")
+                .Annotation("SqlServer:TemporalPeriodStartColumnName", "ValidFromUtc");
+
+            migrationBuilder.DropTable(
                 name: "Plants");
 
             migrationBuilder.DropTable(
-                name: "SubscriptionTiers");
+                name: "SubscriptionAddOns",
+                schema: "admin")
+                .Annotation("SqlServer:IsTemporal", true)
+                .Annotation("SqlServer:TemporalHistoryTableName", "SubscriptionAddOnsHistory")
+                .Annotation("SqlServer:TemporalHistoryTableSchema", "admin")
+                .Annotation("SqlServer:TemporalPeriodEndColumnName", "ValidToUtc")
+                .Annotation("SqlServer:TemporalPeriodStartColumnName", "ValidFromUtc");
+
+            migrationBuilder.DropTable(
+                name: "SubscriptionTiers",
+                schema: "admin")
+                .Annotation("SqlServer:IsTemporal", true)
+                .Annotation("SqlServer:TemporalHistoryTableName", "SubscriptionTiersHistory")
+                .Annotation("SqlServer:TemporalHistoryTableSchema", "admin")
+                .Annotation("SqlServer:TemporalPeriodEndColumnName", "ValidToUtc")
+                .Annotation("SqlServer:TemporalPeriodStartColumnName", "ValidFromUtc");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");

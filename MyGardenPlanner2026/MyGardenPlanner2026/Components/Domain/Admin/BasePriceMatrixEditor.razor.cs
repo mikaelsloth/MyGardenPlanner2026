@@ -13,9 +13,9 @@ public partial class BasePriceMatrixEditor
     public EventCallback<string> OnStatusMessage { get; set; }
 
     private IReadOnlyList<SubscriptionTierAdminDto> tiers = [];
-    private readonly Dictionary<int, decimal> annualEdits = [];
-    private readonly Dictionary<int, decimal> monthlyEdits = [];
-    private readonly Dictionary<int, decimal> perpetualEdits = [];
+    private readonly Dictionary<Guid, decimal> annualEdits = [];
+    private readonly Dictionary<Guid, decimal> monthlyEdits = [];
+    private readonly Dictionary<Guid, decimal> perpetualEdits = [];
     private string? errorMessage;
 
     protected override async Task OnInitializedAsync() => await LoadAsync();
@@ -36,7 +36,7 @@ public partial class BasePriceMatrixEditor
         }
     }
 
-    private async Task SaveTierAsync(int tierId)
+    private async Task SaveTierAsync(Guid tierId)
     {
         errorMessage = null;
 

@@ -8,7 +8,7 @@ using MyGardenPlanner2026.Core.Entities.Layer1;
 /// Bygges via SubscriptionTierMapper fra en SubscriptionTier + valgt BillingCycle.
 /// </summary>
 public sealed record SubscriptionTierDto(
-    int Id,
+    Guid Id,
     GardenAccessLevel Level,
     AccessCategory AccessCategory,
     string Name,

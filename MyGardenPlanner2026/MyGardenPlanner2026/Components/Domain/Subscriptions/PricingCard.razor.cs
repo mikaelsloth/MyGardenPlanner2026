@@ -13,7 +13,7 @@ public partial class PricingCard
     public SubscriptionTierDto Tier { get; set; } = default!;
 
     [Parameter]
-    public EventCallback<int> OnSelectPlan { get; set; }
+    public EventCallback<Guid> OnSelectPlan { get; set; }
 
     private string FormattedPrice => Tier.Price.ToString("C2", DanishCulture);
 

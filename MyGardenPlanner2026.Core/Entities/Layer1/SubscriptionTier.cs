@@ -8,7 +8,7 @@ using MyGardenPlanner2026.Core.Entities.Common;
 /// </summary>
 public class SubscriptionTier : ISoftDelete
 {
-    public int Id { get; set; }
+    public Guid Id { get; init; } = Guid.CreateVersion7();
 
     public GardenAccessLevel Level { get; set; }
     public AccessCategory AccessCategory { get; set; }

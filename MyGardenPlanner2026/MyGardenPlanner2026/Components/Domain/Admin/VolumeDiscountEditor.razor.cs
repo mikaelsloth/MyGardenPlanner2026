@@ -13,9 +13,9 @@ public partial class VolumeDiscountEditor
     public EventCallback<string> OnStatusMessage { get; set; }
 
     private IReadOnlyList<GardenVolumeDiscountTierDto> tiers = [];
-    private readonly Dictionary<int, int> minEdits = [];
-    private readonly Dictionary<int, int?> maxEdits = [];
-    private readonly Dictionary<int, decimal> multiplierEdits = [];
+    private readonly Dictionary<Guid, int> minEdits = [];
+    private readonly Dictionary<Guid, int?> maxEdits = [];
+    private readonly Dictionary<Guid, decimal> multiplierEdits = [];
     private string? errorMessage;
     private bool showResetConfirm;
 
@@ -41,7 +41,7 @@ public partial class VolumeDiscountEditor
         }
     }
 
-    private async Task SaveExistingAsync(int tierId)
+    private async Task SaveExistingAsync(Guid tierId)
     {
         errorMessage = null;
         try
@@ -81,7 +81,7 @@ public partial class VolumeDiscountEditor
         }
     }
 
-    private async Task DeleteAsync(int id)
+    private async Task DeleteAsync(Guid id)
     {
         errorMessage = null;
         try

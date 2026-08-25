@@ -6,35 +6,29 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 
 /// <summary>
 /// Registrerer Create/Update/Delete på alle entities der implementerer ISoftDelete
 /// som append-only rækker i admin.AuditLogs.
 ///
+/// EntityId-timing: bruger EntityEntry.Property(...).IsTemporary til generisk at afgøre,
+/// om nøgleværdien allerede er kendt på SavingChanges-tidspunktet:
+/// - Entities med klient-genereret Guid-nøgle (ValueGeneratedNever + konstruktør-default,
+///   fx Guid.CreateVersion7()) har IsTemporary == false med det samme -> EntityId logges
+///   korrekt i samme SaveChanges-kald, INGEN ekstra database-roundtrip.
+/// - Entities med database-genereret identity-nøgle (int) har IsTemporary == true indtil
+///   INSERT er udført -> falder tilbage til to-trins-opdatering via SavedChanges.
+///
 /// Skal registreres EFTER SoftDeleteInterceptor i AddInterceptors(...)-listen: en fysisk
-/// sletning er på dette tidspunkt allerede konverteret af SoftDeleteInterceptor til
-/// EntityState.Modified med IsDeleted ændret false -&gt; true. Denne interceptor genkender
-/// det mønster og logger det som AuditAction.Delete i stedet for Update.
-///
-/// EntityId for nyoprettede entities (auto-increment PK) kan IKKE læses i SavingChanges,
-/// da databasen først genererer nøglen under selve INSERT-eksekveringen. Derfor bygges
-/// AuditLog-rækken for Create i to trin: den tilføjes i SavingChanges (så den er en del af
-/// samme SaveChanges-kald og dermed samme logiske transaktion), men EntityId udfyldes
-/// først i SavedChanges, når den rigtige nøgle er kendt — via et ekstra, efterfølgende
-/// SaveChanges-kald.
-///
-/// Klassen er registreret som Singleton i DI, men bruges samtidigt af mange DbContext-
-/// instanser (fx samtidige Blazor Server circuits). Pending create-logs kan derfor IKKE
-/// gemmes i et almindeligt instansfelt (det ville deles på tværs af samtidige contexts
-/// og introducere race conditions). ConditionalWeakTable knytter i stedet pending-listen
-/// til den specifikke DbContext-instans, der udløste SavingChanges, og fjernes automatisk
-/// hvis contexten garbage-collectes uden at nå SavedChanges.
+/// sletning er på dette tidspunkt allerede konverteret til EntityState.Modified med
+/// IsDeleted ændret false -> true, hvilket denne interceptor genkender som AuditAction.Delete.
 /// </summary>
 public sealed class AuditLoggingInterceptor(ICurrentUserAccessor currentUser) : SaveChangesInterceptor
 {
-    private static readonly ConditionalWeakTable<DbContext, List<PendingCreateLog>> PendingCreateLogsByContext = [];
+    //private const string PendingEntityIdPlaceholder = "(afventer)";
+
+    //private static readonly ConditionalWeakTable<DbContext, List<PendingCreateLog>> PendingCreateLogsByContext = [];
 
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
@@ -51,20 +45,20 @@ public sealed class AuditLoggingInterceptor(ICurrentUserAccessor currentUser) : 
         return base.SavingChanges(eventData, result);
     }
 
-    public override async ValueTask<int> SavedChangesAsync(
-        SaveChangesCompletedEventData eventData,
-        int result,
-        CancellationToken cancellationToken = default)
-    {
-        await FixUpCreateEntityIdsAsync(eventData.Context, cancellationToken);
-        return await base.SavedChangesAsync(eventData, result, cancellationToken);
-    }
+    //public override async ValueTask<int> SavedChangesAsync(
+    //    SaveChangesCompletedEventData eventData,
+    //    int result,
+    //    CancellationToken cancellationToken = default)
+    //{
+    //    await FixUpPendingEntityIdsAsync(eventData.Context, cancellationToken);
+    //    return await base.SavedChangesAsync(eventData, result, cancellationToken);
+    //}
 
-    public override int SavedChanges(SaveChangesCompletedEventData eventData, int result)
-    {
-        FixUpCreateEntityIdsAsync(eventData.Context, CancellationToken.None).GetAwaiter().GetResult();
-        return base.SavedChanges(eventData, result);
-    }
+    //public override int SavedChanges(SaveChangesCompletedEventData eventData, int result)
+    //{
+    //    FixUpPendingEntityIdsAsync(eventData.Context, CancellationToken.None).GetAwaiter().GetResult();
+    //    return base.SavedChanges(eventData, result);
+    //}
 
     private void WriteAuditEntries(DbContext? context)
     {
@@ -87,6 +81,7 @@ public sealed class AuditLoggingInterceptor(ICurrentUserAccessor currentUser) : 
         foreach (var entry in trackedEntries)
         {
             var action = DetermineAction(entry);
+            //var idIsKnownNow = IsEntityIdKnownNow(entry);
 
             var log = new AuditLog
             {
@@ -95,7 +90,8 @@ public sealed class AuditLoggingInterceptor(ICurrentUserAccessor currentUser) : 
                 IpAddress = user.IpAddress,
                 Action = action,
                 EntityName = entry.Entity.GetType().Name,
-                EntityId = action == AuditAction.Create ? "0" : ResolveEntityId(entry),
+                //EntityId = idIsKnownNow ? ResolveEntityId(entry) : PendingEntityIdPlaceholder,
+                EntityId = ResolveEntityId(entry),
                 OldValues = action == AuditAction.Create ? null : SerializeValues(entry, useOriginal: true),
                 NewValues = action == AuditAction.Delete ? null : SerializeValues(entry, useOriginal: false),
                 TimestampUtc = DateTimeOffset.UtcNow
@@ -103,38 +99,48 @@ public sealed class AuditLoggingInterceptor(ICurrentUserAccessor currentUser) : 
 
             context.Add(log);
 
-            if (action == AuditAction.Create)
-            {
-                var pendingForThisContext = PendingCreateLogsByContext.GetOrCreateValue(context);
-                pendingForThisContext.Add(new PendingCreateLog(log, entry));
-            }
+            //if (!idIsKnownNow)
+            //{
+            //    var pendingForThisContext = PendingCreateLogsByContext.GetOrCreateValue(context);
+            //    pendingForThisContext.Add(new PendingCreateLog(log, entry));
+            //}
         }
     }
 
-    private static async Task FixUpCreateEntityIdsAsync(DbContext? context, CancellationToken cancellationToken)
-    {
-        if (context is null)
-        {
-            return;
-        }
+    //private static async Task FixUpPendingEntityIdsAsync(DbContext? context, CancellationToken cancellationToken)
+    //{
+    //    if (context is null)
+    //    {
+    //        return;
+    //    }
 
-        if (!PendingCreateLogsByContext.TryGetValue(context, out var pendingForThisContext) || pendingForThisContext.Count == 0)
-        {
-            return;
-        }
+    //    if (!PendingCreateLogsByContext.TryGetValue(context, out var pendingForThisContext) || pendingForThisContext.Count == 0)
+    //    {
+    //        return;
+    //    }
 
-        foreach (var pending in pendingForThisContext)
-        {
-            pending.Log.EntityId = ResolveEntityId(pending.Entry);
-        }
+    //    foreach (var pending in pendingForThisContext)
+    //    {
+    //        pending.Log.EntityId = ResolveEntityId(pending.Entry);
+    //    }
 
-        PendingCreateLogsByContext.Remove(context);
+    //    PendingCreateLogsByContext.Remove(context);
 
-        // Persistér de korrigerede EntityId-værdier i en separat, efterfølgende SaveChanges.
-        // Dette sker uden for den oprindelige transaktion, men da AuditLogs er append-only
-        // og aldrig læses samtidig med skrivning i denne kontekst, er det acceptabelt her.
-        await context.SaveChangesAsync(cancellationToken);
-    }
+    //    // Kun entities med database-genereret nøgle (fx int identity) rammer denne sti.
+    //    // For Guid-nøglede entities (ValueGeneratedNever) udløses dette kald aldrig.
+    //    await context.SaveChangesAsync(cancellationToken);
+    //}
+
+    //private static bool IsEntityIdKnownNow(EntityEntry<ISoftDelete> entry)
+    //{
+    //    var keyProperty = entry.Metadata.FindPrimaryKey()?.Properties.FirstOrDefault();
+    //    if (keyProperty is null)
+    //    {
+    //        return true;
+    //    }
+
+    //    return !entry.Property(keyProperty.Name).IsTemporary;
+    //}
 
     private static AuditAction DetermineAction(EntityEntry<ISoftDelete> entry)
     {
@@ -153,13 +159,8 @@ public sealed class AuditLoggingInterceptor(ICurrentUserAccessor currentUser) : 
 
     private static string ResolveEntityId(EntityEntry<ISoftDelete> entry)
     {
-        var keyProperty = entry.Metadata.FindPrimaryKey()?.Properties.FirstOrDefault();
-        if (keyProperty is null)
-        {
-            return "ukendt";
-        }
-
-        return entry.Property(keyProperty.Name).CurrentValue?.ToString() ?? "ukendt";
+        var keyProperty = entry.Metadata.FindPrimaryKey()?.Properties is { Count: > 0 } properties ? properties[0] : null;
+        return keyProperty is null ? "ukendt" : entry.Property(keyProperty.Name).CurrentValue?.ToString() ?? "ukendt";
     }
 
     private static string SerializeValues(EntityEntry<ISoftDelete> entry, bool useOriginal)
@@ -174,5 +175,5 @@ public sealed class AuditLoggingInterceptor(ICurrentUserAccessor currentUser) : 
         return JsonSerializer.Serialize(values);
     }
 
-    private sealed record PendingCreateLog(AuditLog Log, EntityEntry<ISoftDelete> Entry);
+    //private sealed record PendingCreateLog(AuditLog Log, EntityEntry<ISoftDelete> Entry);
 }

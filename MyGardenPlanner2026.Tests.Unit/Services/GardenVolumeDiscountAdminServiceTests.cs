@@ -24,7 +24,7 @@ public class GardenVolumeDiscountAdminServiceTests : TestDbContext
             new GardenVolumeDiscountTierUpsertDto(null, 501, null, 0.30m),
             TestContext.Current.CancellationToken);
 
-        created.Id.Should().NotBe(0);
+        created.Id.Should().NotBe(Guid.Empty);
         var all = await service.GetAllAsync(TestContext.Current.CancellationToken);
         all.Should().HaveCount(8);
     }

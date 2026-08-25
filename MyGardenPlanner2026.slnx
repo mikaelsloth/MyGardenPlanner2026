@@ -1,7 +1,5 @@
 <Solution>
-  <Folder Name="/Documentation/">
-    <File Path="Documentation/Database/01-CreateAdminSchemaAndUsers.sql" />
-  </Folder>
+  <Folder Name="/Documentation/" />
   <Folder Name="/Documentation/Architecture/" />
   <Folder Name="/Documentation/Database/">
     <File Path="Documentation/Database/01-CreateAdminSchemaAndUsers.sql" />

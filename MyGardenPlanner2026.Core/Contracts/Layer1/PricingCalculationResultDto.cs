@@ -10,7 +10,7 @@ public sealed record PricingCalculationResultDto(
     decimal Total);
 
 public sealed record AddOnLineItemDto(
-    int AddOnId,
+    Guid AddOnId,
     string Name,
     int Quantity,
     decimal UnitPrice,

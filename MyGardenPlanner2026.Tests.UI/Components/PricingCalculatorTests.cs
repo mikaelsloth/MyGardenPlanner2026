@@ -11,8 +11,11 @@ using Xunit;
 
 public class PricingCalculatorTests : BunitContext
 {
+    private static readonly Guid BedforslagAddOnId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    private static readonly Guid ArtefaktpakkeAAddOnId = Guid.Parse("22222222-2222-2222-2222-222222222222");
+
     private static readonly SubscriptionAddOnDto BedforslagAddOn = new(
-        Id: 1,
+        Id: BedforslagAddOnId,
         Type: AddOnType.BedforslagNiveau2,
         Name: "Bedforslag (Niveau 2)",
         UnitDescription: "Pakke med 2 bedforslag",
@@ -21,7 +24,7 @@ public class PricingCalculatorTests : BunitContext
         PerpetualPrice: 450m);
 
     private static readonly SubscriptionAddOnDto ArtefaktpakkeAAddOn = new(
-        Id: 2,
+        Id: ArtefaktpakkeAAddOnId,
         Type: AddOnType.ArtefaktpakkeA,
         Name: "Artefaktpakke A",
         UnitDescription: "+25 Planter / Materialer / Opgavelister",
@@ -62,8 +65,8 @@ public class PricingCalculatorTests : BunitContext
 
         cut.Markup.Should().Contain("Bedforslag (Niveau 2)");
         cut.Markup.Should().Contain("Artefaktpakke A");
-        cut.Find("#addon-1").Should().NotBeNull();
-        cut.Find("#addon-2").Should().NotBeNull();
+        cut.Find($"#addon-{BedforslagAddOnId}").Should().NotBeNull();
+        cut.Find($"#addon-{ArtefaktpakkeAAddOnId}").Should().NotBeNull();
     }
 
     [Fact]
@@ -72,10 +75,10 @@ public class PricingCalculatorTests : BunitContext
         RegisterFakes();
         var cut = Render<PricingCalculator>();
 
-        cut.Find("#addon-1").Change("3");
+        cut.Find($"#addon-{BedforslagAddOnId}").Change("3");
 
-        cut.Find("#addon-1").GetAttribute("value").Should().Be("3");
-        cut.Find("#addon-2").GetAttribute("value").Should().Be("0");
+        cut.Find($"#addon-{BedforslagAddOnId}").GetAttribute("value").Should().Be("3");
+        cut.Find($"#addon-{ArtefaktpakkeAAddOnId}").GetAttribute("value").Should().Be("0");
     }
 
     [Fact]
@@ -95,13 +98,13 @@ public class PricingCalculatorTests : BunitContext
         var calculatorService = RegisterFakes();
         var cut = Render<PricingCalculator>();
 
-        cut.Find("#addon-1").Change("2");
+        cut.Find($"#addon-{BedforslagAddOnId}").Change("2");
         cut.Find("button.btn-primary").Click();
 
         calculatorService.Received().CalculateAsync(
             Arg.Is<PricingCalculationRequestDto>(r =>
-                r.AddOnQuantities.ContainsKey(1) && r.AddOnQuantities[1] == 2 &&
-                r.AddOnQuantities.ContainsKey(2) && r.AddOnQuantities[2] == 0),
+                r.AddOnQuantities.ContainsKey(BedforslagAddOnId) && r.AddOnQuantities[BedforslagAddOnId] == 2 &&
+                r.AddOnQuantities.ContainsKey(ArtefaktpakkeAAddOnId) && r.AddOnQuantities[ArtefaktpakkeAAddOnId] == 0),
             Arg.Any<CancellationToken>());
     }
 }

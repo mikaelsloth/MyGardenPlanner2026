@@ -6,7 +6,7 @@ public interface ISubscriptionAddOnAdminService
 
     Task<SubscriptionAddOnDto> SaveAsync(SubscriptionAddOnUpsertDto upsert, CancellationToken cancellationToken = default);
 
-    Task DeleteAsync(int id, CancellationToken cancellationToken = default);
+    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task ResetToDefaultAsync(CancellationToken cancellationToken = default);
 }

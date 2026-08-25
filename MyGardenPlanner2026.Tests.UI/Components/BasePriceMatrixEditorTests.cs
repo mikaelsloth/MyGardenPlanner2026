@@ -12,7 +12,9 @@ using Xunit;
 
 public class BasePriceMatrixEditorTests : BunitContext
 {
-    private static SubscriptionTierAdminDto CreateDto(int id) => new(
+    private static readonly Guid TierId = Guid.Parse("44444444-4444-4444-4444-444444444444");
+
+    private static SubscriptionTierAdminDto CreateDto(Guid id) => new(
         id, GardenAccessLevel.HaveArkitekt, AccessCategory.Administrator, "Have Arkitekt · Administrator",
         AnnualPrice: 336m, MonthlyPrice: 28m, PerpetualPrice: 840m);
 
@@ -20,7 +22,7 @@ public class BasePriceMatrixEditorTests : BunitContext
     {
         var service = Substitute.For<ISubscriptionTierAdminService>();
         service.GetAllTiersAsync(Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<IReadOnlyList<SubscriptionTierAdminDto>>([CreateDto(1)]));
+           .Returns(Task.FromResult<IReadOnlyList<SubscriptionTierAdminDto>>([CreateDto(TierId)]));
 
         Services.AddSingleton(service);
         return service;
@@ -43,11 +45,11 @@ public class BasePriceMatrixEditorTests : BunitContext
 
         var cut = Render<BasePriceMatrixEditor>();
 
-        cut.Find("#annual-1").Change("350");
+        cut.Find($"#annual-{TierId}").Change("350");
         cut.Find("button.btn-primary").Click();
 
         service.Received().UpdateTierAsync(
-            Arg.Is<SubscriptionTierUpdateDto>(u => u.Id == 1 && u.AnnualPrice == 350m),
+            Arg.Is<SubscriptionTierUpdateDto>(u => u.Id == TierId && u.AnnualPrice == 350m),
             Arg.Any<CancellationToken>());
     }
 

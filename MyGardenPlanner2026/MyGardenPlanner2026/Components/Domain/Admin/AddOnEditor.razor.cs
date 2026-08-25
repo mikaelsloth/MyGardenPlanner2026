@@ -14,11 +14,11 @@ public partial class AddOnEditor
     public EventCallback<string> OnStatusMessage { get; set; }
 
     private IReadOnlyList<SubscriptionAddOnDto> addOns = [];
-    private readonly Dictionary<int, string> nameEdits = [];
-    private readonly Dictionary<int, string> unitEdits = [];
-    private readonly Dictionary<int, decimal> annualEdits = [];
-    private readonly Dictionary<int, decimal> monthlyEdits = [];
-    private readonly Dictionary<int, decimal> perpetualEdits = [];
+    private readonly Dictionary<Guid, string> nameEdits = [];
+    private readonly Dictionary<Guid, string> unitEdits = [];
+    private readonly Dictionary<Guid, decimal> annualEdits = [];
+    private readonly Dictionary<Guid, decimal> monthlyEdits = [];
+    private readonly Dictionary<Guid, decimal> perpetualEdits = [];
     private string? errorMessage;
     private bool showResetConfirm;
 
@@ -51,7 +51,7 @@ public partial class AddOnEditor
         }
     }
 
-    private async Task SaveExistingAsync(int addOnId)
+    private async Task SaveExistingAsync(Guid addOnId)
     {
         errorMessage = null;
         try
@@ -101,7 +101,7 @@ public partial class AddOnEditor
         }
     }
 
-    private async Task DeleteAsync(int id)
+    private async Task DeleteAsync(Guid id)
     {
         errorMessage = null;
         try

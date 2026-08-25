@@ -3,7 +3,7 @@
 using MyGardenPlanner2026.Core.Entities.Common;
 
 public sealed record SubscriptionTierAdminDto(
-    int Id,
+    Guid Id,
     GardenAccessLevel Level,
     AccessCategory AccessCategory,
     string Name,

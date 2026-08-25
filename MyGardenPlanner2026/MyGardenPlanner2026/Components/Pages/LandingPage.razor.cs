@@ -19,5 +19,5 @@ public partial class LandingPage
         featuredTiers = await PricingService.GetFeaturedTiersAsync(BillingCycle.Annual);
     }
 
-    private void HandleSelectPlan(int tierId) => NavigationManager.NavigateTo("/pricing");
+    private void HandleSelectPlan(Guid tierId) => NavigationManager.NavigateTo("/pricing");
 }

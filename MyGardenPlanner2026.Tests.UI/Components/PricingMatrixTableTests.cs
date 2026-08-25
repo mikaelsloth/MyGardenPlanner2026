@@ -13,7 +13,7 @@ using Xunit;
 public class PricingMatrixTableTests : BunitContext
 {
     private static SubscriptionTierDto CreateDto(GardenAccessLevel level, AccessCategory category, decimal price) => new(
-        Id: ((int)level * 10) + (int)category,
+        Id: Guid.NewGuid(),
         Level: level,
         AccessCategory: category,
         Name: $"{level} · {category}",

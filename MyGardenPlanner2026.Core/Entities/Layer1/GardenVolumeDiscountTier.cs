@@ -8,7 +8,7 @@ using MyGardenPlanner2026.Core.Entities.Common;
 /// </summary>
 public class GardenVolumeDiscountTier : ISoftDelete
 {
-    public int Id { get; set; }
+    public Guid Id { get; init; } = Guid.CreateVersion7();
 
     public int MinGardens { get; set; }
     public int? MaxGardens { get; set; }

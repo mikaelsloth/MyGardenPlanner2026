@@ -11,8 +11,10 @@ using Xunit;
 
 public class PricingCardTests : BunitContext
 {
+    private static readonly Guid TierId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+
     private static SubscriptionTierDto CreateDto(bool isFeatured = false) => new(
-        Id: 1,
+        Id: TierId,
         Level: GardenAccessLevel.BedDesigner,
         AccessCategory: AccessCategory.Editor,
         Name: "Bed Designer · Editor",
@@ -55,13 +57,13 @@ public class PricingCardTests : BunitContext
     [Fact]
     public void PricingCard_ClickingButton_InvokesOnSelectPlanWithTierId()
     {
-        int? selectedId = null;
+        Guid? selectedId = null;
         var cut = Render<PricingCard>(p => p
             .Add(x => x.Tier, CreateDto())
-            .Add(x => x.OnSelectPlan, EventCallback.Factory.Create<int>(this, id => selectedId = id)));
+            .Add(x => x.OnSelectPlan, EventCallback.Factory.Create<Guid>(this, id => selectedId = id)));
 
         cut.Find("button").Click();
 
-        selectedId.Should().Be(1);
+        selectedId.Should().Be(TierId);
     }
 }

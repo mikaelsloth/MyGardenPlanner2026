@@ -41,6 +41,7 @@ public partial class PlannerDbContext
                 }
             });
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.Name).IsRequired().HasMaxLength(150);
             entity.Property(e => e.UnitDescription).IsRequired().HasMaxLength(200);
             entity.HasIndex(e => e.Type).IsUnique();
@@ -63,6 +64,7 @@ public partial class PlannerDbContext
                 }
             });
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
             entity.HasIndex(e => e.MinGardens).IsUnique();
         });
     }
@@ -83,6 +85,7 @@ public partial class PlannerDbContext
                 }
             });
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Description).HasMaxLength(500);
 

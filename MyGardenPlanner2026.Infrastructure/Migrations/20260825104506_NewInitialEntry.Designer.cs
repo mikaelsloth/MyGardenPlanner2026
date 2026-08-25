@@ -12,8 +12,8 @@ using MyGardenPlanner2026.Infrastructure.Data;
 namespace MyGardenPlanner2026.Infrastructure.Migrations
 {
     [DbContext(typeof(PlannerDbContext))]
-    [Migration("20260823101229_AddAuditLogsTable")]
-    partial class AddAuditLogsTable
+    [Migration("20260825104506_NewInitialEntry")]
+    partial class NewInitialEntry
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -320,11 +320,8 @@ namespace MyGardenPlanner2026.Infrastructure.Migrations
 
             modelBuilder.Entity("MyGardenPlanner2026.Core.Entities.Layer1.GardenVolumeDiscountTier", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTimeOffset?>("DeletedAtUtc")
                         .HasColumnType("datetimeoffset");
@@ -379,11 +376,8 @@ namespace MyGardenPlanner2026.Infrastructure.Migrations
 
             modelBuilder.Entity("MyGardenPlanner2026.Core.Entities.Layer1.SubscriptionAddOn", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("AnnualPrice")
                         .HasPrecision(18, 2)
@@ -453,11 +447,8 @@ namespace MyGardenPlanner2026.Infrastructure.Migrations
 
             modelBuilder.Entity("MyGardenPlanner2026.Core.Entities.Layer1.SubscriptionTier", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("AccessCategory")
                         .HasColumnType("int");

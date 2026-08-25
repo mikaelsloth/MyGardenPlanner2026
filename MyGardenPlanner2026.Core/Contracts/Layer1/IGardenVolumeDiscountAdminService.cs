@@ -6,7 +6,7 @@ public interface IGardenVolumeDiscountAdminService
 
     Task<GardenVolumeDiscountTierDto> SaveAsync(GardenVolumeDiscountTierUpsertDto upsert, CancellationToken cancellationToken = default);
 
-    Task DeleteAsync(int id, CancellationToken cancellationToken = default);
+    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
     Task ResetToDefaultAsync(CancellationToken cancellationToken = default);
 }

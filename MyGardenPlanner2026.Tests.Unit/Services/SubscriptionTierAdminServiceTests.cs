@@ -53,7 +53,7 @@ public class SubscriptionTierAdminServiceTests : TestDbContext
         var service = new SubscriptionTierAdminService(CreateAdminDbContextFactory());
 
         var act = async () => await service.UpdateTierAsync(
-            new SubscriptionTierUpdateDto(999, 1m, 1m, 1m), TestContext.Current.CancellationToken);
+            new SubscriptionTierUpdateDto(Guid.NewGuid(), 1m, 1m, 1m), TestContext.Current.CancellationToken);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }

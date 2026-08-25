@@ -12,9 +12,9 @@ public class PricingFeatureMatrixTests : BunitContext
 {
     private static List<SubscriptionTierDto> CreateTiers() =>
     [
-        new(1, GardenAccessLevel.BedDesigner, AccessCategory.Editor, "Bed Designer · Editor", "Beskrivelse", 120m, BillingCycle.Annual, false,
+        new(Guid.NewGuid(), GardenAccessLevel.BedDesigner, AccessCategory.Editor, "Bed Designer · Editor", "Beskrivelse", 120m, BillingCycle.Annual, false,
             ["2 bedforslag pr. have"], new Dictionary<string, string> { ["Bedforslag"] = "2", ["Bede pr. forslag"] = "25" }),
-        new(2, GardenAccessLevel.Planlaegger, AccessCategory.Editor, "Planlægger · Editor", "Beskrivelse", 96m, BillingCycle.Annual, false,
+        new(Guid.NewGuid(), GardenAccessLevel.Planlaegger, AccessCategory.Editor, "Planlægger · Editor", "Beskrivelse", 96m, BillingCycle.Annual, false,
             ["50 planlagte bede pr. have"], new Dictionary<string, string> { ["Planlagte bede"] = "50" })
     ];
 

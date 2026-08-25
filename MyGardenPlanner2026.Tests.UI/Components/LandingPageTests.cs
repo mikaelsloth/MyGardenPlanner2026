@@ -16,7 +16,7 @@ using Xunit;
 public class LandingPageTests : BunitContext
 {
     private static SubscriptionTierDto CreateDto(GardenAccessLevel level) => new(
-        Id: (int)level,
+        Id: Guid.NewGuid(),
         Level: level,
         AccessCategory: AccessCategory.Editor,
         Name: $"{level} · Editor",

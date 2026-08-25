@@ -34,7 +34,7 @@ public class PricingCalculatorServiceTests : TestDbContext
             BillingCycle.Annual,
             ActiveGardens: 1,
             ArchivedGardens: 0,
-            AddOnQuantities: new Dictionary<int, int>());
+            AddOnQuantities: new Dictionary<Guid, int>());
 
         var result = await service.CalculateAsync(request, TestContext.Current.CancellationToken);
 
@@ -57,7 +57,7 @@ public class PricingCalculatorServiceTests : TestDbContext
             BillingCycle.Annual,
             ActiveGardens: 6,
             ArchivedGardens: 0,
-            AddOnQuantities: new Dictionary<int, int>());
+            AddOnQuantities: new Dictionary<Guid, int>());
 
         var result = await service.CalculateAsync(request, TestContext.Current.CancellationToken);
 
@@ -78,7 +78,7 @@ public class PricingCalculatorServiceTests : TestDbContext
             BillingCycle.Annual,
             ActiveGardens: 0,
             ArchivedGardens: 4,
-            AddOnQuantities: new Dictionary<int, int>());
+            AddOnQuantities: new Dictionary<Guid, int>());
 
         var editorRequest = adminRequest with { AccessCategory = AccessCategory.Editor };
 
@@ -108,7 +108,7 @@ public class PricingCalculatorServiceTests : TestDbContext
             BillingCycle.Annual,
             ActiveGardens: 1,
             ArchivedGardens: 0,
-            AddOnQuantities: new Dictionary<int, int> { [bedforslagAddOn.Id] = 2 });
+            AddOnQuantities: new Dictionary<Guid, int> { [bedforslagAddOn.Id] = 2 });
 
         var result = await service.CalculateAsync(request, TestContext.Current.CancellationToken);
 
@@ -132,7 +132,7 @@ public class PricingCalculatorServiceTests : TestDbContext
             BillingCycle.Perpetual,
             ActiveGardens: 1,
             ArchivedGardens: 0,
-            AddOnQuantities: new Dictionary<int, int> { [bedforslagAddOn.Id] = 1 });
+            AddOnQuantities: new Dictionary<Guid, int> { [bedforslagAddOn.Id] = 1 });
 
         var result = await service.CalculateAsync(request, TestContext.Current.CancellationToken);
 
@@ -154,7 +154,7 @@ public class PricingCalculatorServiceTests : TestDbContext
             BillingCycle.Perpetual,
             ActiveGardens: 6,
             ArchivedGardens: 0,
-            AddOnQuantities: new Dictionary<int, int>());
+            AddOnQuantities: new Dictionary<Guid, int>());
 
         var result = await service.CalculateAsync(request, TestContext.Current.CancellationToken);
 

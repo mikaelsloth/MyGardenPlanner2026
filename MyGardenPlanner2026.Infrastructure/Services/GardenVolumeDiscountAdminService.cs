@@ -31,7 +31,7 @@ public sealed class GardenVolumeDiscountAdminService(
 
         GardenVolumeDiscountTier tier;
 
-        if (upsert.Id is int id)
+        if (upsert.Id is Guid id)
         {
             tier = await context.GardenVolumeDiscountTiers
                 .SingleOrDefaultAsync(t => t.Id == id, cancellationToken)
@@ -67,7 +67,7 @@ public sealed class GardenVolumeDiscountAdminService(
         return ToDto(tier);
     }
 
-    public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
 

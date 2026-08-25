@@ -3,7 +3,7 @@
 using MyGardenPlanner2026.Core.Entities.Common;
 
 public sealed record SubscriptionAddOnDto(
-    int Id,
+    Guid Id,
     AddOnType Type,
     string Name,
     string UnitDescription,

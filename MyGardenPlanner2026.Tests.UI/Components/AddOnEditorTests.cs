@@ -11,8 +11,10 @@ using Xunit;
 
 public class AddOnEditorTests : BunitContext
 {
+    private static readonly Guid AddOn1Id = Guid.Parse("55555555-5555-5555-5555-555555555555");
+
     private static readonly SubscriptionAddOnDto AddOn1 = new(
-        1, AddOnType.BedforslagNiveau2, "Bedforslag (Niveau 2)", "Pakke med 2 bedforslag", 180m, 15m, 450m);
+        AddOn1Id, AddOnType.BedforslagNiveau2, "Bedforslag (Niveau 2)", "Pakke med 2 bedforslag", 180m, 15m, 450m);
 
     private ISubscriptionAddOnAdminService RegisterFake()
     {
@@ -41,12 +43,12 @@ public class AddOnEditorTests : BunitContext
         var service = RegisterFake();
         var cut = Render<AddOnEditor>();
 
-        cut.Find("#name-1").Change("Bedforslag (Niveau 2) - opdateret");
+        cut.Find($"#name-{AddOn1Id}").Change("Bedforslag (Niveau 2) - opdateret");
         cut.Find("button.btn-primary.btn-sm").Click();
 
         service.Received().SaveAsync(
             Arg.Is<SubscriptionAddOnUpsertDto>(d =>
-                d.Id == 1 && d.Type == AddOnType.BedforslagNiveau2 && d.Name == "Bedforslag (Niveau 2) - opdateret"),
+                d.Id == AddOn1Id && d.Type == AddOnType.BedforslagNiveau2 && d.Name == "Bedforslag (Niveau 2) - opdateret"),
             Arg.Any<CancellationToken>());
     }
 

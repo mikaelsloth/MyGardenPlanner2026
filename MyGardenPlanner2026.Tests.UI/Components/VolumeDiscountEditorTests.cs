@@ -10,7 +10,8 @@ using Xunit;
 
 public class VolumeDiscountEditorTests : BunitContext
 {
-    private static readonly GardenVolumeDiscountTierDto Tier1 = new(1, 1, 1, 1.00m);
+    private static readonly Guid Tier1Id = Guid.Parse("33333333-3333-3333-3333-333333333333");
+    private static readonly GardenVolumeDiscountTierDto Tier1 = new(Tier1Id, 1, 1, 1.00m);
 
     private IGardenVolumeDiscountAdminService RegisterFake()
     {
@@ -56,7 +57,7 @@ public class VolumeDiscountEditorTests : BunitContext
 
         cut.Find("button.btn-danger.btn-sm").Click();
 
-        service.Received().DeleteAsync(1, Arg.Any<CancellationToken>());
+        service.Received().DeleteAsync(Tier1Id, Arg.Any<CancellationToken>());
     }
 
     [Fact]

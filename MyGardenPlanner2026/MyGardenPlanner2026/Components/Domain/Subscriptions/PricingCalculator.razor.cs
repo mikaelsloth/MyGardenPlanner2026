@@ -17,7 +17,7 @@ public partial class PricingCalculator
     private IPricingCalculatorService CalculatorService { get; set; } = default!;
 
     private IReadOnlyList<SubscriptionAddOnDto> addOns = [];
-    private readonly Dictionary<int, int> addOnQuantities = [];
+    private readonly Dictionary<Guid, int> addOnQuantities = [];
 
     private GardenAccessLevel selectedLevel = GardenAccessLevel.HaveArkitekt;
     private AccessCategory selectedCategory = AccessCategory.Editor;
@@ -38,9 +38,9 @@ public partial class PricingCalculator
         }
     }
 
-    private int GetQuantity(int addOnId) => addOnQuantities.GetValueOrDefault(addOnId);
+    private int GetQuantity(Guid addOnId) => addOnQuantities.GetValueOrDefault(addOnId);
 
-    private void SetQuantity(int addOnId, int quantity) =>
+    private void SetQuantity(Guid addOnId, int quantity) =>
         addOnQuantities[addOnId] = Math.Max(0, quantity);
 
     private async Task CalculateAsync()

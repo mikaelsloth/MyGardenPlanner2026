@@ -30,7 +30,7 @@ public sealed class SubscriptionAddOnAdminService(
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
         var duplicateTypeExists = await context.SubscriptionAddOns
-            .AnyAsync(a => a.Type == upsert.Type && a.Id != (upsert.Id ?? 0), cancellationToken);
+            .AnyAsync(a => a.Type == upsert.Type && a.Id != (upsert.Id ?? Guid.Empty), cancellationToken);
 
         if (duplicateTypeExists)
         {
@@ -39,7 +39,7 @@ public sealed class SubscriptionAddOnAdminService(
 
         SubscriptionAddOn addOn;
 
-        if (upsert.Id is int id)
+        if (upsert.Id is Guid id)
         {
             addOn = await context.SubscriptionAddOns
                 .SingleOrDefaultAsync(a => a.Id == id, cancellationToken)
@@ -76,7 +76,7 @@ public sealed class SubscriptionAddOnAdminService(
         return ToDto(addOn);
     }
 
-    public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
 

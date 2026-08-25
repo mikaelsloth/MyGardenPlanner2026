@@ -3,6 +3,7 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using MyGardenPlanner2026.Core.Contracts.Common;
+using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Layer1;
 using MyGardenPlanner2026.Infrastructure.Interceptors;
@@ -150,5 +151,31 @@ public class AuditLoggingInterceptorTests : TestDbContext
         logs[0].Action.Should().Be(AuditAction.Create);
         logs[1].Action.Should().Be(AuditAction.Update);
         logs[2].Action.Should().Be(AuditAction.Delete);
+    }
+
+    [Fact]
+    public async Task AddingRoleElevationRequest_WritesCreateAuditLog()
+    {
+        var user = FakeUser();
+        using var context = CreateDbContextWithInterceptors(
+            new SoftDeleteInterceptor(user), new AuditLoggingInterceptor(user));
+
+        var request = new RoleElevationRequest
+        {
+            RequesterUserId = "user-42",
+            RoleName = "SystemAdmin",
+            Reason = "Skal rette prisfejl.",
+            RequestedHours = 4
+        };
+        context.RoleElevationRequests.Add(request);
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        using var verifyContext = CreateDbContext();
+        var log = await verifyContext.AuditLogs
+            .SingleAsync(l => l.EntityName == nameof(RoleElevationRequest), TestContext.Current.CancellationToken);
+
+        log.Action.Should().Be(AuditAction.Create);
+        log.EntityId.Should().Be(request.Id.ToString());
+        log.NewValues.Should().Contain("SystemAdmin");
     }
 }

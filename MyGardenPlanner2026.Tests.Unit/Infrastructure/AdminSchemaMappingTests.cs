@@ -2,6 +2,7 @@
 
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Layer1;
 using MyGardenPlanner2026.Infrastructure.Data;
 using Xunit;
@@ -17,6 +18,7 @@ public class AdminSchemaMappingTests
     [InlineData(typeof(SubscriptionTier), "SubscriptionTiers")]
     [InlineData(typeof(GardenVolumeDiscountTier), "GardenVolumeDiscountTiers")]
     [InlineData(typeof(SubscriptionAddOn), "SubscriptionAddOns")]
+    [InlineData(typeof(RoleElevationRequest), "RoleElevationRequests")]
     public void ProtectedEntities_AreMappedToAdminSchema(Type entityType, string expectedTableName)
     {
         var options = new DbContextOptionsBuilder<PlannerDbContext>()

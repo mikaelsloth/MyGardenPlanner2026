@@ -2,15 +2,15 @@
 
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using MyGardenPlanner2026.Configuration.Authorization;
 using MyGardenPlanner2026.Configuration.Extensions;
 using Xunit;
 
 public class AuthorizationServicesExtensionsTests
 {
     [Fact]
-    public async Task AddAuthorizationServices_RegistersRequireGlobalAdminPolicy_RequiringSystemAdminRole()
+    public async Task AddAuthorizationServices_RegistersRequireGlobalAdminPolicy_WithJitRoleRequirementForSystemAdmin()
     {
         var services = new ServiceCollection();
         services.AddAuthorizationServices();
@@ -21,7 +21,7 @@ public class AuthorizationServicesExtensionsTests
         var policy = await policyProvider.GetPolicyAsync(AuthorizationServicesExtensions.RequireGlobalAdminPolicy);
 
         policy.Should().NotBeNull();
-        policy!.Requirements.OfType<RolesAuthorizationRequirement>()
-            .Should().ContainSingle(r => r.AllowedRoles.Contains(AuthorizationServicesExtensions.SystemAdminRole));
+        policy!.Requirements.OfType<JitRoleRequirement>()
+            .Should().ContainSingle(r => r.RequiredRole == AuthorizationServicesExtensions.SystemAdminRole);
     }
 }

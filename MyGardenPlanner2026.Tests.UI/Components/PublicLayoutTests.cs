@@ -48,6 +48,10 @@ public class PublicLayoutTests : BunitContext
     public void PublicLayout_RendersSkipLinkHeaderMainAndFooter()
     {
         // Act
+        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
+        module.SetupVoid("activate", _ => true);
+        module.SetupVoid("deactivate");
+
         var cut = Render<PublicLayout>();
 
         // Assert - Verificer tilgængeligheds-skiplink

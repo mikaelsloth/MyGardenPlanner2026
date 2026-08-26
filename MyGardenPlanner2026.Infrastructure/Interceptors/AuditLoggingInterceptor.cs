@@ -26,10 +26,6 @@ using System.Text.Json;
 /// </summary>
 public sealed class AuditLoggingInterceptor(ICurrentUserAccessor currentUser) : SaveChangesInterceptor
 {
-    //private const string PendingEntityIdPlaceholder = "(afventer)";
-
-    //private static readonly ConditionalWeakTable<DbContext, List<PendingCreateLog>> PendingCreateLogsByContext = [];
-
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,
@@ -44,21 +40,6 @@ public sealed class AuditLoggingInterceptor(ICurrentUserAccessor currentUser) : 
         WriteAuditEntries(eventData.Context);
         return base.SavingChanges(eventData, result);
     }
-
-    //public override async ValueTask<int> SavedChangesAsync(
-    //    SaveChangesCompletedEventData eventData,
-    //    int result,
-    //    CancellationToken cancellationToken = default)
-    //{
-    //    await FixUpPendingEntityIdsAsync(eventData.Context, cancellationToken);
-    //    return await base.SavedChangesAsync(eventData, result, cancellationToken);
-    //}
-
-    //public override int SavedChanges(SaveChangesCompletedEventData eventData, int result)
-    //{
-    //    FixUpPendingEntityIdsAsync(eventData.Context, CancellationToken.None).GetAwaiter().GetResult();
-    //    return base.SavedChanges(eventData, result);
-    //}
 
     private void WriteAuditEntries(DbContext? context)
     {
@@ -81,7 +62,6 @@ public sealed class AuditLoggingInterceptor(ICurrentUserAccessor currentUser) : 
         foreach (var entry in trackedEntries)
         {
             var action = DetermineAction(entry);
-            //var idIsKnownNow = IsEntityIdKnownNow(entry);
 
             var log = new AuditLog
             {
@@ -90,7 +70,6 @@ public sealed class AuditLoggingInterceptor(ICurrentUserAccessor currentUser) : 
                 IpAddress = user.IpAddress,
                 Action = action,
                 EntityName = entry.Entity.GetType().Name,
-                //EntityId = idIsKnownNow ? ResolveEntityId(entry) : PendingEntityIdPlaceholder,
                 EntityId = ResolveEntityId(entry),
                 OldValues = action == AuditAction.Create ? null : SerializeValues(entry, useOriginal: true),
                 NewValues = action == AuditAction.Delete ? null : SerializeValues(entry, useOriginal: false),
@@ -98,49 +77,8 @@ public sealed class AuditLoggingInterceptor(ICurrentUserAccessor currentUser) : 
             };
 
             context.Add(log);
-
-            //if (!idIsKnownNow)
-            //{
-            //    var pendingForThisContext = PendingCreateLogsByContext.GetOrCreateValue(context);
-            //    pendingForThisContext.Add(new PendingCreateLog(log, entry));
-            //}
         }
     }
-
-    //private static async Task FixUpPendingEntityIdsAsync(DbContext? context, CancellationToken cancellationToken)
-    //{
-    //    if (context is null)
-    //    {
-    //        return;
-    //    }
-
-    //    if (!PendingCreateLogsByContext.TryGetValue(context, out var pendingForThisContext) || pendingForThisContext.Count == 0)
-    //    {
-    //        return;
-    //    }
-
-    //    foreach (var pending in pendingForThisContext)
-    //    {
-    //        pending.Log.EntityId = ResolveEntityId(pending.Entry);
-    //    }
-
-    //    PendingCreateLogsByContext.Remove(context);
-
-    //    // Kun entities med database-genereret nøgle (fx int identity) rammer denne sti.
-    //    // For Guid-nøglede entities (ValueGeneratedNever) udløses dette kald aldrig.
-    //    await context.SaveChangesAsync(cancellationToken);
-    //}
-
-    //private static bool IsEntityIdKnownNow(EntityEntry<ISoftDelete> entry)
-    //{
-    //    var keyProperty = entry.Metadata.FindPrimaryKey()?.Properties.FirstOrDefault();
-    //    if (keyProperty is null)
-    //    {
-    //        return true;
-    //    }
-
-    //    return !entry.Property(keyProperty.Name).IsTemporary;
-    //}
 
     private static AuditAction DetermineAction(EntityEntry<ISoftDelete> entry)
     {
@@ -174,6 +112,4 @@ public sealed class AuditLoggingInterceptor(ICurrentUserAccessor currentUser) : 
 
         return JsonSerializer.Serialize(values);
     }
-
-    //private sealed record PendingCreateLog(AuditLog Log, EntityEntry<ISoftDelete> Entry);
 }

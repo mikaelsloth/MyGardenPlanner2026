@@ -9,7 +9,8 @@ builder.Services
     .AddDatabaseServices(builder.Configuration, provider)
     .AddIdentityServices()
     .AddAuthorizationServices()
-    .AddSubscriptionCatalogServices();
+    .AddSubscriptionCatalogServices()
+    .AddJitElevationServices();
 
 var app = builder.Build();
 

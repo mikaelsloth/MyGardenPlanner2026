@@ -26,6 +26,7 @@ public static class IdentityServicesExtensions
             options.SignIn.RequireConfirmedAccount = true;
             options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;
         })
+            .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<PlannerDbContext>()
             .AddSignInManager()
             .AddDefaultTokenProviders();

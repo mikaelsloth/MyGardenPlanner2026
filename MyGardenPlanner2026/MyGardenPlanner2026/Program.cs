@@ -8,6 +8,7 @@ builder.Services
     .AddBlazorServices()
     .AddDatabaseServices(builder.Configuration, provider)
     .AddIdentityServices()
+    .AddIdentityBootstrapSeeding(builder.Configuration)
     .AddAuthorizationServices()
     .AddSubscriptionCatalogServices()
     .AddJitElevationServices();
@@ -20,6 +21,9 @@ Console.WriteLine($"DatabaseProvider: {provider}");
 // 1.1 Add seeds in development
 if (app.Environment.IsDevelopment())
     await app.Services.AddDatabaseSeeds();
+
+// 1.2 Bootstrap SystemAdmin-rolle og -bruger (Development OG Production)
+await app.Services.SeedIdentityBootstrapAsync();
 
 // 2. HTTP Request Pipeline (Middleware)
 app.UseWebPipeline();

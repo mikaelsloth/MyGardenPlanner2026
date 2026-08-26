@@ -1,18 +1,14 @@
 ﻿@inherits LayoutComponentBase
 @namespace MyGardenPlanner2026.Components.Layout
 
-
 <div class="public-layout-shell d-flex flex-column min-vh-100">
     <!-- Accessibility Skip Link -->
     <a href="#main-content" class="sr-only sr-only-focusable btn btn-primary position-absolute p-2 m-2">
         Spring til hovedindhold
     </a>
 
-    <!-- Header -->
-    <PublicHeader @bind-IsMobileMenuOpen="isMobileMenuOpen" />
-
-    <!-- Mobile Navigation Drawer -->
-    <NavDrawer IsOpen="isMobileMenuOpen" OnClose="CloseMobileMenu" />
+    <!-- Header (ejer nu selv sin mobile nav-drawer) -->
+    <PublicHeader />
 
     <!-- Main Content Area -->
     <main id="main-content" class="public-main-content flex-grow-1">

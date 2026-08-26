@@ -1,18 +1,10 @@
 ﻿namespace MyGardenPlanner2026.Components.Layout;
 
-using Microsoft.AspNetCore.Components;
-
 public partial class PublicHeader
 {
-    [Parameter]
-    public bool IsMobileMenuOpen { get; set; }
+    private bool isMobileMenuOpen;
 
-    [Parameter]
-    public EventCallback<bool> IsMobileMenuOpenChanged { get; set; }
+    private void ToggleMobileMenu() => isMobileMenuOpen = !isMobileMenuOpen;
 
-    private async Task ToggleMobileMenu()
-    {
-        IsMobileMenuOpen = !IsMobileMenuOpen;
-        await IsMobileMenuOpenChanged.InvokeAsync(IsMobileMenuOpen);
-    }
+    private void CloseMobileMenu() => isMobileMenuOpen = false;
 }

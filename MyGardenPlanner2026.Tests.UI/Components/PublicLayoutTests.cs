@@ -11,6 +11,9 @@ public class PublicLayoutTests : BunitContext
     public void PublicHeader_RendersBrandAndNavigationButtons()
     {
         // Act
+        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
+        module.SetupVoid("activate", _ => true).SetVoidResult();
+        module.SetupVoid("deactivate").SetVoidResult();
         var cut = Render<PublicHeader>();
 
         // Assert

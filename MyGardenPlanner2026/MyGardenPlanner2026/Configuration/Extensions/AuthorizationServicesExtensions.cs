@@ -1,11 +1,12 @@
 ﻿namespace MyGardenPlanner2026.Configuration.Extensions;
 
 using MyGardenPlanner2026.Configuration.Authorization;
+using MyGardenPlanner2026.Core.Entities.Common;
 
 public static class AuthorizationServicesExtensions
 {
     public const string RequireGlobalAdminPolicy = "RequireGlobalAdmin";
-    public const string SystemAdminRole = "SystemAdmin";
+    public const string SystemAdminRole = RoleNames.SystemAdmin;
 
     public static IServiceCollection AddAuthorizationServices(this IServiceCollection services)
     {

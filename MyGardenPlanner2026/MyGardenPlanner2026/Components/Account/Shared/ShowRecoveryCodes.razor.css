@@ -1,0 +1,13 @@
+/* CSS for ShowRecoveryCodes component */
+.recovery-code-grid {
+    margin-top: var(--mgp-space-sm);
+}
+
+.recovery-code {
+    display: block;
+    padding: var(--mgp-space-xs) var(--mgp-space-sm);
+    background: var(--mgp-surface-muted);
+    border: 1px solid var(--mgp-border);
+    border-radius: var(--radius-sm);
+    text-align: center;
+}

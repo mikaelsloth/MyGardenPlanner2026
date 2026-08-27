@@ -1,29 +1,17 @@
-﻿@if (!string.IsNullOrEmpty(DisplayMessage))
+﻿﻿@if (!string.IsNullOrEmpty(DisplayMessage))
 {
-    var statusMessageClass = DisplayMessage.StartsWith("Error") ? "danger" : "success";
-    <div class="alert alert-@statusMessageClass" role="alert">
-        @DisplayMessage
-    </div>
-}
-
-@code {
-    private string? messageFromCookie;
-
-    [Parameter]
-    public string? Message { get; set; }
-
-    [CascadingParameter]
-    private HttpContext HttpContext { get; set; } = default!;
-
-    private string? DisplayMessage => Message ?? messageFromCookie;
-
-    protected override void OnInitialized()
+    @if (StatusVariant == "danger")
     {
-        messageFromCookie = HttpContext.Request.Cookies[IdentityRedirectManager.StatusCookieName];
-
-        if (messageFromCookie is not null)
-        {
-            HttpContext.Response.Cookies.Delete(IdentityRedirectManager.StatusCookieName);
-        }
+        <div class="status-message status-danger status-page" role="alert">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div class="status-message-text"><p>@DisplayMessage</p></div>
+        </div>
+    }
+    else
+    {
+        <div class="status-message status-success status-page" role="status" aria-live="polite">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div class="status-message-text"><p>@DisplayMessage</p></div>
+        </div>
     }
 }

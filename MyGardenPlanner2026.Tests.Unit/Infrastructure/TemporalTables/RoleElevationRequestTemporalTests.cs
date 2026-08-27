@@ -19,7 +19,7 @@ public class RoleElevationRequestTemporalTests : TestSqlExpressDbContext
             RequesterUserId = "user-1",
             RoleName = "SystemAdmin",
             Reason = "Temporal test.",
-            RequestedHours = 2
+            RequestedMinutes = 45
         };
         context.Add(request);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);

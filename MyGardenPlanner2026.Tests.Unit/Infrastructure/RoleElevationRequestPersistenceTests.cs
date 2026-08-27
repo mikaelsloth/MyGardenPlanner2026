@@ -20,7 +20,7 @@ public class RoleElevationRequestPersistenceTests : TestDbContext
             RequesterUserId = "user-1",
             RoleName = "SystemAdmin",
             Reason = "Skal rette en fejlkonfigureret rabat-trappe.",
-            RequestedHours = 4
+            RequestedMinutes = 60
         };
 
         context.Add(request);
@@ -45,7 +45,7 @@ public class RoleElevationRequestPersistenceTests : TestDbContext
             RequesterUserId = "user-1",
             RoleName = "DataAdmin",
             Reason = "Nulstiller volumenrabat-katalog.",
-            RequestedHours = 2
+            RequestedMinutes = 30
         };
         context.Add(request);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -79,7 +79,7 @@ public class RoleElevationRequestPersistenceTests : TestDbContext
             RequesterUserId = "user-3",
             RoleName = "AuditViewer",
             Reason = "Test.",
-            RequestedHours = 1
+            RequestedMinutes = 45
         };
         context.Add(request);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);

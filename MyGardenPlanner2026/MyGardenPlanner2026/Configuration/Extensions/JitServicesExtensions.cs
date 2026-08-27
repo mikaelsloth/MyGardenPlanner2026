@@ -7,8 +7,11 @@ using MyGardenPlanner2026.Infrastructure.Services;
 
 public static class JitServicesExtensions
 {
-    public static IServiceCollection AddJitElevationServices(this IServiceCollection services)
+    public static IServiceCollection AddJitElevationServices(this IServiceCollection services, IConfiguration configuration)
     {
+        services.Configure<JitElevationPolicyOptions>(
+            configuration.GetSection(JitElevationPolicyOptions.SectionName));
+
         services.AddScoped<IJitElevationService, JitElevationService>();
         services.AddScoped<IAuthorizationHandler, JitRoleAuthorizationHandler>();
 

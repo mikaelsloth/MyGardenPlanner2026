@@ -165,7 +165,7 @@ public class AuditLoggingInterceptorTests : TestDbContext
             RequesterUserId = "user-42",
             RoleName = "SystemAdmin",
             Reason = "Skal rette prisfejl.",
-            RequestedHours = 4
+            RequestedMinutes = 60
         };
         context.RoleElevationRequests.Add(request);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);

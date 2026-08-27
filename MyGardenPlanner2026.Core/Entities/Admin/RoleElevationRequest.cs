@@ -19,7 +19,7 @@ public class RoleElevationRequest : ISoftDelete
     public RoleElevationStatus Status { get; set; } = RoleElevationStatus.Pending;
 
     public string Reason { get; set; } = string.Empty;
-    public int RequestedHours { get; set; }
+    public int RequestedMinutes { get; set; }
 
     public DateTimeOffset? ValidFromUtc { get; set; }
     public DateTimeOffset? ValidToUtc { get; set; }

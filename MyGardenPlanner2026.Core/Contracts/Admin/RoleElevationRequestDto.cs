@@ -9,7 +9,7 @@ public sealed record RoleElevationRequestDto(
     string RoleName,
     RoleElevationStatus Status,
     string Reason,
-    int RequestedHours,
+    int RequestedMinutes,
     DateTimeOffset? ValidFromUtc,
     DateTimeOffset? ValidToUtc,
     DateTimeOffset CreatedAtUtc);

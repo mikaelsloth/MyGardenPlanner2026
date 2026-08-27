@@ -2,6 +2,7 @@
 
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Infrastructure.Services;
 using NSubstitute;
@@ -9,14 +10,17 @@ using Xunit;
 
 public class JitElevationServiceTests : TestDbContext
 {
-    private JitElevationService CreateService(params string[] knownRoles)
+    private JitElevationService CreateService(params string[] knownRoles) =>
+        CreateServiceWithPolicy(new JitElevationPolicyOptions(), knownRoles);
+
+    private JitElevationService CreateServiceWithPolicy(JitElevationPolicyOptions policy, params string[] knownRoles)
     {
         var store = Substitute.For<IRoleStore<IdentityRole>>();
         var roleManager = Substitute.For<RoleManager<IdentityRole>>(store, null, null, null, null);
         roleManager.RoleExistsAsync(Arg.Any<string>())
             .Returns(callInfo => Task.FromResult(knownRoles.Contains(callInfo.Arg<string>())));
 
-        return new JitElevationService(CreateAdminDbContextFactory(), roleManager);
+        return new JitElevationService(CreateAdminDbContextFactory(), roleManager, Options.Create(policy));
     }
 
     [Fact]
@@ -25,25 +29,66 @@ public class JitElevationServiceTests : TestDbContext
         var service = CreateService("SystemAdmin");
 
         var dto = await service.RequestElevationAsync(
-            "user-1", "SystemAdmin", 4, "Skal rette prisfejl.", TestContext.Current.CancellationToken);
+            "user-1", "SystemAdmin", 60, "Skal rette prisfejl.", TestContext.Current.CancellationToken);
 
         dto.Status.Should().Be(RoleElevationStatus.Pending);
         dto.RequesterUserId.Should().Be("user-1");
+        dto.RequestedMinutes.Should().Be(60);
         dto.ApproverUserId.Should().BeNull();
         dto.ValidFromUtc.Should().BeNull();
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(9)]
-    public async Task RequestElevationAsync_HoursOutsideOneToEight_ThrowsArgumentOutOfRangeException(int hours)
+    [InlineData(29)]
+    [InlineData(91)]
+    public async Task RequestElevationAsync_MinutesOutsideDefaultPolicyRange_ThrowsArgumentOutOfRangeException(int minutes)
     {
         var service = CreateService("SystemAdmin");
 
         var act = async () => await service.RequestElevationAsync(
-            "user-1", "SystemAdmin", hours, "Test.", TestContext.Current.CancellationToken);
+            "user-1", "SystemAdmin", minutes, "Test.", TestContext.Current.CancellationToken);
 
         await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+    }
+
+    [Theory]
+    [InlineData(30)]
+    [InlineData(90)]
+    public async Task RequestElevationAsync_MinutesAtPolicyBoundaries_Succeeds(int minutes)
+    {
+        var service = CreateService("SystemAdmin");
+
+        var dto = await service.RequestElevationAsync(
+            "user-1", "SystemAdmin", minutes, "Test.", TestContext.Current.CancellationToken);
+
+        dto.RequestedMinutes.Should().Be(minutes);
+    }
+
+    [Fact]
+    public async Task RequestElevationAsync_CustomPolicy_RespectsConfiguredBounds()
+    {
+        var policy = new JitElevationPolicyOptions { MinRequestedMinutes = 10, MaxRequestedMinutes = 15 };
+        var service = CreateServiceWithPolicy(policy, "SystemAdmin");
+
+        var withinBounds = async () => await service.RequestElevationAsync(
+            "user-1", "SystemAdmin", 12, "Test.", TestContext.Current.CancellationToken);
+        var outsideBounds = async () => await service.RequestElevationAsync(
+            "user-1", "SystemAdmin", 20, "Test.", TestContext.Current.CancellationToken);
+
+        await withinBounds.Should().NotThrowAsync();
+        await outsideBounds.Should().ThrowAsync<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public async Task RequestElevationAsync_MisconfiguredPolicy_ThrowsInvalidOperationException()
+    {
+        var policy = new JitElevationPolicyOptions { MinRequestedMinutes = 90, MaxRequestedMinutes = 30 };
+        var service = CreateServiceWithPolicy(policy, "SystemAdmin");
+
+        var act = async () => await service.RequestElevationAsync(
+            "user-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
     [Fact]
@@ -52,7 +97,7 @@ public class JitElevationServiceTests : TestDbContext
         var service = CreateService();
 
         var act = async () => await service.RequestElevationAsync(
-            "user-1", "GhostRole", 2, "Test.", TestContext.Current.CancellationToken);
+            "user-1", "GhostRole", 45, "Test.", TestContext.Current.CancellationToken);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
@@ -62,7 +107,7 @@ public class JitElevationServiceTests : TestDbContext
     {
         var service = CreateService("SystemAdmin");
         var request = await service.RequestElevationAsync(
-            "user-1", "SystemAdmin", 3, "Test.", TestContext.Current.CancellationToken);
+            "user-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
 
         var approved = await service.ApproveElevationAsync(
             "user-2", request.Id, TestContext.Current.CancellationToken);
@@ -70,7 +115,7 @@ public class JitElevationServiceTests : TestDbContext
         approved.Status.Should().Be(RoleElevationStatus.Approved);
         approved.ApproverUserId.Should().Be("user-2");
         approved.ValidFromUtc.Should().NotBeNull();
-        approved.ValidToUtc.Should().BeCloseTo(approved.ValidFromUtc!.Value.AddHours(3), TimeSpan.FromSeconds(2));
+        approved.ValidToUtc.Should().BeCloseTo(approved.ValidFromUtc!.Value.AddMinutes(45), TimeSpan.FromSeconds(2));
     }
 
     [Fact]
@@ -78,7 +123,7 @@ public class JitElevationServiceTests : TestDbContext
     {
         var service = CreateService("SystemAdmin");
         var request = await service.RequestElevationAsync(
-            "user-1", "SystemAdmin", 2, "Test.", TestContext.Current.CancellationToken);
+            "user-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
 
         var act = async () => await service.ApproveElevationAsync(
             "user-1", request.Id, TestContext.Current.CancellationToken);
@@ -91,7 +136,7 @@ public class JitElevationServiceTests : TestDbContext
     {
         var service = CreateService("SystemAdmin");
         var request = await service.RequestElevationAsync(
-            "user-1", "SystemAdmin", 2, "Test.", TestContext.Current.CancellationToken);
+            "user-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
         await service.ApproveElevationAsync("user-2", request.Id, TestContext.Current.CancellationToken);
 
         var act = async () => await service.ApproveElevationAsync(
@@ -105,7 +150,7 @@ public class JitElevationServiceTests : TestDbContext
     {
         var service = CreateService("SystemAdmin");
         var request = await service.RequestElevationAsync(
-            "user-1", "SystemAdmin", 2, "Test.", TestContext.Current.CancellationToken);
+            "user-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
 
         var rejected = await service.RejectElevationAsync(
             "user-2", request.Id, TestContext.Current.CancellationToken);
@@ -120,7 +165,7 @@ public class JitElevationServiceTests : TestDbContext
     {
         var service = CreateService("SystemAdmin");
         var request = await service.RequestElevationAsync(
-            "user-1", "SystemAdmin", 2, "Test.", TestContext.Current.CancellationToken);
+            "user-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
 
         var act = async () => await service.RejectElevationAsync(
             "user-1", request.Id, TestContext.Current.CancellationToken);
@@ -133,7 +178,7 @@ public class JitElevationServiceTests : TestDbContext
     {
         var service = CreateService("SystemAdmin");
         var request = await service.RequestElevationAsync(
-            "user-1", "SystemAdmin", 4, "Test.", TestContext.Current.CancellationToken);
+            "user-1", "SystemAdmin", 60, "Test.", TestContext.Current.CancellationToken);
         await service.ApproveElevationAsync("user-2", request.Id, TestContext.Current.CancellationToken);
 
         var result = await service.HasActiveElevationAsync(
@@ -147,7 +192,7 @@ public class JitElevationServiceTests : TestDbContext
     {
         var service = CreateService("SystemAdmin");
         await service.RequestElevationAsync(
-            "user-1", "SystemAdmin", 2, "Test.", TestContext.Current.CancellationToken);
+            "user-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
 
         var result = await service.HasActiveElevationAsync(
             "user-1", "SystemAdmin", TestContext.Current.CancellationToken);
@@ -160,7 +205,7 @@ public class JitElevationServiceTests : TestDbContext
     {
         var service = CreateService("SystemAdmin", "DataAdmin");
         var request = await service.RequestElevationAsync(
-            "user-1", "SystemAdmin", 2, "Test.", TestContext.Current.CancellationToken);
+            "user-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
         await service.ApproveElevationAsync("user-2", request.Id, TestContext.Current.CancellationToken);
 
         var result = await service.HasActiveElevationAsync(

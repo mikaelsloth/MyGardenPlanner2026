@@ -1,4 +1,4 @@
-﻿<script type="module" src="@Assets["Components/Layout/ReconnectModal.razor.js"]"></script>
+﻿﻿<script type="module" src="@Assets["Components/Layout/ReconnectModal.razor.js"]"></script>
 
 <dialog id="components-reconnect-modal" data-nosnippet>
     <div class="components-reconnect-container">
@@ -7,25 +7,25 @@
             <div></div>
         </div>
         <p class="components-reconnect-first-attempt-visible">
-            Rejoining the server...
+            Genopretter forbindelse til serveren...
         </p>
         <p class="components-reconnect-repeated-attempt-visible">
-            Rejoin failed... trying again in <span id="components-seconds-to-next-attempt"></span> seconds.
+            Kunne ikke genoprette forbindelsen... prøver igen om <span id="components-seconds-to-next-attempt"></span> sekunder.
         </p>
         <p class="components-reconnect-failed-visible">
-            Failed to rejoin.<br />Please retry or reload the page.
+            Kunne ikke genoprette forbindelsen.<br />Prøv igen, eller genindlæs siden.
         </p>
         <button id="components-reconnect-button" class="components-reconnect-failed-visible">
-            Retry
+            Prøv igen
         </button>
         <p class="components-pause-visible">
-            The session has been paused by the server.
+            Sessionen er blevet sat på pause af serveren.
         </p>
         <p class="components-resume-failed-visible">
-            Failed to resume the session.<br />Please retry or reload the page.
+            Kunne ikke genoptage sessionen.<br />Prøv igen, eller genindlæs siden.
         </p>
         <button id="components-resume-button" class="components-pause-visible components-resume-failed-visible">
-            Resume
+            Genoptag
         </button>
     </div>
 </dialog>

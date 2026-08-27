@@ -21,30 +21,28 @@
 
 
 #components-reconnect-modal {
-    background-color: white;
+    background-color: var(--mgp-surface);
     width: 20rem;
     margin: 20vh auto;
-    padding: 2rem;
+    padding: var(--mgp-space-xl);
     border: 0;
-    border-radius: 0.5rem;
-    box-shadow: 0 3px 6px 2px rgba(0, 0, 0, 0.3);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
     opacity: 0;
     transition: display 0.5s allow-discrete, overlay 0.5s allow-discrete;
     animation: components-reconnect-modal-fadeOutOpacity 0.5s both;
-    &[open]
 
-{
-    animation: components-reconnect-modal-slideUp 1.5s cubic-bezier(.05, .89, .25, 1.02) 0.3s, components-reconnect-modal-fadeInOpacity 0.5s ease-in-out 0.3s;
-    animation-fill-mode: both;
+    &[open] {
+        animation: components-reconnect-modal-slideUp 1.5s cubic-bezier(.05, .89, .25, 1.02) 0.3s, components-reconnect-modal-fadeInOpacity 0.5s ease-in-out 0.3s;
+        animation-fill-mode: both;
+    }
 }
 
-}
-
-#components-reconnect-modal::backdrop {
-    background-color: rgba(0, 0, 0, 0.4);
-    animation: components-reconnect-modal-fadeInOpacity 0.5s ease-in-out;
-    opacity: 1;
-}
+    #components-reconnect-modal::backdrop {
+        background-color: rgba(0, 0, 0, 0.4);
+        animation: components-reconnect-modal-fadeInOpacity 0.5s ease-in-out;
+        opacity: 1;
+    }
 
 @keyframes components-reconnect-modal-slideUp {
     0% {
@@ -80,7 +78,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1rem;
+    gap: var(--mgp-space-md);
 }
 
 #components-reconnect-modal p {
@@ -90,18 +88,18 @@
 
 #components-reconnect-modal button {
     border: 0;
-    background-color: #6b9ed2;
-    color: white;
+    background-color: var(--mgp-button-primary-bg);
+    color: var(--mgp-button-primary-text);
     padding: 4px 24px;
-    border-radius: 4px;
+    border-radius: var(--radius-sm);
 }
 
     #components-reconnect-modal button:hover {
-        background-color: #3b6ea2;
+        background-color: var(--mgp-primary-dark);
     }
 
     #components-reconnect-modal button:active {
-        background-color: #6b9ed2;
+        background-color: var(--mgp-button-primary-bg);
     }
 
 .components-rejoining-animation {
@@ -112,7 +110,7 @@
 
     .components-rejoining-animation div {
         position: absolute;
-        border: 3px solid #0087ff;
+        border: 3px solid var(--mgp-primary);
         opacity: 1;
         border-radius: 50%;
         animation: components-rejoining-animation 1.5s cubic-bezier(0, 0.2, 0.8, 1) infinite;

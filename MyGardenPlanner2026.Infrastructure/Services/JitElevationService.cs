@@ -19,7 +19,8 @@ using MyGardenPlanner2026.Infrastructure.Data;
 public sealed class JitElevationService(
     IAdminDbContextFactory contextFactory,
     RoleManager<IdentityRole> roleManager,
-    IOptions<JitElevationPolicyOptions> policyOptions) : IJitElevationService
+    IOptions<JitElevationPolicyOptions> policyOptions,
+    TimeProvider timeProvider) : IJitElevationService
 {
     public async Task<RoleElevationRequestDto> RequestElevationAsync(
         string userId, string roleName, int minutes, string reason, CancellationToken cancellationToken = default)
@@ -73,7 +74,7 @@ public sealed class JitElevationService(
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
         var request = await LoadPendingRequestAsync(context, approverUserId, requestId, "godkendes", cancellationToken);
 
-        var now = DateTimeOffset.UtcNow;
+        var now = timeProvider.GetUtcNow();
         request.Status = RoleElevationStatus.Approved;
         request.ApproverUserId = approverUserId;
         request.ValidFromUtc = now;
@@ -114,7 +115,7 @@ public sealed class JitElevationService(
                 && r.Status == RoleElevationStatus.Approved)
             .ToListAsync(cancellationToken);
 
-        var now = DateTimeOffset.UtcNow;
+        var now = timeProvider.GetUtcNow();
         return approvedRequests.Any(r => r.ValidFromUtc <= now && r.ValidToUtc >= now);
     }
 
@@ -125,18 +126,12 @@ public sealed class JitElevationService(
             .SingleOrDefaultAsync(r => r.Id == requestId, cancellationToken)
             ?? throw new InvalidOperationException($"Ingen elevations-anmodning fundet med Id {requestId}.");
 
-        if (request.RequesterUserId == approverUserId)
-        {
-            throw new InvalidOperationException(
-                $"Anmodningen kan ikke {action} af ansøgeren selv (dual-custody / peer approval).");
-        }
-
-        if (request.Status != RoleElevationStatus.Pending)
-        {
-            throw new InvalidOperationException($"Anmodningen kan ikke {action} fra status '{request.Status}'.");
-        }
-
-        return request;
+        return request.RequesterUserId == approverUserId
+            ? throw new InvalidOperationException(
+                $"Anmodningen kan ikke {action} af ansøgeren selv (dual-custody / peer approval).")
+            : request.Status != RoleElevationStatus.Pending
+            ? throw new InvalidOperationException($"Anmodningen kan ikke {action} fra status '{request.Status}'.")
+            : request;
     }
 
     private static RoleElevationRequestDto ToDto(RoleElevationRequest request) => new(

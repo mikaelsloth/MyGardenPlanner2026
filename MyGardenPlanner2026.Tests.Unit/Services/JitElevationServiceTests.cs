@@ -20,7 +20,18 @@ public class JitElevationServiceTests : TestDbContext
         roleManager.RoleExistsAsync(Arg.Any<string>())
             .Returns(callInfo => Task.FromResult(knownRoles.Contains(callInfo.Arg<string>())));
 
-        return new JitElevationService(CreateAdminDbContextFactory(), roleManager, Options.Create(policy));
+        return new JitElevationService(CreateAdminDbContextFactory(), roleManager, Options.Create(policy), TimeProvider.System);
+    }
+
+    private JitElevationService CreateServiceWithTimeProvider(TimeProvider timeProvider, params string[] knownRoles)
+    {
+        var store = Substitute.For<IRoleStore<IdentityRole>>();
+        var roleManager = Substitute.For<RoleManager<IdentityRole>>(store, null, null, null, null);
+        roleManager.RoleExistsAsync(Arg.Any<string>())
+            .Returns(callInfo => Task.FromResult(knownRoles.Contains(callInfo.Arg<string>())));
+
+        return new JitElevationService(
+            CreateAdminDbContextFactory(), roleManager, Options.Create(new JitElevationPolicyOptions()), timeProvider);
     }
 
     [Fact]
@@ -210,6 +221,42 @@ public class JitElevationServiceTests : TestDbContext
 
         var result = await service.HasActiveElevationAsync(
             "user-1", "DataAdmin", TestContext.Current.CancellationToken);
+
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task HasActiveElevationAsync_ExactlyAtValidToUtc_ReturnsTrue()
+    {
+        var timeProvider = new TestTimeProvider(new DateTimeOffset(2026, 8, 28, 10, 0, 0, TimeSpan.Zero));
+        var service = CreateServiceWithTimeProvider(timeProvider, "SystemAdmin");
+
+        var request = await service.RequestElevationAsync(
+            "user-1", "SystemAdmin", 60, "Test.", TestContext.Current.CancellationToken);
+        await service.ApproveElevationAsync("user-2", request.Id, TestContext.Current.CancellationToken);
+
+        timeProvider.Advance(TimeSpan.FromMinutes(60));
+
+        var result = await service.HasActiveElevationAsync(
+            "user-1", "SystemAdmin", TestContext.Current.CancellationToken);
+
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task HasActiveElevationAsync_OneSecondAfterValidToUtc_ReturnsFalse()
+    {
+        var timeProvider = new TestTimeProvider(new DateTimeOffset(2026, 8, 28, 10, 0, 0, TimeSpan.Zero));
+        var service = CreateServiceWithTimeProvider(timeProvider, "SystemAdmin");
+
+        var request = await service.RequestElevationAsync(
+            "user-1", "SystemAdmin", 60, "Test.", TestContext.Current.CancellationToken);
+        await service.ApproveElevationAsync("user-2", request.Id, TestContext.Current.CancellationToken);
+
+        timeProvider.Advance(TimeSpan.FromMinutes(60) + TimeSpan.FromSeconds(1));
+
+        var result = await service.HasActiveElevationAsync(
+            "user-1", "SystemAdmin", TestContext.Current.CancellationToken);
 
         result.Should().BeFalse();
     }

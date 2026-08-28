@@ -12,6 +12,7 @@ public static class JitServicesExtensions
         services.Configure<JitElevationPolicyOptions>(
             configuration.GetSection(JitElevationPolicyOptions.SectionName));
 
+        services.AddSingleton(TimeProvider.System);
         services.AddScoped<IJitElevationService, JitElevationService>();
         services.AddScoped<IAuthorizationHandler, JitRoleAuthorizationHandler>();
 

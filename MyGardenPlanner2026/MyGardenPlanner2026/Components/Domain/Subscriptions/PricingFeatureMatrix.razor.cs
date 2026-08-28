@@ -9,11 +9,10 @@ public partial class PricingFeatureMatrix
     public List<SubscriptionTierDto> Tiers { get; set; } = [];
 
     private IReadOnlyList<string> FeatureKeys =>
-        Tiers
+        [.. Tiers
             .SelectMany(t => t.FeatureLimits.Keys)
             .Distinct()
-            .OrderBy(k => k, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+            .OrderBy(k => k, StringComparer.OrdinalIgnoreCase)];
 
     private static string GetLimitValue(SubscriptionTierDto tier, string featureKey) =>
         tier.FeatureLimits.TryGetValue(featureKey, out var value) ? value : "–";

@@ -5,11 +5,9 @@
 /// (fx udløbsgrænser). Starter ved en fast konstruktør-angivet tid og rykkes
 /// kun fremad eksplicit via Advance/SetUtcNow — aldrig af det reelle ur.
 /// </summary>
-public sealed class TestTimeProvider : TimeProvider
+public sealed class TestTimeProvider(DateTimeOffset start) : TimeProvider
 {
-    private DateTimeOffset _utcNow;
-
-    public TestTimeProvider(DateTimeOffset start) => _utcNow = start;
+    private DateTimeOffset _utcNow = start;
 
     public override DateTimeOffset GetUtcNow() => _utcNow;
 

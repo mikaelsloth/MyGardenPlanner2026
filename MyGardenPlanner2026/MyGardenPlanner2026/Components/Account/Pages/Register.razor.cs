@@ -80,11 +80,9 @@ public partial class Register
 
     private IUserEmailStore<ApplicationUser> GetEmailStore()
     {
-        if (!UserManager.SupportsUserEmail)
-        {
-            throw new NotSupportedException("The default UI requires a user store with email support.");
-        }
-        return (IUserEmailStore<ApplicationUser>)UserStore;
+        return !UserManager.SupportsUserEmail
+            ? throw new NotSupportedException("The default UI requires a user store with email support.")
+            : (IUserEmailStore<ApplicationUser>)UserStore;
     }
 
     private sealed class InputModel

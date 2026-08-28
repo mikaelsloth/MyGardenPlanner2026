@@ -17,13 +17,21 @@ using MyGardenPlanner2026.Core.Entities.Common;
 /// produktion. Mangler konfiguration, springes brugerbootstrap over (rollen oprettes
 /// stadig, så JIT-anmodninger til SystemAdmin er mulige), og der logges en advarsel.
 /// </summary>
-public sealed class IdentityBootstrapSeeder(
+public sealed partial class IdentityBootstrapSeeder(
     UserManager<ApplicationUser> userManager,
     RoleManager<IdentityRole> roleManager,
     IOptions<InitialAdminOptions> options,
     ILogger<IdentityBootstrapSeeder> logger)
 {
+    [LoggerMessage(EventId = 1006, Level = LogLevel.Information, Message = "Eksisterende bruger '{Email}' tilføjet til SystemAdmin-rollen.")]
+    static partial void UserAddedAsAdmin(ILogger logger, string Email);
+
+    [LoggerMessage(EventId = 1007, Level = LogLevel.Information, Message = "Initial SystemAdmin-bruger '{Email}' oprettet og tildelt rollen.")]
+    static partial void InitialAdminCreated(ILogger logger, string Email);
+
+#pragma warning disable IDE0060 // Remove unused parameter
     public async Task SeedAsync(CancellationToken cancellationToken = default)
+#pragma warning restore IDE0060 // Remove unused parameter
     {
         await EnsureRoleExistsAsync(RoleNames.SystemAdmin);
 
@@ -47,7 +55,7 @@ public sealed class IdentityBootstrapSeeder(
         if (existingUser is not null)
         {
             await AddToSystemAdminRoleAsync(existingUser);
-            logger.LogInformation("Eksisterende bruger '{Email}' tilføjet til SystemAdmin-rollen.", adminOptions.Email);
+            UserAddedAsAdmin(logger, adminOptions.Email);
             return;
         }
 
@@ -66,7 +74,7 @@ public sealed class IdentityBootstrapSeeder(
         }
 
         await AddToSystemAdminRoleAsync(user);
-        logger.LogInformation("Initial SystemAdmin-bruger '{Email}' oprettet og tildelt rollen.", adminOptions.Email);
+        InitialAdminCreated(logger, adminOptions.Email);
     }
 
     private async Task EnsureRoleExistsAsync(string roleName)

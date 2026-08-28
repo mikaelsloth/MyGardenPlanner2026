@@ -34,7 +34,7 @@ public class SubscriptionAddOnServiceTests : TestDbContext
 
         var result = await service.GetAllAddOnsAsync(TestContext.Current.CancellationToken);
 
-        result.First().Name.Should().Be("Bedforslag (Niveau 2)");
-        result.Last().Name.Should().Be("Artefaktpakke B");
+        result[0].Name.Should().Be("Bedforslag (Niveau 2)");
+        result[result.Count - 1].Name.Should().Be("Artefaktpakke B");
     }
 }

@@ -20,6 +20,9 @@ public partial class LoginWith2fa
     [SupplyParameterFromQuery]
     private bool RememberMe { get; set; }
 
+    [LoggerMessage(EventId = 1004, Level = LogLevel.Information, Message = "User with ID '{UserId}' logged in with 2fa.")]
+    static partial void UserLoggedIn(ILogger logger, string? UserId);
+
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();
@@ -36,7 +39,7 @@ public partial class LoginWith2fa
 
         if (result.Succeeded)
         {
-            Logger.LogInformation("User with ID '{UserId}' logged in with 2fa.", userId);
+            UserLoggedIn(Logger, userId);
             RedirectManager.RedirectTo(ReturnUrl);
         }
         else if (result.IsLockedOut)

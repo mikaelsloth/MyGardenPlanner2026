@@ -17,6 +17,9 @@ public partial class LoginWithRecoveryCode
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
 
+    [LoggerMessage(EventId = 1005, Level = LogLevel.Information, Message = "User with ID '{UserId}' logged in with a recovery code.")]
+    static partial void UserLoggedIn(ILogger logger, string? UserId);
+
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();
@@ -35,7 +38,7 @@ public partial class LoginWithRecoveryCode
 
         if (result.Succeeded)
         {
-            Logger.LogInformation("User with ID '{UserId}' logged in with a recovery code.", userId);
+            UserLoggedIn(Logger, userId);
             RedirectManager.RedirectTo(ReturnUrl);
         }
         else if (result.IsLockedOut)

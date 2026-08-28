@@ -14,7 +14,7 @@ public class ShowRecoveryCodesTests : BunitContext
         var httpContext = new DefaultHttpContext();
         var cut = Render<ShowRecoveryCodes>(parameters => parameters
             .AddCascadingValue(httpContext)
-            .Add(p => p.RecoveryCodes, new[] { "ABCD-1234", "EFGH-5678" }));
+            .Add(p => p.RecoveryCodes, ["ABCD-1234", "EFGH-5678"]));
 
         cut.FindAll("code.recovery-code").Should().HaveCount(2);
         cut.Markup.Should().Contain("ABCD-1234");
@@ -27,7 +27,7 @@ public class ShowRecoveryCodesTests : BunitContext
         var httpContext = new DefaultHttpContext();
         var cut = Render<ShowRecoveryCodes>(parameters => parameters
             .AddCascadingValue(httpContext)
-            .Add(p => p.RecoveryCodes, new[] { "ABCD-1234" }));
+            .Add(p => p.RecoveryCodes, ["ABCD-1234"]));
 
         cut.Find(".status-warning").Should().NotBeNull();
     }

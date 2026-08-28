@@ -59,6 +59,7 @@ public abstract class TestSqlExpressDbContext : IDisposable
             context.Database.Migrate();
             _databaseCreated = true;
         }
+
         return context;
     }
 
@@ -69,6 +70,7 @@ public abstract class TestSqlExpressDbContext : IDisposable
             using var context = new PlannerDbContext(_contextOptions);
             context.Database.EnsureDeleted();
         }
+
         GC.SuppressFinalize(this);
     }
 }

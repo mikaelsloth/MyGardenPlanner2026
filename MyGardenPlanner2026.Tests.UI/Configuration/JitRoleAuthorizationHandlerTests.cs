@@ -19,6 +19,7 @@ public class JitRoleAuthorizationHandlerTests
         {
             claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
         }
+
         if (inRole)
         {
             claims.Add(new Claim(ClaimTypes.Role, RequiredRole));

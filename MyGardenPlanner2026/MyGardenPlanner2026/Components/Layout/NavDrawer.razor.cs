@@ -81,6 +81,7 @@ public partial class NavDrawer : IAsyncDisposable
             }
 
             await module.DisposeAsync();
+            GC.SuppressFinalize(this);
         }
         catch (JSDisconnectedException)
         {

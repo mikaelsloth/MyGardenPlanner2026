@@ -35,6 +35,12 @@ public partial class ExternalLogin
 
     private string? ProviderDisplayName => externalLoginInfo?.ProviderDisplayName;
 
+    [LoggerMessage(EventId = 1003, Level = LogLevel.Information, Message = "User created an account using {Name} provider.")]
+    static partial void UserCreatedAccount(ILogger logger, string? name);
+
+    [LoggerMessage(EventId = 1001, Level = LogLevel.Information, Message = "{Name} logged in with {LoginProvider} provider.")]
+    static partial void UserLoggedIn(ILogger logger, string? name, string LoginProvider);
+
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();
@@ -82,9 +88,7 @@ public partial class ExternalLogin
 
         if (result.Succeeded)
         {
-            Logger.LogInformation(
-                "{Name} logged in with {LoginProvider} provider.",
-                externalLoginInfo.Principal.Identity?.Name,
+            UserLoggedIn(Logger, externalLoginInfo.Principal.Identity?.Name,
                 externalLoginInfo.LoginProvider);
             RedirectManager.RedirectTo(ReturnUrl);
             return;
@@ -121,7 +125,7 @@ public partial class ExternalLogin
             result = await UserManager.AddLoginAsync(user, externalLoginInfo);
             if (result.Succeeded)
             {
-                Logger.LogInformation("User created an account using {Name} provider.", externalLoginInfo.LoginProvider);
+                UserCreatedAccount(Logger, externalLoginInfo.LoginProvider);
 
                 var userId = await UserManager.GetUserIdAsync(user);
                 var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);

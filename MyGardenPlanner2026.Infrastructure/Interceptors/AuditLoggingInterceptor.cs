@@ -7,6 +7,7 @@ using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 /// <summary>
 /// Registrerer Create/Update/Delete på alle entities der implementerer ISoftDelete
@@ -26,6 +27,11 @@ using System.Text.Json;
 /// </summary>
 public sealed class AuditLoggingInterceptor(ICurrentUserAccessor currentUser) : SaveChangesInterceptor
 {
+    private static readonly JsonSerializerOptions SerializationOptions = new()
+    {
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,
@@ -110,6 +116,6 @@ public sealed class AuditLoggingInterceptor(ICurrentUserAccessor currentUser) : 
             values[property.Metadata.Name] = useOriginal ? property.OriginalValue : property.CurrentValue;
         }
 
-        return JsonSerializer.Serialize(values);
+        return JsonSerializer.Serialize(values, SerializationOptions);
     }
 }

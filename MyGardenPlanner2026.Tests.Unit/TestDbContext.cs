@@ -50,6 +50,19 @@ public abstract class TestDbContext : IDisposable
         return new AdminDbContextFactory(pooled);
     }
 
+    protected IAdminDbContextFactory CreateAdminDbContextFactoryWithInterceptors(params IInterceptor[] interceptors)
+    {
+        var options = new DbContextOptionsBuilder<PlannerDbContext>()
+            .UseSqlite(_connection)
+            .AddInterceptors(interceptors)
+            .EnableSensitiveDataLogging()
+            .LogTo(Console.WriteLine, LogLevel.Information)
+            .Options;
+
+        var pooled = new PooledDbContextFactory<PlannerDbContext>(options);
+        return new AdminDbContextFactory(pooled);
+    }
+
     protected PlannerDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<PlannerDbContext>()

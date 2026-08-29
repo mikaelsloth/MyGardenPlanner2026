@@ -16,9 +16,21 @@ public class IdentityBootstrapSeederTests
         Substitute.For<UserManager<ApplicationUser>>(
             Substitute.For<IUserStore<ApplicationUser>>(), null, null, null, null, null, null, null, null);
 
-    private static RoleManager<IdentityRole> CreateRoleManager() =>
-        Substitute.For<RoleManager<IdentityRole>>(
+    private static RoleManager<IdentityRole> CreateRoleManager()
+    {
+        var roleManager = Substitute.For<RoleManager<IdentityRole>>(
             Substitute.For<IRoleStore<IdentityRole>>(), null, null, null, null);
+
+        // Standardadfærd for alle roller, medmindre en test eksplicit overstyrer for en
+        // specifik rolle: rollen "findes allerede" (ingen CreateAsync-kald), og hvis en
+        // test alligevel lader en rolle "ikke findes", lykkes oprettelsen som fallback.
+        // Forhindrer NullReferenceException i EnsureRoleExistsAsync for roller (DataAdmin/
+        // PolicyAdmin/AuditViewer), som den enkelte test ikke selv stubber.
+        roleManager.RoleExistsAsync(Arg.Any<string>()).Returns(Task.FromResult(true));
+        roleManager.CreateAsync(Arg.Any<IdentityRole>()).Returns(Task.FromResult(IdentityResult.Success));
+
+        return roleManager;
+    }
 
     private static IdentityBootstrapSeeder CreateSeeder(
         UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, InitialAdminOptions options) =>
@@ -148,5 +160,42 @@ public class IdentityBootstrapSeederTests
         var act = async () => await seeder.SeedAsync();
 
         await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*Password too weak*");
+    }
+
+    [Theory]
+    [InlineData(RoleNames.DataAdmin)]
+    [InlineData(RoleNames.PolicyAdmin)]
+    [InlineData(RoleNames.AuditViewer)]
+    public async Task SeedAsync_AdditionalRoleDoesNotExist_CreatesRole(string roleName)
+    {
+        var userManager = CreateUserManager();
+        var roleManager = CreateRoleManager();
+        roleManager.RoleExistsAsync(Arg.Any<string>()).Returns(Task.FromResult(false));
+        roleManager.CreateAsync(Arg.Any<IdentityRole>()).Returns(Task.FromResult(IdentityResult.Success));
+        userManager.GetUsersInRoleAsync(RoleNames.SystemAdmin).Returns(Task.FromResult<IList<ApplicationUser>>([]));
+
+        var seeder = CreateSeeder(userManager, roleManager, new InitialAdminOptions());
+
+        await seeder.SeedAsync(TestContext.Current.CancellationToken);
+
+        await roleManager.Received().CreateAsync(Arg.Is<IdentityRole>(r => r.Name == roleName));
+    }
+
+    [Fact]
+    public async Task SeedAsync_ChecksExistenceForAllFourRoles()
+    {
+        var userManager = CreateUserManager();
+        var roleManager = CreateRoleManager();
+        roleManager.RoleExistsAsync(Arg.Any<string>()).Returns(Task.FromResult(true));
+        userManager.GetUsersInRoleAsync(RoleNames.SystemAdmin).Returns(Task.FromResult<IList<ApplicationUser>>([]));
+
+        var seeder = CreateSeeder(userManager, roleManager, new InitialAdminOptions());
+
+        await seeder.SeedAsync(TestContext.Current.CancellationToken);
+
+        await roleManager.Received(1).RoleExistsAsync(RoleNames.SystemAdmin);
+        await roleManager.Received(1).RoleExistsAsync(RoleNames.DataAdmin);
+        await roleManager.Received(1).RoleExistsAsync(RoleNames.PolicyAdmin);
+        await roleManager.Received(1).RoleExistsAsync(RoleNames.AuditViewer);
     }
 }

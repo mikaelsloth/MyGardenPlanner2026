@@ -29,11 +29,19 @@ public sealed partial class IdentityBootstrapSeeder(
     [LoggerMessage(EventId = 1007, Level = LogLevel.Information, Message = "Initial SystemAdmin-bruger '{Email}' oprettet og tildelt rollen.")]
     static partial void InitialAdminCreated(ILogger logger, string Email);
 
+    private static readonly string[] AdditionalRoles =
+    [RoleNames.DataAdmin, RoleNames.PolicyAdmin, RoleNames.AuditViewer];
+
 #pragma warning disable IDE0060 // Remove unused parameter
     public async Task SeedAsync(CancellationToken cancellationToken = default)
 #pragma warning restore IDE0060 // Remove unused parameter
     {
         await EnsureRoleExistsAsync(RoleNames.SystemAdmin);
+
+        foreach (var roleName in AdditionalRoles)
+        {
+            await EnsureRoleExistsAsync(roleName);
+        }
 
         var existingMembers = await userManager.GetUsersInRoleAsync(RoleNames.SystemAdmin);
         if (existingMembers.Count > 0)

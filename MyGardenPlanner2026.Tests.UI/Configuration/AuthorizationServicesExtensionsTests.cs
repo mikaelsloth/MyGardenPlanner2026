@@ -72,4 +72,32 @@ public class AuthorizationServicesExtensionsTests
         policy!.Requirements.OfType<JitRoleRequirement>()
             .Should().ContainSingle(r => r.RequiredRole == AuthorizationServicesExtensions.AuditViewerRole);
     }
+
+    [Theory]
+    [InlineData("RequireGlobalAdmin")]
+    [InlineData("RequireDataAdmin")]
+    [InlineData("RequirePolicyAdmin")]
+    [InlineData("RequireAuditViewer")]
+    public async Task AddAuthorizationServices_AdminPolicies_AlsoRequireMfaRequirement(string policyName)
+    {
+        var services = new ServiceCollection();
+        services.AddAuthorizationServices();
+
+        await using var provider = services.BuildServiceProvider();
+        var policyProvider = provider.GetRequiredService<IAuthorizationPolicyProvider>();
+
+        var policy = await policyProvider.GetPolicyAsync(policyName);
+
+        policy!.Requirements.OfType<MfaRequirement>().Should().ContainSingle();
+    }
+
+    [Fact]
+    public void AddAuthorizationServices_RegistersMfaAuthorizationHandler()
+    {
+        var services = new ServiceCollection();
+        services.AddAuthorizationServices();
+
+        services.Should().Contain(d =>
+            d.ServiceType == typeof(IAuthorizationHandler) && d.ImplementationType == typeof(MfaAuthorizationHandler));
+    }
 }

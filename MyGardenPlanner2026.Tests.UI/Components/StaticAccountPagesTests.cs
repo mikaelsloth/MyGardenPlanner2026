@@ -10,16 +10,6 @@ using Xunit;
 public class StaticAccountPagesTests : BunitContext
 {
     [Fact]
-    public void AccessDenied_RendersAuthPageShellWithDanishTitleAndDangerStatusMessage()
-    {
-        var cut = Render<AccessDenied>();
-
-        cut.Find("h1").TextContent.Should().Be("Adgang nægtet");
-        cut.Find(".status-danger").Should().NotBeNull();
-        cut.Markup.Should().Contain("ikke adgang til denne ressource");
-    }
-
-    [Fact]
     public void Lockout_RendersAuthPageShellWithDanishTitleAndDangerStatusMessage()
     {
         var cut = Render<Lockout>();

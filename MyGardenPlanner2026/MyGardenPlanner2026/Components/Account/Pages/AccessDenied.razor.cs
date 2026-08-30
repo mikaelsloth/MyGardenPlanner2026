@@ -12,9 +12,19 @@ public partial class AccessDenied
     protected override async Task OnInitializedAsync()
     {
         var user = await UserManager.GetUserAsync(HttpContext.User);
-        if (user is not null)
+        if (user is null)
         {
-            requiresTwoFactorSetup = !await UserManager.GetTwoFactorEnabledAsync(user);
+            return;
+        }
+
+        requiresTwoFactorSetup = !await UserManager.GetTwoFactorEnabledAsync(user);
+
+        if (requiresTwoFactorSetup)
+        {
+            RedirectManager.RedirectToWithStatus(
+                "Account/Manage/EnableAuthenticator",
+                "Adgang til denne funktion kræver, at du har totrinsbekræftelse aktiveret på din konto.",
+                HttpContext);
         }
     }
 }

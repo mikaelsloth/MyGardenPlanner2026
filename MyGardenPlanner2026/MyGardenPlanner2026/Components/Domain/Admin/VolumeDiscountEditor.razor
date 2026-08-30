@@ -1,5 +1,7 @@
 ﻿@namespace MyGardenPlanner2026.Components.Domain.Admin
+
 @using System.Globalization
+@using MyGardenPlanner2026.Components.Account.Shared
 
 <div class="volume-discount-editor" data-density="default">
     @if (errorMessage is not null)
@@ -101,4 +103,5 @@
             <button type="button" class="btn btn-danger" @onclick="RequestReset">Nulstil til standardkatalog</button>
         }
     </div>
+    <StepUpReAuthModal IsOpen="showStepUpModal" OnReAuthenticated="ExecutePendingActionAsync" OnCancel="CancelStepUp" />
 </div>

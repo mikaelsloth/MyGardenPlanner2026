@@ -1,5 +1,7 @@
 ﻿@namespace MyGardenPlanner2026.Components.Domain.Admin
+
 @using System.Globalization
+@using MyGardenPlanner2026.Components.Account.Shared
 
 <div class="base-price-matrix-editor" data-density="default">
     @if (errorMessage is not null)
@@ -56,4 +58,5 @@
             </tbody>
         </table>
     </div>
+    <StepUpReAuthModal IsOpen="showStepUpModal" OnReAuthenticated="ExecutePendingActionAsync" OnCancel="CancelStepUp" />
 </div>

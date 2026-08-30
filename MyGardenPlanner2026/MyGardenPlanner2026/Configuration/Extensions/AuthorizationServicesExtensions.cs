@@ -10,6 +10,7 @@ public static class AuthorizationServicesExtensions
     public const string RequireDataAdminPolicy = "RequireDataAdmin";
     public const string RequirePolicyAdminPolicy = "RequirePolicyAdmin";
     public const string RequireAuditViewerPolicy = "RequireAuditViewer";
+    public const string RequireRecentAuthenticationPolicy = "RequireRecentAuthentication";   // NY
 
     public const string SystemAdminRole = RoleNames.SystemAdmin;
     public const string DataAdminRole = RoleNames.DataAdmin;
@@ -19,13 +20,15 @@ public static class AuthorizationServicesExtensions
     public static IServiceCollection AddAuthorizationServices(this IServiceCollection services)
     {
         services.AddScoped<IAuthorizationHandler, MfaAuthorizationHandler>();
+        services.AddScoped<IAuthorizationHandler, RequireRecentAuthenticationHandler>();   // NY
 
         services.AddAuthorizationBuilder()
             .AddPolicy(RequireGlobalAdminPolicy, policy => policy.RequireRole(SystemAdminRole))
             .AddPolicy(RequireGlobalAdminPolicy, policy => policy.RequireJitRole(SystemAdminRole).AddRequirements(new MfaRequirement()))
             .AddPolicy(RequireDataAdminPolicy, policy => policy.RequireJitRole(DataAdminRole).AddRequirements(new MfaRequirement()))
             .AddPolicy(RequirePolicyAdminPolicy, policy => policy.RequireJitRole(PolicyAdminRole).AddRequirements(new MfaRequirement()))
-            .AddPolicy(RequireAuditViewerPolicy, policy => policy.RequireJitRole(AuditViewerRole).AddRequirements(new MfaRequirement()));
+            .AddPolicy(RequireAuditViewerPolicy, policy => policy.RequireJitRole(AuditViewerRole).AddRequirements(new MfaRequirement()))
+            .AddPolicy(RequireRecentAuthenticationPolicy, policy => policy.RequireAuthenticatedUser().AddRequirements(new RequireRecentAuthenticationRequirement()));   // NY
 
         return services;
     }

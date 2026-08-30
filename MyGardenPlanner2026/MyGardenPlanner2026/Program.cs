@@ -12,7 +12,7 @@ builder.Services
     .AddAuthorizationServices()
     .AddSubscriptionCatalogServices()
     .AddJitElevationServices(builder.Configuration)
-    .AddReAuthenticationServices();
+    .AddReAuthenticationServices(builder.Configuration);
 
 var app = builder.Build();
 

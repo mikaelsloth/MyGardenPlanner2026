@@ -100,4 +100,29 @@ public class AuthorizationServicesExtensionsTests
         services.Should().Contain(d =>
             d.ServiceType == typeof(IAuthorizationHandler) && d.ImplementationType == typeof(MfaAuthorizationHandler));
     }
+
+    [Fact]
+    public async Task AddAuthorizationServices_RegistersRequireRecentAuthenticationPolicy_WithRequireRecentAuthenticationRequirement()
+    {
+        var services = new ServiceCollection();
+        services.AddAuthorizationServices();
+
+        await using var provider = services.BuildServiceProvider();
+        var policyProvider = provider.GetRequiredService<IAuthorizationPolicyProvider>();
+
+        var policy = await policyProvider.GetPolicyAsync(AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy);
+
+        policy.Should().NotBeNull();
+        policy!.Requirements.OfType<RequireRecentAuthenticationRequirement>().Should().ContainSingle();
+    }
+
+    [Fact]
+    public void AddAuthorizationServices_RegistersRequireRecentAuthenticationHandler()
+    {
+        var services = new ServiceCollection();
+        services.AddAuthorizationServices();
+
+        services.Should().Contain(d =>
+            d.ServiceType == typeof(IAuthorizationHandler) && d.ImplementationType == typeof(RequireRecentAuthenticationHandler));
+    }
 }

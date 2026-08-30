@@ -1,0 +1,50 @@
+﻿@if (IsOpen)
+{
+    <div class="confirm-dialog-backdrop">
+        <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="step-up-reauth-title">
+            <div class="confirm-dialog-header">
+                <h2 id="step-up-reauth-title" class="confirm-dialog-title">Bekræft din identitet</h2>
+            </div>
+            <div class="confirm-dialog-body">
+                <p>Denne handling kræver, at du bekræfter din adgangskode igen, da det er et stykke tid siden du sidst logget ind.</p>
+            </div>
+
+            <EditForm Model="Input" OnValidSubmit="VerifyAsync">
+                <DataAnnotationsValidator />
+
+                <div class="field">
+                    <label class="field-label" for="step-up-password">Adgangskode</label>
+                    <InputText type="password" @bind-Value="Input.Password" id="step-up-password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="Din adgangskode" />
+                    <ValidationMessage For="() => Input.Password" class="field-message" />
+                </div>
+
+                @if (requiresTwoFactor)
+                {
+                    <div class="field">
+                        <label class="field-label" for="step-up-totp">Godkendelseskode</label>
+                        <InputText @bind-Value="Input.TwoFactorCode" id="step-up-totp" class="form-control" autocomplete="off" placeholder="Kode fra din godkender-app" />
+                    </div>
+                }
+
+                @if (errorMessage is not null)
+                {
+                    <div class="status-message status-danger status-form" role="alert">
+                        <span class="status-dot" aria-hidden="true"></span>
+                        <div class="status-message-text"><p>@errorMessage</p></div>
+                    </div>
+                }
+
+                <div class="confirm-dialog-actions">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelAsync" disabled="@isVerifying">Annullér</button>
+                    <button type="submit" class="btn btn-primary" disabled="@isVerifying">
+                        @if (isVerifying)
+                        {
+                            <span class="btn-spinner" aria-hidden="true"></span>
+                        }
+                        Bekræft
+                    </button>
+                </div>
+            </EditForm>
+        </div>
+    </div>
+}

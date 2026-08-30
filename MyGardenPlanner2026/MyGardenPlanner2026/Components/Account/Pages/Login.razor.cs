@@ -59,6 +59,7 @@ public partial class Login
 
         if (result.Succeeded)
         {
+            ReAuthenticationService.MarkReAuthenticated();
             Logger.LogInformation("User logged in.");
             RedirectManager.RedirectTo(ReturnUrl);
         }

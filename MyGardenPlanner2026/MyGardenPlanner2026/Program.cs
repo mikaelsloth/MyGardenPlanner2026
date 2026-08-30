@@ -11,7 +11,8 @@ builder.Services
     .AddIdentityBootstrapSeeding(builder.Configuration)
     .AddAuthorizationServices()
     .AddSubscriptionCatalogServices()
-    .AddJitElevationServices(builder.Configuration);
+    .AddJitElevationServices(builder.Configuration)
+    .AddReAuthenticationServices();
 
 var app = builder.Build();
 

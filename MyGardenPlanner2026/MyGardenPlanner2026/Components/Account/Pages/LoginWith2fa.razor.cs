@@ -39,6 +39,7 @@ public partial class LoginWith2fa
 
         if (result.Succeeded)
         {
+            ReAuthenticationService.MarkReAuthenticated();
             UserLoggedIn(Logger, userId);
             RedirectManager.RedirectTo(ReturnUrl);
         }

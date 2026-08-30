@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Account.Pages;
+using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Tests.UI.Identity;
 using NSubstitute;
@@ -14,7 +15,7 @@ using Xunit;
 
 public class LoginWith2faTests : BunitContext
 {
-    private (UserManager<ApplicationUser> UserManager, SignInManager<ApplicationUser> SignInManager, ApplicationUser User) RegisterFakes()
+    private (UserManager<ApplicationUser> UserManager, SignInManager<ApplicationUser> SignInManager, ApplicationUser User, IReAuthenticationService ReAuthenticationService) RegisterFakes()
     {
         var user = new ApplicationUser { Id = "user-1" };
         var userManager = IdentityTestDoubles.CreateUserManager();
@@ -23,17 +24,19 @@ public class LoginWith2faTests : BunitContext
         var signInManager = IdentityTestDoubles.CreateSignInManager(userManager);
         signInManager.GetTwoFactorAuthenticationUserAsync().Returns(Task.FromResult<ApplicationUser?>(user));
 
+        var reAuthenticationService = Substitute.For<IReAuthenticationService>();
+
         Services.AddSingleton(userManager);
         Services.AddSingleton(signInManager);
+        Services.AddSingleton(reAuthenticationService);
         Services.AddSingleton(Substitute.For<ILogger<LoginWith2fa>>());
 
-        return (userManager, signInManager, user);
+        return (userManager, signInManager, user, reAuthenticationService);
     }
-
     [Fact]
     public void OnValidSubmitAsync_ValidCode_RedirectsToReturnUrl()
     {
-        var (_, signInManager, _) = RegisterFakes();
+        var (_, signInManager, _, _) = RegisterFakes();
         signInManager.TwoFactorAuthenticatorSignInAsync("123456", false, false)
             .Returns(Task.FromResult(SignInResult.Success));
         var navMan = this.UseIdentityRedirectManager();
@@ -49,7 +52,7 @@ public class LoginWith2faTests : BunitContext
     [Fact]
     public void OnValidSubmitAsync_InvalidCode_ShowsDanishErrorMessage()
     {
-        var (_, signInManager, _) = RegisterFakes();
+        var (_, signInManager, _, _) = RegisterFakes();
         signInManager.TwoFactorAuthenticatorSignInAsync(Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<bool>())
             .Returns(Task.FromResult(SignInResult.Failed));
         this.UseIdentityRedirectManager();
@@ -59,5 +62,20 @@ public class LoginWith2faTests : BunitContext
         cut.Find("form").Submit();
 
         cut.Markup.Should().Contain("Error: Ugyldig godkendelseskode.");
+    }
+
+    [Fact]
+    public void OnValidSubmitAsync_ValidCode_MarksReAuthenticated()
+    {
+        var (_, signInManager, _, reAuthenticationService) = RegisterFakes();
+        signInManager.TwoFactorAuthenticatorSignInAsync("123456", false, false)
+            .Returns(Task.FromResult(SignInResult.Success));
+        this.UseIdentityRedirectManager();
+
+        var cut = Render<LoginWith2fa>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        cut.Find("#Input\\.TwoFactorCode").Change("123456");
+        cut.Find("form").Submit();
+
+        reAuthenticationService.Received(1).MarkReAuthenticated();
     }
 }

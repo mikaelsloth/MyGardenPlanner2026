@@ -7,6 +7,7 @@ public partial class PlannerDbContext
 {
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<RoleElevationRequest> RoleElevationRequests => Set<RoleElevationRequest>();
+    public DbSet<ReAuthFailureAttempt> ReAuthFailureAttempts => Set<ReAuthFailureAttempt>();
 
     /// <summary>
     /// Instansmetode (var static): Database.IsSqlServer() kræver context-instansen,
@@ -18,6 +19,20 @@ public partial class PlannerDbContext
 
         ConfigureAuditLog(modelBuilder);
         ConfigureRoleElevation(modelBuilder, useTemporalTables);
+        ConfigureReAuthFailureAttempts(modelBuilder);
+    }
+
+    private static void ConfigureReAuthFailureAttempts(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ReAuthFailureAttempt>(entity =>
+        {
+            entity.ToTable("ReAuthFailureAttempts", AdminSchema);
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+            entity.Property(e => e.IpAddress).HasMaxLength(45);
+            entity.HasIndex(e => new { e.UserId, e.OccurredAtUtc });
+        });
     }
 
     private static void ConfigureRoleElevation(ModelBuilder modelBuilder, bool useTemporalTables)

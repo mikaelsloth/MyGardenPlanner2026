@@ -13,7 +13,8 @@ builder.Services
     .AddSubscriptionCatalogServices()
     .AddJitElevationServices(builder.Configuration)
     .AddReAuthenticationServices(builder.Configuration)
-    .AddRateLimitingServices();
+    .AddRateLimitingServices()
+    .AddAdminApiRateLimiting(builder.Configuration);
 
 var app = builder.Build();
 

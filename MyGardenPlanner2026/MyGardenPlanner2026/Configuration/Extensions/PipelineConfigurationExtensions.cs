@@ -19,6 +19,7 @@ public static class PipelineConfigurationExtensions
 
         app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
         app.UseHttpsRedirection();
+        app.UseRateLimiter();
         app.UseAntiforgery();
 
         return app;

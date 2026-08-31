@@ -12,7 +12,8 @@ builder.Services
     .AddAuthorizationServices()
     .AddSubscriptionCatalogServices()
     .AddJitElevationServices(builder.Configuration)
-    .AddReAuthenticationServices(builder.Configuration);
+    .AddReAuthenticationServices(builder.Configuration)
+    .AddRateLimitingServices();
 
 var app = builder.Build();
 

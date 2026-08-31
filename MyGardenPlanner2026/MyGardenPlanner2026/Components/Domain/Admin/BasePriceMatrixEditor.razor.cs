@@ -3,15 +3,14 @@ namespace MyGardenPlanner2026.Components.Domain.Admin;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using MyGardenPlanner2026.Components.Account.Shared;
 using MyGardenPlanner2026.Configuration.Extensions;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
 using System.Globalization;
 
 /// <summary>
 /// Gemning af basispriser er en følsom "core policy"-handling (§3.2) og kræver derfor
-/// step-up re-autentificering (RequireRecentAuthentication-policy). Håndhæves direkte
-/// i backend-event-handleren — ikke kun via UI-skjulning — da manipulerede WebSocket-
-/// beskeder ellers kunne kalde SaveTierAsync direkte uden om et skjult knap.
+/// step-up re-autentificering — håndhævet via StepUpGuard (PR5).
 /// </summary>
 public partial class BasePriceMatrixEditor
 {
@@ -32,10 +31,13 @@ public partial class BasePriceMatrixEditor
     private readonly Dictionary<Guid, decimal> monthlyEdits = [];
     private readonly Dictionary<Guid, decimal> perpetualEdits = [];
     private string? errorMessage;
-    private bool showStepUpModal;
-    private Func<Task>? pendingAction;
+    private StepUpGuard stepUpGuard = default!;
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        stepUpGuard = new StepUpGuard(AuthorizationService, AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy);
+        await LoadAsync();
+    }
 
     private async Task LoadAsync()
     {
@@ -53,17 +55,8 @@ public partial class BasePriceMatrixEditor
         }
     }
 
-    private async Task SaveTierAsync(Guid tierId)
-    {
-        if (!await HasRecentAuthenticationAsync())
-        {
-            pendingAction = () => SaveTierCoreAsync(tierId);
-            showStepUpModal = true;
-            return;
-        }
-
-        await SaveTierCoreAsync(tierId);
-    }
+    private Task SaveTierAsync(Guid tierId) =>
+        stepUpGuard.RunAsync(AuthenticationStateTask, () => SaveTierCoreAsync(tierId));
 
     private async Task SaveTierCoreAsync(Guid tierId)
     {
@@ -84,38 +77,6 @@ public partial class BasePriceMatrixEditor
         {
             errorMessage = ex.Message;
         }
-    }
-
-    private async Task<bool> HasRecentAuthenticationAsync()
-    {
-        if (AuthenticationStateTask is null)
-        {
-            return false;
-        }
-
-        var authState = await AuthenticationStateTask;
-        var result = await AuthorizationService.AuthorizeAsync(
-            authState.User, resource: null, AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy);
-
-        return result.Succeeded;
-    }
-
-    private async Task ExecutePendingActionAsync()
-    {
-        showStepUpModal = false;
-
-        if (pendingAction is not null)
-        {
-            var action = pendingAction;
-            pendingAction = null;
-            await action();
-        }
-    }
-
-    private void CancelStepUp()
-    {
-        showStepUpModal = false;
-        pendingAction = null;
     }
 
     private static decimal ParseDecimal(object? value) =>

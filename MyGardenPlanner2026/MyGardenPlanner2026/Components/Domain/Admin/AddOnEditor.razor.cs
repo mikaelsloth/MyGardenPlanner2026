@@ -3,6 +3,7 @@ namespace MyGardenPlanner2026.Components.Domain.Admin;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using MyGardenPlanner2026.Components.Account.Shared;
 using MyGardenPlanner2026.Configuration.Extensions;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
 using MyGardenPlanner2026.Core.Entities.Common;
@@ -10,8 +11,7 @@ using System.Globalization;
 
 /// <summary>
 /// Alle mutationer (Gem/Tilføj/Slet/Nulstil) er følsomme "core policy"-handlinger (§3.2)
-/// og kræver derfor step-up re-autentificering, håndhævet direkte i backend-event-
-/// handlerne — samme mønster som BasePriceMatrixEditor (PR3).
+/// og kræver derfor step-up re-autentificering — håndhævet via StepUpGuard (PR5).
 /// </summary>
 public partial class AddOnEditor
 {
@@ -35,8 +35,7 @@ public partial class AddOnEditor
     private readonly Dictionary<Guid, decimal> perpetualEdits = [];
     private string? errorMessage;
     private bool showResetConfirm;
-    private bool showStepUpModal;
-    private Func<Task>? pendingAction;
+    private StepUpGuard stepUpGuard = default!;
 
     private AddOnType newType = AddOnType.BedforslagNiveau2;
     private string newName = string.Empty;
@@ -45,7 +44,11 @@ public partial class AddOnEditor
     private decimal newMonthlyPrice;
     private decimal newPerpetualPrice;
 
-    protected override async Task OnInitializedAsync() => await LoadAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        stepUpGuard = new StepUpGuard(AuthorizationService, AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy);
+        await LoadAsync();
+    }
 
     private async Task LoadAsync()
     {
@@ -67,8 +70,8 @@ public partial class AddOnEditor
         }
     }
 
-    private async Task SaveExistingAsync(Guid addOnId) =>
-        await RunWithStepUpAsync(() => SaveExistingCoreAsync(addOnId));
+    private Task SaveExistingAsync(Guid addOnId) =>
+        stepUpGuard.RunAsync(AuthenticationStateTask, () => SaveExistingCoreAsync(addOnId));
 
     private async Task SaveExistingCoreAsync(Guid addOnId)
     {
@@ -96,8 +99,8 @@ public partial class AddOnEditor
         }
     }
 
-    private async Task AddNewAsync() =>
-        await RunWithStepUpAsync(AddNewCoreAsync);
+    private Task AddNewAsync() =>
+        stepUpGuard.RunAsync(AuthenticationStateTask, AddNewCoreAsync);
 
     private async Task AddNewCoreAsync()
     {
@@ -123,8 +126,8 @@ public partial class AddOnEditor
         }
     }
 
-    private async Task DeleteAsync(Guid id) =>
-        await RunWithStepUpAsync(() => DeleteCoreAsync(id));
+    private Task DeleteAsync(Guid id) =>
+        stepUpGuard.RunAsync(AuthenticationStateTask, () => DeleteCoreAsync(id));
 
     private async Task DeleteCoreAsync(Guid id)
     {
@@ -144,10 +147,10 @@ public partial class AddOnEditor
     private void RequestReset() => showResetConfirm = true;
     private void CancelReset() => showResetConfirm = false;
 
-    private async Task ConfirmResetAsync()
+    private Task ConfirmResetAsync()
     {
         showResetConfirm = false;
-        await RunWithStepUpAsync(ConfirmResetCoreAsync);
+        return stepUpGuard.RunAsync(AuthenticationStateTask, ConfirmResetCoreAsync);
     }
 
     private async Task ConfirmResetCoreAsync()
@@ -155,50 +158,6 @@ public partial class AddOnEditor
         await AdminService.ResetToDefaultAsync();
         await LoadAsync();
         await OnStatusMessage.InvokeAsync("Tilkøbsmodulerne er nulstillet til standardkataloget.");
-    }
-
-    private async Task RunWithStepUpAsync(Func<Task> action)
-    {
-        if (await HasRecentAuthenticationAsync())
-        {
-            await action();
-            return;
-        }
-
-        pendingAction = action;
-        showStepUpModal = true;
-    }
-
-    private async Task<bool> HasRecentAuthenticationAsync()
-    {
-        if (AuthenticationStateTask is null)
-        {
-            return false;
-        }
-
-        var authState = await AuthenticationStateTask;
-        var result = await AuthorizationService.AuthorizeAsync(
-            authState.User, resource: null, AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy);
-
-        return result.Succeeded;
-    }
-
-    private async Task ExecutePendingActionAsync()
-    {
-        showStepUpModal = false;
-
-        if (pendingAction is not null)
-        {
-            var action = pendingAction;
-            pendingAction = null;
-            await action();
-        }
-    }
-
-    private void CancelStepUp()
-    {
-        showStepUpModal = false;
-        pendingAction = null;
     }
 
     private static decimal ParseDecimal(object? value) =>

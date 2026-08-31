@@ -14,9 +14,14 @@ builder.Services
     .AddJitElevationServices(builder.Configuration)
     .AddReAuthenticationServices(builder.Configuration)
     .AddRateLimitingServices()
-    .AddAdminApiRateLimiting(builder.Configuration);
+    .AddAdminApiRateLimiting(builder.Configuration)
+    .AddSecurityAlertingServices(builder.Configuration);
 
 var app = builder.Build();
+
+//using var scope = app.Services.CreateScope();
+//var service = scope.ServiceProvider.GetRequiredService<ISecurityAlertService>();
+//await service.AlertPolicyChangedAsync("testuser", "loginpolicy", CancellationToken.None);
 
 Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
 Console.WriteLine($"DatabaseProvider: {provider}");

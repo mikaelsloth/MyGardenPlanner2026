@@ -133,5 +133,5 @@
             <button type="button" class="btn btn-danger" @onclick="RequestReset">Nulstil til standardkatalog</button>
         }
     </div>
-    <StepUpReAuthModal IsOpen="showStepUpModal" OnReAuthenticated="ExecutePendingActionAsync" OnCancel="CancelStepUp" />
+    <StepUpReAuthModal IsOpen="stepUpGuard.ShowModal" OnReAuthenticated="stepUpGuard.ExecutePendingActionAsync" OnCancel="stepUpGuard.Cancel" />
 </div>

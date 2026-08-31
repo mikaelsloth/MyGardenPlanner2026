@@ -58,5 +58,5 @@
             </tbody>
         </table>
     </div>
-    <StepUpReAuthModal IsOpen="showStepUpModal" OnReAuthenticated="ExecutePendingActionAsync" OnCancel="CancelStepUp" />
+    <StepUpReAuthModal IsOpen="stepUpGuard.ShowModal" OnReAuthenticated="stepUpGuard.ExecutePendingActionAsync" OnCancel="stepUpGuard.Cancel" />
 </div>

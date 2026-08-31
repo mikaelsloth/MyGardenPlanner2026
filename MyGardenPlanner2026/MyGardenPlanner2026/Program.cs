@@ -15,7 +15,8 @@ builder.Services
     .AddReAuthenticationServices(builder.Configuration)
     .AddRateLimitingServices()
     .AddAdminApiRateLimiting(builder.Configuration)
-    .AddSecurityAlertingServices(builder.Configuration);
+    .AddSecurityAlertingServices(builder.Configuration)
+    .AddReAuthFailureTracking(builder.Configuration);
 
 var app = builder.Build();
 

@@ -38,6 +38,7 @@ public partial class LoginWithRecoveryCode
 
         if (result.Succeeded)
         {
+            ReAuthenticationService.MarkReAuthenticated();
             UserLoggedIn(Logger, userId);
             await ReAuthFailureTracker.ClearFailuresAsync(userId);
             RedirectManager.RedirectTo(ReturnUrl);

@@ -19,6 +19,11 @@ public class AdminSchemaMappingTests
     [InlineData(typeof(GardenVolumeDiscountTier), "GardenVolumeDiscountTiers")]
     [InlineData(typeof(SubscriptionAddOn), "SubscriptionAddOns")]
     [InlineData(typeof(RoleElevationRequest), "RoleElevationRequests")]
+    [InlineData(typeof(JitElevationPolicySettings), "JitElevationPolicySettings")]
+    [InlineData(typeof(ReAuthenticationPolicySettings), "ReAuthenticationPolicySettings")]
+    [InlineData(typeof(ReAuthFailureTrackerSettings), "ReAuthFailureTrackerSettings")]
+    [InlineData(typeof(AdminApiRateLimitSettings), "AdminApiRateLimitSettings")]
+    [InlineData(typeof(LoginRateLimitSettings), "LoginRateLimitSettings")]
     public void ProtectedEntities_AreMappedToAdminSchema(Type entityType, string expectedTableName)
     {
         var options = new DbContextOptionsBuilder<PlannerDbContext>()

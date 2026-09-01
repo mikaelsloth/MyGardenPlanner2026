@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using MyGardenPlanner2026.Components.Account.Shared;
 using MyGardenPlanner2026.Configuration.Extensions;
+using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
 using System.Globalization;
 
@@ -20,6 +21,9 @@ public partial class VolumeDiscountEditor
     [Inject]
     private IAuthorizationService AuthorizationService { get; set; } = default!;
 
+    [Inject]
+    private IAdminActionRateLimiter RateLimiter { get; set; } = default!;
+
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
@@ -33,6 +37,7 @@ public partial class VolumeDiscountEditor
     private string? errorMessage;
     private bool showResetConfirm;
     private StepUpGuard stepUpGuard = default!;
+    private AdminActionGuard adminActionGuard = default!;
 
     private int newMinGardens = 1;
     private int? newMaxGardens;
@@ -41,6 +46,7 @@ public partial class VolumeDiscountEditor
     protected override async Task OnInitializedAsync()
     {
         stepUpGuard = new StepUpGuard(AuthorizationService, AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy);
+        adminActionGuard = new AdminActionGuard(RateLimiter);
         await LoadAsync();
     }
 
@@ -60,8 +66,16 @@ public partial class VolumeDiscountEditor
         }
     }
 
-    private Task SaveExistingAsync(Guid tierId) =>
-        stepUpGuard.RunAsync(AuthenticationStateTask, () => SaveExistingCoreAsync(tierId));
+    private async Task SaveExistingAsync(Guid tierId)
+    {
+        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
+            stepUpGuard.RunAsync(AuthenticationStateTask, () => SaveExistingCoreAsync(tierId)));
+
+        if (adminActionGuard.IsRateLimited)
+        {
+            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
+        }
+    }
 
     private async Task SaveExistingCoreAsync(Guid tierId)
     {
@@ -81,8 +95,16 @@ public partial class VolumeDiscountEditor
         }
     }
 
-    private Task AddNewAsync() =>
-        stepUpGuard.RunAsync(AuthenticationStateTask, AddNewCoreAsync);
+    private async Task AddNewAsync()
+    {
+        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
+            stepUpGuard.RunAsync(AuthenticationStateTask, AddNewCoreAsync));
+
+        if (adminActionGuard.IsRateLimited)
+        {
+            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
+        }
+    }
 
     private async Task AddNewCoreAsync()
     {
@@ -106,8 +128,16 @@ public partial class VolumeDiscountEditor
         }
     }
 
-    private Task DeleteAsync(Guid id) =>
-        stepUpGuard.RunAsync(AuthenticationStateTask, () => DeleteCoreAsync(id));
+    private async Task DeleteAsync(Guid id)
+    {
+        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
+            stepUpGuard.RunAsync(AuthenticationStateTask, () => DeleteCoreAsync(id)));
+
+        if (adminActionGuard.IsRateLimited)
+        {
+            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
+        }
+    }
 
     private async Task DeleteCoreAsync(Guid id)
     {
@@ -127,10 +157,17 @@ public partial class VolumeDiscountEditor
     private void RequestReset() => showResetConfirm = true;
     private void CancelReset() => showResetConfirm = false;
 
-    private Task ConfirmResetAsync()
+    private async Task ConfirmResetAsync()
     {
         showResetConfirm = false;
-        return stepUpGuard.RunAsync(AuthenticationStateTask, ConfirmResetCoreAsync);
+
+        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
+            stepUpGuard.RunAsync(AuthenticationStateTask, ConfirmResetCoreAsync));
+
+        if (adminActionGuard.IsRateLimited)
+        {
+            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
+        }
     }
 
     private async Task ConfirmResetCoreAsync()

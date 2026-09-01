@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Account.Shared;
 using MyGardenPlanner2026.Core.Contracts.Admin;
+using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Tests.UI.Identity;
 using NSubstitute;
@@ -33,6 +34,11 @@ public class StepUpReAuthModalTests : BunitContext
 
         Services.AddSingleton(userManager);
         Services.AddSingleton(reAuthenticationService);
+        Services.AddSingleton(Substitute.For<IReAuthFailureTracker>());
+
+        var currentUserAccessor = Substitute.For<ICurrentUserAccessor>();
+        currentUserAccessor.GetCurrent().Returns(new CurrentUserInfo(null, null, "127.0.0.1"));
+        Services.AddSingleton(currentUserAccessor);
 
         return (userManager, reAuthenticationService, user);
     }
@@ -184,5 +190,39 @@ public class StepUpReAuthModalTests : BunitContext
 
         cancelled.Should().BeTrue();
         reAuthenticationService.DidNotReceive().MarkReAuthenticated();
+    }
+
+    [Fact]
+    public async Task Submit_WrongPassword_RecordsReAuthFailure()
+    {
+        var (userManager, _, user) = RegisterFakes();
+        userManager.CheckPasswordAsync(user, "forkert").Returns(Task.FromResult(false));
+        var tracker = Services.GetRequiredService<IReAuthFailureTracker>();
+
+        var cut = Render<StepUpReAuthModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .AddCascadingValue(CreateAuthState()));
+
+        cut.Find("#step-up-password").Change("forkert");
+        cut.Find("form").Submit();
+
+        await tracker.Received(1).RecordFailureAsync("user-1", Arg.Any<string?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Submit_CorrectPasswordNoTwoFactor_ClearsReAuthFailures()
+    {
+        var (userManager, _, user) = RegisterFakes(twoFactorEnabled: false);
+        userManager.CheckPasswordAsync(user, "Rigtig123!").Returns(Task.FromResult(true));
+        var tracker = Services.GetRequiredService<IReAuthFailureTracker>();
+
+        var cut = Render<StepUpReAuthModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .AddCascadingValue(CreateAuthState()));
+
+        cut.Find("#step-up-password").Change("Rigtig123!");
+        cut.Find("form").Submit();
+
+        await tracker.Received(1).ClearFailuresAsync("user-1", Arg.Any<CancellationToken>());
     }
 }

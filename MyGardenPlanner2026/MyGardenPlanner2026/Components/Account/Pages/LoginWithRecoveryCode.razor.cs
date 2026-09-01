@@ -39,6 +39,7 @@ public partial class LoginWithRecoveryCode
         if (result.Succeeded)
         {
             UserLoggedIn(Logger, userId);
+            await ReAuthFailureTracker.ClearFailuresAsync(userId);
             RedirectManager.RedirectTo(ReturnUrl);
         }
         else if (result.IsLockedOut)
@@ -48,6 +49,8 @@ public partial class LoginWithRecoveryCode
         }
         else
         {
+            var ip = CurrentUserAccessor.GetCurrent().IpAddress;
+            await ReAuthFailureTracker.RecordFailureAsync(userId, ip);
             Logger.LogWarning("Invalid recovery code entered for user with ID '{UserId}' ", userId);
             message = "Error: Ugyldig gendannelseskode indtastet.";
         }

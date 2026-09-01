@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using MyGardenPlanner2026.Components.Account.Shared;
 using MyGardenPlanner2026.Configuration.Extensions;
+using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
 using System.Globalization;
 
@@ -20,6 +21,9 @@ public partial class BasePriceMatrixEditor
     [Inject]
     private IAuthorizationService AuthorizationService { get; set; } = default!;
 
+    [Inject]
+    private IAdminActionRateLimiter RateLimiter { get; set; } = default!;
+
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
@@ -32,10 +36,12 @@ public partial class BasePriceMatrixEditor
     private readonly Dictionary<Guid, decimal> perpetualEdits = [];
     private string? errorMessage;
     private StepUpGuard stepUpGuard = default!;
+    private AdminActionGuard adminActionGuard = default!;
 
     protected override async Task OnInitializedAsync()
     {
         stepUpGuard = new StepUpGuard(AuthorizationService, AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy);
+        adminActionGuard = new AdminActionGuard(RateLimiter);
         await LoadAsync();
     }
 
@@ -55,8 +61,16 @@ public partial class BasePriceMatrixEditor
         }
     }
 
-    private Task SaveTierAsync(Guid tierId) =>
-        stepUpGuard.RunAsync(AuthenticationStateTask, () => SaveTierCoreAsync(tierId));
+    private async Task SaveTierAsync(Guid tierId)
+    {
+        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
+            stepUpGuard.RunAsync(AuthenticationStateTask, () => SaveTierCoreAsync(tierId)));
+
+        if (adminActionGuard.IsRateLimited)
+        {
+            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
+        }
+    }
 
     private async Task SaveTierCoreAsync(Guid tierId)
     {

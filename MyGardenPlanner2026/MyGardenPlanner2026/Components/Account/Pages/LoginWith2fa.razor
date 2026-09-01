@@ -8,6 +8,8 @@
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<LoginWith2fa> Logger
 @inject IReAuthenticationService ReAuthenticationService
+@inject IReAuthFailureTracker ReAuthFailureTracker
+@inject ICurrentUserAccessor CurrentUserAccessor
 
 <PageTitle>Totrinsbekræftelse – MyGardenPlanner</PageTitle>
 

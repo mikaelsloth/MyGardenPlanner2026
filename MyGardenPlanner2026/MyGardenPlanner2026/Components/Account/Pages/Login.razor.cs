@@ -60,6 +60,7 @@ public partial class Login
         if (result.Succeeded)
         {
             ReAuthenticationService.MarkReAuthenticated();
+            await TrackReAuthOutcomeAsync(succeeded: true);
             Logger.LogInformation("User logged in.");
             RedirectManager.RedirectTo(ReturnUrl);
         }
@@ -76,7 +77,37 @@ public partial class Login
         }
         else
         {
+            await TrackReAuthOutcomeAsync(succeeded: false);
             errorMessage = "Error: Invalid login attempt.";
+        }
+    }
+
+    /// <summary>
+    /// Registrerer/rydder fejlede login-forsøg i IReAuthFailureTracker (§4.2). Springes
+    /// over hvis Input.Email er tom (passkey-only login) eller brugeren ikke findes —
+    /// afslører aldrig brugerens eksistens til klienten.
+    /// </summary>
+    private async Task TrackReAuthOutcomeAsync(bool succeeded)
+    {
+        if (string.IsNullOrWhiteSpace(Input.Email))
+        {
+            return;
+        }
+
+        var user = await UserManager.FindByEmailAsync(Input.Email);
+        if (user is null)
+        {
+            return;
+        }
+
+        if (succeeded)
+        {
+            await ReAuthFailureTracker.ClearFailuresAsync(user.Id);
+        }
+        else
+        {
+            var ip = CurrentUserAccessor.GetCurrent().IpAddress;
+            await ReAuthFailureTracker.RecordFailureAsync(user.Id, ip);
         }
     }
 

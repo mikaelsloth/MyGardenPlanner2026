@@ -7,6 +7,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Account.Pages;
+using MyGardenPlanner2026.Core.Contracts.Admin;
+using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Tests.UI.Identity;
 using NSubstitute;
@@ -26,6 +28,11 @@ public class LoginWithRecoveryCodeTests : BunitContext
         Services.AddSingleton(userManager);
         Services.AddSingleton(signInManager);
         Services.AddSingleton(Substitute.For<ILogger<LoginWithRecoveryCode>>());
+        Services.AddSingleton(Substitute.For<IReAuthFailureTracker>());
+
+        var currentUserAccessor = Substitute.For<ICurrentUserAccessor>();
+        currentUserAccessor.GetCurrent().Returns(new CurrentUserInfo(null, null, "127.0.0.1"));
+        Services.AddSingleton(currentUserAccessor);
 
         return (userManager, signInManager);
     }
@@ -57,5 +64,20 @@ public class LoginWithRecoveryCodeTests : BunitContext
         cut.Find("form").Submit();
 
         cut.Markup.Should().Contain("Error: Ugyldig gendannelseskode indtastet.");
+    }
+
+    [Fact]
+    public async Task OnValidSubmitAsync_InvalidRecoveryCode_RecordsReAuthFailure()
+    {
+        var (_, signInManager) = RegisterFakes();
+        signInManager.TwoFactorRecoveryCodeSignInAsync(Arg.Any<string>()).Returns(Task.FromResult(SignInResult.Failed));
+        this.UseIdentityRedirectManager();
+        var tracker = Services.GetRequiredService<IReAuthFailureTracker>();
+
+        var cut = Render<LoginWithRecoveryCode>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        cut.Find("#Input\\.RecoveryCode").Change("FORKERT");
+        cut.Find("form").Submit();
+
+        await tracker.Received(1).RecordFailureAsync("user-1", Arg.Any<string?>(), Arg.Any<CancellationToken>());
     }
 }

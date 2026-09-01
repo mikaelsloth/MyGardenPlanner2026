@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Domain.Admin;
 using MyGardenPlanner2026.Configuration.Extensions;
 using MyGardenPlanner2026.Core.Contracts.Admin;
+using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
 using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Core.Entities.Common;
@@ -47,6 +48,12 @@ public class AddOnEditorTests : BunitContext
         Services.AddSingleton(userManager);
 
         Services.AddSingleton(Substitute.For<IReAuthenticationService>());
+        Services.AddSingleton(Substitute.For<IReAuthFailureTracker>());
+        Services.AddSingleton(Substitute.For<ICurrentUserAccessor>());
+
+        var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
+        rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
+        Services.AddSingleton(rateLimiter);
 
         return service;
     }
@@ -153,5 +160,20 @@ public class AddOnEditorTests : BunitContext
 
         cut.FindAll(".confirm-dialog").Should().BeEmpty();
         service.DidNotReceive().DeleteAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public void RateLimited_ClickingGem_DoesNotCallUpdateTierAsync_AndShowsErrorMessage()
+    {
+        var service = RegisterFake(reAuthSucceeds: true);
+        var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
+        rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(false));
+        Services.AddSingleton(rateLimiter); // overskriver den permitterende fake fra RegisterFakes
+
+        var cut = Render<AddOnEditor>(p => p.AddCascadingValue(CreateAuthState()));
+        cut.Find("button.btn-primary").Click();
+
+        service.DidNotReceive().SaveAsync(Arg.Any<SubscriptionAddOnUpsertDto>(), Arg.Any<CancellationToken>());
+        cut.Markup.Should().Contain("For mange handlinger");
     }
 }

@@ -92,6 +92,7 @@
     <File Path="Documentation/Web Design Documents/Full source/25 Komponentnavngivning og design tokens.md" />
   </Folder>
   <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
     <File Path="global.json" />
     <File Path="LICENSE.txt" />
     <File Path="Licensing Model Overview.txt" />

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using MyGardenPlanner2026.Core.Contracts.Admin;
+using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Entities;
 using System.ComponentModel.DataAnnotations;
 
@@ -20,6 +21,12 @@ public partial class StepUpReAuthModal
 
     [Inject]
     private IReAuthenticationService ReAuthenticationService { get; set; } = default!;
+
+    [Inject]
+    private IReAuthFailureTracker ReAuthFailureTracker { get; set; } = default!;
+
+    [Inject]
+    private ICurrentUserAccessor CurrentUserAccessor { get; set; } = default!;
 
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
@@ -89,6 +96,7 @@ public partial class StepUpReAuthModal
             if (!await UserManager.CheckPasswordAsync(currentUser, Input.Password))
             {
                 errorMessage = "Error: Forkert adgangskode.";
+                await RecordFailureAsync();
                 return;
             }
 
@@ -107,11 +115,13 @@ public partial class StepUpReAuthModal
                 if (!isCodeValid)
                 {
                     errorMessage = "Error: Ugyldig godkendelseskode.";
+                    await RecordFailureAsync();
                     return;
                 }
             }
 
             ReAuthenticationService.MarkReAuthenticated();
+            await ReAuthFailureTracker.ClearFailuresAsync(currentUser.Id);
             ResetForm();
             await OnReAuthenticated.InvokeAsync();
         }
@@ -119,6 +129,17 @@ public partial class StepUpReAuthModal
         {
             isVerifying = false;
         }
+    }
+
+    private async Task RecordFailureAsync()
+    {
+        if (currentUser is null)
+        {
+            return;
+        }
+
+        var ip = CurrentUserAccessor.GetCurrent().IpAddress;
+        await ReAuthFailureTracker.RecordFailureAsync(currentUser.Id, ip);
     }
 
     private async Task CancelAsync()

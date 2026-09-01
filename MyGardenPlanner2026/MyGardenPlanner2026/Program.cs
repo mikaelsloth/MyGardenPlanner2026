@@ -16,7 +16,8 @@ builder.Services
     .AddRateLimitingServices()
     .AddAdminApiRateLimiting(builder.Configuration)
     .AddSecurityAlertingServices(builder.Configuration)
-    .AddReAuthFailureTracking(builder.Configuration);
+    .AddReAuthFailureTracking(builder.Configuration)
+    .AddSecurityPolicySettingsSeeding(builder.Configuration);
 
 var app = builder.Build();
 
@@ -33,6 +34,9 @@ if (app.Environment.IsDevelopment())
 
 // 1.2 Bootstrap SystemAdmin-rolle og -bruger (Development OG Production)
 await app.Services.SeedIdentityBootstrapAsync();
+
+// 1.3 Seed sikkerhedspolicy-indstillinger (Development OG Production)
+await app.Services.SeedSecurityPolicySettingsAsync();
 
 // 2. HTTP Request Pipeline (Middleware)
 app.UseWebPipeline();

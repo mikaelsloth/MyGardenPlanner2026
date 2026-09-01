@@ -2,12 +2,18 @@
 
 using Microsoft.EntityFrameworkCore;
 using MyGardenPlanner2026.Core.Entities.Admin;
+using MyGardenPlanner2026.Core.Entities.Common;
 
 public partial class PlannerDbContext
 {
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<RoleElevationRequest> RoleElevationRequests => Set<RoleElevationRequest>();
     public DbSet<ReAuthFailureAttempt> ReAuthFailureAttempts => Set<ReAuthFailureAttempt>();
+    public DbSet<JitElevationPolicySettings> JitElevationPolicySettings => Set<JitElevationPolicySettings>();
+    public DbSet<ReAuthenticationPolicySettings> ReAuthenticationPolicySettings => Set<ReAuthenticationPolicySettings>();
+    public DbSet<ReAuthFailureTrackerSettings> ReAuthFailureTrackerSettings => Set<ReAuthFailureTrackerSettings>();
+    public DbSet<AdminApiRateLimitSettings> AdminApiRateLimitSettings => Set<AdminApiRateLimitSettings>();
+    public DbSet<LoginRateLimitSettings> LoginRateLimitSettings => Set<LoginRateLimitSettings>();
 
     /// <summary>
     /// Instansmetode (var static): Database.IsSqlServer() kræver context-instansen,
@@ -20,6 +26,38 @@ public partial class PlannerDbContext
         ConfigureAuditLog(modelBuilder);
         ConfigureRoleElevation(modelBuilder, useTemporalTables);
         ConfigureReAuthFailureAttempts(modelBuilder);
+        ConfigureSecurityPolicySettings(modelBuilder, useTemporalTables);
+    }
+
+    private static void ConfigureSecurityPolicySettings(ModelBuilder modelBuilder, bool useTemporalTables)
+    {
+        ConfigureSingletonSettings<JitElevationPolicySettings>(modelBuilder, "JitElevationPolicySettings", useTemporalTables);
+        ConfigureSingletonSettings<ReAuthenticationPolicySettings>(modelBuilder, "ReAuthenticationPolicySettings", useTemporalTables);
+        ConfigureSingletonSettings<ReAuthFailureTrackerSettings>(modelBuilder, "ReAuthFailureTrackerSettings", useTemporalTables);
+        ConfigureSingletonSettings<AdminApiRateLimitSettings>(modelBuilder, "AdminApiRateLimitSettings", useTemporalTables);
+        ConfigureSingletonSettings<LoginRateLimitSettings>(modelBuilder, "LoginRateLimitSettings", useTemporalTables);
+    }
+
+    private static void ConfigureSingletonSettings<TEntity>(
+        ModelBuilder modelBuilder, string tableName, bool useTemporalTables)
+        where TEntity : class, ISingletonSettings
+    {
+        modelBuilder.Entity<TEntity>(entity =>
+        {
+            entity.ToTable(tableName, AdminSchema, b =>
+            {
+                if (useTemporalTables)
+                {
+                    b.IsTemporal(t =>
+                    {
+                        t.HasPeriodStart("ValidFromUtc");
+                        t.HasPeriodEnd("ValidToUtc");
+                    });
+                }
+            });
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
+        });
     }
 
     private static void ConfigureReAuthFailureAttempts(ModelBuilder modelBuilder)

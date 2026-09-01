@@ -61,7 +61,7 @@ public sealed class JitElevationService(
             Reason = reason
         };
 
-        context.RoleElevationRequests.Add(request);
+        await context.RoleElevationRequests.AddAsync(request, CancellationToken.None);
         await context.SaveChangesAsync(cancellationToken);
 
         return ToDto(request);

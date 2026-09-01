@@ -76,7 +76,7 @@ public class NavDrawerFocusTrapTests : BunitContext
         module.SetupVoid("deactivate").SetVoidResult();
 
         var cut = Render<NavDrawer>(p => p.Add(x => x.IsOpen, true));
-        cut.WaitForAssertion(() => module.VerifyInvoke("activate"));
+        await cut.WaitForAssertionAsync(() => module.VerifyInvoke("activate"));
 
         await cut.Instance.DisposeAsync();
 

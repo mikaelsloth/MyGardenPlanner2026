@@ -1,5 +1,24 @@
-[*]
-end_of_line = crlf
+root = true
 
 [**/Migrations/*.cs]
+
 dotnet_analyzer_diagnostic.severity = none
+dotnet_diagnostic.CA1861.severity = none
+
+[*.cs]
+
+indent_style = space
+indent_size = 4
+
+csharp_prefer_braces = true:error
+
+dotnet_diagnostic.VSTHRD003.severity = none
+dotnet_diagnostic.VSTHRD111.severity = none
+
+dotnet_analyzer_diagnostic.category-Security.severity = warning
+dotnet_analyzer_diagnostic.category-Reliability.severity = warning
+dotnet_analyzer_diagnostic.category-Performance.severity = warning
+dotnet_analyzer_diagnostic.category-Usage.severity = warning
+
+[*]
+end_of_line = crlf

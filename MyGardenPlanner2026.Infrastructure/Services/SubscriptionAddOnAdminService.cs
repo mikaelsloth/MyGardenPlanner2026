@@ -68,7 +68,7 @@ public sealed class SubscriptionAddOnAdminService(
                 PerpetualPrice = upsert.PerpetualPrice,
                 DisplayOrder = maxDisplayOrder + 1
             };
-            context.SubscriptionAddOns.Add(addOn);
+            await context.SubscriptionAddOns.AddAsync(addOn, CancellationToken.None);
         }
 
         await context.SaveChangesAsync(cancellationToken);
@@ -95,7 +95,7 @@ public sealed class SubscriptionAddOnAdminService(
         context.SubscriptionAddOns.RemoveRange(context.SubscriptionAddOns);
         await context.SaveChangesAsync(cancellationToken);
 
-        context.SubscriptionAddOns.AddRange(defaultCatalog.GetDefaultAddOns());
+        await context.SubscriptionAddOns.AddRangeAsync(defaultCatalog.GetDefaultAddOns(), CancellationToken.None);
         await context.SaveChangesAsync(cancellationToken);
     }
 

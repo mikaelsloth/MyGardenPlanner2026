@@ -17,7 +17,7 @@ using Xunit;
 
 public class StepUpReAuthModalTests : BunitContext
 {
-    private static Task<AuthenticationState> CreateAuthState()
+    private static Task<AuthenticationState> CreateAuthStateAsync()
     {
         var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "user-1")], authenticationType: "Test");
         return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(identity)));
@@ -50,7 +50,7 @@ public class StepUpReAuthModalTests : BunitContext
 
         var cut = Render<StepUpReAuthModal>(p => p
             .Add(x => x.IsOpen, false)
-            .AddCascadingValue(CreateAuthState()));
+            .AddCascadingValue(CreateAuthStateAsync()));
 
         cut.FindAll(".confirm-dialog").Should().BeEmpty();
     }
@@ -62,7 +62,7 @@ public class StepUpReAuthModalTests : BunitContext
 
         var cut = Render<StepUpReAuthModal>(p => p
             .Add(x => x.IsOpen, true)
-            .AddCascadingValue(CreateAuthState()));
+            .AddCascadingValue(CreateAuthStateAsync()));
 
         cut.FindAll(".confirm-dialog").Should().HaveCount(1);
         cut.FindAll("#step-up-totp").Should().BeEmpty();
@@ -75,7 +75,7 @@ public class StepUpReAuthModalTests : BunitContext
 
         var cut = Render<StepUpReAuthModal>(p => p
             .Add(x => x.IsOpen, true)
-            .AddCascadingValue(CreateAuthState()));
+            .AddCascadingValue(CreateAuthStateAsync()));
 
         cut.Find("#step-up-totp").Should().NotBeNull();
     }
@@ -88,7 +88,7 @@ public class StepUpReAuthModalTests : BunitContext
 
         var cut = Render<StepUpReAuthModal>(p => p
             .Add(x => x.IsOpen, true)
-            .AddCascadingValue(CreateAuthState()));
+            .AddCascadingValue(CreateAuthStateAsync()));
 
         cut.Find("#step-up-password").Change("forkert");
         cut.Find("form").Submit();
@@ -107,7 +107,7 @@ public class StepUpReAuthModalTests : BunitContext
         var cut = Render<StepUpReAuthModal>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnReAuthenticated, EventCallback.Factory.Create(this, () => invoked = true))
-            .AddCascadingValue(CreateAuthState()));
+            .AddCascadingValue(CreateAuthStateAsync()));
 
         cut.Find("#step-up-password").Change("Rigtig123!");
         cut.Find("form").Submit();
@@ -124,7 +124,7 @@ public class StepUpReAuthModalTests : BunitContext
 
         var cut = Render<StepUpReAuthModal>(p => p
             .Add(x => x.IsOpen, true)
-            .AddCascadingValue(CreateAuthState()));
+            .AddCascadingValue(CreateAuthStateAsync()));
 
         cut.Find("#step-up-password").Change("Rigtig123!");
         cut.Find("form").Submit();
@@ -145,7 +145,7 @@ public class StepUpReAuthModalTests : BunitContext
         var cut = Render<StepUpReAuthModal>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnReAuthenticated, EventCallback.Factory.Create(this, () => invoked = true))
-            .AddCascadingValue(CreateAuthState()));
+            .AddCascadingValue(CreateAuthStateAsync()));
 
         cut.Find("#step-up-password").Change("Rigtig123!");
         cut.Find("#step-up-totp").Change("123456");
@@ -165,7 +165,7 @@ public class StepUpReAuthModalTests : BunitContext
 
         var cut = Render<StepUpReAuthModal>(p => p
             .Add(x => x.IsOpen, true)
-            .AddCascadingValue(CreateAuthState()));
+            .AddCascadingValue(CreateAuthStateAsync()));
 
         cut.Find("#step-up-password").Change("Rigtig123!");
         cut.Find("#step-up-totp").Change("000000");
@@ -184,7 +184,7 @@ public class StepUpReAuthModalTests : BunitContext
         var cut = Render<StepUpReAuthModal>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnCancel, EventCallback.Factory.Create(this, () => cancelled = true))
-            .AddCascadingValue(CreateAuthState()));
+            .AddCascadingValue(CreateAuthStateAsync()));
 
         cut.Find("button.btn-secondary").Click();
 
@@ -201,10 +201,10 @@ public class StepUpReAuthModalTests : BunitContext
 
         var cut = Render<StepUpReAuthModal>(p => p
             .Add(x => x.IsOpen, true)
-            .AddCascadingValue(CreateAuthState()));
+            .AddCascadingValue(CreateAuthStateAsync()));
 
-        cut.Find("#step-up-password").Change("forkert");
-        cut.Find("form").Submit();
+        await cut.Find("#step-up-password").ChangeAsync("forkert");
+        await cut.Find("form").SubmitAsync();
 
         await tracker.Received(1).RecordFailureAsync("user-1", Arg.Any<string?>(), Arg.Any<CancellationToken>());
     }
@@ -218,10 +218,10 @@ public class StepUpReAuthModalTests : BunitContext
 
         var cut = Render<StepUpReAuthModal>(p => p
             .Add(x => x.IsOpen, true)
-            .AddCascadingValue(CreateAuthState()));
+            .AddCascadingValue(CreateAuthStateAsync()));
 
-        cut.Find("#step-up-password").Change("Rigtig123!");
-        cut.Find("form").Submit();
+        await cut.Find("#step-up-password").ChangeAsync("Rigtig123!");
+        await cut.Find("form").SubmitAsync();
 
         await tracker.Received(1).ClearFailuresAsync("user-1", Arg.Any<CancellationToken>());
     }

@@ -6,6 +6,8 @@
 		<Nullable>enable</Nullable>
 		<IsPackable>false</IsPackable>
 		<TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+		<AnalysisLevel>latest</AnalysisLevel>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -16,6 +18,10 @@
 		</PackageReference>
 		<PackageReference Include="FluentAssertions" Version="8.10.0" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
+		<PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.7.23">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
 		<PackageReference Include="NSubstitute" Version="6.2.0" />
 		<PackageReference Include="xunit.runner.visualstudio" Version="4.0.0">
 			<PrivateAssets>all</PrivateAssets>

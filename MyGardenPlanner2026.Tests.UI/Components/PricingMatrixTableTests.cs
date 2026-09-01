@@ -57,6 +57,6 @@ public class PricingMatrixTableTests : BunitContext
 
         cut.FindAll(".context-tab")[1].Click();
 
-        service.Received().GetAllTiersAsync(BillingCycle.Monthly, Arg.Any<CancellationToken>());
+        _ = service.Received().GetAllTiersAsync(BillingCycle.Monthly, Arg.Any<CancellationToken>());
     }
 }

@@ -23,7 +23,7 @@ public sealed class SecurityPolicySettingsSeeder<TEntity>(
             return;
         }
 
-        context.Set<TEntity>().Add(createDefault());
+        await context.Set<TEntity>().AddAsync(createDefault(), CancellationToken.None);
         await context.SaveChangesAsync(cancellationToken);
     }
 }

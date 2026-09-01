@@ -28,12 +28,12 @@ public sealed class ReAuthFailureTracker(
 
         var now = timeProvider.GetUtcNow();
 
-        context.ReAuthFailureAttempts.Add(new ReAuthFailureAttempt
+        await context.ReAuthFailureAttempts.AddAsync(new ReAuthFailureAttempt
         {
             UserId = userId,
             OccurredAtUtc = now,
             IpAddress = ipAddress
-        });
+        }, CancellationToken.None);
         await context.SaveChangesAsync(cancellationToken);
 
         var policy = policyOptions.Value;

@@ -20,7 +20,7 @@ public sealed class SubscriptionTierSeeder(
             return;
         }
 
-        context.SubscriptionTiers.AddRange(catalog.GetDefaultTiers());
+        await context.SubscriptionTiers.AddRangeAsync(catalog.GetDefaultTiers(), CancellationToken.None);
         await context.SaveChangesAsync(cancellationToken);
     }
 }

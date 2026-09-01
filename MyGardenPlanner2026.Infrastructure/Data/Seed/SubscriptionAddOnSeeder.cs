@@ -16,7 +16,7 @@ public sealed class SubscriptionAddOnSeeder(
             return;
         }
 
-        context.SubscriptionAddOns.AddRange(catalog.GetDefaultAddOns());
+        await context.SubscriptionAddOns.AddRangeAsync(catalog.GetDefaultAddOns(), CancellationToken.None);
         await context.SaveChangesAsync(cancellationToken);
     }
 }

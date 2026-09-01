@@ -2,32 +2,32 @@
 
 @if (IsOpen)
 {
-    <div class="drawer-backdrop" @onclick="HandleClose"></div>
+    <div class="drawer-backdrop" @onclick="HandleCloseAsync"></div>
 }
 
 <nav class="nav-drawer @(IsOpen ? "open" : string.Empty)"
      aria-label="Mobilnavigation"
      tabindex="-1"
      @ref="drawerElement"
-     @onkeydown="HandleKeyDown">
+     @onkeydown="HandleKeyDownAsync">
     <ul class="list-unstyled d-flex flex-column gap-2 nav-drawer-list">
         <li>
-            <NavLink class="nav-link-item" href="/" Match="NavLinkMatch.All" @onclick="HandleClose">
+            <NavLink class="nav-link-item" href="/" Match="NavLinkMatch.All" @onclick="HandleCloseAsync">
                 Forside
             </NavLink>
         </li>
         <li>
-            <NavLink class="nav-link-item" href="/pricing" @onclick="HandleClose">
+            <NavLink class="nav-link-item" href="/pricing" @onclick="HandleCloseAsync">
                 Priser &amp; Abonnement
             </NavLink>
         </li>
         <li>
-            <a class="nav-link-item" href="/account/login" @onclick="HandleClose">
+            <a class="nav-link-item" href="/account/login" @onclick="HandleCloseAsync">
                 Log ind
             </a>
         </li>
         <li>
-            <a class="nav-link-item" href="/account/register" @onclick="HandleClose">
+            <a class="nav-link-item" href="/account/register" @onclick="HandleCloseAsync">
                 Opret bruger
             </a>
         </li>

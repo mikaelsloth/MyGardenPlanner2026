@@ -34,7 +34,7 @@ public partial class Login
         }
     }
 
-    public async Task LoginUser()
+    public async Task LoginUserAsync()
     {
         if (!string.IsNullOrEmpty(Input.Passkey?.Error))
         {
@@ -102,12 +102,12 @@ public partial class Login
 
         if (succeeded)
         {
-            await ReAuthFailureTracker.ClearFailuresAsync(user.Id);
+            await ReAuthFailureTracker.ClearFailuresAsync(user.Id, HttpContext.RequestAborted);
         }
         else
         {
             var ip = CurrentUserAccessor.GetCurrent().IpAddress;
-            await ReAuthFailureTracker.RecordFailureAsync(user.Id, ip);
+            await ReAuthFailureTracker.RecordFailureAsync(user.Id, ip, HttpContext.RequestAborted);
         }
     }
 

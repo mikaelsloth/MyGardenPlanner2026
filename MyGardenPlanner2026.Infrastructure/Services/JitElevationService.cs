@@ -20,7 +20,8 @@ public sealed class JitElevationService(
     IAdminDbContextFactory contextFactory,
     RoleManager<IdentityRole> roleManager,
     IOptions<JitElevationPolicyOptions> policyOptions,
-    TimeProvider timeProvider) : IJitElevationService
+    TimeProvider timeProvider,
+    ISecurityAlertService securityAlertService) : IJitElevationService
 {
     public async Task<RoleElevationRequestDto> RequestElevationAsync(
         string userId, string roleName, int minutes, string reason, CancellationToken cancellationToken = default)
@@ -81,6 +82,13 @@ public sealed class JitElevationService(
         request.ValidToUtc = now.AddMinutes(request.RequestedMinutes);
 
         await context.SaveChangesAsync(cancellationToken);
+
+        request.ValidFromUtc = now;
+        request.ValidToUtc = now.AddMinutes(request.RequestedMinutes);
+
+        await context.SaveChangesAsync(cancellationToken);
+
+        await securityAlertService.AlertJitRequestedAsync(request.RequesterUserId, request.RoleName, cancellationToken);
 
         return ToDto(request);
     }

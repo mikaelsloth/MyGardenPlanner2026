@@ -3,6 +3,7 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
+using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Infrastructure.Services;
 using NSubstitute;
@@ -10,6 +11,8 @@ using Xunit;
 
 public class JitElevationServiceTests : TestDbContext
 {
+    private readonly ISecurityAlertService securityAlertService = Substitute.For<ISecurityAlertService>();
+
     private JitElevationService CreateService(params string[] knownRoles) =>
         CreateServiceWithPolicy(new JitElevationPolicyOptions(), knownRoles);
 
@@ -20,7 +23,8 @@ public class JitElevationServiceTests : TestDbContext
         roleManager.RoleExistsAsync(Arg.Any<string>())
             .Returns(callInfo => Task.FromResult(knownRoles.Contains(callInfo.Arg<string>())));
 
-        return new JitElevationService(CreateAdminDbContextFactory(), roleManager, Options.Create(policy), TimeProvider.System);
+        return new JitElevationService(
+            CreateAdminDbContextFactory(), roleManager, Options.Create(policy), TimeProvider.System, securityAlertService);
     }
 
     private JitElevationService CreateServiceWithTimeProvider(TimeProvider timeProvider, params string[] knownRoles)
@@ -31,7 +35,7 @@ public class JitElevationServiceTests : TestDbContext
             .Returns(callInfo => Task.FromResult(knownRoles.Contains(callInfo.Arg<string>())));
 
         return new JitElevationService(
-            CreateAdminDbContextFactory(), roleManager, Options.Create(new JitElevationPolicyOptions()), timeProvider);
+            CreateAdminDbContextFactory(), roleManager, Options.Create(new JitElevationPolicyOptions()), timeProvider, securityAlertService);
     }
 
     [Fact]
@@ -259,5 +263,31 @@ public class JitElevationServiceTests : TestDbContext
             "user-1", "SystemAdmin", TestContext.Current.CancellationToken);
 
         result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ApproveElevationAsync_DifferentApprover_SendsSecurityAlert()
+    {
+        var service = CreateService("SystemAdmin");
+        var request = await service.RequestElevationAsync(
+            "user-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
+
+        await service.ApproveElevationAsync("user-2", request.Id, TestContext.Current.CancellationToken);
+
+        await securityAlertService.Received(1).AlertJitRequestedAsync(
+            "user-1", "SystemAdmin", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RejectElevationAsync_DoesNotSendSecurityAlert()
+    {
+        var service = CreateService("SystemAdmin");
+        var request = await service.RequestElevationAsync(
+            "user-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
+
+        await service.RejectElevationAsync("user-2", request.Id, TestContext.Current.CancellationToken);
+
+        await securityAlertService.DidNotReceive().AlertJitRequestedAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 }

@@ -31,7 +31,7 @@ public class SoftDeleteInterceptorTests : TestDbContext
             MonthlyPrice = 1m,
             PerpetualPrice = 1m
         };
-        context.SubscriptionAddOns.Add(addOn);
+        await context.SubscriptionAddOns.AddAsync(addOn, TestContext.Current.CancellationToken);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         context.SubscriptionAddOns.Remove(addOn);
@@ -61,7 +61,7 @@ public class SoftDeleteInterceptorTests : TestDbContext
             MonthlyPrice = 1m,
             PerpetualPrice = 1m
         };
-        context.SubscriptionAddOns.Add(addOn);
+        await context.SubscriptionAddOns.AddAsync(addOn, TestContext.Current.CancellationToken);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         context.SubscriptionAddOns.Remove(addOn);
@@ -85,7 +85,7 @@ public class SoftDeleteInterceptorTests : TestDbContext
             MaxGardens = null,
             PriceMultiplier = 0.35m
         };
-        context.GardenVolumeDiscountTiers.Add(tier);
+        await context.GardenVolumeDiscountTiers.AddAsync(tier, TestContext.Current.CancellationToken);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var verifyContext = CreateDbContext();

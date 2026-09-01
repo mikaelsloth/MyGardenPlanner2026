@@ -33,7 +33,7 @@ public class SubscriptionTierPersistenceTests : TestDbContext
             .FirstOrDefaultAsync(t => t.Name == "Planlægger · Administrator", TestContext.Current.CancellationToken);
 
         saved.Should().NotBeNull();
-        saved!.IncludedFeatures.Should().ContainSingle().Which.Should().Be("50 planlagte bede pr. have");
+        saved.IncludedFeatures.Should().ContainSingle().Which.Should().Be("50 planlagte bede pr. have");
         saved.FeatureLimits.Should().ContainKey("Planlagte bede").WhoseValue.Should().Be("50");
     }
 
@@ -41,7 +41,7 @@ public class SubscriptionTierPersistenceTests : TestDbContext
     public async Task CannotInsertDuplicate_LevelAndAccessCategoryCombination()
     {
         using var context = CreateDbContext();
-        context.AddRange(
+        await context.AddRangeAsync(
             new SubscriptionTier { Level = GardenAccessLevel.HaveArkitekt, AccessCategory = AccessCategory.Viewer, Name = "A", AnnualPrice = 42m, MonthlyPrice = 3.5m, PerpetualPrice = 105m },
             new SubscriptionTier { Level = GardenAccessLevel.HaveArkitekt, AccessCategory = AccessCategory.Viewer, Name = "B", AnnualPrice = 42m, MonthlyPrice = 3.5m, PerpetualPrice = 105m });
 

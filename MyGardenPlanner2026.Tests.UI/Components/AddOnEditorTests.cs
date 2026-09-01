@@ -24,7 +24,7 @@ public class AddOnEditorTests : BunitContext
     private static readonly SubscriptionAddOnDto AddOn1 = new(
         AddOn1Id, AddOnType.BedforslagNiveau2, "Bedforslag (Niveau 2)", "Pakke med 2 bedforslag", 180m, 15m, 450m);
 
-    private static Task<AuthenticationState> CreateAuthState()
+    private static Task<AuthenticationState> CreateAuthStateAsync()
     {
         var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "user-1")], authenticationType: "Test");
         return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(identity)));
@@ -63,7 +63,7 @@ public class AddOnEditorTests : BunitContext
     {
         RegisterFake();
 
-        var cut = Render<AddOnEditor>(p => p.AddCascadingValue(CreateAuthState()));
+        var cut = Render<AddOnEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
 
         cut.FindAll("tbody tr").Should().HaveCount(1);
         cut.Markup.Should().Contain("Bedforslag (Niveau 2)");
@@ -73,12 +73,12 @@ public class AddOnEditorTests : BunitContext
     public void ReAuthValid_ClickingGem_CallsSaveAsyncWithSameTypeAndEditedName()
     {
         var service = RegisterFake(reAuthSucceeds: true);
-        var cut = Render<AddOnEditor>(p => p.AddCascadingValue(CreateAuthState()));
+        var cut = Render<AddOnEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
 
         cut.Find($"#name-{AddOn1Id}").Change("Bedforslag (Niveau 2) - opdateret");
         cut.Find("button.btn-primary.btn-sm").Click();
 
-        service.Received().SaveAsync(
+        _ = service.Received().SaveAsync(
             Arg.Is<SubscriptionAddOnUpsertDto>(d =>
                 d.Id == AddOn1Id && d.Type == AddOnType.BedforslagNiveau2 && d.Name == "Bedforslag (Niveau 2) - opdateret"),
             Arg.Any<CancellationToken>());
@@ -89,12 +89,12 @@ public class AddOnEditorTests : BunitContext
     public void ReAuthValid_AddingNewAddOn_CallsSaveAsyncWithNullId()
     {
         var service = RegisterFake(reAuthSucceeds: true);
-        var cut = Render<AddOnEditor>(p => p.AddCascadingValue(CreateAuthState()));
+        var cut = Render<AddOnEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
 
         cut.Find("#new-name").Change("Artefaktpakke C");
         cut.Find("button.btn-primary:not(.btn-sm)").Click();
 
-        service.Received().SaveAsync(
+        _ = service.Received().SaveAsync(
             Arg.Is<SubscriptionAddOnUpsertDto>(d => d.Id == null && d.Name == "Artefaktpakke C"),
             Arg.Any<CancellationToken>());
     }
@@ -103,63 +103,63 @@ public class AddOnEditorTests : BunitContext
     public void ReAuthExpired_ClickingGem_OpensStepUpModal_WithoutSaving()
     {
         var service = RegisterFake(reAuthSucceeds: false);
-        var cut = Render<AddOnEditor>(p => p.AddCascadingValue(CreateAuthState()));
+        var cut = Render<AddOnEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
 
         cut.Find("button.btn-primary.btn-sm").Click();
 
         cut.FindAll(".confirm-dialog").Should().HaveCount(1);
-        service.DidNotReceive().SaveAsync(Arg.Any<SubscriptionAddOnUpsertDto>(), Arg.Any<CancellationToken>());
+        _ = service.DidNotReceive().SaveAsync(Arg.Any<SubscriptionAddOnUpsertDto>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public void ReAuthExpired_AddingNewAddOn_OpensStepUpModal_WithoutSaving()
     {
         var service = RegisterFake(reAuthSucceeds: false);
-        var cut = Render<AddOnEditor>(p => p.AddCascadingValue(CreateAuthState()));
+        var cut = Render<AddOnEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
 
         cut.Find("#new-name").Change("Artefaktpakke C");
         cut.Find("button.btn-primary:not(.btn-sm)").Click();
 
         cut.FindAll(".confirm-dialog").Should().HaveCount(1);
-        service.DidNotReceive().SaveAsync(Arg.Any<SubscriptionAddOnUpsertDto>(), Arg.Any<CancellationToken>());
+        _ = service.DidNotReceive().SaveAsync(Arg.Any<SubscriptionAddOnUpsertDto>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public void ReAuthExpired_ClickingSlet_OpensStepUpModal_WithoutDeleting()
     {
         var service = RegisterFake(reAuthSucceeds: false);
-        var cut = Render<AddOnEditor>(p => p.AddCascadingValue(CreateAuthState()));
+        var cut = Render<AddOnEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
 
         cut.Find("button.btn-danger.btn-sm").Click();
 
         cut.FindAll(".confirm-dialog").Should().HaveCount(1);
-        service.DidNotReceive().DeleteAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        _ = service.DidNotReceive().DeleteAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public void ReAuthExpired_ConfirmingReset_OpensStepUpModal_WithoutResetting()
     {
         var service = RegisterFake(reAuthSucceeds: false);
-        var cut = Render<AddOnEditor>(p => p.AddCascadingValue(CreateAuthState()));
+        var cut = Render<AddOnEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
 
         cut.Find(".danger-zone button.btn-danger").Click();
         cut.Find(".inline-confirm button.btn-danger").Click();
 
         cut.FindAll(".confirm-dialog").Should().HaveCount(1);
-        service.DidNotReceive().ResetToDefaultAsync(Arg.Any<CancellationToken>());
+        _ = service.DidNotReceive().ResetToDefaultAsync(Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public void ReAuthExpired_CancellingStepUpModal_ClosesModal_WithoutSaving()
     {
         var service = RegisterFake(reAuthSucceeds: false);
-        var cut = Render<AddOnEditor>(p => p.AddCascadingValue(CreateAuthState()));
+        var cut = Render<AddOnEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
 
         cut.Find("button.btn-danger.btn-sm").Click();
         cut.Find(".confirm-dialog button.btn-secondary").Click();
 
         cut.FindAll(".confirm-dialog").Should().BeEmpty();
-        service.DidNotReceive().DeleteAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        _ = service.DidNotReceive().DeleteAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -170,10 +170,10 @@ public class AddOnEditorTests : BunitContext
         rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(false));
         Services.AddSingleton(rateLimiter); // overskriver den permitterende fake fra RegisterFakes
 
-        var cut = Render<AddOnEditor>(p => p.AddCascadingValue(CreateAuthState()));
+        var cut = Render<AddOnEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
-        service.DidNotReceive().SaveAsync(Arg.Any<SubscriptionAddOnUpsertDto>(), Arg.Any<CancellationToken>());
+        _ = service.DidNotReceive().SaveAsync(Arg.Any<SubscriptionAddOnUpsertDto>(), Arg.Any<CancellationToken>());
         cut.Markup.Should().Contain("For mange handlinger");
     }
 }

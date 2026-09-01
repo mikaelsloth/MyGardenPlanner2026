@@ -26,7 +26,7 @@ public partial class Register
         Input ??= new();
     }
 
-    public async Task RegisterUser(EditContext editContext)
+    public async Task RegisterUserAsync(EditContext editContext)
     {
         var user = CreateUser();
 

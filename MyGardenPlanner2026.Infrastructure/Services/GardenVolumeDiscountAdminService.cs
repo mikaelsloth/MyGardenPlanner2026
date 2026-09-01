@@ -49,7 +49,7 @@ public sealed class GardenVolumeDiscountAdminService(
                 MaxGardens = upsert.MaxGardens,
                 PriceMultiplier = upsert.PriceMultiplier
             };
-            context.GardenVolumeDiscountTiers.Add(tier);
+            await context.GardenVolumeDiscountTiers.AddAsync(tier, CancellationToken.None);
         }
 
         try
@@ -88,7 +88,7 @@ public sealed class GardenVolumeDiscountAdminService(
         context.GardenVolumeDiscountTiers.RemoveRange(context.GardenVolumeDiscountTiers);
         await context.SaveChangesAsync(cancellationToken);
 
-        context.GardenVolumeDiscountTiers.AddRange(defaultCatalog.GetDefaultTiers());
+        await context.GardenVolumeDiscountTiers.AddRangeAsync(defaultCatalog.GetDefaultTiers(), CancellationToken.None);
         await context.SaveChangesAsync(cancellationToken);
     }
 

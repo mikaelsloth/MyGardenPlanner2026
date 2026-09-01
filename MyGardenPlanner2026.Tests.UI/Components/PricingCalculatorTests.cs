@@ -101,7 +101,7 @@ public class PricingCalculatorTests : BunitContext
         cut.Find($"#addon-{BedforslagAddOnId}").Change("2");
         cut.Find("button.btn-primary").Click();
 
-        calculatorService.Received().CalculateAsync(
+        _ = calculatorService.Received().CalculateAsync(
             Arg.Is<PricingCalculationRequestDto>(r =>
                 r.AddOnQuantities.ContainsKey(BedforslagAddOnId) && r.AddOnQuantities[BedforslagAddOnId] == 2 &&
                 r.AddOnQuantities.ContainsKey(ArtefaktpakkeAAddOnId) && r.AddOnQuantities[ArtefaktpakkeAAddOnId] == 0),

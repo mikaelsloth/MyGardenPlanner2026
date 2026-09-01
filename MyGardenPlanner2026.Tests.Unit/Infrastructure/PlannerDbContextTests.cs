@@ -15,7 +15,7 @@ public class PlannerDbContextTests : TestDbContext
         var plant = new DummyEntityPlant { Name = "Rose", Species = "Rosa" };
 
         // Act
-        context.Plants.Add(plant);
+        await context.Plants.AddAsync(plant, TestContext.Current.CancellationToken);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         // Assert

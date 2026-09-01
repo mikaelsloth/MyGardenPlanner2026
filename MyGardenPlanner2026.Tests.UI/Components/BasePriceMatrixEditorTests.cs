@@ -26,7 +26,7 @@ public class BasePriceMatrixEditorTests : BunitContext
         id, GardenAccessLevel.HaveArkitekt, AccessCategory.Administrator, "Have Arkitekt · Administrator",
         AnnualPrice: 336m, MonthlyPrice: 28m, PerpetualPrice: 840m);
 
-    private static Task<AuthenticationState> CreateAuthState()
+    private static Task<AuthenticationState> CreateAuthStateAsync()
     {
         var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "user-1")], authenticationType: "Test");
         return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(identity)));
@@ -65,7 +65,7 @@ public class BasePriceMatrixEditorTests : BunitContext
     {
         RegisterFakes(reAuthSucceeds: true);
 
-        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(CreateAuthState()));
+        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
 
         cut.FindAll("tbody tr").Should().HaveCount(1);
     }
@@ -75,11 +75,11 @@ public class BasePriceMatrixEditorTests : BunitContext
     {
         var service = RegisterFakes(reAuthSucceeds: true);
 
-        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(CreateAuthState()));
+        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
         cut.Find($"#annual-{TierId}").Change("350");
         cut.Find("button.btn-primary").Click();
 
-        service.Received().UpdateTierAsync(
+        _ = service.Received().UpdateTierAsync(
             Arg.Is<SubscriptionTierUpdateDto>(u => u.Id == TierId && u.AnnualPrice == 350m),
             Arg.Any<CancellationToken>());
         cut.FindAll(".confirm-dialog").Should().BeEmpty();
@@ -93,7 +93,7 @@ public class BasePriceMatrixEditorTests : BunitContext
 
         var cut = Render<BasePriceMatrixEditor>(p => p
             .Add(x => x.OnStatusMessage, EventCallback.Factory.Create<string>(this, m => receivedMessage = m))
-            .AddCascadingValue(CreateAuthState()));
+            .AddCascadingValue(CreateAuthStateAsync()));
 
         cut.Find("button.btn-primary").Click();
 
@@ -106,11 +106,11 @@ public class BasePriceMatrixEditorTests : BunitContext
     {
         var service = RegisterFakes(reAuthSucceeds: false);
 
-        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(CreateAuthState()));
+        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
         cut.FindAll(".confirm-dialog").Should().HaveCount(1);
-        service.DidNotReceive().UpdateTierAsync(Arg.Any<SubscriptionTierUpdateDto>(), Arg.Any<CancellationToken>());
+        _ = service.DidNotReceive().UpdateTierAsync(Arg.Any<SubscriptionTierUpdateDto>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -118,13 +118,13 @@ public class BasePriceMatrixEditorTests : BunitContext
     {
         var service = RegisterFakes(reAuthSucceeds: false);
 
-        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(CreateAuthState()));
+        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
         cut.Find(".confirm-dialog button.btn-secondary").Click();
 
         cut.FindAll(".confirm-dialog").Should().BeEmpty();
-        service.DidNotReceive().UpdateTierAsync(Arg.Any<SubscriptionTierUpdateDto>(), Arg.Any<CancellationToken>());
+        _ = service.DidNotReceive().UpdateTierAsync(Arg.Any<SubscriptionTierUpdateDto>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -135,10 +135,10 @@ public class BasePriceMatrixEditorTests : BunitContext
         rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(false));
         Services.AddSingleton(rateLimiter); // overskriver den permitterende fake fra RegisterFakes
 
-        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(CreateAuthState()));
+        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
-        service.DidNotReceive().UpdateTierAsync(Arg.Any<SubscriptionTierUpdateDto>(), Arg.Any<CancellationToken>());
+        _ = service.DidNotReceive().UpdateTierAsync(Arg.Any<SubscriptionTierUpdateDto>(), Arg.Any<CancellationToken>());
         cut.Markup.Should().Contain("For mange handlinger");
     }
 }

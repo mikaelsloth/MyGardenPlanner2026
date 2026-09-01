@@ -24,9 +24,9 @@ public class ResendEmailConfirmationTests : BunitContext
         Services.AddSingleton(emailSender);
         this.UseIdentityRedirectManager();
 
-        var cut = Render<ResendEmailConfirmation>(parameters => parameters.AddCascadingValue(new DefaultHttpContext())); ;
-        cut.Find("#Input\\.Email").Change("ukendt@example.dk");
-        cut.Find("form").Submit();
+        var cut = Render<ResendEmailConfirmation>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        await cut.Find("#Input\\.Email").ChangeAsync("ukendt@example.dk");
+        await cut.Find("form").SubmitAsync();
 
         cut.Markup.Should().Contain("Bekræftelses-e-mail sendt. Tjek venligst din e-mail.");
         await emailSender.DidNotReceive().SendConfirmationLinkAsync(
@@ -47,9 +47,9 @@ public class ResendEmailConfirmationTests : BunitContext
         Services.AddSingleton(emailSender);
         this.UseIdentityRedirectManager();
 
-        var cut = Render<ResendEmailConfirmation>(parameters => parameters.AddCascadingValue(new DefaultHttpContext())); ;
-        cut.Find("#Input\\.Email").Change("kendt@example.dk");
-        cut.Find("form").Submit();
+        var cut = Render<ResendEmailConfirmation>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        await cut.Find("#Input\\.Email").ChangeAsync("kendt@example.dk");
+        await cut.Find("form").SubmitAsync();
 
         await emailSender.Received().SendConfirmationLinkAsync(user, "kendt@example.dk", Arg.Any<string>());
     }

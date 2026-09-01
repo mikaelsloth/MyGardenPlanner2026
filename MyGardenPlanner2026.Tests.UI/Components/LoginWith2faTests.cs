@@ -96,8 +96,8 @@ public class LoginWith2faTests : BunitContext
         var tracker = Services.GetRequiredService<IReAuthFailureTracker>();
 
         var cut = Render<LoginWith2fa>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
-        cut.Find("#Input\\.TwoFactorCode").Change("123456");
-        cut.Find("form").Submit();
+        await cut.Find("#Input\\.TwoFactorCode").ChangeAsync("123456");
+        await cut.Find("form").SubmitAsync();
 
         await tracker.Received(1).ClearFailuresAsync("user-1", Arg.Any<CancellationToken>());
     }
@@ -112,8 +112,8 @@ public class LoginWith2faTests : BunitContext
         var tracker = Services.GetRequiredService<IReAuthFailureTracker>();
 
         var cut = Render<LoginWith2fa>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
-        cut.Find("#Input\\.TwoFactorCode").Change("000000");
-        cut.Find("form").Submit();
+        await cut.Find("#Input\\.TwoFactorCode").ChangeAsync("000000");
+        await cut.Find("form").SubmitAsync();
 
         await tracker.Received(1).RecordFailureAsync("user-1", Arg.Any<string?>(), Arg.Any<CancellationToken>());
     }

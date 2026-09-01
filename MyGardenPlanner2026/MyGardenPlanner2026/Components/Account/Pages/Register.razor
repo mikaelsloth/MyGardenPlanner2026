@@ -16,7 +16,7 @@
 
 <AuthPageShell Title="Opret bruger" Subtitle="Kom i gang med at planlægge din have på få minutter.">
     <StatusMessage Message="@Message" />
-    <EditForm Model="Input" method="post" OnValidSubmit="RegisterUser" FormName="register">
+    <EditForm Model="Input" method="post" OnValidSubmit="RegisterUserAsync" FormName="register">
         <DataAnnotationsValidator />
         <ValidationSummary class="text-danger" role="alert" />
 

@@ -24,8 +24,8 @@ public class ForgotPasswordTests : BunitContext
         var navMan = this.UseIdentityRedirectManager();
 
         var cut = Render<ForgotPassword>();
-        cut.Find("#Input\\.Email").Change("ukendt@example.dk");
-        cut.Find("form").Submit();
+        await cut.Find("#Input\\.Email").ChangeAsync("ukendt@example.dk");
+        await cut.Find("form").SubmitAsync();
 
         navMan.Uri.Should().Contain("ForgotPasswordConfirmation");
         await emailSender.DidNotReceive().SendPasswordResetLinkAsync(
@@ -47,8 +47,8 @@ public class ForgotPasswordTests : BunitContext
         var navMan = this.UseIdentityRedirectManager();
 
         var cut = Render<ForgotPassword>();
-        cut.Find("#Input\\.Email").Change("kendt@example.dk");
-        cut.Find("form").Submit();
+        await cut.Find("#Input\\.Email").ChangeAsync("kendt@example.dk");
+        await cut.Find("form").SubmitAsync();
 
         navMan.Uri.Should().Contain("ForgotPasswordConfirmation");
         await emailSender.Received().SendPasswordResetLinkAsync(user, "kendt@example.dk", Arg.Any<string>());

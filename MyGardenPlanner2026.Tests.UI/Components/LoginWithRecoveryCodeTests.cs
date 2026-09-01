@@ -78,8 +78,8 @@ public class LoginWithRecoveryCodeTests : BunitContext
         var tracker = Services.GetRequiredService<IReAuthFailureTracker>();
 
         var cut = Render<LoginWithRecoveryCode>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
-        cut.Find("#Input\\.RecoveryCode").Change("FORKERT");
-        cut.Find("form").Submit();
+        await cut.Find("#Input\\.RecoveryCode").ChangeAsync("FORKERT");
+        await cut.Find("form").SubmitAsync();
 
         await tracker.Received(1).RecordFailureAsync("user-1", Arg.Any<string?>(), Arg.Any<CancellationToken>());
     }

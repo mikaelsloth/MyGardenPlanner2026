@@ -17,7 +17,7 @@
 
 <AuthPageShell Title="Log ind" Subtitle="Velkommen tilbage til din have.">
     <StatusMessage Message="@errorMessage" />
-    <EditForm EditContext="editContext" method="post" OnSubmit="LoginUser" FormName="login">
+    <EditForm EditContext="editContext" method="post" OnSubmit="LoginUserAsync" FormName="login">
         <DataAnnotationsValidator />
         <ValidationSummary class="text-danger" role="alert" />
 

@@ -4,7 +4,7 @@ using MyGardenPlanner2026.Infrastructure.Data.Seed;
 
 public static class DatabaseSeedExtensions
 {
-    public static async Task AddDatabaseSeeds(this IServiceProvider services)
+    public static async Task AddDatabaseSeedsAsync(this IServiceProvider services)
     {
         using var scope = services.CreateScope();
 

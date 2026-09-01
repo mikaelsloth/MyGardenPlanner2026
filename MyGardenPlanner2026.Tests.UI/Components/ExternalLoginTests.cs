@@ -37,7 +37,7 @@ public class ExternalLoginTests : BunitContext
         Render<ExternalLogin>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
 
         navMan.Uri.Should().Contain("Account/Login");
-        signInManager.DidNotReceive().GetExternalLoginInfoAsync();
+        _ = signInManager.DidNotReceive().GetExternalLoginInfoAsync();
     }
 
     [Fact]

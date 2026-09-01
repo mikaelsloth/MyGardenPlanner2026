@@ -16,7 +16,7 @@ public sealed class GardenVolumeDiscountSeeder(
             return;
         }
 
-        context.GardenVolumeDiscountTiers.AddRange(catalog.GetDefaultTiers());
+        await context.GardenVolumeDiscountTiers.AddRangeAsync(catalog.GetDefaultTiers(), CancellationToken.None);
         await context.SaveChangesAsync(cancellationToken);
     }
 }

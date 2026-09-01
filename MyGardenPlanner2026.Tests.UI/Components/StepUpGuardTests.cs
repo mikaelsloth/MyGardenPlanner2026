@@ -12,7 +12,7 @@ public class StepUpGuardTests
 {
     private const string PolicyName = "RequireRecentAuthentication";
 
-    private static Task<AuthenticationState> CreateAuthState()
+    private static Task<AuthenticationState> CreateAuthStateAsync()
     {
         var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "user-1")], authenticationType: "Test");
         return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(identity)));
@@ -32,7 +32,7 @@ public class StepUpGuardTests
         var guard = new StepUpGuard(CreateAuthorizationService(succeeds: true), PolicyName);
         var executed = false;
 
-        await guard.RunAsync(CreateAuthState(), () => { executed = true; return Task.CompletedTask; });
+        await guard.RunAsync(CreateAuthStateAsync(), () => { executed = true; return Task.CompletedTask; });
 
         executed.Should().BeTrue();
         guard.ShowModal.Should().BeFalse();
@@ -44,7 +44,7 @@ public class StepUpGuardTests
         var guard = new StepUpGuard(CreateAuthorizationService(succeeds: false), PolicyName);
         var executed = false;
 
-        await guard.RunAsync(CreateAuthState(), () => { executed = true; return Task.CompletedTask; });
+        await guard.RunAsync(CreateAuthStateAsync(), () => { executed = true; return Task.CompletedTask; });
 
         executed.Should().BeFalse();
         guard.ShowModal.Should().BeTrue();
@@ -67,7 +67,7 @@ public class StepUpGuardTests
     {
         var guard = new StepUpGuard(CreateAuthorizationService(succeeds: false), PolicyName);
         var executed = false;
-        await guard.RunAsync(CreateAuthState(), () => { executed = true; return Task.CompletedTask; });
+        await guard.RunAsync(CreateAuthStateAsync(), () => { executed = true; return Task.CompletedTask; });
 
         await guard.ExecutePendingActionAsync();
 
@@ -80,7 +80,7 @@ public class StepUpGuardTests
     {
         var guard = new StepUpGuard(CreateAuthorizationService(succeeds: false), PolicyName);
         var executionCount = 0;
-        await guard.RunAsync(CreateAuthState(), () => { executionCount++; return Task.CompletedTask; });
+        await guard.RunAsync(CreateAuthStateAsync(), () => { executionCount++; return Task.CompletedTask; });
 
         await guard.ExecutePendingActionAsync();
         await guard.ExecutePendingActionAsync();
@@ -93,7 +93,7 @@ public class StepUpGuardTests
     {
         var guard = new StepUpGuard(CreateAuthorizationService(succeeds: false), PolicyName);
         var executed = false;
-        await guard.RunAsync(CreateAuthState(), () => { executed = true; return Task.CompletedTask; });
+        await guard.RunAsync(CreateAuthStateAsync(), () => { executed = true; return Task.CompletedTask; });
 
         guard.Cancel();
         await guard.ExecutePendingActionAsync();
@@ -108,7 +108,7 @@ public class StepUpGuardTests
         var authorizationService = CreateAuthorizationService(succeeds: true);
         var guard = new StepUpGuard(authorizationService, PolicyName);
 
-        await guard.RunAsync(CreateAuthState(), () => Task.CompletedTask);
+        await guard.RunAsync(CreateAuthStateAsync(), () => Task.CompletedTask);
 
         await authorizationService.Received(1).AuthorizeAsync(
             Arg.Any<ClaimsPrincipal>(), Arg.Any<object>(), Arg.Is(PolicyName));

@@ -27,7 +27,7 @@ public class AuditLoggingInterceptorTests : TestDbContext
             new SoftDeleteInterceptor(user), new AuditLoggingInterceptor(user));
 
         var tier = new GardenVolumeDiscountTier { MinGardens = 301, MaxGardens = 400, PriceMultiplier = 0.45m };
-        context.GardenVolumeDiscountTiers.Add(tier);
+        await context.GardenVolumeDiscountTiers.AddAsync(tier, TestContext.Current.CancellationToken);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var verifyContext = CreateDbContext();
@@ -50,7 +50,7 @@ public class AuditLoggingInterceptorTests : TestDbContext
             new SoftDeleteInterceptor(user), new AuditLoggingInterceptor(user));
 
         var tier = new GardenVolumeDiscountTier { MinGardens = 801, MaxGardens = 900, PriceMultiplier = 0.20m };
-        context.GardenVolumeDiscountTiers.Add(tier);
+        await context.GardenVolumeDiscountTiers.AddAsync(tier, TestContext.Current.CancellationToken);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var verifyContext = CreateDbContext();
@@ -76,7 +76,7 @@ public class AuditLoggingInterceptorTests : TestDbContext
             MonthlyPrice = 4m,
             PerpetualPrice = 120m
         };
-        context.SubscriptionAddOns.Add(addOn);
+        await context.SubscriptionAddOns.AddAsync(addOn, TestContext.Current.CancellationToken);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         addOn.AnnualPrice = 60m;
@@ -107,7 +107,7 @@ public class AuditLoggingInterceptorTests : TestDbContext
             MonthlyPrice = 2m,
             PerpetualPrice = 60m
         };
-        context.SubscriptionAddOns.Add(addOn);
+        await context.SubscriptionAddOns.AddAsync(addOn, TestContext.Current.CancellationToken);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         context.SubscriptionAddOns.Remove(addOn);
@@ -131,7 +131,7 @@ public class AuditLoggingInterceptorTests : TestDbContext
             new SoftDeleteInterceptor(user), new AuditLoggingInterceptor(user));
 
         var tier = new GardenVolumeDiscountTier { MinGardens = 601, MaxGardens = 700, PriceMultiplier = 0.30m };
-        context.GardenVolumeDiscountTiers.Add(tier);
+        await context.GardenVolumeDiscountTiers.AddAsync(tier, TestContext.Current.CancellationToken);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         tier.PriceMultiplier = 0.25m;
@@ -167,7 +167,7 @@ public class AuditLoggingInterceptorTests : TestDbContext
             Reason = "Skal rette prisfejl.",
             RequestedMinutes = 60
         };
-        context.RoleElevationRequests.Add(request);
+        await context.RoleElevationRequests.AddAsync(request, TestContext.Current.CancellationToken);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         using var verifyContext = CreateDbContext();

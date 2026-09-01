@@ -39,10 +39,10 @@ public class RegisterTests : BunitContext
         var navMan = this.UseIdentityRedirectManager();
 
         var cut = Render<Register>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
-        cut.Find("#Input\\.Email").Change("ny-bruger@example.dk");
-        cut.Find("#Input\\.Password").Change("P@ssw0rd123!");
-        cut.Find("#Input\\.ConfirmPassword").Change("P@ssw0rd123!");
-        cut.Find("form").Submit();
+        await cut.Find("#Input\\.Email").ChangeAsync("ny-bruger@example.dk");
+        await cut.Find("#Input\\.Password").ChangeAsync("P@ssw0rd123!");
+        await cut.Find("#Input\\.ConfirmPassword").ChangeAsync("P@ssw0rd123!");
+        await cut.Find("form").SubmitAsync();
 
         navMan.Uri.Should().Contain("RegisterConfirmation");
         await emailSender.Received().SendConfirmationLinkAsync(

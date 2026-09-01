@@ -1,4 +1,5 @@
 using MyGardenPlanner2026.Configuration.Extensions;
+using MyGardenPlanner2026.Core.Contracts.Admin;
 
 var builder = WebApplication.CreateBuilder(args);
 var provider = builder.Configuration["DatabaseProvider"];
@@ -21,16 +22,20 @@ builder.Services
 
 var app = builder.Build();
 
-//using var scope = app.Services.CreateScope();
-//var service = scope.ServiceProvider.GetRequiredService<ISecurityAlertService>();
-//await service.AlertPolicyChangedAsync("testuser", "loginpolicy", CancellationToken.None);
+#if DEBUG
+using var scope = app.Services.CreateScope();
+var service = scope.ServiceProvider.GetRequiredService<ISecurityAlertService>();
+await service.AlertPolicyChangedAsync("testuser", "loginpolicy", CancellationToken.None);
+#endif
 
 Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
 Console.WriteLine($"DatabaseProvider: {provider}");
 
 // 1.1 Add seeds in development
 if (app.Environment.IsDevelopment())
-    await app.Services.AddDatabaseSeeds();
+{
+    await app.Services.AddDatabaseSeedsAsync();
+}
 
 // 1.2 Bootstrap SystemAdmin-rolle og -bruger (Development OG Production)
 await app.Services.SeedIdentityBootstrapAsync();

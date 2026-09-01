@@ -16,7 +16,7 @@ using Xunit;
 
 public class LoginWithRecoveryCodeTests : BunitContext
 {
-    private (UserManager<ApplicationUser> UserManager, SignInManager<ApplicationUser> SignInManager) RegisterFakes()
+    private (UserManager<ApplicationUser> UserManager, SignInManager<ApplicationUser> SignInManager, IReAuthenticationService ReAuthenticationService) RegisterFakes()
     {
         var user = new ApplicationUser { Id = "user-1" };
         var userManager = IdentityTestDoubles.CreateUserManager();
@@ -25,8 +25,11 @@ public class LoginWithRecoveryCodeTests : BunitContext
         var signInManager = IdentityTestDoubles.CreateSignInManager(userManager);
         signInManager.GetTwoFactorAuthenticationUserAsync().Returns(Task.FromResult<ApplicationUser?>(user));
 
+        var reAuthenticationService = Substitute.For<IReAuthenticationService>();
+
         Services.AddSingleton(userManager);
         Services.AddSingleton(signInManager);
+        Services.AddSingleton(reAuthenticationService);
         Services.AddSingleton(Substitute.For<ILogger<LoginWithRecoveryCode>>());
         Services.AddSingleton(Substitute.For<IReAuthFailureTracker>());
 
@@ -34,13 +37,13 @@ public class LoginWithRecoveryCodeTests : BunitContext
         currentUserAccessor.GetCurrent().Returns(new CurrentUserInfo(null, null, "127.0.0.1"));
         Services.AddSingleton(currentUserAccessor);
 
-        return (userManager, signInManager);
+        return (userManager, signInManager, reAuthenticationService);
     }
 
     [Fact]
     public void OnValidSubmitAsync_ValidRecoveryCode_RedirectsToReturnUrl()
     {
-        var (_, signInManager) = RegisterFakes();
+        var (_, signInManager, _) = RegisterFakes();
         signInManager.TwoFactorRecoveryCodeSignInAsync("ABCD1234").Returns(Task.FromResult(SignInResult.Success));
         var navMan = this.UseIdentityRedirectManager();
 
@@ -55,7 +58,7 @@ public class LoginWithRecoveryCodeTests : BunitContext
     [Fact]
     public void OnValidSubmitAsync_InvalidRecoveryCode_ShowsDanishErrorMessage()
     {
-        var (_, signInManager) = RegisterFakes();
+        var (_, signInManager, _) = RegisterFakes();
         signInManager.TwoFactorRecoveryCodeSignInAsync(Arg.Any<string>()).Returns(Task.FromResult(SignInResult.Failed));
         this.UseIdentityRedirectManager();
 
@@ -69,7 +72,7 @@ public class LoginWithRecoveryCodeTests : BunitContext
     [Fact]
     public async Task OnValidSubmitAsync_InvalidRecoveryCode_RecordsReAuthFailure()
     {
-        var (_, signInManager) = RegisterFakes();
+        var (_, signInManager, _) = RegisterFakes();
         signInManager.TwoFactorRecoveryCodeSignInAsync(Arg.Any<string>()).Returns(Task.FromResult(SignInResult.Failed));
         this.UseIdentityRedirectManager();
         var tracker = Services.GetRequiredService<IReAuthFailureTracker>();
@@ -79,5 +82,19 @@ public class LoginWithRecoveryCodeTests : BunitContext
         cut.Find("form").Submit();
 
         await tracker.Received(1).RecordFailureAsync("user-1", Arg.Any<string?>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public void OnValidSubmitAsync_ValidRecoveryCode_MarksReAuthenticated()
+    {
+        var (_, signInManager, reAuthenticationService) = RegisterFakes();
+        signInManager.TwoFactorRecoveryCodeSignInAsync("ABCD1234").Returns(Task.FromResult(SignInResult.Success));
+        this.UseIdentityRedirectManager();
+
+        var cut = Render<LoginWithRecoveryCode>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        cut.Find("#Input\\.RecoveryCode").Change("ABCD1234");
+        cut.Find("form").Submit();
+
+        reAuthenticationService.Received(1).MarkReAuthenticated();
     }
 }

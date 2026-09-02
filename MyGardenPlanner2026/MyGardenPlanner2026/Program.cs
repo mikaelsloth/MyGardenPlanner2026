@@ -18,7 +18,8 @@ builder.Services
     .AddAdminApiRateLimiting(builder.Configuration)
     .AddSecurityAlertingServices(builder.Configuration)
     .AddReAuthFailureTracking(builder.Configuration)
-    .AddSecurityPolicySettingsSeeding(builder.Configuration);
+    .AddSecurityPolicySettingsSeeding(builder.Configuration)
+    .AddSecurityPolicyRuntimeReload();
 
 var app = builder.Build();
 

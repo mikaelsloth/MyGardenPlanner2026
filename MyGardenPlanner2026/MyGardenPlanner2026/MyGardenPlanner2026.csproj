@@ -7,7 +7,7 @@
 		<UserSecretsId>aspnet-MyGardenPlanner2026-637ebfcd-8a68-4168-9bc7-bd156ccf6dc8</UserSecretsId>
 		<BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
 		<AnalysisLevel>latest</AnalysisLevel>
-		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 	</PropertyGroup>
 
 	<ItemGroup>

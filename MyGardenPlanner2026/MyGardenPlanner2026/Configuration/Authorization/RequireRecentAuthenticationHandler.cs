@@ -12,13 +12,13 @@ using MyGardenPlanner2026.Infrastructure.Services;
 /// </summary>
 public sealed class RequireRecentAuthenticationHandler(
     IReAuthenticationService reAuthenticationService,
-    IOptions<ReAuthenticationPolicyOptions> policyOptions)
+    IOptionsMonitor<ReAuthenticationPolicyOptions> policyOptionsMonitor)
     : AuthorizationHandler<RequireRecentAuthenticationRequirement>
 {
     protected override Task HandleRequirementAsync(
         AuthorizationHandlerContext context, RequireRecentAuthenticationRequirement requirement)
     {
-        var maxAge = TimeSpan.FromMinutes(policyOptions.Value.MaxAgeMinutes);
+        var maxAge = TimeSpan.FromMinutes(policyOptionsMonitor.CurrentValue.MaxAgeMinutes);
 
         if (reAuthenticationService.IsReAuthValid(maxAge))
         {

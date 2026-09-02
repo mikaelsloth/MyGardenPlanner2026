@@ -33,4 +33,17 @@ public class RateLimitingServicesExtensionsTests
 
         options.GlobalLimiter.Should().NotBeNull();
     }
+
+    [Fact]
+    public void AddRateLimitingServices_ConfiguresGlobalLimiter_AsReloadableLoginRateLimiterSingleton()
+    {
+        var services = new ServiceCollection();
+        services.AddRateLimitingServices();
+
+        using var provider = services.BuildServiceProvider();
+        var options = provider.GetRequiredService<IOptions<RateLimiterOptions>>().Value;
+        var limiterInstance = provider.GetRequiredService<MyGardenPlanner2026.Configuration.RateLimiting.ReloadableLoginRateLimiter>();
+
+        options.GlobalLimiter.Should().BeSameAs(limiterInstance);
+    }
 }

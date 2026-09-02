@@ -19,7 +19,7 @@ using MyGardenPlanner2026.Infrastructure.Data;
 public sealed class JitElevationService(
     IAdminDbContextFactory contextFactory,
     RoleManager<IdentityRole> roleManager,
-    IOptions<JitElevationPolicyOptions> policyOptions,
+    IOptionsMonitor<JitElevationPolicyOptions> policyOptionsMonitor,
     TimeProvider timeProvider,
     ISecurityAlertService securityAlertService) : IJitElevationService
 {
@@ -30,7 +30,7 @@ public sealed class JitElevationService(
         ArgumentException.ThrowIfNullOrWhiteSpace(roleName);
         ArgumentException.ThrowIfNullOrWhiteSpace(reason);
 
-        var policy = policyOptions.Value;
+        var policy = policyOptionsMonitor.CurrentValue;
 
         if (policy.MinRequestedMinutes > policy.MaxRequestedMinutes)
         {

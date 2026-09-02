@@ -21,10 +21,15 @@ using MyGardenPlanner2026.Infrastructure.Data;
 /// IKKE i SQL (fejler på SQLite, se PlannerDbContextTests-memory). Approved-poster
 /// materialiseres først via ToListAsync, tidsvindue-filtreres derefter i hukommelsen —
 /// samme mønster som JitElevationService.HasActiveElevationAsync.
+///
+/// SweepIntervalMinutes er runtime-konfigurerbar (§3.2, admin-UI). I stedet for en fast
+/// PeriodicTimer bruges Task.Delay, der afbrydes med det samme via
+/// IOptionsMonitor.OnChange, hvis intervallet ændres, mens jobbet venter — så en
+/// forkortet ventetid træder i kraft uden at vente den gamle periode ud først.
 /// </summary>
 public sealed partial class RoleElevationExpirySweepService(
     IAdminDbContextFactory contextFactory,
-    IOptions<JitElevationPolicyOptions> policyOptions,
+    IOptionsMonitor<JitElevationPolicyOptions> policyOptionsMonitor,
     TimeProvider timeProvider,
     ILogger<RoleElevationExpirySweepService> logger) : BackgroundService
 {
@@ -33,11 +38,7 @@ public sealed partial class RoleElevationExpirySweepService(
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var interval = TimeSpan.FromMinutes(Math.Max(1, policyOptions.Value.SweepIntervalMinutes));
-
-        using var timer = new PeriodicTimer(interval);
-
-        do
+        while (!stoppingToken.IsCancellationRequested)
         {
             try
             {
@@ -47,8 +48,33 @@ public sealed partial class RoleElevationExpirySweepService(
             {
                 logger.LogError(ex, "Fejl under sweep af udløbne JIT-eskaleringer.");
             }
+
+            await WaitForNextSweepAsync(stoppingToken);
         }
-        while (await timer.WaitForNextTickAsync(stoppingToken));
+    }
+
+    /// <summary>
+    /// Venter til næste sweep. Offentlig og uafhængig af ExecuteAsync-løkken, så
+    /// reload-adfærden (afbrydes øjeblikkeligt ved ændret SweepIntervalMinutes) kan
+    /// testes direkte — samme begrundelse som SweepOnceAsync er public.
+    /// </summary>
+    public async Task WaitForNextSweepAsync(CancellationToken cancellationToken = default)
+    {
+        using var intervalChangedSource = new CancellationTokenSource();
+        using var changeSubscription = policyOptionsMonitor.OnChange(_ => intervalChangedSource.Cancel());
+        using var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, intervalChangedSource.Token);
+
+        var interval = TimeSpan.FromMinutes(Math.Max(1, policyOptionsMonitor.CurrentValue.SweepIntervalMinutes));
+
+        try
+        {
+            await Task.Delay(interval, linkedSource.Token);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Intervallet blev ændret i admin-UI — ventetiden afbrydes med vilje, så
+            // den nye værdi træder i kraft ved næste iteration.
+        }
     }
 
     /// <summary>

@@ -3,7 +3,6 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
@@ -15,7 +14,7 @@ using Xunit;
 public class RoleElevationExpirySweepServiceTests : TestDbContext
 {
     private RoleElevationExpirySweepService CreateService(TestTimeProvider timeProvider) =>
-        new(CreateAdminDbContextFactory(), Options.Create(new JitElevationPolicyOptions()), timeProvider,
+        new(CreateAdminDbContextFactory(), new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()), timeProvider,
             Substitute.For<ILogger<RoleElevationExpirySweepService>>());
 
     [Fact]
@@ -137,7 +136,7 @@ public class RoleElevationExpirySweepServiceTests : TestDbContext
         await seedContext.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var service = new RoleElevationExpirySweepService(
-            contextFactory, Options.Create(new JitElevationPolicyOptions()), timeProvider,
+            contextFactory, new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()), timeProvider,
             Substitute.For<ILogger<RoleElevationExpirySweepService>>());
 
         await service.SweepOnceAsync(TestContext.Current.CancellationToken);
@@ -150,5 +149,24 @@ public class RoleElevationExpirySweepServiceTests : TestDbContext
             .SingleAsync(TestContext.Current.CancellationToken);
 
         updateLog.NewValues.Should().Contain("Expired");
+    }
+
+    [Fact]
+    public async Task WaitForNextSweepAsync_IntervalChangedDuringWait_ReturnsWithoutWaitingFullOldInterval()
+    {
+        var monitor = new TestOptionsMonitor<JitElevationPolicyOptions>(
+            new JitElevationPolicyOptions { MinRequestedMinutes = 30, MaxRequestedMinutes = 90, SweepIntervalMinutes = 60 });
+        var service = new RoleElevationExpirySweepService(
+            CreateAdminDbContextFactory(), monitor, TimeProvider.System,
+            Substitute.For<ILogger<RoleElevationExpirySweepService>>());
+
+        var waitTask = service.WaitForNextSweepAsync(TestContext.Current.CancellationToken);
+
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+        monitor.Set(new JitElevationPolicyOptions { MinRequestedMinutes = 30, MaxRequestedMinutes = 90, SweepIntervalMinutes = 1 });
+
+        var completedTask = await Task.WhenAny(waitTask, Task.Delay(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken));
+
+        completedTask.Should().Be(waitTask);
     }
 }

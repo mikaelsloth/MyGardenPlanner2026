@@ -15,7 +15,7 @@ using MyGardenPlanner2026.Infrastructure.Data;
 /// </summary>
 public sealed class ReAuthFailureTracker(
     IAdminDbContextFactory contextFactory,
-    IOptions<ReAuthFailureTrackerOptions> policyOptions,
+    IOptionsMonitor<ReAuthFailureTrackerOptions> policyOptionsMonitor,
     ISecurityAlertService securityAlertService,
     TimeProvider timeProvider) : IReAuthFailureTracker
 {
@@ -36,7 +36,7 @@ public sealed class ReAuthFailureTracker(
         }, CancellationToken.None);
         await context.SaveChangesAsync(cancellationToken);
 
-        var policy = policyOptions.Value;
+        var policy = policyOptionsMonitor.CurrentValue;
         var windowStart = now.AddDays(-policy.WindowDays);
 
         var attemptsForUser = await context.ReAuthFailureAttempts

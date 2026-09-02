@@ -1,7 +1,6 @@
 ﻿namespace MyGardenPlanner2026.Tests.Unit.Services;
 
 using FluentAssertions;
-using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Infrastructure.Services;
 using NSubstitute;
@@ -9,8 +8,8 @@ using Xunit;
 
 public class ReAuthFailureTrackerTests : TestDbContext
 {
-    private static IOptions<ReAuthFailureTrackerOptions> Policy(int threshold, int windowDays) =>
-        Options.Create(new ReAuthFailureTrackerOptions { Threshold = threshold, WindowDays = windowDays });
+    private static TestOptionsMonitor<ReAuthFailureTrackerOptions> Policy(int threshold, int windowDays) =>
+        new(new ReAuthFailureTrackerOptions { Threshold = threshold, WindowDays = windowDays });
 
     private (ReAuthFailureTracker Tracker, ISecurityAlertService AlertService, TestTimeProvider TimeProvider) CreateTracker(
         int threshold = 5, int windowDays = 2)
@@ -128,5 +127,26 @@ public class ReAuthFailureTrackerTests : TestDbContext
         var act = async () => await tracker.RecordFailureAsync(userId!, "10.0.0.1", TestContext.Current.CancellationToken);
 
         await act.Should().ThrowAsync<ArgumentException>();
+    }
+
+    [Fact]
+    public async Task RecordFailureAsync_ThresholdChangedAfterConstruction_UsesUpdatedThresholdImmediately()
+    {
+        var monitor = new TestOptionsMonitor<ReAuthFailureTrackerOptions>(
+            new ReAuthFailureTrackerOptions { Threshold = 5, WindowDays = 2 });
+        var alertService = Substitute.For<ISecurityAlertService>();
+        var timeProvider = new TestTimeProvider(new DateTimeOffset(2026, 8, 31, 10, 0, 0, TimeSpan.Zero));
+        var tracker = new ReAuthFailureTracker(CreateAdminDbContextFactory(), monitor, alertService, timeProvider);
+
+        await tracker.RecordFailureAsync("user-1", "10.0.0.1", TestContext.Current.CancellationToken);
+        var secondResult = await tracker.RecordFailureAsync("user-1", "10.0.0.1", TestContext.Current.CancellationToken);
+        secondResult.Should().BeFalse(); // 2 forsøg, gammel tærskel er 5
+
+        monitor.Set(new ReAuthFailureTrackerOptions { Threshold = 3, WindowDays = 2 });
+
+        var thirdResult = await tracker.RecordFailureAsync("user-1", "10.0.0.1", TestContext.Current.CancellationToken);
+
+        thirdResult.Should().BeTrue(); // 3. forsøg rammer den nye, lavere tærskel (3) uden proces-genstart
+        await alertService.Received(1).AlertFailedReAuthAsync("user-1", "10.0.0.1", Arg.Any<CancellationToken>());
     }
 }

@@ -1,10 +1,10 @@
 ﻿namespace MyGardenPlanner2026.Configuration.Extensions;
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Configuration.RateLimiting;
-using System.Threading.RateLimiting;
 
 public static class RateLimitingServicesExtensions
 {
@@ -13,30 +13,11 @@ public static class RateLimitingServicesExtensions
 
     public static IServiceCollection AddRateLimitingServices(this IServiceCollection services)
     {
+        services.AddSingleton<ReloadableLoginRateLimiter>();
+
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
-            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
-            {
-                var isProtected = AdminAuthPathMatcher.IsProtectedAuthRequest(
-                    httpContext.Request.Method, httpContext.Request.Path.Value ?? string.Empty);
-
-                if (!isProtected)
-                {
-                    return RateLimitPartition.GetNoLimiter("unrestricted");
-                }
-
-                var ipAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
-                return RateLimitPartition.GetFixedWindowLimiter(ipAddress, _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = 5,
-                    Window = TimeSpan.FromMinutes(1),
-                    QueueLimit = 0,
-                    AutoReplenishment = true
-                });
-            });
 
             options.OnRejected = (context, cancellationToken) =>
             {
@@ -46,7 +27,6 @@ public static class RateLimitingServicesExtensions
 
                 var ipAddress = context.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-                // TODO (PR3): kald ISecurityAlertService.AlertFailedReAuthAsync herfra ved gentagne afvisninger.
                 logger.LogWarning(
                     "{Policy}: rate limit overskredet for IP {IpAddress} på {Path}.",
                     AdminAuthPolicyName, ipAddress, context.HttpContext.Request.Path);
@@ -54,6 +34,12 @@ public static class RateLimitingServicesExtensions
                 return ValueTask.CompletedTask;
             };
         });
+
+        // GlobalLimiter sættes via en separat Configure-registrering, så
+        // ReloadableLoginRateLimiter (der selv abonnerer på policy-ændringer) kan
+        // injiceres fra DI i stedet for at blive bygget statisk i configure-callbacken.
+        services.AddOptions<RateLimiterOptions>()
+            .Configure<ReloadableLoginRateLimiter>((options, limiter) => options.GlobalLimiter = limiter);
 
         return services;
     }

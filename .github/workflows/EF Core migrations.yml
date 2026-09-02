@@ -1,4 +1,18 @@
-- name: Check migrations
-  run: |
-    dotnet ef migrations has-pending-model-changes \
-      --project src/MyProject
+name: PR Quality Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check migrations
+        run: |
+          dotnet ef migrations has-pending-model-changes \
+          --project src/MyGardenPlanner2026.Infrastructure

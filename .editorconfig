@@ -1,5 +1,6 @@
 root = true
 
+# EF Core migrations er genereret kode
 [**/Migrations/*.cs]
 
 dotnet_analyzer_diagnostic.severity = none
@@ -12,13 +13,26 @@ indent_size = 4
 
 csharp_prefer_braces = true:error
 
+# Blazor / async undtagelser
 dotnet_diagnostic.VSTHRD003.severity = none
 dotnet_diagnostic.VSTHRD111.severity = none
 
+# Planlagt teknisk gæld
+dotnet_diagnostic.CA1848.severity = suggestion
+dotnet_diagnostic.CA1873.severity = suggestion
+
+# Kategorier som stadig skal bryde builds når
+# TreatWarningsAsErrors=true
 dotnet_analyzer_diagnostic.category-Security.severity = warning
 dotnet_analyzer_diagnostic.category-Reliability.severity = warning
 dotnet_analyzer_diagnostic.category-Performance.severity = warning
 dotnet_analyzer_diagnostic.category-Usage.severity = warning
+
+# Nullable warnings er meget værdifulde i Blazor
+dotnet_diagnostic.CS8600.severity = warning
+dotnet_diagnostic.CS8602.severity = warning
+dotnet_diagnostic.CS8603.severity = warning
+dotnet_diagnostic.CS8618.severity = warning
 
 [*]
 end_of_line = crlf

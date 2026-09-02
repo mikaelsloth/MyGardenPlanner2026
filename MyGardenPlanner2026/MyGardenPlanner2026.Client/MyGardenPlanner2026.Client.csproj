@@ -8,7 +8,7 @@
 		<StaticWebAssetProjectMode>Default</StaticWebAssetProjectMode>
 		<BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
 		<AnalysisLevel>latest</AnalysisLevel>
-		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 	</PropertyGroup>
 
 	<ItemGroup>

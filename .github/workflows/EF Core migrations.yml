@@ -1,4 +1,4 @@
-name: PR Quality Gate
+name: EF Core Migrations
 
 on:
   pull_request:

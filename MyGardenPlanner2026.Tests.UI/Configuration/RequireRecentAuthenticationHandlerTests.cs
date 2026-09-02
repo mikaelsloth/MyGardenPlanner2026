@@ -16,8 +16,12 @@ public class RequireRecentAuthenticationHandlerTests
         new(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "user-1")], authenticationType: "Test"));
 
     private static RequireRecentAuthenticationHandler CreateHandler(
-        IReAuthenticationService reAuthenticationService, int maxAgeMinutes = 15) =>
-        new(reAuthenticationService, Options.Create(new ReAuthenticationPolicyOptions { MaxAgeMinutes = maxAgeMinutes }));
+        IReAuthenticationService reAuthenticationService, int maxAgeMinutes = 15)
+    {
+        var monitor = Substitute.For<IOptionsMonitor<ReAuthenticationPolicyOptions>>();
+        monitor.CurrentValue.Returns(new ReAuthenticationPolicyOptions { MaxAgeMinutes = maxAgeMinutes });
+        return new(reAuthenticationService, monitor);
+    }
 
     [Fact]
     public async Task HandleRequirementAsync_ReAuthValidWithinConfiguredMaxAge_Succeeds()

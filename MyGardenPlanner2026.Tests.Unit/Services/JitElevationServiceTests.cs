@@ -2,7 +2,6 @@
 
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Infrastructure.Services;
@@ -24,7 +23,7 @@ public class JitElevationServiceTests : TestDbContext
             .Returns(callInfo => Task.FromResult(knownRoles.Contains(callInfo.Arg<string>())));
 
         return new JitElevationService(
-            CreateAdminDbContextFactory(), roleManager, Options.Create(policy), TimeProvider.System, securityAlertService);
+            CreateAdminDbContextFactory(), roleManager, new TestOptionsMonitor<JitElevationPolicyOptions>(policy), TimeProvider.System, securityAlertService);
     }
 
     private JitElevationService CreateServiceWithTimeProvider(TimeProvider timeProvider, params string[] knownRoles)
@@ -35,7 +34,7 @@ public class JitElevationServiceTests : TestDbContext
             .Returns(callInfo => Task.FromResult(knownRoles.Contains(callInfo.Arg<string>())));
 
         return new JitElevationService(
-            CreateAdminDbContextFactory(), roleManager, Options.Create(new JitElevationPolicyOptions()), timeProvider, securityAlertService);
+            CreateAdminDbContextFactory(), roleManager, new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()), timeProvider, securityAlertService);
     }
 
     [Fact]
@@ -289,5 +288,29 @@ public class JitElevationServiceTests : TestDbContext
 
         await securityAlertService.DidNotReceive().AlertJitRequestedAsync(
             Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RequestElevationAsync_PolicyChangedAfterConstruction_UsesUpdatedBoundsImmediately()
+    {
+        var monitor = new TestOptionsMonitor<JitElevationPolicyOptions>(
+            new JitElevationPolicyOptions { MinRequestedMinutes = 30, MaxRequestedMinutes = 90 });
+
+        var store = Substitute.For<IRoleStore<IdentityRole>>();
+        var roleManager = Substitute.For<RoleManager<IdentityRole>>(store, null, null, null, null);
+        roleManager.RoleExistsAsync("SystemAdmin").Returns(Task.FromResult(true));
+
+        var service = new JitElevationService(
+            CreateAdminDbContextFactory(), roleManager, monitor, TimeProvider.System, securityAlertService);
+
+        var stillOldBounds = async () => await service.RequestElevationAsync(
+            "user-1", "SystemAdmin", 120, "Test.", TestContext.Current.CancellationToken);
+        await stillOldBounds.Should().ThrowAsync<ArgumentOutOfRangeException>();
+
+        monitor.Set(new JitElevationPolicyOptions { MinRequestedMinutes = 30, MaxRequestedMinutes = 150 });
+
+        var withinNewBounds = async () => await service.RequestElevationAsync(
+            "user-1", "SystemAdmin", 120, "Test.", TestContext.Current.CancellationToken);
+        await withinNewBounds.Should().NotThrowAsync();
     }
 }

@@ -1,0 +1,9 @@
+/* CSS for AdminSecurityPolicyPage component */
+.admin-security-policy-page {
+    padding-top: var(--mgp-page-y);
+    padding-bottom: var(--mgp-page-y);
+}
+
+.admin-tab-content {
+    margin-top: var(--mgp-space-lg);
+}

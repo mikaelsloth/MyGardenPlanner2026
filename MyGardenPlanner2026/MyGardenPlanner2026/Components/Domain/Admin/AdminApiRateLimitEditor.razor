@@ -1,0 +1,50 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Admin
+
+@using MyGardenPlanner2026.Components.Account.Shared
+
+<div class="security-policy-editor card card-entity" data-density="default">
+    @if (errorMessage is not null)
+    {
+        <div class="status-message status-danger status-section" role="alert">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div class="status-message-text"><p>@errorMessage</p></div>
+        </div>
+    }
+
+    @if (settings is null)
+    {
+        <div class="skeleton-card" aria-hidden="true">
+            <div class="skeleton-line skeleton-title"></div>
+            <div class="skeleton-line skeleton-meta"></div>
+        </div>
+    }
+    else
+    {
+        <div class="form-grid form-grid-3">
+            <div class="field">
+                <label class="field-label" for="adminapi-permit">Tilladte forespørgsler</label>
+                <input id="adminapi-permit" type="number" min="1" class="form-control"
+                       value="@permitEdit" @onchange="e => permitEdit = ParseInt(e.Value)" />
+                <p class="help">Maks. antal admin-handlinger pr. bruger inden for vinduet.</p>
+            </div>
+            <div class="field">
+                <label class="field-label" for="adminapi-window">Vindue (sekunder)</label>
+                <input id="adminapi-window" type="number" min="1" class="form-control"
+                       value="@windowEdit" @onchange="e => windowEdit = ParseInt(e.Value)" />
+                <p class="help">Det glidende tidsvindue, kvoten gælder for.</p>
+            </div>
+            <div class="field">
+                <label class="field-label" for="adminapi-segments">Segmenter pr. vindue</label>
+                <input id="adminapi-segments" type="number" min="1" class="form-control"
+                       value="@segmentsEdit" @onchange="e => segmentsEdit = ParseInt(e.Value)" />
+                <p class="help">Antal underopdelinger af det glidende vindue (præcision).</p>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn btn-primary" @onclick="SaveAsync">Gem</button>
+        </div>
+    }
+
+    <StepUpReAuthModal IsOpen="stepUpGuard.ShowModal" OnReAuthenticated="stepUpGuard.ExecutePendingActionAsync" OnCancel="stepUpGuard.Cancel" />
+</div>

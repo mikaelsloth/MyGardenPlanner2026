@@ -1,0 +1,50 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Admin
+
+@using MyGardenPlanner2026.Components.Account.Shared
+
+<div class="security-policy-editor card card-entity" data-density="default">
+    @if (errorMessage is not null)
+    {
+        <div class="status-message status-danger status-section" role="alert">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div class="status-message-text"><p>@errorMessage</p></div>
+        </div>
+    }
+
+    @if (settings is null)
+    {
+        <div class="skeleton-card" aria-hidden="true">
+            <div class="skeleton-line skeleton-title"></div>
+            <div class="skeleton-line skeleton-meta"></div>
+        </div>
+    }
+    else
+    {
+        <div class="form-grid form-grid-3">
+            <div class="field">
+                <label class="field-label" for="jit-min">Min. anmodningsminutter</label>
+                <input id="jit-min" type="number" min="1" class="form-control"
+                       value="@minEdit" @onchange="e => minEdit = ParseInt(e.Value)" />
+                <p class="help">Laveste tilladte varighed for en JIT-eskalering.</p>
+            </div>
+            <div class="field">
+                <label class="field-label" for="jit-max">Max. anmodningsminutter</label>
+                <input id="jit-max" type="number" min="1" class="form-control"
+                       value="@maxEdit" @onchange="e => maxEdit = ParseInt(e.Value)" />
+                <p class="help">Højeste tilladte varighed for en JIT-eskalering.</p>
+            </div>
+            <div class="field">
+                <label class="field-label" for="jit-sweep">Sweep-interval (minutter)</label>
+                <input id="jit-sweep" type="number" min="1" class="form-control"
+                       value="@sweepEdit" @onchange="e => sweepEdit = ParseInt(e.Value)" />
+                <p class="help">Hvor ofte udløbne eskaleringer markeres som Expired.</p>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="button" class="btn btn-primary" @onclick="SaveAsync">Gem</button>
+        </div>
+    }
+
+    <StepUpReAuthModal IsOpen="stepUpGuard.ShowModal" OnReAuthenticated="stepUpGuard.ExecutePendingActionAsync" OnCancel="stepUpGuard.Cancel" />
+</div>

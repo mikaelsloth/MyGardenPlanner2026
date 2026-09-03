@@ -1,0 +1,5 @@
+/* CSS for AdminApiRateLimitEditor component */
+.security-policy-editor {
+    display: grid;
+    gap: var(--mgp-space-md);
+}

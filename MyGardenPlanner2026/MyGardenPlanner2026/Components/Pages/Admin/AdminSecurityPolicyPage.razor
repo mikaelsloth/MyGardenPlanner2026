@@ -1,0 +1,62 @@
+﻿@page "/admin/security-policies"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy = MyGardenPlanner2026.Configuration.Extensions.AuthorizationServicesExtensions.RequirePolicyAdminPolicy)]
+@rendermode InteractiveServer
+
+<PageTitle>Sikkerhedspolicies – MyGardenPlanner</PageTitle>
+
+<div class="container-fluid px-3 px-md-4 admin-security-policy-page">
+    <h1>Sikkerhedspolicies</h1>
+    <p class="card-description">Redigér runtime-konfigurerbare sikkerhedspolicies. Ændringer træder i kraft med det samme, uden genstart af applikationen.</p>
+
+    @if (statusMessage is not null)
+    {
+        <div class="status-message status-success status-page" role="status" aria-live="polite">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div class="status-message-text"><p>@statusMessage</p></div>
+        </div>
+    }
+
+    <div class="context-tabs" role="tablist" aria-label="Sikkerhedspolicy-områder">
+        <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.JitElevation ? "active" : string.Empty)"
+                aria-selected="@(activeTab == AdminTab.JitElevation)" @onclick="() => SelectTab(AdminTab.JitElevation)">
+            JIT-eskalering
+        </button>
+        <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.ReAuthentication ? "active" : string.Empty)"
+                aria-selected="@(activeTab == AdminTab.ReAuthentication)" @onclick="() => SelectTab(AdminTab.ReAuthentication)">
+            Step-up re-auth
+        </button>
+        <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.ReAuthFailureTracker ? "active" : string.Empty)"
+                aria-selected="@(activeTab == AdminTab.ReAuthFailureTracker)" @onclick="() => SelectTab(AdminTab.ReAuthFailureTracker)">
+            Fejl-tracker
+        </button>
+        <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.AdminApiRateLimit ? "active" : string.Empty)"
+                aria-selected="@(activeTab == AdminTab.AdminApiRateLimit)" @onclick="() => SelectTab(AdminTab.AdminApiRateLimit)">
+            Admin-API rate limit
+        </button>
+        <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.LoginRateLimit ? "active" : string.Empty)"
+                aria-selected="@(activeTab == AdminTab.LoginRateLimit)" @onclick="() => SelectTab(AdminTab.LoginRateLimit)">
+            Login rate limit
+        </button>
+    </div>
+
+    <div class="admin-tab-content">
+        @switch (activeTab)
+        {
+            case AdminTab.JitElevation:
+                <JitElevationPolicyEditor OnStatusMessage="SetStatusMessage" />
+                break;
+            case AdminTab.ReAuthentication:
+                <ReAuthenticationPolicyEditor OnStatusMessage="SetStatusMessage" />
+                break;
+            case AdminTab.ReAuthFailureTracker:
+                <ReAuthFailureTrackerEditor OnStatusMessage="SetStatusMessage" />
+                break;
+            case AdminTab.AdminApiRateLimit:
+                <AdminApiRateLimitEditor OnStatusMessage="SetStatusMessage" />
+                break;
+            case AdminTab.LoginRateLimit:
+                <LoginRateLimitEditor OnStatusMessage="SetStatusMessage" />
+                break;
+        }
+    </div>
+</div>

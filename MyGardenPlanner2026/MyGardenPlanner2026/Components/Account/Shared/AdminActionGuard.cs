@@ -2,7 +2,6 @@
 
 using Microsoft.AspNetCore.Components.Authorization;
 using MyGardenPlanner2026.Core.Contracts.Admin;
-using System.Security.Claims;
 
 /// <summary>
 /// Genanvendelig guard for "AdminApiPolicy" rate limiting (§4.1). Da admin-editors kalder
@@ -26,8 +25,7 @@ public sealed class AdminActionGuard(IAdminActionRateLimiter rateLimiter)
     {
         IsRateLimited = false;
 
-        var userId = await ResolveUserIdAsync(authenticationStateTask);
-        if (userId is null)
+        var userId = await CurrentUserIdResolver.ResolveAsync(authenticationStateTask); if (userId is null)
         {
             IsRateLimited = true;
             return;
@@ -40,16 +38,5 @@ public sealed class AdminActionGuard(IAdminActionRateLimiter rateLimiter)
         }
 
         await action();
-    }
-
-    private static async Task<string?> ResolveUserIdAsync(Task<AuthenticationState>? authenticationStateTask)
-    {
-        if (authenticationStateTask is null)
-        {
-            return null;
-        }
-
-        var authState = await authenticationStateTask;
-        return authState.User.FindFirstValue(ClaimTypes.NameIdentifier);
     }
 }

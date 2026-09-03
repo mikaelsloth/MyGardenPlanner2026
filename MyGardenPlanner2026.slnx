@@ -93,10 +93,21 @@
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
     <File Path="global.json" />
     <File Path="LICENSE.txt" />
     <File Path="Licensing Model Overview.txt" />
     <File Path="README.md" />
+  </Folder>
+  <Folder Name="/Solution Items/.github/">
+    <File Path=".github/dependabot.yml" />
+  </Folder>
+  <Folder Name="/Solution Items/.github/workflows/">
+    <File Path=".github/workflows/Coverage.yml" />
+    <File Path=".github/workflows/EF Core migrations.yml" />
+    <File Path=".github/workflows/Pull Request Quality Gate.yml" />
+    <File Path=".github/workflows/Vulnerability.yml" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="MyGardenPlanner2026.Core/MyGardenPlanner2026.Core.csproj" />

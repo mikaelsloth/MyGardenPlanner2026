@@ -3,6 +3,7 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using MyGardenPlanner2026.Core.Contracts.Admin;
+using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Infrastructure.Services;
 using NSubstitute;
@@ -11,6 +12,21 @@ using Xunit;
 public class JitElevationServiceTests : TestDbContext
 {
     private readonly ISecurityAlertService securityAlertService = Substitute.For<ISecurityAlertService>();
+
+    private static UserManager<ApplicationUser> CreateUserManager()
+    {
+        var store = Substitute.For<IUserStore<ApplicationUser>>();
+        return Substitute.For<UserManager<ApplicationUser>>(store, null, null, null, null, null, null, null, null);
+    }
+
+    private static UserManager<ApplicationUser> CreateUserManagerWithRoles(string userId, params string[] roles)
+    {
+        var user = new ApplicationUser { Id = userId };
+        var userManager = CreateUserManager();
+        userManager.FindByIdAsync(userId).Returns(Task.FromResult<ApplicationUser?>(user));
+        userManager.GetRolesAsync(user).Returns(Task.FromResult<IList<string>>([.. roles]));
+        return userManager;
+    }
 
     private JitElevationService CreateService(params string[] knownRoles) =>
         CreateServiceWithPolicy(new JitElevationPolicyOptions(), knownRoles);
@@ -23,7 +39,7 @@ public class JitElevationServiceTests : TestDbContext
             .Returns(callInfo => Task.FromResult(knownRoles.Contains(callInfo.Arg<string>())));
 
         return new JitElevationService(
-            CreateAdminDbContextFactory(), roleManager, new TestOptionsMonitor<JitElevationPolicyOptions>(policy), TimeProvider.System, securityAlertService);
+            CreateAdminDbContextFactory(), roleManager, CreateUserManager(), new TestOptionsMonitor<JitElevationPolicyOptions>(policy), TimeProvider.System, securityAlertService);
     }
 
     private JitElevationService CreateServiceWithTimeProvider(TimeProvider timeProvider, params string[] knownRoles)
@@ -34,7 +50,7 @@ public class JitElevationServiceTests : TestDbContext
             .Returns(callInfo => Task.FromResult(knownRoles.Contains(callInfo.Arg<string>())));
 
         return new JitElevationService(
-            CreateAdminDbContextFactory(), roleManager, new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()), timeProvider, securityAlertService);
+            CreateAdminDbContextFactory(), roleManager, CreateUserManager(), new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()), timeProvider, securityAlertService);
     }
 
     [Fact]
@@ -301,8 +317,7 @@ public class JitElevationServiceTests : TestDbContext
         roleManager.RoleExistsAsync("SystemAdmin").Returns(Task.FromResult(true));
 
         var service = new JitElevationService(
-            CreateAdminDbContextFactory(), roleManager, monitor, TimeProvider.System, securityAlertService);
-
+                    CreateAdminDbContextFactory(), roleManager, CreateUserManager(), monitor, TimeProvider.System, securityAlertService);
         var stillOldBounds = async () => await service.RequestElevationAsync(
             "user-1", "SystemAdmin", 120, "Test.", TestContext.Current.CancellationToken);
         await stillOldBounds.Should().ThrowAsync<ArgumentOutOfRangeException>();
@@ -312,5 +327,139 @@ public class JitElevationServiceTests : TestDbContext
         var withinNewBounds = async () => await service.RequestElevationAsync(
             "user-1", "SystemAdmin", 120, "Test.", TestContext.Current.CancellationToken);
         await withinNewBounds.Should().NotThrowAsync();
+    }
+
+    [Fact]
+    public async Task GetRequestsForUserAsync_ReturnsOnlyRequestsForSpecifiedUser()
+    {
+        var service = CreateService("SystemAdmin");
+        await service.RequestElevationAsync("user-1", "SystemAdmin", 45, "Test 1.", TestContext.Current.CancellationToken);
+        await service.RequestElevationAsync("user-2", "SystemAdmin", 45, "Test 2.", TestContext.Current.CancellationToken);
+
+        var result = await service.GetRequestsForUserAsync("user-1", TestContext.Current.CancellationToken);
+
+        result.Should().ContainSingle().Which.RequesterUserId.Should().Be("user-1");
+    }
+
+    [Fact]
+    public async Task GetRequestsForUserAsync_ReturnsAllStatuses_NewestFirst()
+    {
+        var service = CreateService("SystemAdmin");
+        var first = await service.RequestElevationAsync("user-1", "SystemAdmin", 45, "Først.", TestContext.Current.CancellationToken);
+        var second = await service.RequestElevationAsync("user-1", "SystemAdmin", 45, "Sidst.", TestContext.Current.CancellationToken);
+        await service.RejectElevationAsync("user-2", first.Id, TestContext.Current.CancellationToken);
+
+        var result = await service.GetRequestsForUserAsync("user-1", TestContext.Current.CancellationToken);
+
+        result.Should().HaveCount(2);
+        result[0].Id.Should().Be(second.Id);
+        result.Should().Contain(r => r.Status == RoleElevationStatus.Rejected);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task GetRequestsForUserAsync_MissingUserId_ThrowsArgumentException(string? userId)
+    {
+        var service = CreateService();
+
+        var act = async () => await service.GetRequestsForUserAsync(userId!, TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
+
+    [Fact]
+    public async Task GetPendingRequestsForApprovalAsync_ApproverHasMatchingRole_ReturnsRequest()
+    {
+        var store = Substitute.For<IRoleStore<IdentityRole>>();
+        var roleManager = Substitute.For<RoleManager<IdentityRole>>(store, null, null, null, null);
+        roleManager.RoleExistsAsync("SystemAdmin").Returns(Task.FromResult(true));
+
+        var service = new JitElevationService(
+            CreateAdminDbContextFactory(), roleManager, CreateUserManagerWithRoles("approver-1", "SystemAdmin"),
+            new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()), TimeProvider.System, securityAlertService);
+
+        await service.RequestElevationAsync("requester-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
+
+        var result = await service.GetPendingRequestsForApprovalAsync("approver-1", TestContext.Current.CancellationToken);
+
+        result.Should().ContainSingle().Which.RoleName.Should().Be("SystemAdmin");
+    }
+
+    [Fact]
+    public async Task GetPendingRequestsForApprovalAsync_ApproverDoesNotHaveMatchingRole_ReturnsEmpty()
+    {
+        var store = Substitute.For<IRoleStore<IdentityRole>>();
+        var roleManager = Substitute.For<RoleManager<IdentityRole>>(store, null, null, null, null);
+        roleManager.RoleExistsAsync("SystemAdmin").Returns(Task.FromResult(true));
+
+        var service = new JitElevationService(
+            CreateAdminDbContextFactory(), roleManager, CreateUserManagerWithRoles("approver-1", "DataAdmin"),
+            new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()), TimeProvider.System, securityAlertService);
+
+        await service.RequestElevationAsync("requester-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
+
+        var result = await service.GetPendingRequestsForApprovalAsync("approver-1", TestContext.Current.CancellationToken);
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetPendingRequestsForApprovalAsync_ExcludesOwnRequests_DualCustody()
+    {
+        var store = Substitute.For<IRoleStore<IdentityRole>>();
+        var roleManager = Substitute.For<RoleManager<IdentityRole>>(store, null, null, null, null);
+        roleManager.RoleExistsAsync("SystemAdmin").Returns(Task.FromResult(true));
+
+        var service = new JitElevationService(
+            CreateAdminDbContextFactory(), roleManager, CreateUserManagerWithRoles("user-1", "SystemAdmin"),
+            new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()), TimeProvider.System, securityAlertService);
+
+        await service.RequestElevationAsync("user-1", "SystemAdmin", 45, "Egen anmodning.", TestContext.Current.CancellationToken);
+
+        var result = await service.GetPendingRequestsForApprovalAsync("user-1", TestContext.Current.CancellationToken);
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetPendingRequestsForApprovalAsync_ExcludesNonPendingRequests()
+    {
+        var store = Substitute.For<IRoleStore<IdentityRole>>();
+        var roleManager = Substitute.For<RoleManager<IdentityRole>>(store, null, null, null, null);
+        roleManager.RoleExistsAsync("SystemAdmin").Returns(Task.FromResult(true));
+
+        var service = new JitElevationService(
+            CreateAdminDbContextFactory(), roleManager, CreateUserManagerWithRoles("approver-1", "SystemAdmin"),
+            new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()), TimeProvider.System, securityAlertService);
+
+        var request = await service.RequestElevationAsync("requester-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
+        await service.ApproveElevationAsync("approver-1", request.Id, TestContext.Current.CancellationToken);
+
+        var result = await service.GetPendingRequestsForApprovalAsync("approver-1", TestContext.Current.CancellationToken);
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetPendingRequestsForApprovalAsync_UnknownApprover_ReturnsEmpty_WithoutQueryingRoles()
+    {
+        var service = CreateService("SystemAdmin");
+
+        var result = await service.GetPendingRequestsForApprovalAsync("ghost-user", TestContext.Current.CancellationToken);
+
+        result.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task GetPendingRequestsForApprovalAsync_MissingApproverUserId_ThrowsArgumentException(string? approverUserId)
+    {
+        var service = CreateService();
+
+        var act = async () => await service.GetPendingRequestsForApprovalAsync(approverUserId!, TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<ArgumentException>();
     }
 }

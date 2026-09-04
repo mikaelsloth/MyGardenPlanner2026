@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Contracts.Admin;
+using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Infrastructure.Data;
@@ -19,6 +20,7 @@ using MyGardenPlanner2026.Infrastructure.Data;
 public sealed class JitElevationService(
     IAdminDbContextFactory contextFactory,
     RoleManager<IdentityRole> roleManager,
+    UserManager<ApplicationUser> userManager,
     IOptionsMonitor<JitElevationPolicyOptions> policyOptionsMonitor,
     TimeProvider timeProvider,
     ISecurityAlertService securityAlertService) : IJitElevationService
@@ -83,11 +85,6 @@ public sealed class JitElevationService(
 
         await context.SaveChangesAsync(cancellationToken);
 
-        request.ValidFromUtc = now;
-        request.ValidToUtc = now.AddMinutes(request.RequestedMinutes);
-
-        await context.SaveChangesAsync(cancellationToken);
-
         await securityAlertService.AlertJitRequestedAsync(request.RequesterUserId, request.RoleName, cancellationToken);
 
         return ToDto(request);
@@ -125,6 +122,55 @@ public sealed class JitElevationService(
 
         var now = timeProvider.GetUtcNow();
         return approvedRequests.Any(r => r.ValidFromUtc <= now && r.ValidToUtc >= now);
+    }
+
+    public async Task<IReadOnlyList<RoleElevationRequestDto>> GetRequestsForUserAsync(
+            string userId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        // OBS: sortering på CreatedAtUtc (DateTimeOffset) sker client-side — SQLite kan
+        // ikke oversætte ORDER BY på DateTimeOffset til SQL (se memory-noter).
+        var requests = await context.RoleElevationRequests
+            .Where(r => r.RequesterUserId == userId)
+            .ToListAsync(cancellationToken);
+
+        return [.. requests
+            .OrderByDescending(r => r.CreatedAtUtc)
+            .Select(ToDto)];
+    }
+
+    public async Task<IReadOnlyList<RoleElevationRequestDto>> GetPendingRequestsForApprovalAsync(
+        string approverUserId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(approverUserId);
+
+        var approverUser = await userManager.FindByIdAsync(approverUserId);
+        if (approverUser is null)
+        {
+            return [];
+        }
+
+        var approverRoles = await userManager.GetRolesAsync(approverUser);
+        if (approverRoles.Count == 0)
+        {
+            return [];
+        }
+
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        // OBS: sortering på CreatedAtUtc (DateTimeOffset) sker client-side — se note ovenfor.
+        var requests = await context.RoleElevationRequests
+            .Where(r => r.Status == RoleElevationStatus.Pending
+                && r.RequesterUserId != approverUserId
+                && approverRoles.Contains(r.RoleName))
+            .ToListAsync(cancellationToken);
+
+        return [.. requests
+            .OrderBy(r => r.CreatedAtUtc)
+            .Select(ToDto)];
     }
 
     private static async Task<RoleElevationRequest> LoadPendingRequestAsync(

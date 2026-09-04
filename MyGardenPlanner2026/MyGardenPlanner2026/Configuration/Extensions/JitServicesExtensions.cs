@@ -15,6 +15,7 @@ public static class JitServicesExtensions
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<IJitElevationService, JitElevationService>();
         services.AddScoped<IAuthorizationHandler, JitRoleAuthorizationHandler>();
+        services.AddScoped<IAuthorizationHandler, AnyAdminRoleAuthorizationHandler>();
         services.AddHostedService<RoleElevationExpirySweepService>();
 
         return services;

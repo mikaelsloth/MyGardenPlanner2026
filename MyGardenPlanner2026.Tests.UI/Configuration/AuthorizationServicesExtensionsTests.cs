@@ -125,4 +125,40 @@ public class AuthorizationServicesExtensionsTests
         services.Should().Contain(d =>
             d.ServiceType == typeof(IAuthorizationHandler) && d.ImplementationType == typeof(RequireRecentAuthenticationHandler));
     }
+
+    [Fact]
+    public async Task AddAuthorizationServices_RegistersRequireAnyAdminRolePolicy_WithAllFourAdminRoles()
+    {
+        var services = new ServiceCollection();
+        services.AddAuthorizationServices();
+
+        await using var provider = services.BuildServiceProvider();
+        var policyProvider = provider.GetRequiredService<IAuthorizationPolicyProvider>();
+
+        var policy = await policyProvider.GetPolicyAsync(AuthorizationServicesExtensions.RequireAnyAdminRolePolicy);
+
+        policy.Should().NotBeNull();
+        var requirement = policy!.Requirements.OfType<AnyAdminRoleRequirement>().Should().ContainSingle().Subject;
+        requirement.RoleNames.Should().BeEquivalentTo(
+        [
+            AuthorizationServicesExtensions.SystemAdminRole,
+            AuthorizationServicesExtensions.DataAdminRole,
+            AuthorizationServicesExtensions.PolicyAdminRole,
+            AuthorizationServicesExtensions.AuditViewerRole
+        ]);
+    }
+
+    [Fact]
+    public async Task AddAuthorizationServices_RequireAnyAdminRolePolicy_AlsoRequiresMfaRequirement()
+    {
+        var services = new ServiceCollection();
+        services.AddAuthorizationServices();
+
+        await using var provider = services.BuildServiceProvider();
+        var policyProvider = provider.GetRequiredService<IAuthorizationPolicyProvider>();
+
+        var policy = await policyProvider.GetPolicyAsync(AuthorizationServicesExtensions.RequireAnyAdminRolePolicy);
+
+        policy!.Requirements.OfType<MfaRequirement>().Should().ContainSingle();
+    }
 }

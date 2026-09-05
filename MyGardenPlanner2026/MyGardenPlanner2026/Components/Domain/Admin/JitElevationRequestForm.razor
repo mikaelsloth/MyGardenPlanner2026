@@ -1,0 +1,83 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Admin
+
+<div class="jit-elevation-request-form card card-entity" data-density="default">
+    @if (errorMessage is not null)
+    {
+        <div class="status-message status-danger status-section" role="alert">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div class="status-message-text"><p>@errorMessage</p></div>
+        </div>
+    }
+
+    <div class="form-section">
+        <h3 class="h5">Anmod om midlertidig adgang</h3>
+        <div class="form-grid form-grid-3">
+            <div class="field">
+                <label class="field-label" for="jit-request-role">Rolle</label>
+                <select id="jit-request-role" class="form-select" @bind="selectedRole">
+                    @foreach (var role in AdminRoles)
+                    {
+                        <option value="@role">@role</option>
+                    }
+                </select>
+            </div>
+            <div class="field">
+                <label class="field-label" for="jit-request-minutes">Minutter</label>
+                <input id="jit-request-minutes" type="number" min="1" class="form-control"
+                       value="@minutes" @onchange="e => minutes = ParseInt(e.Value)" />
+                <p class="help">Skal ligge inden for den konfigurerede policy-grænse.</p>
+            </div>
+            <div class="field">
+                <label class="field-label" for="jit-request-reason">Årsag</label>
+                <input id="jit-request-reason" class="form-control" @bind="reason" placeholder="Beskriv formålet" />
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="button" class="btn btn-primary" @onclick="SubmitRequestAsync">Send anmodning</button>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <div class="form-section-header">
+            <h3 class="h5">Mine anmodninger</h3>
+            <div class="check-row">
+                <input type="checkbox" id="jit-request-show-history" class="form-check-input" @bind="showHistory" />
+                <label class="field-label" for="jit-request-show-history">Vis afviste/udløbne</label>
+            </div>
+        </div>
+
+        @{ var visibleRequests = VisibleRequests.ToList(); }
+        @if (visibleRequests.Count == 0)
+        {
+            <p class="card-description">Ingen anmodninger at vise.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="data-table" data-density="compact">
+                    <thead>
+                        <tr>
+                            <th scope="col">Rolle</th>
+                            <th scope="col">Minutter</th>
+                            <th scope="col">Årsag</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Oprettet</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var request in visibleRequests)
+                        {
+                            <tr @key="request.Id">
+                                <td>@request.RoleName</td>
+                                <td class="numeric">@request.RequestedMinutes</td>
+                                <td>@request.Reason</td>
+                                <td><span class="badge-role @StatusBadgeClass(request.Status)">@StatusLabel(request.Status)</span></td>
+                                <td>@request.CreatedAtUtc.ToLocalTime().ToString("g", DanishCulture)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

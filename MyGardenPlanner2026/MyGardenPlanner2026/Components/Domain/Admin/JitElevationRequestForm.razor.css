@@ -1,0 +1,6 @@
+/* CSS for JitElevationRequestForm component */
+/* CSS for JitElevationRequestForm component */
+.jit-elevation-request-form {
+    display: grid;
+    gap: var(--mgp-space-lg);
+}

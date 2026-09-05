@@ -1,0 +1,41 @@
+﻿@page "/admin/jit-requests"
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Policy = MyGardenPlanner2026.Configuration.Extensions.AuthorizationServicesExtensions.RequireAnyAdminRolePolicy)]
+@rendermode InteractiveServer
+
+<PageTitle>JIT-adgang – MyGardenPlanner</PageTitle>
+
+<div class="container-fluid px-3 px-md-4 admin-jit-requests-page">
+    <h1>JIT-adgang</h1>
+    <p class="card-description">Anmod om midlertidig forhøjet adgang, eller godkend andres anmodninger. Alle anmodninger kræver peer-godkendelse fra en bruger med den specifikke rolle.</p>
+
+    @if (statusMessage is not null)
+    {
+        <div class="status-message status-success status-page" role="status" aria-live="polite">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div class="status-message-text"><p>@statusMessage</p></div>
+        </div>
+    }
+
+    <div class="context-tabs" role="tablist" aria-label="JIT-adgangsområder">
+        <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.Request ? "active" : string.Empty)"
+                aria-selected="@(activeTab == AdminTab.Request)" @onclick="() => SelectTab(AdminTab.Request)">
+            Anmod om adgang
+        </button>
+        <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.Approve ? "active" : string.Empty)"
+                aria-selected="@(activeTab == AdminTab.Approve)" @onclick="() => SelectTab(AdminTab.Approve)">
+            Godkend anmodninger
+        </button>
+    </div>
+
+    <div class="admin-tab-content">
+        @switch (activeTab)
+        {
+            case AdminTab.Request:
+                <JitElevationRequestForm />
+                break;
+            case AdminTab.Approve:
+                <JitElevationApprovalQueue OnStatusMessage="SetStatusMessage" />
+                break;
+        }
+    </div>
+</div>

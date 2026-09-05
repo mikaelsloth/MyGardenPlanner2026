@@ -1,0 +1,10 @@
+/* CSS for AdminJitRequestsPage component */
+/* CSS for AdminJitRequestsPage component */
+.admin-jit-requests-page {
+    padding-top: var(--mgp-page-y);
+    padding-bottom: var(--mgp-page-y);
+}
+
+.admin-tab-content {
+    margin-top: var(--mgp-space-lg);
+}

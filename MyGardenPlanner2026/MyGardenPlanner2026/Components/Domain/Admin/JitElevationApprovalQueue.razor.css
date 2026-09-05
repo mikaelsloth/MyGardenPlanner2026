@@ -1,0 +1,6 @@
+/* CSS for JitElevationApprovalQueue component */
+/* CSS for JitElevationApprovalQueue component */
+.jit-elevation-approval-queue {
+    display: grid;
+    gap: var(--mgp-space-md);
+}

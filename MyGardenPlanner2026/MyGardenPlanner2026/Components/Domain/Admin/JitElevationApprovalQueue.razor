@@ -1,0 +1,55 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Admin
+
+@using MyGardenPlanner2026.Components.Account.Shared
+
+<div class="jit-elevation-approval-queue card card-entity" data-density="default">
+    @if (errorMessage is not null)
+    {
+        <div class="status-message status-danger status-section" role="alert">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div class="status-message-text"><p>@errorMessage</p></div>
+        </div>
+    }
+
+    <h3 class="h5">Anmodninger til godkendelse</h3>
+
+    @if (pendingRequests.Count == 0)
+    {
+        <p class="card-description">Ingen ventende anmodninger, du kan godkende.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="data-table" data-density="compact">
+                <thead>
+                    <tr>
+                        <th scope="col">Ansøger</th>
+                        <th scope="col">Rolle</th>
+                        <th scope="col">Minutter</th>
+                        <th scope="col">Årsag</th>
+                        <th scope="col">Anmodet</th>
+                        <th scope="col">Handling</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var request in pendingRequests)
+                    {
+                        <tr @key="request.Id">
+                            <td>@request.RequesterUserId</td>
+                            <td>@request.RoleName</td>
+                            <td class="numeric">@request.RequestedMinutes</td>
+                            <td>@request.Reason</td>
+                            <td>@request.CreatedAtUtc.ToLocalTime().ToString("g", DanishCulture)</td>
+                            <td class="btn-row">
+                                <button type="button" class="btn btn-primary btn-sm" @onclick="() => ApproveAsync(request.Id)">Godkend</button>
+                                <button type="button" class="btn btn-danger btn-sm" @onclick="() => RejectAsync(request.Id)">Afvis</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <StepUpReAuthModal IsOpen="stepUpGuard.ShowModal" OnReAuthenticated="stepUpGuard.ExecutePendingActionAsync" OnCancel="stepUpGuard.Cancel" />
+</div>

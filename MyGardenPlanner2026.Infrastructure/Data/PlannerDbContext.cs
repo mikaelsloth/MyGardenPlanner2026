@@ -16,6 +16,7 @@ public partial class PlannerDbContext(DbContextOptions<PlannerDbContext> options
 
         ConfigureLayer1(modelBuilder);
         ConfigureAdmin(modelBuilder);
+        ConfigureAuditLogViewerPreference(modelBuilder);
         ApplySoftDeleteQueryFilters(modelBuilder);
 
         modelBuilder.Entity<DummyEntityPlant>(entity =>

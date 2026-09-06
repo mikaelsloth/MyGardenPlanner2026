@@ -15,6 +15,7 @@ public static class RoutingAndEndpointsExtension
             .AddAdditionalAssemblies(typeof(MyGardenPlanner2026.Client._Imports).Assembly);
 
         app.MapAdditionalIdentityEndpoints();
+        app.MapAuditLogEndpoints();
         return app;
     }
 }

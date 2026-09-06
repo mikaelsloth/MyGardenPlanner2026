@@ -19,7 +19,8 @@ builder.Services
     .AddSecurityAlertingServices(builder.Configuration)
     .AddReAuthFailureTracking(builder.Configuration)
     .AddSecurityPolicySettingsSeeding(builder.Configuration)
-    .AddSecurityPolicyRuntimeReload();
+    .AddSecurityPolicyRuntimeReload()
+    .AddAuditLogServices();
 
 var app = builder.Build();
 
@@ -50,4 +51,6 @@ app.UseWebPipeline();
 // 3. Routing & Endpoints
 app.MapRoutingEndpoints();
 
+#pragma warning disable S6966
 app.Run();
+#pragma warning restore S6966

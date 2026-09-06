@@ -8,6 +8,7 @@ public static class AuditLogServicesExtensions
     public static IServiceCollection AddAuditLogServices(this IServiceCollection services)
     {
         services.AddScoped<IAuditLogQueryService, AuditLogQueryService>();
+        services.AddScoped<IAuditLogViewerPreferenceService, AuditLogViewerPreferenceService>();
 
         return services;
     }

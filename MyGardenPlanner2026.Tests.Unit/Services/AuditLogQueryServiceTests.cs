@@ -251,4 +251,25 @@ public sealed class AuditLogQueryServiceTests : TestDbContext
 
         count.Should().Be(0);
     }
+
+    [Fact]
+    public async Task GetDistinctEntityNamesAsync_ReturnsAlphabeticallySortedDistinctNames()
+    {
+        await SeedAsync(
+            Log(entityName: "SubscriptionAddOn"),
+            Log(entityName: "SubscriptionTier"),
+            Log(entityName: "SubscriptionTier"));
+
+        var names = await sut.GetDistinctEntityNamesAsync(TestContext.Current.CancellationToken);
+
+        names.Should().Equal("SubscriptionAddOn", "SubscriptionTier");
+    }
+
+    [Fact]
+    public async Task GetDistinctEntityNamesAsync_NoRows_ReturnsEmptyList()
+    {
+        var names = await sut.GetDistinctEntityNamesAsync(TestContext.Current.CancellationToken);
+
+        names.Should().BeEmpty();
+    }
 }

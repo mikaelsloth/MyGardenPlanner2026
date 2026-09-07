@@ -1,0 +1,66 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Admin
+
+<div class="filter-bar audit-log-filter-bar" data-density="default">
+    <div class="filter-bar-main">
+        <div class="field">
+            <label class="field-label" for="audit-filter-entity">Entitet</label>
+            <select id="audit-filter-entity" class="form-select" @bind="entityName">
+                <option value="">Alle</option>
+                @foreach (var name in EntityNameOptions)
+                {
+                    <option value="@name">@name</option>
+                }
+            </select>
+        </div>
+
+        <div class="field">
+            <label class="field-label" for="audit-filter-entity-id">Entitets-ID</label>
+            <input id="audit-filter-entity-id" class="form-control" @bind="entityId" placeholder="fx en Guid" />
+        </div>
+
+        <div class="field">
+            <label class="field-label" for="audit-filter-user-id">Bruger-ID</label>
+            <input id="audit-filter-user-id" class="form-control" @bind="userId" />
+        </div>
+
+        <div class="field">
+            <label class="field-label" for="audit-filter-user-email">E-mail</label>
+            <input id="audit-filter-user-email" class="form-control" @bind="userEmail" />
+        </div>
+
+        <div class="field">
+            <label class="field-label" for="audit-filter-action">Handling</label>
+            <select id="audit-filter-action" class="form-select" @bind="action">
+                <option value="">Alle</option>
+                @foreach (var value in ActionOptions)
+                {
+                    <option value="@value">@ActionLabel(value)</option>
+                }
+            </select>
+        </div>
+
+        <div class="field">
+            <label class="field-label" for="audit-filter-from">Fra</label>
+            <input id="audit-filter-from" type="date" class="form-control" @bind="fromDate" @bind:format="yyyy-MM-dd" />
+        </div>
+
+        <div class="field">
+            <label class="field-label" for="audit-filter-to">Til</label>
+            <input id="audit-filter-to" type="date" class="form-control" @bind="toDate" @bind:format="yyyy-MM-dd" />
+        </div>
+
+        <div class="field">
+            <label class="field-label" for="audit-filter-pagesize">Rækker pr. side</label>
+            <select id="audit-filter-pagesize" class="form-select" @bind="pageSize">
+                @foreach (var size in PageSizeOptions)
+                {
+                    <option value="@size">@size</option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <div class="filter-bar-actions">
+        <button type="button" class="btn btn-primary" @onclick="HandleSearchAsync">Søg</button>
+    </div>
+</div>

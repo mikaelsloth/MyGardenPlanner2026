@@ -1,0 +1,7 @@
+/* CSS for AdminAuditLogPage component */
+.admin-audit-log-page {
+    padding-top: var(--mgp-page-y);
+    padding-bottom: var(--mgp-page-y);
+    display: grid;
+    gap: var(--mgp-space-lg);
+}

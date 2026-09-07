@@ -13,4 +13,7 @@ public interface IAuditLogQueryService
     /// <summary>Samlet antal rækker der matcher filteret, uden hensyn til paginering.</summary>
     Task<int> CountAsync(
         AuditLogFilterDto filter, CancellationToken cancellationToken = default);
+
+    /// <summary>Alfabetisk sorteret liste over distinkte EntityName-værdier i loggen — bruges til at populere admin-UI'ets filter-dropdown dynamisk.</summary>
+    Task<IReadOnlyList<string>> GetDistinctEntityNamesAsync(CancellationToken cancellationToken = default);
 }

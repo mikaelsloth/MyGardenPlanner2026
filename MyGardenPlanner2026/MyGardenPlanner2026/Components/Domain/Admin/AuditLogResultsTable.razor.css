@@ -1,0 +1,5 @@
+/* CSS for AuditLogResultsTable component */
+.audit-log-pagination {
+    justify-content: space-between;
+    margin-top: var(--mgp-space-md);
+}

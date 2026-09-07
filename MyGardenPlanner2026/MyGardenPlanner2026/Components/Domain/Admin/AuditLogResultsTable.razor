@@ -1,0 +1,67 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Admin
+
+@if (Result is null)
+{
+    <div class="skeleton-card" aria-hidden="true">
+        <div class="skeleton-line skeleton-title"></div>
+        <div class="skeleton-line skeleton-meta"></div>
+    </div>
+}
+else if (Result.Items.Count == 0)
+{
+    <div class="empty-state empty-search">
+        <div class="empty-icon" aria-hidden="true">
+            <i class="bi bi-search"></i>
+        </div>
+        <div class="empty-content">
+            <h3>Ingen resultater</h3>
+            <p>Ingen revisionslog-rækker matcher det aktuelle filter.</p>
+        </div>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="data-table data-table-compact" data-density="compact">
+            <thead>
+                <tr>
+                    <th scope="col">Tidspunkt</th>
+                    <th scope="col">Bruger</th>
+                    <th scope="col">Handling</th>
+                    <th scope="col">Entitet</th>
+                    <th scope="col">Entitets-ID</th>
+                    <th scope="col">IP-adresse</th>
+                    <th scope="col">Detaljer</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var entry in Result.Items)
+                {
+                    <tr @key="entry.Id">
+                        <td>@entry.TimestampUtc.ToLocalTime().ToString("g", DanishCulture)</td>
+                        <td>@entry.UserEmail</td>
+                        <td><span class="badge-role @ActionBadgeClass(entry.Action)">@ActionLabel(entry.Action)</span></td>
+                        <td>@entry.EntityName</td>
+                        <td>@entry.EntityId</td>
+                        <td>@entry.IpAddress</td>
+                        <td>
+                            <button type="button" class="btn btn-secondary btn-sm" @onclick="() => OnViewDetails.InvokeAsync(entry)">
+                                Detaljer
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="btn-row audit-log-pagination">
+        <button type="button" class="btn btn-secondary btn-sm" disabled="@(!HasPreviousPage)" @onclick="GoToPreviousPageAsync">
+            Forrige
+        </button>
+        <span class="meta">Side @Result.PageNumber af @TotalPages (@Result.TotalCount rækker i alt)</span>
+        <button type="button" class="btn btn-secondary btn-sm" disabled="@(!HasNextPage)" @onclick="GoToNextPageAsync">
+            Næste
+        </button>
+    </div>
+}

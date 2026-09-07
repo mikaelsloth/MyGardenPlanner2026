@@ -51,6 +51,19 @@ public sealed class AuditLogQueryService(
         return ApplyFilter(all, filter).Count();
     }
 
+    public async Task<IReadOnlyList<string>> GetDistinctEntityNamesAsync(CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        // Ingen provider-forgrening nødvendig: Distinct/OrderBy på en string-kolonne
+        // rammer ikke SQLite-begrænsningen på DateTimeOffset (jf. memory-noter).
+        return await context.AuditLogs
+            .Select(a => a.EntityName)
+            .Distinct()
+            .OrderBy(name => name)
+            .ToListAsync(cancellationToken);
+    }
+
     private static async Task<AuditLogQueryResultDto> SearchOnSqlServerAsync(
         PlannerDbContext context, AuditLogFilterDto filter, CancellationToken cancellationToken)
     {

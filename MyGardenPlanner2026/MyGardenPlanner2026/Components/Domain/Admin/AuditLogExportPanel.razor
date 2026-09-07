@@ -1,0 +1,39 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Admin
+
+@using MyGardenPlanner2026.Components.Account.Shared
+
+<div class="audit-log-export-panel card card-entity" data-density="default">
+    @if (errorMessage is not null)
+    {
+        <div class="status-message status-danger status-section" role="alert">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div class="status-message-text"><p>@errorMessage</p></div>
+        </div>
+    }
+
+    <div class="form-grid form-grid-2">
+        <div class="field">
+            <label class="field-label" for="export-format">Format</label>
+            <select id="export-format" class="form-select" @bind="selectedFormat">
+                <option value="@AuditLogExportFormat.Csv">CSV</option>
+                <option value="@AuditLogExportFormat.Json">JSON</option>
+                <option value="@AuditLogExportFormat.Xlsx">Excel</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="form-actions">
+        <button type="button" class="btn btn-primary" @onclick="ExportButtonClickedAsync">Eksportér</button>
+    </div>
+
+    @if (showThresholdConfirm)
+    {
+        <div class="inline-confirm">
+            <span>Eksporten omfatter @pendingRowCount rækker og kan tage et øjeblik. Fortsæt?</span>
+            <button type="button" class="btn btn-primary btn-sm" @onclick="ConfirmExportAsync">Ja, fortsæt</button>
+            <button type="button" class="btn btn-secondary btn-sm" @onclick="CancelExportConfirm">Annullér</button>
+        </div>
+    }
+
+    <StepUpReAuthModal IsOpen="stepUpGuard.ShowModal" OnReAuthenticated="stepUpGuard.ExecutePendingActionAsync" OnCancel="stepUpGuard.Cancel" />
+</div>

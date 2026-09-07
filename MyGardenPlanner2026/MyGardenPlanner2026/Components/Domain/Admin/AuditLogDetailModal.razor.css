@@ -1,0 +1,36 @@
+/* CSS for AuditLogDetailModal component */
+.audit-log-detail-dialog {
+    max-width: 900px;
+    width: 100%;
+}
+
+.audit-log-detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--mgp-space-md);
+}
+
+.audit-log-detail-column {
+    display: grid;
+    gap: var(--mgp-space-xs);
+}
+
+.audit-log-detail-json {
+    background: var(--mgp-surface-muted);
+    border: 1px solid var(--mgp-border);
+    border-radius: var(--radius-md);
+    padding: var(--mgp-space-sm);
+    font-family: var(--mgp-font-mono);
+    font-size: var(--font-size-sm);
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+    margin: 0;
+}
+
+@media (max-width: 939.98px) {
+    .audit-log-detail-grid {
+        grid-template-columns: 1fr;
+    }
+}

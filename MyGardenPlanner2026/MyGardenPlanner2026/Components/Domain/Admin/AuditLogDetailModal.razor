@@ -1,0 +1,37 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Admin
+
+@if (IsOpen && Entry is not null)
+{
+    <div class="confirm-dialog-backdrop" @onclick="HandleCloseAsync">
+        <div class="confirm-dialog audit-log-detail-dialog" role="dialog" aria-modal="true"
+             aria-labelledby="audit-log-detail-title" @onclick:stopPropagation="true">
+            <div class="confirm-dialog-header">
+                <h2 id="audit-log-detail-title" class="confirm-dialog-title">
+                    Detaljer — @Entry.EntityName (@Entry.EntityId)
+                </h2>
+            </div>
+
+            <div class="confirm-dialog-body stack-sm">
+                <p class="meta">
+                    @Entry.TimestampUtc.ToLocalTime().ToString("g", DanishCulture) ·
+                    @Entry.UserEmail (@Entry.UserId) · @Entry.IpAddress
+                </p>
+
+                <div class="audit-log-detail-grid">
+                    <div class="audit-log-detail-column">
+                        <h3 class="h6">Tidligere værdier</h3>
+                        <pre class="audit-log-detail-json">@FormattedOldValues</pre>
+                    </div>
+                    <div class="audit-log-detail-column">
+                        <h3 class="h6">Nye værdier</h3>
+                        <pre class="audit-log-detail-json">@FormattedNewValues</pre>
+                    </div>
+                </div>
+            </div>
+
+            <div class="confirm-dialog-actions">
+                <button type="button" class="btn btn-secondary" @onclick="HandleCloseAsync">Luk</button>
+            </div>
+        </div>
+    </div>
+}

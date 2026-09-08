@@ -1,0 +1,12 @@
+﻿@namespace MyGardenPlanner2026.Components.Layout
+
+<nav class="admin-nav-menu" aria-label="Administration">
+    <ul class="list-unstyled d-flex flex-column gap-1 nav-drawer-list">
+        @foreach (var item in visibleItems)
+        {
+            <li @key="item.Href">
+                <NavLink class="nav-link-item" href="@item.Href">@item.Label</NavLink>
+            </li>
+        }
+    </ul>
+</nav>

@@ -1,0 +1,6 @@
+/* CSS for AdminNavMenu component */
+/* CSS for AdminNavMenu component */
+.admin-nav-menu {
+    position: sticky;
+    top: var(--mgp-space-lg);
+}

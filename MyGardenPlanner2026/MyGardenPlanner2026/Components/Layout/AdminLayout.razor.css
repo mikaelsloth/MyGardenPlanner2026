@@ -1,0 +1,7 @@
+/* CSS for AdminLayout component */
+/* CSS for AdminLayout component */
+.admin-layout-row {
+    padding-left: var(--mgp-page-x);
+    padding-right: var(--mgp-page-x);
+    margin-top: var(--mgp-space-lg);
+}

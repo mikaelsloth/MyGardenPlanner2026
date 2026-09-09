@@ -31,6 +31,7 @@ public class AdminApiRateLimitingServicesExtensionsTests
         var configuration = new ConfigurationBuilder().Build();
 
         services.AddAdminApiRateLimiting(configuration);
+        services.AddLogging();
 
         using var provider = services.BuildServiceProvider();
         var limiter = provider.GetRequiredService<IAdminActionRateLimiter>();

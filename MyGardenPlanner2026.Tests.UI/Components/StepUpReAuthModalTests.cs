@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Account.Shared;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Contracts.Common;
@@ -35,6 +36,7 @@ public class StepUpReAuthModalTests : BunitContext
         Services.AddSingleton(userManager);
         Services.AddSingleton(reAuthenticationService);
         Services.AddSingleton(Substitute.For<IReAuthFailureTracker>());
+        Services.AddSingleton(Substitute.For<ILogger<StepUpReAuthModal>>());
 
         var currentUserAccessor = Substitute.For<ICurrentUserAccessor>();
         currentUserAccessor.GetCurrent().Returns(new CurrentUserInfo(null, null, "127.0.0.1"));

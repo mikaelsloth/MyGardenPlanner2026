@@ -2,6 +2,7 @@
 
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Configuration.RateLimiting;
 using MyGardenPlanner2026.Infrastructure.Services;
@@ -11,6 +12,8 @@ using Xunit;
 
 public class ReloadableLoginRateLimiterTests
 {
+    private readonly ILogger<ReloadableLoginRateLimiter> logger = Substitute.For<ILogger<ReloadableLoginRateLimiter>>();
+
     private static DefaultHttpContext CreateProtectedLoginRequest()
     {
         var context = new DefaultHttpContext();
@@ -44,7 +47,7 @@ public class ReloadableLoginRateLimiterTests
     public void AttemptAcquire_UnprotectedPath_AlwaysSucceeds()
     {
         var (monitor, _) = CreateMonitor(new LoginRateLimitOptions { PermitLimit = 1, WindowSeconds = 60 });
-        using var limiter = new ReloadableLoginRateLimiter(monitor);
+        using var limiter = new ReloadableLoginRateLimiter(monitor, logger);
         var context = new DefaultHttpContext();
         context.Request.Method = "GET";
         context.Request.Path = "/pricing";
@@ -60,7 +63,7 @@ public class ReloadableLoginRateLimiterTests
     public void AttemptAcquire_ProtectedPath_ExceedsPermitLimit_RejectsOverflow()
     {
         var (monitor, _) = CreateMonitor(new LoginRateLimitOptions { PermitLimit = 1, WindowSeconds = 60 });
-        using var limiter = new ReloadableLoginRateLimiter(monitor);
+        using var limiter = new ReloadableLoginRateLimiter(monitor, logger);
         var context = CreateProtectedLoginRequest();
 
         var first = limiter.AttemptAcquire(context);
@@ -74,7 +77,7 @@ public class ReloadableLoginRateLimiterTests
     public void AttemptAcquire_AfterOptionsChanged_AppliesNewPermitLimitImmediately()
     {
         var (monitor, triggerChange) = CreateMonitor(new LoginRateLimitOptions { PermitLimit = 1, WindowSeconds = 60 });
-        using var limiter = new ReloadableLoginRateLimiter(monitor);
+        using var limiter = new ReloadableLoginRateLimiter(monitor, logger);
         var context = CreateProtectedLoginRequest();
 
         limiter.AttemptAcquire(context).IsAcquired.Should().BeTrue();

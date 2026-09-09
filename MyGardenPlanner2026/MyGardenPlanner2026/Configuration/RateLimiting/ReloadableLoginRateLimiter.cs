@@ -1,6 +1,7 @@
 ﻿namespace MyGardenPlanner2026.Configuration.RateLimiting;
 
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Infrastructure.Services;
 using System.Threading.RateLimiting;
@@ -13,19 +14,25 @@ using System.Threading.RateLimiting;
 /// Abonnerer på IOptionsMonitor.OnChange: en ændring i admin-UI bygger en ny intern
 /// limiter og bytter den atomisk ind, mens den gamle disposes.
 /// </summary>
-public sealed class ReloadableLoginRateLimiter : PartitionedRateLimiter<HttpContext>
+public sealed partial class ReloadableLoginRateLimiter : PartitionedRateLimiter<HttpContext>
 {
     private readonly IDisposable? _changeSubscription;
+    private readonly ILogger<ReloadableLoginRateLimiter> logger;
     private PartitionedRateLimiter<HttpContext> _inner;
 
-    public ReloadableLoginRateLimiter(IOptionsMonitor<LoginRateLimitOptions> optionsMonitor)
+    [LoggerMessage(EventId = 1041, Level = LogLevel.Information, Message = "ReloadableLoginRateLimiter genopbygget med ny policy (PermitLimit={PermitLimit}, WindowSeconds={WindowSeconds}).")]
+    static partial void RateLimiterRebuilt(ILogger logger, int PermitLimit, int WindowSeconds);
+
+    public ReloadableLoginRateLimiter(IOptionsMonitor<LoginRateLimitOptions> optionsMonitor, ILogger<ReloadableLoginRateLimiter> logger)
     {
+        this.logger = logger;
         _inner = BuildLimiter(optionsMonitor.CurrentValue);
         _changeSubscription = optionsMonitor.OnChange(policy =>
         {
             var newInner = BuildLimiter(policy);
             var oldInner = Interlocked.Exchange(ref _inner, newInner);
             oldInner.Dispose();
+            RateLimiterRebuilt(this.logger, policy.PermitLimit, policy.WindowSeconds);
         });
     }
 

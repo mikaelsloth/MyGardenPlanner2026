@@ -28,6 +28,9 @@ public partial class StepUpReAuthModal
     [Inject]
     private ICurrentUserAccessor CurrentUserAccessor { get; set; } = default!;
 
+    [Inject]
+    private ILogger<StepUpReAuthModal> Logger { get; set; } = default!;
+
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
@@ -39,6 +42,18 @@ public partial class StepUpReAuthModal
 
     [Parameter]
     public EventCallback OnReAuthenticated { get; set; }
+
+    [LoggerMessage(EventId = 1035, Level = LogLevel.Warning, Message = "Forkert adgangskode angivet under step-up re-autentificering for bruger '{UserId}'.")]
+    static partial void WrongPasswordAttempt(ILogger logger, string UserId);
+
+    [LoggerMessage(EventId = 1036, Level = LogLevel.Warning, Message = "Ugyldig godkendelseskode angivet under step-up re-autentificering for bruger '{UserId}'.")]
+    static partial void InvalidTwoFactorCodeAttempt(ILogger logger, string UserId);
+
+    [LoggerMessage(EventId = 1037, Level = LogLevel.Information, Message = "Bruger '{UserId}' gennemførte step-up re-autentificering.")]
+    static partial void ReAuthenticationSucceeded(ILogger logger, string UserId);
+
+    [LoggerMessage(EventId = 1038, Level = LogLevel.Warning, Message = "Kunne ikke bestemme den aktuelle bruger under step-up re-autentificering.")]
+    static partial void CurrentUserCouldNotBeResolved(ILogger logger);
 
     private InputModel Input { get; set; } = new();
     private ApplicationUser? currentUser;
@@ -87,6 +102,7 @@ public partial class StepUpReAuthModal
         if (currentUser is null)
         {
             errorMessage = "Error: Kunne ikke bestemme den aktuelle bruger.";
+            CurrentUserCouldNotBeResolved(Logger);
             return;
         }
 
@@ -96,6 +112,7 @@ public partial class StepUpReAuthModal
             if (!await UserManager.CheckPasswordAsync(currentUser, Input.Password))
             {
                 errorMessage = "Error: Forkert adgangskode.";
+                WrongPasswordAttempt(Logger, currentUser.Id);
                 await RecordFailureAsync();
                 return;
             }
@@ -115,6 +132,7 @@ public partial class StepUpReAuthModal
                 if (!isCodeValid)
                 {
                     errorMessage = "Error: Ugyldig godkendelseskode.";
+                    InvalidTwoFactorCodeAttempt(Logger, currentUser.Id);
                     await RecordFailureAsync();
                     return;
                 }
@@ -122,6 +140,7 @@ public partial class StepUpReAuthModal
 
             ReAuthenticationService.MarkReAuthenticated();
             await ReAuthFailureTracker.ClearFailuresAsync(currentUser.Id);
+            ReAuthenticationSucceeded(Logger, currentUser.Id);
             ResetForm();
             await OnReAuthenticated.InvokeAsync();
         }

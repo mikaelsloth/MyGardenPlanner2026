@@ -2,6 +2,7 @@
 
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Core.Entities.Common;
@@ -12,6 +13,7 @@ using Xunit;
 public class JitElevationServiceTests : TestDbContext
 {
     private readonly ISecurityAlertService securityAlertService = Substitute.For<ISecurityAlertService>();
+    private readonly ILogger<JitElevationService> logger = Substitute.For<ILogger<JitElevationService>>();
 
     private static UserManager<ApplicationUser> CreateUserManager()
     {
@@ -39,7 +41,7 @@ public class JitElevationServiceTests : TestDbContext
             .Returns(callInfo => Task.FromResult(knownRoles.Contains(callInfo.Arg<string>())));
 
         return new JitElevationService(
-            CreateAdminDbContextFactory(), roleManager, CreateUserManager(), new TestOptionsMonitor<JitElevationPolicyOptions>(policy), TimeProvider.System, securityAlertService);
+            CreateAdminDbContextFactory(), roleManager, CreateUserManager(), new TestOptionsMonitor<JitElevationPolicyOptions>(policy), TimeProvider.System, securityAlertService, logger);
     }
 
     private JitElevationService CreateServiceWithTimeProvider(TimeProvider timeProvider, params string[] knownRoles)
@@ -50,7 +52,7 @@ public class JitElevationServiceTests : TestDbContext
             .Returns(callInfo => Task.FromResult(knownRoles.Contains(callInfo.Arg<string>())));
 
         return new JitElevationService(
-            CreateAdminDbContextFactory(), roleManager, CreateUserManager(), new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()), timeProvider, securityAlertService);
+            CreateAdminDbContextFactory(), roleManager, CreateUserManager(), new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()), timeProvider, securityAlertService, logger);
     }
 
     [Fact]
@@ -317,7 +319,7 @@ public class JitElevationServiceTests : TestDbContext
         roleManager.RoleExistsAsync("SystemAdmin").Returns(Task.FromResult(true));
 
         var service = new JitElevationService(
-                    CreateAdminDbContextFactory(), roleManager, CreateUserManager(), monitor, TimeProvider.System, securityAlertService);
+                    CreateAdminDbContextFactory(), roleManager, CreateUserManager(), monitor, TimeProvider.System, securityAlertService, logger);
         var stillOldBounds = async () => await service.RequestElevationAsync(
             "user-1", "SystemAdmin", 120, "Test.", TestContext.Current.CancellationToken);
         await stillOldBounds.Should().ThrowAsync<ArgumentOutOfRangeException>();
@@ -377,7 +379,7 @@ public class JitElevationServiceTests : TestDbContext
 
         var service = new JitElevationService(
             CreateAdminDbContextFactory(), roleManager, CreateUserManagerWithRoles("approver-1", "SystemAdmin"),
-            new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()), TimeProvider.System, securityAlertService);
+            new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()), TimeProvider.System, securityAlertService, logger);
 
         await service.RequestElevationAsync("requester-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
 
@@ -395,7 +397,7 @@ public class JitElevationServiceTests : TestDbContext
 
         var service = new JitElevationService(
             CreateAdminDbContextFactory(), roleManager, CreateUserManagerWithRoles("approver-1", "DataAdmin"),
-            new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()), TimeProvider.System, securityAlertService);
+            new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()), TimeProvider.System, securityAlertService, logger);
 
         await service.RequestElevationAsync("requester-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
 
@@ -413,7 +415,7 @@ public class JitElevationServiceTests : TestDbContext
 
         var service = new JitElevationService(
             CreateAdminDbContextFactory(), roleManager, CreateUserManagerWithRoles("user-1", "SystemAdmin"),
-            new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()), TimeProvider.System, securityAlertService);
+            new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()), TimeProvider.System, securityAlertService, logger);
 
         await service.RequestElevationAsync("user-1", "SystemAdmin", 45, "Egen anmodning.", TestContext.Current.CancellationToken);
 
@@ -431,7 +433,7 @@ public class JitElevationServiceTests : TestDbContext
 
         var service = new JitElevationService(
             CreateAdminDbContextFactory(), roleManager, CreateUserManagerWithRoles("approver-1", "SystemAdmin"),
-            new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()), TimeProvider.System, securityAlertService);
+            new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()), TimeProvider.System, securityAlertService, logger);
 
         var request = await service.RequestElevationAsync("requester-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
         await service.ApproveElevationAsync("approver-1", request.Id, TestContext.Current.CancellationToken);

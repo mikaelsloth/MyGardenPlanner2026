@@ -2,6 +2,7 @@
 
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities;
@@ -16,15 +17,42 @@ using MyGardenPlanner2026.Infrastructure.Data;
 ///   (konfigurerbar via JitElevationPolicyOptions, sektion "JitElevationPolicy").
 /// - Peer approval / dual-custody: godkender/afviser må ikke være ansøgeren selv.
 /// Skriver via IAdminDbContextFactory, da RoleElevationRequests ligger i admin-schema.
+/// Alle anmodninger, godkendelser, afvisninger og valideringsfejl logges som Information
+/// til brug for driftsmæssig sporing (§4.2-relateret, om end ikke en sikkerhedsalarm i sig selv).
 /// </summary>
-public sealed class JitElevationService(
+public sealed partial class JitElevationService(
     IAdminDbContextFactory contextFactory,
     RoleManager<IdentityRole> roleManager,
     UserManager<ApplicationUser> userManager,
     IOptionsMonitor<JitElevationPolicyOptions> policyOptionsMonitor,
     TimeProvider timeProvider,
-    ISecurityAlertService securityAlertService) : IJitElevationService
+    ISecurityAlertService securityAlertService,
+    ILogger<JitElevationService> logger) : IJitElevationService
 {
+    [LoggerMessage(EventId = 1027, Level = LogLevel.Information, Message = "Bruger '{UserId}' anmodede om JIT-eskalering til rollen '{RoleName}' i {Minutes} minutter.")]
+    static partial void ElevationRequested(ILogger logger, string UserId, string RoleName, int Minutes);
+
+    [LoggerMessage(EventId = 1028, Level = LogLevel.Information, Message = "Ugyldig JitElevationPolicy ved anmodning fra bruger '{UserId}': MinRequestedMinutes ({MinMinutes}) er større end MaxRequestedMinutes ({MaxMinutes}).")]
+    static partial void ElevationRequestPolicyMisconfigured(ILogger logger, string UserId, int MinMinutes, int MaxMinutes);
+
+    [LoggerMessage(EventId = 1029, Level = LogLevel.Information, Message = "Bruger '{UserId}' anmodede om {Minutes} minutter, hvilket ligger uden for policy-grænsen [{MinMinutes}-{MaxMinutes}].")]
+    static partial void ElevationRequestMinutesOutOfRange(ILogger logger, string UserId, int Minutes, int MinMinutes, int MaxMinutes);
+
+    [LoggerMessage(EventId = 1030, Level = LogLevel.Information, Message = "Bruger '{UserId}' anmodede om ukendt rolle '{RoleName}'.")]
+    static partial void ElevationRequestUnknownRole(ILogger logger, string UserId, string RoleName);
+
+    [LoggerMessage(EventId = 1031, Level = LogLevel.Information, Message = "Anmodning '{RequestId}' om rollen '{RoleName}' blev godkendt af bruger '{ApproverUserId}'.")]
+    static partial void ElevationApproved(ILogger logger, Guid RequestId, string RoleName, string ApproverUserId);
+
+    [LoggerMessage(EventId = 1032, Level = LogLevel.Information, Message = "Anmodning '{RequestId}' om rollen '{RoleName}' blev afvist af bruger '{ApproverUserId}'.")]
+    static partial void ElevationRejected(ILogger logger, Guid RequestId, string RoleName, string ApproverUserId);
+
+    [LoggerMessage(EventId = 1033, Level = LogLevel.Information, Message = "Bruger '{ApproverUserId}' forsøgte at {Action} egen anmodning '{RequestId}' (dual-custody afvist).")]
+    static partial void ElevationSelfActionRejected(ILogger logger, string ApproverUserId, string Action, Guid RequestId);
+
+    [LoggerMessage(EventId = 1034, Level = LogLevel.Information, Message = "Anmodning '{RequestId}' kunne ikke {Action} fra status '{Status}'.")]
+    static partial void ElevationInvalidStatusForAction(ILogger logger, Guid RequestId, string Action, RoleElevationStatus Status);
+
     public async Task<RoleElevationRequestDto> RequestElevationAsync(
         string userId, string roleName, int minutes, string reason, CancellationToken cancellationToken = default)
     {
@@ -36,6 +64,7 @@ public sealed class JitElevationService(
 
         if (policy.MinRequestedMinutes > policy.MaxRequestedMinutes)
         {
+            ElevationRequestPolicyMisconfigured(logger, userId, policy.MinRequestedMinutes, policy.MaxRequestedMinutes);
             throw new InvalidOperationException(
                 $"Ugyldig JitElevationPolicy: MinRequestedMinutes ({policy.MinRequestedMinutes}) " +
                 $"er større end MaxRequestedMinutes ({policy.MaxRequestedMinutes}).");
@@ -43,6 +72,7 @@ public sealed class JitElevationService(
 
         if (minutes < policy.MinRequestedMinutes || minutes > policy.MaxRequestedMinutes)
         {
+            ElevationRequestMinutesOutOfRange(logger, userId, minutes, policy.MinRequestedMinutes, policy.MaxRequestedMinutes);
             throw new ArgumentOutOfRangeException(
                 nameof(minutes), minutes,
                 $"RequestedMinutes skal være mellem {policy.MinRequestedMinutes} og {policy.MaxRequestedMinutes}.");
@@ -50,6 +80,7 @@ public sealed class JitElevationService(
 
         if (!await roleManager.RoleExistsAsync(roleName))
         {
+            ElevationRequestUnknownRole(logger, userId, roleName);
             throw new InvalidOperationException($"Rollen '{roleName}' findes ikke.");
         }
 
@@ -66,6 +97,8 @@ public sealed class JitElevationService(
         await context.RoleElevationRequests.AddAsync(request, CancellationToken.None);
         await context.SaveChangesAsync(cancellationToken);
 
+        ElevationRequested(logger, userId, roleName, minutes);
+
         return ToDto(request);
     }
 
@@ -75,7 +108,7 @@ public sealed class JitElevationService(
         ArgumentException.ThrowIfNullOrWhiteSpace(approverUserId);
 
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
-        var request = await LoadPendingRequestAsync(context, approverUserId, requestId, "godkendes", cancellationToken);
+        var request = await LoadPendingRequestAsync(context, logger, approverUserId, requestId, "godkendes", cancellationToken);
 
         var now = timeProvider.GetUtcNow();
         request.Status = RoleElevationStatus.Approved;
@@ -84,6 +117,8 @@ public sealed class JitElevationService(
         request.ValidToUtc = now.AddMinutes(request.RequestedMinutes);
 
         await context.SaveChangesAsync(cancellationToken);
+
+        ElevationApproved(logger, request.Id, request.RoleName, approverUserId);
 
         await securityAlertService.AlertJitRequestedAsync(request.RequesterUserId, request.RoleName, cancellationToken);
 
@@ -96,12 +131,14 @@ public sealed class JitElevationService(
         ArgumentException.ThrowIfNullOrWhiteSpace(approverUserId);
 
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
-        var request = await LoadPendingRequestAsync(context, approverUserId, requestId, "afvises", cancellationToken);
+        var request = await LoadPendingRequestAsync(context, logger, approverUserId, requestId, "afvises", cancellationToken);
 
         request.Status = RoleElevationStatus.Rejected;
         request.ApproverUserId = approverUserId;
 
         await context.SaveChangesAsync(cancellationToken);
+
+        ElevationRejected(logger, request.Id, request.RoleName, approverUserId);
 
         return ToDto(request);
     }
@@ -174,18 +211,26 @@ public sealed class JitElevationService(
     }
 
     private static async Task<RoleElevationRequest> LoadPendingRequestAsync(
-        PlannerDbContext context, string approverUserId, Guid requestId, string action, CancellationToken cancellationToken)
+        PlannerDbContext context, ILogger logger, string approverUserId, Guid requestId, string action, CancellationToken cancellationToken)
     {
         var request = await context.RoleElevationRequests
             .SingleOrDefaultAsync(r => r.Id == requestId, cancellationToken)
             ?? throw new InvalidOperationException($"Ingen elevations-anmodning fundet med Id {requestId}.");
 
-        return request.RequesterUserId == approverUserId
-            ? throw new InvalidOperationException(
-                $"Anmodningen kan ikke {action} af ansøgeren selv (dual-custody / peer approval).")
-            : request.Status != RoleElevationStatus.Pending
-            ? throw new InvalidOperationException($"Anmodningen kan ikke {action} fra status '{request.Status}'.")
-            : request;
+        if (request.RequesterUserId == approverUserId)
+        {
+            ElevationSelfActionRejected(logger, approverUserId, action, requestId);
+            throw new InvalidOperationException(
+                $"Anmodningen kan ikke {action} af ansøgeren selv (dual-custody / peer approval).");
+        }
+
+        if (request.Status != RoleElevationStatus.Pending)
+        {
+            ElevationInvalidStatusForAction(logger, requestId, action, request.Status);
+            throw new InvalidOperationException($"Anmodningen kan ikke {action} fra status '{request.Status}'.");
+        }
+
+        return request;
     }
 
     private static RoleElevationRequestDto ToDto(RoleElevationRequest request) => new(

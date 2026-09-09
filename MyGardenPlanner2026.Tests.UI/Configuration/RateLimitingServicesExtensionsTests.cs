@@ -15,6 +15,7 @@ public class RateLimitingServicesExtensionsTests
     {
         var services = new ServiceCollection();
         services.AddRateLimitingServices();
+        services.AddLogging();
 
         using var provider = services.BuildServiceProvider();
         var options = provider.GetRequiredService<IOptions<RateLimiterOptions>>().Value;
@@ -27,6 +28,7 @@ public class RateLimitingServicesExtensionsTests
     {
         var services = new ServiceCollection();
         services.AddRateLimitingServices();
+        services.AddLogging();
 
         using var provider = services.BuildServiceProvider();
         var options = provider.GetRequiredService<IOptions<RateLimiterOptions>>().Value;
@@ -39,6 +41,7 @@ public class RateLimitingServicesExtensionsTests
     {
         var services = new ServiceCollection();
         services.AddRateLimitingServices();
+        services.AddLogging();
 
         using var provider = services.BuildServiceProvider();
         var options = provider.GetRequiredService<IOptions<RateLimiterOptions>>().Value;

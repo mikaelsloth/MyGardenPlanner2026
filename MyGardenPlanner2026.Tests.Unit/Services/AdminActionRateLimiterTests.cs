@@ -1,18 +1,22 @@
 ﻿namespace MyGardenPlanner2026.Tests.Unit.Services;
 
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Infrastructure.Services;
+using NSubstitute;
 using Xunit;
 
 public class AdminActionRateLimiterTests
 {
-    private static AdminActionRateLimiter CreateLimiter(int permitLimit = 3, int windowSeconds = 60) =>
+    private readonly ILogger<AdminActionRateLimiter> logger = Substitute.For<ILogger<AdminActionRateLimiter>>();
+
+    private AdminActionRateLimiter CreateLimiter(int permitLimit = 3, int windowSeconds = 60) =>
     new(new TestOptionsMonitor<AdminApiRateLimitOptions>(new AdminApiRateLimitOptions
     {
         PermitLimit = permitLimit,
         WindowSeconds = windowSeconds,
         SegmentsPerWindow = 1
-    }));
+    }), logger);
 
     [Fact]
     public async Task TryAcquireAsync_WithinPermitLimit_ReturnsTrue()
@@ -70,7 +74,7 @@ public class AdminActionRateLimiterTests
     {
         var monitor = new TestOptionsMonitor<AdminApiRateLimitOptions>(
             new AdminApiRateLimitOptions { PermitLimit = 1, WindowSeconds = 60, SegmentsPerWindow = 1 });
-        using var limiter = new AdminActionRateLimiter(monitor);
+        using var limiter = new AdminActionRateLimiter(monitor, logger);
 
         var first = await limiter.TryAcquireAsync("user-1", TestContext.Current.CancellationToken);
         var second = await limiter.TryAcquireAsync("user-1", TestContext.Current.CancellationToken);

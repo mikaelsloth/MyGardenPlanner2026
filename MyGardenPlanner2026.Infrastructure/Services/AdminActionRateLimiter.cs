@@ -1,5 +1,6 @@
 ﻿namespace MyGardenPlanner2026.Infrastructure.Services;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using System.Threading.RateLimiting;
@@ -15,19 +16,28 @@ using System.Threading.RateLimiting;
 /// oprettelse, abonneres der på IOptionsMonitor.OnChange: en ændring bygger en ny intern
 /// limiter og bytter den atomisk ind (Interlocked.Exchange), mens den gamle disposes.
 /// </summary>
-public sealed class AdminActionRateLimiter : IAdminActionRateLimiter, IDisposable
+public sealed partial class AdminActionRateLimiter : IAdminActionRateLimiter, IDisposable
 {
     private readonly IDisposable? _changeSubscription;
+    private readonly ILogger<AdminActionRateLimiter> logger;
     private PartitionedRateLimiter<string> _limiter;
 
-    public AdminActionRateLimiter(IOptionsMonitor<AdminApiRateLimitOptions> optionsMonitor)
+    [LoggerMessage(EventId = 1039, Level = LogLevel.Warning, Message = "Admin-handling rate-limited for bruger '{UserId}'.")]
+    static partial void AdminActionRateLimited(ILogger logger, string UserId);
+
+    [LoggerMessage(EventId = 1040, Level = LogLevel.Information, Message = "AdminActionRateLimiter genopbygget med ny policy (PermitLimit={PermitLimit}, WindowSeconds={WindowSeconds}, SegmentsPerWindow={SegmentsPerWindow}).")]
+    static partial void RateLimiterRebuilt(ILogger logger, int PermitLimit, int WindowSeconds, int SegmentsPerWindow);
+
+    public AdminActionRateLimiter(IOptionsMonitor<AdminApiRateLimitOptions> optionsMonitor, ILogger<AdminActionRateLimiter> logger)
     {
+        this.logger = logger;
         _limiter = BuildLimiter(optionsMonitor.CurrentValue);
         _changeSubscription = optionsMonitor.OnChange(policy =>
         {
             var newLimiter = BuildLimiter(policy);
             var oldLimiter = Interlocked.Exchange(ref _limiter, newLimiter);
             oldLimiter.Dispose();
+            RateLimiterRebuilt(this.logger, policy.PermitLimit, policy.WindowSeconds, policy.SegmentsPerWindow);
         });
     }
 
@@ -36,6 +46,12 @@ public sealed class AdminActionRateLimiter : IAdminActionRateLimiter, IDisposabl
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
 
         using var lease = await Volatile.Read(ref _limiter).AcquireAsync(userId, permitCount: 1, cancellationToken);
+
+        if (!lease.IsAcquired)
+        {
+            AdminActionRateLimited(logger, userId);
+        }
+
         return lease.IsAcquired;
     }
 

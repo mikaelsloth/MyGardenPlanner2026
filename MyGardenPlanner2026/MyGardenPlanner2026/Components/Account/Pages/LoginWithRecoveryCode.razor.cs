@@ -20,6 +20,12 @@ public partial class LoginWithRecoveryCode
     [LoggerMessage(EventId = 1005, Level = LogLevel.Information, Message = "User with ID '{UserId}' logged in with a recovery code.")]
     static partial void UserLoggedIn(ILogger logger, string? UserId);
 
+    [LoggerMessage(EventId = 1011, Level = LogLevel.Warning, Message = "User account locked out.")]
+    static partial void RecoveryCodeLoginAccountLockedOut(ILogger logger);
+
+    [LoggerMessage(EventId = 1013, Level = LogLevel.Warning, Message = "Invalid recovery code entered for user with ID '{UserId}'.")]
+    static partial void InvalidRecoveryCodeEntered(ILogger logger, string UserId);
+
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();
@@ -45,14 +51,14 @@ public partial class LoginWithRecoveryCode
         }
         else if (result.IsLockedOut)
         {
-            Logger.LogWarning("User account locked out.");
+            RecoveryCodeLoginAccountLockedOut(Logger);
             RedirectManager.RedirectTo("Account/Lockout");
         }
         else
         {
             var ip = CurrentUserAccessor.GetCurrent().IpAddress;
             await ReAuthFailureTracker.RecordFailureAsync(userId, ip);
-            Logger.LogWarning("Invalid recovery code entered for user with ID '{UserId}' ", userId);
+            InvalidRecoveryCodeEntered(Logger, userId);
             message = "Error: Ugyldig gendannelseskode indtastet.";
         }
     }

@@ -29,6 +29,10 @@ public sealed partial class IdentityBootstrapSeeder(
     [LoggerMessage(EventId = 1007, Level = LogLevel.Information, Message = "Initial SystemAdmin-bruger '{Email}' oprettet og tildelt rollen.")]
     static partial void InitialAdminCreated(ILogger logger, string Email);
 
+    [LoggerMessage(EventId = 1021, Level = LogLevel.Warning,
+    Message = "Ingen SystemAdmin findes, og InitialAdmin:Email/InitialAdmin:Password er ikke konfigureret. Bootstrap af bruger springes over. Konfigurér User Secrets/miljøvariabler og genstart.")]
+    static partial void NoInitialAdminConfigured(ILogger logger);
+
     private static readonly string[] AdditionalRoles =
     [RoleNames.DataAdmin, RoleNames.PolicyAdmin, RoleNames.AuditViewer];
 
@@ -53,9 +57,7 @@ public sealed partial class IdentityBootstrapSeeder(
         var adminOptions = options.Value;
         if (string.IsNullOrWhiteSpace(adminOptions.Email) || string.IsNullOrWhiteSpace(adminOptions.Password))
         {
-            logger.LogWarning(
-                "Ingen SystemAdmin findes, og InitialAdmin:Email/InitialAdmin:Password er ikke konfigureret. " +
-                "Bootstrap af bruger springes over. Konfigurér User Secrets/miljøvariabler og genstart.");
+            NoInitialAdminConfigured(logger);
             return;
         }
 

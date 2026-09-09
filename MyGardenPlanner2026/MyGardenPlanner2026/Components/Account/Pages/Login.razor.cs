@@ -61,7 +61,7 @@ public partial class Login
         {
             ReAuthenticationService.MarkReAuthenticated();
             await TrackReAuthOutcomeAsync(succeeded: true);
-            Logger.LogInformation("User logged in.");
+            PasswordLoginSucceeded(Logger);
             RedirectManager.RedirectTo(ReturnUrl);
         }
         else if (result.RequiresTwoFactor)
@@ -72,7 +72,7 @@ public partial class Login
         }
         else if (result.IsLockedOut)
         {
-            Logger.LogWarning("User account locked out.");
+            PasswordLoginAccountLockedOut(Logger);
             RedirectManager.RedirectTo("Account/Lockout");
         }
         else
@@ -81,6 +81,12 @@ public partial class Login
             errorMessage = "Error: Invalid login attempt.";
         }
     }
+
+    [LoggerMessage(EventId = 1002, Level = LogLevel.Information, Message = "User logged in.")]
+    static partial void PasswordLoginSucceeded(ILogger logger);
+
+    [LoggerMessage(EventId = 1008, Level = LogLevel.Warning, Message = "User account locked out.")]
+    static partial void PasswordLoginAccountLockedOut(ILogger logger);
 
     /// <summary>
     /// Registrerer/rydder fejlede login-forsøg i IReAuthFailureTracker (§4.2). Springes

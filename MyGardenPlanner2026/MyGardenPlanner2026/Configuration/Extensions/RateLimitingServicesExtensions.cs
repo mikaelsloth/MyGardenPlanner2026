@@ -6,10 +6,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Configuration.RateLimiting;
 
-public static class RateLimitingServicesExtensions
+public static partial class RateLimitingServicesExtensions
 {
     /// <summary>Label brugt i logs — IKKE en navngivet policy, se PR-beskrivelse for begrundelse.</summary>
     public const string AdminAuthPolicyName = "AdminAuthPolicy";
+
+    [LoggerMessage(EventId = 1023, Level = LogLevel.Warning, Message = "{Policy}: rate limit overskredet for IP {IpAddress} på {Path}.")]
+    static partial void RateLimitExceeded(ILogger logger, string Policy, string IpAddress, string Path);
 
     public static IServiceCollection AddRateLimitingServices(this IServiceCollection services)
     {
@@ -27,9 +30,7 @@ public static class RateLimitingServicesExtensions
 
                 var ipAddress = context.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-                logger.LogWarning(
-                    "{Policy}: rate limit overskredet for IP {IpAddress} på {Path}.",
-                    AdminAuthPolicyName, ipAddress, context.HttpContext.Request.Path);
+                RateLimitExceeded(logger, AdminAuthPolicyName, ipAddress, context.HttpContext.Request.Path.Value ?? string.Empty);
 
                 return ValueTask.CompletedTask;
             };

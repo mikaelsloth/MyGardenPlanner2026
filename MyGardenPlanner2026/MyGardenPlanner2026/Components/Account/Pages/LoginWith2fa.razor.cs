@@ -23,6 +23,12 @@ public partial class LoginWith2fa
     [LoggerMessage(EventId = 1004, Level = LogLevel.Information, Message = "User with ID '{UserId}' logged in with 2fa.")]
     static partial void UserLoggedIn(ILogger logger, string? UserId);
 
+    [LoggerMessage(EventId = 1009, Level = LogLevel.Warning, Message = "User with ID '{UserId}' account locked out.")]
+    static partial void TwoFactorLoginAccountLockedOut(ILogger logger, string UserId);
+
+    [LoggerMessage(EventId = 1010, Level = LogLevel.Warning, Message = "Invalid authenticator code entered for user with ID '{UserId}'.")]
+    static partial void InvalidAuthenticatorCodeEntered(ILogger logger, string UserId);
+
     protected override async Task OnInitializedAsync()
     {
         Input ??= new();
@@ -46,14 +52,14 @@ public partial class LoginWith2fa
         }
         else if (result.IsLockedOut)
         {
-            Logger.LogWarning("User with ID '{UserId}' account locked out.", userId);
+            TwoFactorLoginAccountLockedOut(Logger, userId);
             RedirectManager.RedirectTo("Account/Lockout");
         }
         else
         {
             var ip = CurrentUserAccessor.GetCurrent().IpAddress;
             await ReAuthFailureTracker.RecordFailureAsync(userId, ip);
-            Logger.LogWarning("Invalid authenticator code entered for user with ID '{UserId}'.", userId);
+            InvalidAuthenticatorCodeEntered(Logger, userId);
             message = "Error: Ugyldig godkendelseskode.";
         }
     }

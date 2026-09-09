@@ -13,8 +13,11 @@ using MyGardenPlanner2026.Core.Entities;
 using System.Security.Claims;
 using System.Text.Json;
 
-internal static class IdentityComponentsEndpointRouteBuilderExtensions
+internal static partial class IdentityComponentsEndpointRouteBuilderExtensions
 {
+    [LoggerMessage(EventId = 1020, Level = LogLevel.Information, Message = "User with ID '{UserId}' asked for their personal data.")]
+    static partial void PersonalDataDownloadRequested(ILogger logger, string UserId);
+
     // These endpoints are required by the Identity Razor components defined in the /Components/Account/Pages directory of this project.
     public static IEndpointConventionBuilder MapAdditionalIdentityEndpoints(this IEndpointRouteBuilder endpoints)
     {
@@ -123,7 +126,7 @@ internal static class IdentityComponentsEndpointRouteBuilderExtensions
             }
 
             var userId = await userManager.GetUserIdAsync(user);
-            downloadLogger.LogInformation("User with ID '{UserId}' asked for their personal data.", userId);
+            PersonalDataDownloadRequested(downloadLogger, userId);
 
             // Only include personal data for download
             var personalData = new Dictionary<string, string>();

@@ -1,5 +1,4 @@
 using MyGardenPlanner2026.Configuration.Extensions;
-using MyGardenPlanner2026.Core.Contracts.Admin;
 
 var builder = WebApplication.CreateBuilder(args);
 var provider = builder.Configuration["DatabaseProvider"];
@@ -23,12 +22,6 @@ builder.Services
     .AddAuditLogServices();
 
 var app = builder.Build();
-
-#if DEBUG
-using var scope = app.Services.CreateScope();
-var service = scope.ServiceProvider.GetRequiredService<ISecurityAlertService>();
-await service.AlertPolicyChangedAsync("testuser", "loginpolicy", CancellationToken.None);
-#endif
 
 Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
 Console.WriteLine($"DatabaseProvider: {provider}");

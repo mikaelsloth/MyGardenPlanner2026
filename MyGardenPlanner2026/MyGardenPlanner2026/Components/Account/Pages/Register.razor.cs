@@ -21,6 +21,9 @@ public partial class Register
 
     private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
 
+    [LoggerMessage(EventId = 1026, Level = LogLevel.Information, Message = "User created a new account with password.")]
+    static partial void UserCreatedAccountWithPassword(ILogger logger);
+
     protected override void OnInitialized()
     {
         Input ??= new();
@@ -41,7 +44,7 @@ public partial class Register
             return;
         }
 
-        Logger.LogInformation("User created a new account with password.");
+        UserCreatedAccountWithPassword(Logger);
 
         var userId = await UserManager.GetUserIdAsync(user);
         var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);

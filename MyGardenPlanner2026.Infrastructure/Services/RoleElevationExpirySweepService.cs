@@ -36,6 +36,9 @@ public sealed partial class RoleElevationExpirySweepService(
     [LoggerMessage(EventId = 1012, Level = LogLevel.Information, Message = "Markerede {Count} udløbne JIT-eskaleringer som Expired.")]
     static partial void JitEscalationExpired(ILogger logger, int Count);
 
+    [LoggerMessage(EventId = 1022, Level = LogLevel.Error, Message = "Fejl under sweep af udløbne JIT-eskaleringer.")]
+    static partial void SweepFailed(ILogger logger, Exception ex);
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)
@@ -46,7 +49,7 @@ public sealed partial class RoleElevationExpirySweepService(
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                logger.LogError(ex, "Fejl under sweep af udløbne JIT-eskaleringer.");
+                SweepFailed(logger, ex);
             }
 
             await WaitForNextSweepAsync(stoppingToken);

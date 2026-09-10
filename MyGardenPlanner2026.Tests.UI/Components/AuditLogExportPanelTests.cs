@@ -5,6 +5,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Domain.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Contracts.Common;
@@ -35,6 +36,7 @@ public class AuditLogExportPanelTests : BunitContext
         Services.AddSingleton(reAuthenticationService);
         Services.AddSingleton(reAuthFailureTracker);
         Services.AddSingleton(currentUserAccessor);
+        Services.AddSingleton(Substitute.For<ILogger<AuditLogExportPanel>>());
 
         // Standard: reauth gyldig, permit ledig, 0 rækker at eksportere.
         rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));

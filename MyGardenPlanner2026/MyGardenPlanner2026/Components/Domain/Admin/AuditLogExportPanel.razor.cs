@@ -44,6 +44,9 @@ public partial class AuditLogExportPanel
     [Inject]
     private IJSRuntime JS { get; set; } = default!;
 
+    [Inject]
+    private ILogger<AuditLogExportPanel> Logger { get; set; } = default!;
+
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
@@ -56,6 +59,21 @@ public partial class AuditLogExportPanel
     private int pendingRowCount;
     private StepUpGuard stepUpGuard = default!;
     private AdminActionGuard adminActionGuard = default!;
+
+    [LoggerMessage(EventId = 1042, Level = LogLevel.Information, Message = "Bruger '{UserId}' anmodede om AuditLog-eksport i format '{Format}'.")]
+    static partial void ExportRequested(ILogger logger, string UserId, AuditLogExportFormat Format);
+
+    [LoggerMessage(EventId = 1043, Level = LogLevel.Warning, Message = "AuditLog-eksport afvist for bruger '{UserId}': {Count} rækker overstiger den tilladte grænse på {Limit}.")]
+    static partial void ExportHardLimitExceeded(ILogger logger, string UserId, int Count, int Limit);
+
+    [LoggerMessage(EventId = 1044, Level = LogLevel.Information, Message = "AuditLog-eksport for bruger '{UserId}' kræver bekræftelse: {Count} rækker overstiger det bløde tærskel.")]
+    static partial void ExportSoftLimitThresholdReached(ILogger logger, string UserId, int Count);
+
+    [LoggerMessage(EventId = 1045, Level = LogLevel.Information, Message = "Bruger '{UserId}' udløste download af AuditLog-eksport i format '{Format}'.")]
+    static partial void ExportDownloadTriggered(ILogger logger, string UserId, AuditLogExportFormat Format);
+
+    [LoggerMessage(EventId = 1046, Level = LogLevel.Warning, Message = "Kunne ikke bestemme den aktuelle bruger ved AuditLog-eksport.")]
+    static partial void ExportCurrentUserCouldNotBeResolved(ILogger logger);
 
     protected override void OnInitialized()
     {
@@ -79,12 +97,19 @@ public partial class AuditLogExportPanel
         errorMessage = null;
         showThresholdConfirm = false;
 
+        var userId = await CurrentUserIdResolver.ResolveAsync(AuthenticationStateTask);
+        if (userId is not null)
+        {
+            ExportRequested(Logger, userId, selectedFormat);
+        }
+
         var count = await QueryService.CountAsync(CurrentFilter);
 
         if (count > IAuditLogExportService.HardRowLimit)
         {
             errorMessage = $"Error: Eksporten omfatter {count} rækker, hvilket overstiger grænsen på " +
                 $"{IAuditLogExportService.HardRowLimit}. Indsnævr filteret og prøv igen.";
+            ExportHardLimitExceeded(Logger, userId ?? "ukendt", count, IAuditLogExportService.HardRowLimit);
             return;
         }
 
@@ -92,6 +117,7 @@ public partial class AuditLogExportPanel
         {
             pendingRowCount = count;
             showThresholdConfirm = true;
+            ExportSoftLimitThresholdReached(Logger, userId ?? "ukendt", count);
             return;
         }
 
@@ -116,11 +142,14 @@ public partial class AuditLogExportPanel
         if (userId is null)
         {
             errorMessage = "Error: Kunne ikke bestemme den aktuelle bruger.";
+            ExportCurrentUserCouldNotBeResolved(Logger);
             return;
         }
 
         var token = TokenService.IssueToken(userId);
         var url = BuildExportUrl(token);
+
+        ExportDownloadTriggered(Logger, userId, selectedFormat);
 
         await JS.InvokeVoidAsync("open", url, "_blank");
     }

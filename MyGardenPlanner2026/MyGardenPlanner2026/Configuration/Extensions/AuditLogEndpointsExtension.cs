@@ -1,6 +1,8 @@
 ﻿namespace MyGardenPlanner2026.Configuration.Extensions;
 
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using System.Security.Claims;
@@ -11,14 +13,35 @@ using System.Security.Claims;
 /// direkte — step-up-friskhed bevises i stedet via et signeret token udstedt af Blazor-
 /// komponenten efter StepUpGuard er bestået (se IAuditLogExportTokenService).
 /// </summary>
-public static class AuditLogEndpointsExtension
+public static partial class AuditLogEndpointsExtension
 {
+    [LoggerMessage(EventId = 1047, Level = LogLevel.Warning, Message = "AuditLog-eksport afvist: intet bruger-ID fundet i konteksten.")]
+    static partial void ExportEndpointForbidden(ILogger logger);
+
+    [LoggerMessage(EventId = 1048, Level = LogLevel.Warning, Message = "AuditLog-eksport afvist for bruger '{UserId}': ugyldigt token ({Reason}).")]
+    static partial void ExportEndpointTokenInvalid(ILogger logger, string UserId, string? Reason);
+
+    [LoggerMessage(EventId = 1049, Level = LogLevel.Warning, Message = "AuditLog-eksport rate-limited for bruger '{UserId}'.")]
+    static partial void ExportEndpointRateLimited(ILogger logger, string UserId);
+
+    [LoggerMessage(EventId = 1050, Level = LogLevel.Warning, Message = "AuditLog-eksport afvist for bruger '{UserId}': ukendt format '{Format}'.")]
+    static partial void ExportEndpointUnknownFormat(ILogger logger, string UserId, string Format);
+
+    [LoggerMessage(EventId = 1051, Level = LogLevel.Warning, Message = "AuditLog-eksport afvist for bruger '{UserId}': {Count} rækker overstiger grænsen på {Limit}.")]
+    static partial void ExportEndpointHardLimitExceeded(ILogger logger, string UserId, int Count, int Limit);
+
+    [LoggerMessage(EventId = 1052, Level = LogLevel.Information, Message = "AuditLog-eksport gennemført for bruger '{UserId}': {Count} rækker, format '{Format}'.")]
+    static partial void ExportEndpointSucceeded(ILogger logger, string UserId, int Count, AuditLogExportFormat Format);
+
     public static IEndpointRouteBuilder MapAuditLogEndpoints(this IEndpointRouteBuilder endpoints)
     {
         ArgumentNullException.ThrowIfNull(endpoints);
 
         var group = endpoints.MapGroup("/admin/audit-log")
             .RequireAuthorization(AuthorizationServicesExtensions.RequireAuditViewerPolicy);
+
+        var loggerFactory = endpoints.ServiceProvider.GetRequiredService<ILoggerFactory>();
+        var exportLogger = loggerFactory.CreateLogger("AuditLogExport");
 
         group.MapGet("/export", async (
             HttpContext context,
@@ -40,11 +63,13 @@ public static class AuditLogEndpointsExtension
             var currentUserId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(currentUserId))
             {
+                ExportEndpointForbidden(exportLogger);
                 return Results.Forbid();
             }
 
             if (!tokenService.TryValidateToken(token, currentUserId, out var tokenError))
             {
+                ExportEndpointTokenInvalid(exportLogger, currentUserId, tokenError);
                 return Results.Problem(
                     detail: $"Eksport-token er ugyldig eller udløbet: {tokenError} " +
                         "Bekræft din identitet igen og prøv eksporten forfra.",
@@ -53,6 +78,7 @@ public static class AuditLogEndpointsExtension
 
             if (!await rateLimiter.TryAcquireAsync(currentUserId, cancellationToken))
             {
+                ExportEndpointRateLimited(exportLogger, currentUserId);
                 return Results.Problem(
                     detail: "For mange handlinger på kort tid. Vent et øjeblik og prøv igen.",
                     statusCode: StatusCodes.Status429TooManyRequests);
@@ -60,6 +86,7 @@ public static class AuditLogEndpointsExtension
 
             if (!Enum.TryParse<AuditLogExportFormat>(format, ignoreCase: true, out var exportFormat))
             {
+                ExportEndpointUnknownFormat(exportLogger, currentUserId, format);
                 return Results.Problem(
                     detail: $"Ukendt eksportformat '{format}'. Gyldige værdier: Csv, Json, Xlsx.",
                     statusCode: StatusCodes.Status400BadRequest);
@@ -70,6 +97,7 @@ public static class AuditLogEndpointsExtension
             var totalCount = await queryService.CountAsync(filter, cancellationToken);
             if (totalCount > IAuditLogExportService.HardRowLimit)
             {
+                ExportEndpointHardLimitExceeded(exportLogger, currentUserId, totalCount, IAuditLogExportService.HardRowLimit);
                 return Results.Problem(
                     detail: $"Eksporten omfatter {totalCount} rækker, hvilket overstiger den " +
                         $"tilladte grænse på {IAuditLogExportService.HardRowLimit}. Indsnævr filteret og prøv igen.",
@@ -91,6 +119,8 @@ public static class AuditLogEndpointsExtension
                 };
 
                 var fileName = $"audit-log-export-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.{fileExtension}";
+
+                ExportEndpointSucceeded(exportLogger, currentUserId, totalCount, exportFormat);
 
                 return Results.File(memoryStream.ToArray(), contentType, fileName);
             }

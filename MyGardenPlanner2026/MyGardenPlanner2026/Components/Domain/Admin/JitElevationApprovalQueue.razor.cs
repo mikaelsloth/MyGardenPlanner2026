@@ -27,6 +27,9 @@ public partial class JitElevationApprovalQueue
     [Inject]
     private IAdminActionRateLimiter RateLimiter { get; set; } = default!;
 
+    [Inject]
+    private ILogger<JitElevationApprovalQueue> Logger { get; set; } = default!;
+
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
@@ -37,6 +40,12 @@ public partial class JitElevationApprovalQueue
     private string? errorMessage;
     private StepUpGuard stepUpGuard = default!;
     private AdminActionGuard adminActionGuard = default!;
+
+    [LoggerMessage(EventId = 1079, Level = LogLevel.Information, Message = "Godkendelse af JIT-anmodning '{RequestId}' afvist: {Reason}")]
+    static partial void JitElevationApprovalFailed(ILogger logger, Guid RequestId, string Reason);
+
+    [LoggerMessage(EventId = 1080, Level = LogLevel.Information, Message = "Afvisning af JIT-anmodning '{RequestId}' afvist: {Reason}")]
+    static partial void JitElevationRejectionFailed(ILogger logger, Guid RequestId, string Reason);
 
     protected override async Task OnInitializedAsync()
     {
@@ -84,6 +93,7 @@ public partial class JitElevationApprovalQueue
         catch (InvalidOperationException ex)
         {
             errorMessage = $"Error: {ex.Message}";
+            JitElevationApprovalFailed(Logger, requestId, ex.Message);
         }
     }
 
@@ -118,6 +128,7 @@ public partial class JitElevationApprovalQueue
         catch (InvalidOperationException ex)
         {
             errorMessage = $"Error: {ex.Message}";
+            JitElevationRejectionFailed(Logger, requestId, ex.Message);
         }
     }
 }

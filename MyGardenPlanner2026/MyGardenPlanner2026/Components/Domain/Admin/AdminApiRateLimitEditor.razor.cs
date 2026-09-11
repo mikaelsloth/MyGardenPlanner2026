@@ -23,6 +23,9 @@ public partial class AdminApiRateLimitEditor
     [Inject]
     private IAdminActionRateLimiter RateLimiter { get; set; } = default!;
 
+    [Inject]
+    private ILogger<AdminApiRateLimitEditor> Logger { get; set; } = default!;
+
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
@@ -36,6 +39,9 @@ public partial class AdminApiRateLimitEditor
     private string? errorMessage;
     private StepUpGuard stepUpGuard = default!;
     private AdminActionGuard adminActionGuard = default!;
+
+    [LoggerMessage(EventId = 1076, Level = LogLevel.Information, Message = "Opdatering af admin-API rate limit-policy afvist: {Reason}")]
+    static partial void AdminApiRateLimitPolicySaveFailed(ILogger logger, string Reason);
 
     protected override async Task OnInitializedAsync()
     {
@@ -84,6 +90,7 @@ public partial class AdminApiRateLimitEditor
         catch (ArgumentOutOfRangeException ex)
         {
             errorMessage = $"Error: {ex.Message}";
+            AdminApiRateLimitPolicySaveFailed(Logger, ex.Message);
         }
     }
 

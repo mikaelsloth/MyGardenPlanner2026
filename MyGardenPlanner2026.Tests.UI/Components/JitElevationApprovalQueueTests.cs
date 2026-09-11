@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Domain.Admin;
 using MyGardenPlanner2026.Configuration.Extensions;
 using MyGardenPlanner2026.Core.Contracts.Admin;
@@ -71,6 +72,7 @@ public class JitElevationApprovalQueueTests : BunitContext
         var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
         rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(rateLimiterPermits));
         Services.AddSingleton(rateLimiter);
+        Services.AddSingleton(Substitute.For<ILogger<JitElevationApprovalQueue>>());
 
         return service;
     }

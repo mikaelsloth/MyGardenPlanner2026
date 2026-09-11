@@ -4,6 +4,7 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Domain.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
@@ -42,6 +43,7 @@ public class JitElevationRequestFormTests : BunitContext
         var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
         rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(rateLimiterPermits));
         Services.AddSingleton(rateLimiter);
+        Services.AddSingleton(Substitute.For<ILogger<JitElevationRequestForm>>());
 
         return service;
     }

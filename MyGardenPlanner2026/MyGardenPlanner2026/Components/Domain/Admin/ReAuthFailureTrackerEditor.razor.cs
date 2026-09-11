@@ -23,6 +23,9 @@ public partial class ReAuthFailureTrackerEditor
     [Inject]
     private IAdminActionRateLimiter RateLimiter { get; set; } = default!;
 
+    [Inject]
+    private ILogger<ReAuthFailureTrackerEditor> Logger { get; set; } = default!;
+
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
@@ -35,6 +38,9 @@ public partial class ReAuthFailureTrackerEditor
     private string? errorMessage;
     private StepUpGuard stepUpGuard = default!;
     private AdminActionGuard adminActionGuard = default!;
+
+    [LoggerMessage(EventId = 1075, Level = LogLevel.Information, Message = "Opdatering af fejl-tracker-policy afvist: {Reason}")]
+    static partial void ReAuthFailureTrackerPolicySaveFailed(ILogger logger, string Reason);
 
     protected override async Task OnInitializedAsync()
     {
@@ -81,6 +87,7 @@ public partial class ReAuthFailureTrackerEditor
         catch (ArgumentOutOfRangeException ex)
         {
             errorMessage = $"Error: {ex.Message}";
+            ReAuthFailureTrackerPolicySaveFailed(Logger, ex.Message);
         }
     }
 

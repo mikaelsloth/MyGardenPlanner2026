@@ -23,8 +23,8 @@ builder.Services
 
 var app = builder.Build();
 
-Console.WriteLine($"Environment: {builder.Environment.EnvironmentName}");
-Console.WriteLine($"DatabaseProvider: {provider}");
+var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
+Program.StartupEnvironment(startupLogger, builder.Environment.EnvironmentName, provider ?? "ukendt");
 
 // 1.1 Add seeds in development
 if (app.Environment.IsDevelopment())
@@ -47,3 +47,9 @@ app.MapRoutingEndpoints();
 #pragma warning disable S6966
 app.Run();
 #pragma warning restore S6966
+
+partial class Program
+{
+    [LoggerMessage(EventId = 1065, Level = LogLevel.Information, Message = "Environment: {EnvironmentName}, DatabaseProvider: {DatabaseProvider}.")]
+    static partial void StartupEnvironment(ILogger logger, string EnvironmentName, string DatabaseProvider);
+}

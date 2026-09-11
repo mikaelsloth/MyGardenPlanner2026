@@ -1,14 +1,32 @@
 ﻿namespace MyGardenPlanner2026.Infrastructure.Services;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
+using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Layer1;
 using MyGardenPlanner2026.Infrastructure.Data;
 
-public sealed class SubscriptionAddOnAdminService(
+public sealed partial class SubscriptionAddOnAdminService(
     IAdminDbContextFactory contextFactory,
-    ISubscriptionAddOnCatalog defaultCatalog) : ISubscriptionAddOnAdminService
+    ISubscriptionAddOnCatalog defaultCatalog,
+    ILogger<SubscriptionAddOnAdminService> logger) : ISubscriptionAddOnAdminService
 {
+    [LoggerMessage(EventId = 1060, Level = LogLevel.Information, Message = "Tilkøb '{Id}' ({Type}) {Action}.")]
+    static partial void AddOnSaved(ILogger logger, Guid Id, AddOnType Type, string Action);
+
+    [LoggerMessage(EventId = 1061, Level = LogLevel.Information, Message = "Tilkøb kunne ikke gemmes: der findes allerede et tilkøb med typen '{Type}'.")]
+    static partial void AddOnDuplicateType(ILogger logger, AddOnType Type);
+
+    [LoggerMessage(EventId = 1062, Level = LogLevel.Information, Message = "Intet tilkøb fundet med Id '{Id}'.")]
+    static partial void AddOnNotFound(ILogger logger, Guid Id);
+
+    [LoggerMessage(EventId = 1063, Level = LogLevel.Information, Message = "Tilkøb '{Id}' slettet.")]
+    static partial void AddOnDeleted(ILogger logger, Guid Id);
+
+    [LoggerMessage(EventId = 1064, Level = LogLevel.Information, Message = "Tilkøbsmoduler nulstillet til standardkatalog.")]
+    static partial void AddOnsResetToDefault(ILogger logger);
+
     public async Task<IReadOnlyList<SubscriptionAddOnDto>> GetAllAsync(
         CancellationToken cancellationToken = default)
     {
@@ -34,16 +52,23 @@ public sealed class SubscriptionAddOnAdminService(
 
         if (duplicateTypeExists)
         {
+            AddOnDuplicateType(logger, upsert.Type);
             throw new InvalidOperationException($"Der findes allerede et tilkøb med typen '{upsert.Type}'.");
         }
 
-        SubscriptionAddOn addOn;
+        SubscriptionAddOn? addOn;
+        var isNew = upsert.Id is null;
 
         if (upsert.Id is Guid id)
         {
             addOn = await context.SubscriptionAddOns
-                .SingleOrDefaultAsync(a => a.Id == id, cancellationToken)
-                ?? throw new InvalidOperationException($"Intet tilkøb fundet med Id {id}.");
+                .SingleOrDefaultAsync(a => a.Id == id, cancellationToken);
+
+            if (addOn is null)
+            {
+                AddOnNotFound(logger, id);
+                throw new InvalidOperationException($"Intet tilkøb fundet med Id {id}.");
+            }
 
             addOn.Type = upsert.Type;
             addOn.Name = upsert.Name;
@@ -73,6 +98,8 @@ public sealed class SubscriptionAddOnAdminService(
 
         await context.SaveChangesAsync(cancellationToken);
 
+        AddOnSaved(logger, addOn.Id, addOn.Type, isNew ? "oprettet" : "opdateret");
+
         return ToDto(addOn);
     }
 
@@ -81,11 +108,18 @@ public sealed class SubscriptionAddOnAdminService(
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
         var addOn = await context.SubscriptionAddOns
-            .SingleOrDefaultAsync(a => a.Id == id, cancellationToken)
-            ?? throw new InvalidOperationException($"Intet tilkøb fundet med Id {id}.");
+            .SingleOrDefaultAsync(a => a.Id == id, cancellationToken);
+
+        if (addOn is null)
+        {
+            AddOnNotFound(logger, id);
+            throw new InvalidOperationException($"Intet tilkøb fundet med Id {id}.");
+        }
 
         context.SubscriptionAddOns.Remove(addOn);
         await context.SaveChangesAsync(cancellationToken);
+
+        AddOnDeleted(logger, id);
     }
 
     public async Task ResetToDefaultAsync(CancellationToken cancellationToken = default)
@@ -97,6 +131,8 @@ public sealed class SubscriptionAddOnAdminService(
 
         await context.SubscriptionAddOns.AddRangeAsync(defaultCatalog.GetDefaultAddOns(), CancellationToken.None);
         await context.SaveChangesAsync(cancellationToken);
+
+        AddOnsResetToDefault(logger);
     }
 
     private static SubscriptionAddOnDto ToDto(SubscriptionAddOn addOn) =>

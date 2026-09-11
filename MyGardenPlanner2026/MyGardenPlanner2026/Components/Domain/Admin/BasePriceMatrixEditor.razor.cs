@@ -24,6 +24,9 @@ public partial class BasePriceMatrixEditor
     [Inject]
     private IAdminActionRateLimiter RateLimiter { get; set; } = default!;
 
+    [Inject]
+    private ILogger<BasePriceMatrixEditor> Logger { get; set; } = default!;
+
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
@@ -37,6 +40,9 @@ public partial class BasePriceMatrixEditor
     private string? errorMessage;
     private StepUpGuard stepUpGuard = default!;
     private AdminActionGuard adminActionGuard = default!;
+
+    [LoggerMessage(EventId = 1069, Level = LogLevel.Information, Message = "Opdatering af basispris for abonnement '{TierId}' afvist: {Reason}")]
+    static partial void TierPriceUpdateFailed(ILogger logger, Guid TierId, string Reason);
 
     protected override async Task OnInitializedAsync()
     {
@@ -90,6 +96,7 @@ public partial class BasePriceMatrixEditor
         catch (InvalidOperationException ex)
         {
             errorMessage = ex.Message;
+            TierPriceUpdateFailed(Logger, tierId, ex.Message);
         }
     }
 

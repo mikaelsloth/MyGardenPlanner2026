@@ -24,6 +24,9 @@ public partial class JitElevationPolicyEditor
     [Inject]
     private IAdminActionRateLimiter RateLimiter { get; set; } = default!;
 
+    [Inject]
+    private ILogger<JitElevationPolicyEditor> Logger { get; set; } = default!;
+
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
@@ -37,6 +40,9 @@ public partial class JitElevationPolicyEditor
     private string? errorMessage;
     private StepUpGuard stepUpGuard = default!;
     private AdminActionGuard adminActionGuard = default!;
+
+    [LoggerMessage(EventId = 1073, Level = LogLevel.Information, Message = "Opdatering af JIT-eskaleringspolicy afvist: {Reason}")]
+    static partial void JitPolicySaveFailed(ILogger logger, string Reason);
 
     protected override async Task OnInitializedAsync()
     {
@@ -84,6 +90,7 @@ public partial class JitElevationPolicyEditor
         catch (ArgumentOutOfRangeException ex)
         {
             errorMessage = $"Error: {ex.Message}";
+            JitPolicySaveFailed(Logger, ex.Message);
         }
     }
 

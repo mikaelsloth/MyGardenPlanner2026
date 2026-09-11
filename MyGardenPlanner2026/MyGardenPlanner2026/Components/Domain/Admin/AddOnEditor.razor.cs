@@ -25,6 +25,9 @@ public partial class AddOnEditor
     [Inject]
     private IAdminActionRateLimiter RateLimiter { get; set; } = default!;
 
+    [Inject]
+    private ILogger<AddOnEditor> Logger { get; set; } = default!;
+
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
@@ -48,6 +51,15 @@ public partial class AddOnEditor
     private decimal newAnnualPrice;
     private decimal newMonthlyPrice;
     private decimal newPerpetualPrice;
+
+    [LoggerMessage(EventId = 1066, Level = LogLevel.Information, Message = "Opdatering af tilkøb '{AddOnId}' afvist: {Reason}")]
+    static partial void AddOnUpdateFailed(ILogger logger, Guid AddOnId, string Reason);
+
+    [LoggerMessage(EventId = 1067, Level = LogLevel.Information, Message = "Oprettelse af nyt tilkøb afvist: {Reason}")]
+    static partial void AddOnCreateFailed(ILogger logger, string Reason);
+
+    [LoggerMessage(EventId = 1068, Level = LogLevel.Information, Message = "Sletning af tilkøb '{AddOnId}' afvist: {Reason}")]
+    static partial void AddOnDeleteFailed(ILogger logger, Guid AddOnId, string Reason);
 
     protected override async Task OnInitializedAsync()
     {
@@ -110,6 +122,7 @@ public partial class AddOnEditor
         catch (InvalidOperationException ex)
         {
             errorMessage = ex.Message;
+            AddOnUpdateFailed(Logger, addOnId, ex.Message);
         }
     }
 
@@ -145,6 +158,7 @@ public partial class AddOnEditor
         catch (InvalidOperationException ex)
         {
             errorMessage = ex.Message;
+            AddOnCreateFailed(Logger, ex.Message);
         }
     }
 
@@ -171,6 +185,7 @@ public partial class AddOnEditor
         catch (InvalidOperationException ex)
         {
             errorMessage = ex.Message;
+            AddOnDeleteFailed(Logger, id, ex.Message);
         }
     }
 

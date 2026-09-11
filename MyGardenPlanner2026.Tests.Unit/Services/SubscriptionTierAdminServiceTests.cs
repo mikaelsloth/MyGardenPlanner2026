@@ -1,14 +1,17 @@
 ﻿namespace MyGardenPlanner2026.Tests.Unit.Services;
 
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Infrastructure.Data.Seed;
 using MyGardenPlanner2026.Infrastructure.Services;
+using NSubstitute;
 using Xunit;
 
 public class SubscriptionTierAdminServiceTests : TestDbContext
 {
+    private readonly ILogger<SubscriptionTierAdminService> logger = Substitute.For<ILogger<SubscriptionTierAdminService>>();
     private async Task SeedAsync()
     {
         var seeder = new SubscriptionTierSeeder(CreateAdminDbContextFactory(), new DefaultSubscriptionTierCatalog());
@@ -19,7 +22,7 @@ public class SubscriptionTierAdminServiceTests : TestDbContext
     public async Task GetAllTiersAsync_Returns12Tiers()
     {
         await SeedAsync();
-        var service = new SubscriptionTierAdminService(CreateAdminDbContextFactory());
+        var service = new SubscriptionTierAdminService(CreateAdminDbContextFactory(), logger);
 
         var result = await service.GetAllTiersAsync(TestContext.Current.CancellationToken);
 
@@ -30,7 +33,7 @@ public class SubscriptionTierAdminServiceTests : TestDbContext
     public async Task UpdateTierAsync_UpdatesAllThreePricesAndPersists()
     {
         await SeedAsync();
-        var service = new SubscriptionTierAdminService(CreateAdminDbContextFactory());
+        var service = new SubscriptionTierAdminService(CreateAdminDbContextFactory(), logger);
 
         var tiers = await service.GetAllTiersAsync(TestContext.Current.CancellationToken);
         var target = tiers.Single(t => t.Level == GardenAccessLevel.HaveArkitekt && t.AccessCategory == AccessCategory.Administrator);
@@ -50,7 +53,7 @@ public class SubscriptionTierAdminServiceTests : TestDbContext
     public async Task UpdateTierAsync_NonExistentId_ThrowsInvalidOperationException()
     {
         await SeedAsync();
-        var service = new SubscriptionTierAdminService(CreateAdminDbContextFactory());
+        var service = new SubscriptionTierAdminService(CreateAdminDbContextFactory(), logger);
 
         var act = async () => await service.UpdateTierAsync(
             new SubscriptionTierUpdateDto(Guid.NewGuid(), 1m, 1m, 1m), TestContext.Current.CancellationToken);

@@ -27,6 +27,9 @@ public partial class JitElevationRequestForm
     [Inject]
     private IAdminActionRateLimiter RateLimiter { get; set; } = default!;
 
+    [Inject]
+    private ILogger<JitElevationRequestForm> Logger { get; set; } = default!;
+
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
@@ -41,6 +44,9 @@ public partial class JitElevationRequestForm
     private IEnumerable<RoleElevationRequestDto> VisibleRequests => showHistory
         ? myRequests
         : myRequests.Where(r => r.Status is RoleElevationStatus.Pending or RoleElevationStatus.Approved);
+
+    [LoggerMessage(EventId = 1078, Level = LogLevel.Information, Message = "JIT-anmodning om rollen '{RoleName}' afvist: {Reason}")]
+    static partial void JitElevationRequestSubmitFailed(ILogger logger, string RoleName, string Reason);
 
     protected override async Task OnInitializedAsync()
     {
@@ -86,6 +92,7 @@ public partial class JitElevationRequestForm
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
             errorMessage = $"Error: {ex.Message}";
+            JitElevationRequestSubmitFailed(Logger, selectedRole, ex.Message);
         }
     }
 

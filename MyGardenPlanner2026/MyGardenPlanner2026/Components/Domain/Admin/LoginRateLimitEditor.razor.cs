@@ -25,6 +25,9 @@ public partial class LoginRateLimitEditor
     [Inject]
     private IAdminActionRateLimiter RateLimiter { get; set; } = default!;
 
+    [Inject]
+    private ILogger<LoginRateLimitEditor> Logger { get; set; } = default!;
+
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
@@ -37,6 +40,9 @@ public partial class LoginRateLimitEditor
     private string? errorMessage;
     private StepUpGuard stepUpGuard = default!;
     private AdminActionGuard adminActionGuard = default!;
+
+    [LoggerMessage(EventId = 1077, Level = LogLevel.Information, Message = "Opdatering af login rate limit-policy afvist: {Reason}")]
+    static partial void LoginRateLimitPolicySaveFailed(ILogger logger, string Reason);
 
     protected override async Task OnInitializedAsync()
     {
@@ -83,6 +89,7 @@ public partial class LoginRateLimitEditor
         catch (ArgumentOutOfRangeException ex)
         {
             errorMessage = $"Error: {ex.Message}";
+            LoginRateLimitPolicySaveFailed(Logger, ex.Message);
         }
     }
 

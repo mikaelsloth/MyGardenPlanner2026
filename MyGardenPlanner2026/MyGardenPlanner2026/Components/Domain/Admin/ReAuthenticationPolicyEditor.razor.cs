@@ -23,6 +23,9 @@ public partial class ReAuthenticationPolicyEditor
     [Inject]
     private IAdminActionRateLimiter RateLimiter { get; set; } = default!;
 
+    [Inject]
+    private ILogger<ReAuthenticationPolicyEditor> Logger { get; set; } = default!;
+
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
@@ -34,6 +37,9 @@ public partial class ReAuthenticationPolicyEditor
     private string? errorMessage;
     private StepUpGuard stepUpGuard = default!;
     private AdminActionGuard adminActionGuard = default!;
+
+    [LoggerMessage(EventId = 1074, Level = LogLevel.Information, Message = "Opdatering af step-up re-auth-policy afvist: {Reason}")]
+    static partial void ReAuthPolicySaveFailed(ILogger logger, string Reason);
 
     protected override async Task OnInitializedAsync()
     {
@@ -79,6 +85,7 @@ public partial class ReAuthenticationPolicyEditor
         catch (ArgumentOutOfRangeException ex)
         {
             errorMessage = $"Error: {ex.Message}";
+            ReAuthPolicySaveFailed(Logger, ex.Message);
         }
     }
 

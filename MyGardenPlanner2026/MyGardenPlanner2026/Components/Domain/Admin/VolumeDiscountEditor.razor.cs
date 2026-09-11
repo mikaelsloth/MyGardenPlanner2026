@@ -24,6 +24,9 @@ public partial class VolumeDiscountEditor
     [Inject]
     private IAdminActionRateLimiter RateLimiter { get; set; } = default!;
 
+    [Inject]
+    private ILogger<VolumeDiscountEditor> Logger { get; set; } = default!;
+
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
@@ -42,6 +45,15 @@ public partial class VolumeDiscountEditor
     private int newMinGardens = 1;
     private int? newMaxGardens;
     private decimal newPriceMultiplier = 1.00m;
+
+    [LoggerMessage(EventId = 1070, Level = LogLevel.Information, Message = "Opdatering af volumenrabat-trappe '{TierId}' afvist: {Reason}")]
+    static partial void VolumeDiscountUpdateFailed(ILogger logger, Guid TierId, string Reason);
+
+    [LoggerMessage(EventId = 1071, Level = LogLevel.Information, Message = "Oprettelse af ny volumenrabat-trappe afvist: {Reason}")]
+    static partial void VolumeDiscountCreateFailed(ILogger logger, string Reason);
+
+    [LoggerMessage(EventId = 1072, Level = LogLevel.Information, Message = "Sletning af volumenrabat-trappe '{TierId}' afvist: {Reason}")]
+    static partial void VolumeDiscountDeleteFailed(ILogger logger, Guid TierId, string Reason);
 
     protected override async Task OnInitializedAsync()
     {
@@ -92,6 +104,7 @@ public partial class VolumeDiscountEditor
         catch (InvalidOperationException ex)
         {
             errorMessage = ex.Message;
+            VolumeDiscountUpdateFailed(Logger, tierId, ex.Message);
         }
     }
 
@@ -125,6 +138,7 @@ public partial class VolumeDiscountEditor
         catch (InvalidOperationException ex)
         {
             errorMessage = ex.Message;
+            VolumeDiscountCreateFailed(Logger, ex.Message);
         }
     }
 
@@ -151,6 +165,7 @@ public partial class VolumeDiscountEditor
         catch (InvalidOperationException ex)
         {
             errorMessage = ex.Message;
+            VolumeDiscountDeleteFailed(Logger, id, ex.Message);
         }
     }
 

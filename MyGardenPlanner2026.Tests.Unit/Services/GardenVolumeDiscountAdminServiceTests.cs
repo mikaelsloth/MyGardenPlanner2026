@@ -1,13 +1,17 @@
 ﻿namespace MyGardenPlanner2026.Tests.Unit.Services;
 
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
 using MyGardenPlanner2026.Infrastructure.Data.Seed;
 using MyGardenPlanner2026.Infrastructure.Services;
+using NSubstitute;
 using Xunit;
 
 public class GardenVolumeDiscountAdminServiceTests : TestDbContext
 {
+    private readonly ILogger<GardenVolumeDiscountAdminService> logger = Substitute.For<ILogger<GardenVolumeDiscountAdminService>>();
+
     private async Task SeedAsync()
     {
         var seeder = new GardenVolumeDiscountSeeder(CreateAdminDbContextFactory(), new DefaultGardenVolumeDiscountCatalog());
@@ -18,7 +22,7 @@ public class GardenVolumeDiscountAdminServiceTests : TestDbContext
     public async Task SaveAsync_WithNullId_CreatesNewTier()
     {
         await SeedAsync();
-        var service = new GardenVolumeDiscountAdminService(CreateAdminDbContextFactory(), new DefaultGardenVolumeDiscountCatalog());
+        var service = new GardenVolumeDiscountAdminService(CreateAdminDbContextFactory(), new DefaultGardenVolumeDiscountCatalog(), logger);
 
         var created = await service.SaveAsync(
             new GardenVolumeDiscountTierUpsertDto(null, 501, null, 0.30m),
@@ -33,7 +37,7 @@ public class GardenVolumeDiscountAdminServiceTests : TestDbContext
     public async Task SaveAsync_WithExistingId_UpdatesTier()
     {
         await SeedAsync();
-        var service = new GardenVolumeDiscountAdminService(CreateAdminDbContextFactory(), new DefaultGardenVolumeDiscountCatalog());
+        var service = new GardenVolumeDiscountAdminService(CreateAdminDbContextFactory(), new DefaultGardenVolumeDiscountCatalog(), logger);
 
         var existing = (await service.GetAllAsync(TestContext.Current.CancellationToken)).First(t => t.MinGardens == 1);
 
@@ -49,7 +53,7 @@ public class GardenVolumeDiscountAdminServiceTests : TestDbContext
     public async Task SaveAsync_DuplicateMinGardens_ThrowsInvalidOperationException()
     {
         await SeedAsync();
-        var service = new GardenVolumeDiscountAdminService(CreateAdminDbContextFactory(), new DefaultGardenVolumeDiscountCatalog());
+        var service = new GardenVolumeDiscountAdminService(CreateAdminDbContextFactory(), new DefaultGardenVolumeDiscountCatalog(), logger);
 
         var act = async () => await service.SaveAsync(
             new GardenVolumeDiscountTierUpsertDto(null, 1, 1, 1.00m),
@@ -62,7 +66,7 @@ public class GardenVolumeDiscountAdminServiceTests : TestDbContext
     public async Task DeleteAsync_RemovesTier()
     {
         await SeedAsync();
-        var service = new GardenVolumeDiscountAdminService(CreateAdminDbContextFactory(), new DefaultGardenVolumeDiscountCatalog());
+        var service = new GardenVolumeDiscountAdminService(CreateAdminDbContextFactory(), new DefaultGardenVolumeDiscountCatalog(), logger);
 
         var existing = (await service.GetAllAsync(TestContext.Current.CancellationToken)).First(t => t.MinGardens == 201);
 
@@ -76,7 +80,7 @@ public class GardenVolumeDiscountAdminServiceTests : TestDbContext
     public async Task ResetToDefaultAsync_RestoresSevenDefaultTiers()
     {
         await SeedAsync();
-        var service = new GardenVolumeDiscountAdminService(CreateAdminDbContextFactory(), new DefaultGardenVolumeDiscountCatalog());
+        var service = new GardenVolumeDiscountAdminService(CreateAdminDbContextFactory(), new DefaultGardenVolumeDiscountCatalog(), logger);
 
         await service.SaveAsync(new GardenVolumeDiscountTierUpsertDto(null, 501, null, 0.30m), TestContext.Current.CancellationToken);
         await service.ResetToDefaultAsync(TestContext.Current.CancellationToken);

@@ -19,7 +19,8 @@ builder.Services
     .AddReAuthFailureTracking(builder.Configuration)
     .AddSecurityPolicySettingsSeeding(builder.Configuration)
     .AddSecurityPolicyRuntimeReload()
-    .AddAuditLogServices();
+    .AddAuditLogServices()
+    .AddOnboardingServices();
 
 var app = builder.Build();
 

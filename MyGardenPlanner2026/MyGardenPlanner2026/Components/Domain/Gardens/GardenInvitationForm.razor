@@ -1,0 +1,63 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Gardens
+
+<FormSection Title="Opret ny invitation" Columns="2">
+    <div class="field">
+        <label class="field-label" for="invite-email">E-mail</label>
+        <input id="invite-email" type="email" class="form-control" @bind="email" placeholder="navn@eksempel.dk" />
+    </div>
+
+    <div class="field">
+        <label class="field-label" for="invite-layer">Niveau</label>
+        <select id="invite-layer" class="form-select" @bind="selectedLayer">
+            @foreach (var layer in AllowedLayers)
+            {
+                <option value="@layer">@layer.ToDisplayName()</option>
+            }
+        </select>
+    </div>
+
+    <div class="field">
+        <label class="field-label" for="invite-category">Adgangskategori</label>
+        <select id="invite-category" class="form-select" @bind="selectedCategory">
+            @foreach (var category in AllowedCategories)
+            {
+                <option value="@category">@category.ToDisplayName()</option>
+            }
+        </select>
+    </div>
+
+    <div class="check-row">
+        <input type="checkbox" id="invite-self-upgrade" class="form-check-input" @bind="allowSelfUpgrade" />
+        <div>
+            <label class="field-label" for="invite-self-upgrade">Tillad selv-opgradering</label>
+            <p class="help">Den inviterede må selv tilkøbe adgang op til dit eget niveau.</p>
+        </div>
+    </div>
+
+    <div class="stack-2xs">
+        <Badge Variant="Badge.BadgeVariant.Accent">
+            @($"Du har {FreeQuota.RemainingFreeSlots} gratis invitation(er) tilbage ud af {FreeQuota.TotalFreeSlots}")
+        </Badge>
+        @if (CanUseFreeSlot)
+        {
+            <div class="check-row">
+                <input type="checkbox" id="invite-free-slot" class="form-check-input" @bind="useFreeSlot" />
+                <label class="field-label" for="invite-free-slot">Brug gratis invitation (samme niveau som mit eget)</label>
+            </div>
+        }
+    </div>
+
+    @if (errorMessage is not null)
+    {
+        <div class="status-message status-danger status-form" role="alert">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div class="status-message-text"><p>@errorMessage</p></div>
+        </div>
+    }
+</FormSection>
+
+<div class="form-actions">
+    <Button Variant="Button.ButtonVariant.Primary" Loading="isSubmitting" OnClick="SubmitAsync">
+        Send invitation
+    </Button>
+</div>

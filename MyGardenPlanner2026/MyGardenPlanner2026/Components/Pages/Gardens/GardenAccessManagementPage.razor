@@ -1,0 +1,63 @@
+﻿@page "/gardens/{GardenId:guid}/access"
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+<PageTitle>Haveadgang – MyGardenPlanner</PageTitle>
+
+@* Bruger MainLayout indtil AppShell (kommer i PR4) — ingen navigation/shell endnu. *@
+
+<div class="container-fluid px-3 px-md-4 garden-access-page">
+    @if (isLoading)
+    {
+        <div class="skeleton-card" aria-hidden="true">
+            <div class="skeleton-line skeleton-title"></div>
+            <div class="skeleton-line skeleton-meta"></div>
+        </div>
+    }
+    else if (!isAuthorized)
+    {
+        <div class="empty-state empty-restricted">
+            <div class="empty-icon" aria-hidden="true">
+                <i class="bi bi-lock"></i>
+            </div>
+            <div class="empty-content">
+                <h1>Ingen adgang</h1>
+                <p>Du er ikke medlem af denne have og kan derfor ikke administrere adgang.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <h1>Haveadgang @(garden is not null ? $"– {garden.Name}" : string.Empty)</h1>
+
+        @if (statusMessage is not null)
+        {
+            <div class="status-message status-success status-page" role="status" aria-live="polite">
+                <span class="status-dot" aria-hidden="true"></span>
+                <div class="status-message-text"><p>@statusMessage</p></div>
+            </div>
+        }
+
+        @if (lastResult is not null)
+        {
+            <InvitationLinkCard Result="lastResult" GardenName="@(garden?.Name ?? string.Empty)" InvitedEmail="@lastInvitedEmail" />
+        }
+
+        <GardenInvitationForm GardenId="GardenId"
+                               RequesterMembership="currentMembership!"
+                               FreeQuota="freeQuota"
+                               OnInvitationCreated="HandleInvitationCreatedAsync" />
+
+        <div class="section stack-lg">
+            <h2 class="h4">Medlemmer</h2>
+            <GardenMemberList Members="members" />
+
+            <h2 class="h4">Invitationer</h2>
+            <GardenInvitationList Invitations="invitations"
+                                   CanManageAll="CanManageAllInvitations"
+                                   CurrentUserId="currentUserId!"
+                                   OnRevoke="HandleRevokeAsync" />
+        </div>
+    }
+</div>

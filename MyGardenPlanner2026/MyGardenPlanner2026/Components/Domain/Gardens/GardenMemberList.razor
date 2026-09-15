@@ -1,0 +1,23 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Gardens
+
+<div class="table-responsive">
+    <table class="data-table" data-density="compact">
+        <thead>
+            <tr>
+                <th scope="col">Bruger</th>
+                <th scope="col">Rolle</th>
+                <th scope="col">Medlem siden</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var member in Members)
+            {
+                <tr @key="member.Id">
+                    <td>@member.UserId</td>
+                    <td><RoleBadge Category="member.Category" IsOwner="member.IsOwner" /></td>
+                    <td>@member.JoinedAtUtc.ToLocalTime().ToString("d. MMM yyyy", DanishCulture)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

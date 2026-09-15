@@ -11,4 +11,5 @@ public sealed record CreateInvitationRequestDto(
     GardenAccessLevel MaxAllowedLayer,
     AccessCategory MaxAllowedCategory,
     bool AllowSelfUpgrade,
+    bool UseFreeSlot,
     TimeSpan ValidFor);

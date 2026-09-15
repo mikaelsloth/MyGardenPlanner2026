@@ -1,0 +1,15 @@
+﻿@namespace MyGardenPlanner2026.Components.Foundation
+
+<button type="@Type"
+        class="btn @VariantClass @SizeClass @CssClass"
+        disabled="@(Disabled || Loading)"
+        aria-busy="@(Loading ? "true" : "false")"
+        aria-label="@AriaLabel"
+        @attributes="AdditionalAttributes"
+        @onclick="HandleClickAsync">
+    @if (Loading)
+    {
+        <span class="btn-spinner" aria-hidden="true"></span>
+    }
+    @ChildContent
+</button>

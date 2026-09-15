@@ -1,0 +1,31 @@
+﻿@namespace MyGardenPlanner2026.Components.Interaction
+
+@if (IsOpen)
+{
+    <div class="confirm-dialog-backdrop" @onclick="HandleBackdropClickAsync">
+        <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="@titleId" @onclick:stopPropagation="true">
+            <div class="confirm-dialog-header">
+                <h2 id="@titleId" class="confirm-dialog-title">@Title</h2>
+            </div>
+            <div class="confirm-dialog-body">
+                <p>@Message</p>
+                @if (!string.IsNullOrWhiteSpace(ImpactNote))
+                {
+                    <p class="confirm-dialog-impact">@ImpactNote</p>
+                }
+            </div>
+            <div class="confirm-dialog-actions">
+                <button type="button" class="btn btn-secondary" disabled="@IsSubmitting" @onclick="HandleCancelAsync">
+                    @CancelLabel
+                </button>
+                <button type="button" class="btn @(IsDangerous ? "btn-danger" : "btn-primary")" disabled="@IsSubmitting" @onclick="HandleConfirmAsync">
+                    @if (IsSubmitting)
+                    {
+                        <span class="btn-spinner" aria-hidden="true"></span>
+                    }
+                    @ConfirmLabel
+                </button>
+            </div>
+        </div>
+    </div>
+}

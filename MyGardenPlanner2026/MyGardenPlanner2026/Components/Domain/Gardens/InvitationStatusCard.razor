@@ -1,0 +1,22 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Gardens
+
+<div class="card card-entity invitation-status-card" data-density="default">
+    <div class="card-header">
+        <div class="stack-2xs">
+            <p class="compact-row-title">@Invitation.Email</p>
+            <p class="meta">@RoleLabel · Udløber @Invitation.ExpiresUtc.ToLocalTime().ToString("d. MMM yyyy", DanishCulture)</p>
+        </div>
+        <span class="badge-role @StatusBadgeClass">@StatusLabel</span>
+    </div>
+
+    @if (CanRevoke)
+    {
+        <div class="card-actions">
+            <button type="button" class="btn btn-danger btn-sm"
+                    aria-label="@($"Tilbagekald invitation til {Invitation.Email}")"
+                    @onclick="HandleRevokeAsync">
+                Tilbagekald invitation
+            </button>
+        </div>
+    }
+</div>

@@ -1,0 +1,28 @@
+﻿@namespace MyGardenPlanner2026.Components.Interaction
+
+<div class="field @(HasError ? "field-error" : string.Empty)">
+    <label class="field-label" for="@For">
+        @Label
+        @if (Required)
+        {
+            <span class="required-label">(påkrævet)</span>
+        }
+        else if (ShowOptionalLabel)
+        {
+            <span class="optional-label">(valgfri)</span>
+        }
+    </label>
+    @ChildContent
+    @if (HasError)
+    {
+        <p class="field-message" id="@ErrorId">@ErrorMessage</p>
+    }
+    else if (!string.IsNullOrWhiteSpace(HelpText))
+    {
+        <p class="help" id="@HelpId">@HelpText</p>
+    }
+    else
+    {
+        <p class="help help-empty" aria-hidden="true">&nbsp;</p>
+    }
+</div>

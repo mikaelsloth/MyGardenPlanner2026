@@ -1,0 +1,17 @@
+﻿@namespace MyGardenPlanner2026.Components.Layout
+
+<section class="form-section @(HasError ? "form-section-error" : string.Empty)">
+    @if (!string.IsNullOrWhiteSpace(Title))
+    {
+        <div class="form-section-header">
+            <h3 class="h5">@Title</h3>
+        </div>
+    }
+    @if (!string.IsNullOrWhiteSpace(Intro))
+    {
+        <p class="form-intro">@Intro</p>
+    }
+    <div class="form-grid @GridClass">
+        @ChildContent
+    </div>
+</section>

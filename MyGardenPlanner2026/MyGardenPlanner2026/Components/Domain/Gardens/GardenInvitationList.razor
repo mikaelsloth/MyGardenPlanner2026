@@ -1,0 +1,44 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Gardens
+
+<div class="stack-md">
+    <div class="stack-sm">
+        <h3 class="h6">Afventende (@Pending.Count)</h3>
+        @if (Pending.Count == 0)
+        {
+            <p class="card-description">Ingen afventende invitationer.</p>
+        }
+        else
+        {
+            @foreach (var invitation in Pending)
+            {
+                <InvitationStatusCard @key="invitation.Id"
+                                      Invitation="invitation"
+                                      AllowRevoke="CanManageAll || invitation.InvitedByUserId == CurrentUserId"
+                                      OnRevoke="RequestRevoke" />
+            }
+        }
+    </div>
+
+    <div class="stack-sm">
+        <h3 class="h6">Accepteret (@Accepted.Count)</h3>
+        @foreach (var invitation in Accepted)
+        {
+            <InvitationStatusCard @key="invitation.Id" Invitation="invitation" />
+        }
+    </div>
+
+    <div class="stack-sm">
+        <h3 class="h6">Udløbet / Tilbagekaldt (@ExpiredOrRevoked.Count)</h3>
+        @foreach (var invitation in ExpiredOrRevoked)
+        {
+            <InvitationStatusCard @key="invitation.Id" Invitation="invitation" />
+        }
+    </div>
+</div>
+
+<ConfirmDialog IsOpen="pendingRevokeId.HasValue"
+               Title="Tilbagekald invitation"
+               Message="Er du sikker på, at du vil annullere invitationen?"
+               ConfirmLabel="Ja, tilbagekald"
+               OnConfirm="ConfirmRevokeAsync"
+               OnCancel="CancelRevoke" />

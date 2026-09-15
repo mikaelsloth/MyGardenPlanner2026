@@ -1,0 +1,34 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Gardens
+
+<div class="card card-entity invitation-link-card screen-only" data-density="default">
+    <div class="card-header">
+        <h3 class="h6">Invitation oprettet</h3>
+        <Badge Variant="Badge.BadgeVariant.Primary">Klar til at dele</Badge>
+    </div>
+
+    <div class="read-only-section">
+        <div class="read-only-field">
+            <span class="read-only-label">Invitationslink</span>
+            <span class="read-only-value mono">@InviteUrl</span>
+        </div>
+    </div>
+
+    <canvas @ref="qrCanvasElement" class="invitation-qr-canvas" aria-hidden="true"></canvas>
+
+    <div class="card-actions">
+        <Button Variant="Button.ButtonVariant.Secondary" OnClick="CopyLinkAsync">Kopiér link</Button>
+        <Button Variant="Button.ButtonVariant.Secondary" OnClick="PrintAsync">Udskriv</Button>
+    </div>
+
+    @if (copied)
+    {
+        <p class="help">Linket er kopieret.</p>
+    }
+</div>
+
+<div class="print-only invitation-print-block">
+    <h2>Invitation til @GardenName</h2>
+    <p>Til: @InvitedEmail</p>
+    <p>Scan QR-koden, eller åbn linket:</p>
+    <p class="mono">@InviteUrl</p>
+</div>

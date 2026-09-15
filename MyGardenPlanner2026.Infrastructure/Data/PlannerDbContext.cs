@@ -15,6 +15,7 @@ public partial class PlannerDbContext(DbContextOptions<PlannerDbContext> options
         base.OnModelCreating(modelBuilder); // VIGTIG: Skal kaldes for at konfigurere Identity-tabellerne!
 
         ConfigureLayer1(modelBuilder);
+        ConfigureGardens(modelBuilder);
         ConfigureAdmin(modelBuilder);
         ConfigureAuditLogViewerPreference(modelBuilder);
         ApplySoftDeleteQueryFilters(modelBuilder);

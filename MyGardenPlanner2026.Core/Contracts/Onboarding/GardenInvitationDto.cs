@@ -6,6 +6,7 @@ using MyGardenPlanner2026.Core.Entities.Common;
 public sealed record GardenInvitationDto(
     Guid Id,
     Guid GardenId,
+    string InvitedByUserId,
     string Email,
     GardenAccessLevel TargetLayer,
     AccessCategory TargetCategory,

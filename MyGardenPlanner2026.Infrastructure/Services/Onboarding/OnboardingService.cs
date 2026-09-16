@@ -13,7 +13,7 @@ using MyGardenPlanner2026.Infrastructure.Data;
 /// (begrænsede) IDbContextFactory&lt;PlannerDbContext&gt; — Gardens-entiteterne ligger i
 /// dbo-schema, ikke admin-schema.
 ///
-/// Gratis invitation (HavePlanner2026 - Adgang og abonnement.md, §2): 1 slot PR. aktivt
+/// Gratis invitation (HavePlanner2026 - Adgang og abonnement.md, §2): 1 slot pr. aktivt
 /// (ikke-trial) UserEntitlement på PRÆCIS samme Layer og Category som entitlementet selv.
 /// Layer/Category-loft (Adgangsrettigheder.md): en invitation må aldrig give den
 /// inviterede bedre rettigheder end afsenderen selv har.
@@ -25,6 +25,7 @@ public sealed partial class OnboardingService(
     ILogger<OnboardingService> logger) : IOnboardingService
 {
     private static readonly TimeSpan TrialDuration = TimeSpan.FromDays(30);
+    private static readonly TimeSpan CheckoutDraftLifetime = TimeSpan.FromMinutes(30);
 
     [LoggerMessage(EventId = 1100, Level = LogLevel.Information, Message = "Sandkasse-have '{GardenId}' oprettet for bruger '{UserId}'.")]
     static partial void SandboxGardenCreated(ILogger logger, Guid GardenId, string UserId);
@@ -40,6 +41,21 @@ public sealed partial class OnboardingService(
 
     [LoggerMessage(EventId = 1104, Level = LogLevel.Information, Message = "Invitation '{InvitationId}' tilbagekaldt af bruger '{UserId}'.")]
     static partial void InvitationRevoked(ILogger logger, Guid InvitationId, string UserId);
+
+    [LoggerMessage(EventId = 1105, Level = LogLevel.Information, Message = "Checkout-draft '{DraftId}' gemt for bruger '{UserId}'.")]
+    static partial void CheckoutDraftSaved(ILogger logger, Guid DraftId, string UserId);
+
+    [LoggerMessage(EventId = 1106, Level = LogLevel.Information, Message = "Have '{GardenId}' provisioneret fra checkout-draft '{DraftId}' for bruger '{UserId}'.")]
+    static partial void CheckoutDraftProvisioned(ILogger logger, Guid DraftId, Guid GardenId, string UserId);
+
+    [LoggerMessage(EventId = 1107, Level = LogLevel.Information, Message = "Provisionering fra checkout-draft '{DraftId}' afvist: {Reason}")]
+    static partial void CheckoutDraftProvisionFailed(ILogger logger, Guid DraftId, string Reason);
+
+    [LoggerMessage(EventId = 1108, Level = LogLevel.Information, Message = "Invitation '{InvitationId}' accepteret af bruger '{UserId}' som medlemskab '{MembershipId}'.")]
+    static partial void InvitationAccepted(ILogger logger, Guid InvitationId, string UserId, Guid MembershipId);
+
+    [LoggerMessage(EventId = 1109, Level = LogLevel.Information, Message = "Accept af invitation afvist for bruger '{UserId}': {Reason}")]
+    static partial void InvitationAcceptanceRejected(ILogger logger, string UserId, string Reason);
 
     public async Task<SandboxGardenResultDto> CreateSandboxGardenAsync(
         string userId, CancellationToken cancellationToken = default)
@@ -90,35 +106,85 @@ public sealed partial class OnboardingService(
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
         var now = timeProvider.GetUtcNow();
 
-        var garden = new Garden { Name = request.GardenName, Description = request.Description };
-        var membership = new GardenMembership
-        {
-            GardenId = garden.Id,
-            UserId = request.UserId,
-            IsOwner = true,
-            Layer = request.Layer,
-            Category = request.Category,
-            JoinedAtUtc = now
-        };
-        var entitlement = new UserEntitlement
-        {
-            UserId = request.UserId,
-            GardenId = garden.Id,
-            Layer = request.Layer,
-            Category = request.Category,
-            BillingCycle = request.BillingCycle,
-            IsTrial = false,
-            ValidToUtc = ComputeValidTo(request.BillingCycle, now)
-        };
+        var (garden, membership, entitlement) = await ProvisionPaidGardenCoreAsync(context, request, now, cancellationToken);
 
-        await ApplyAddOnQuantitiesAsync(context, entitlement, request.AddOnQuantities, cancellationToken);
-
-        await context.Gardens.AddAsync(garden, CancellationToken.None);
-        await context.GardenMemberships.AddAsync(membership, CancellationToken.None);
-        await context.UserEntitlements.AddAsync(entitlement, CancellationToken.None);
         await context.SaveChangesAsync(cancellationToken);
 
         PaidGardenProvisioned(logger, garden.Id, request.UserId, request.Layer, request.Category);
+
+        return new PaidGardenProvisionResultDto(garden.Id, membership.Id, entitlement.Id);
+    }
+
+    public async Task<Guid> SaveCheckoutDraftAsync(
+        SaveCheckoutDraftRequestDto request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.GardenName);
+
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+        var now = timeProvider.GetUtcNow();
+
+        var draft = new CheckoutDraft
+        {
+            UserId = request.UserId,
+            GardenName = request.GardenName,
+            Description = request.Description,
+            Layer = request.Layer,
+            Category = request.Category,
+            BillingCycle = request.BillingCycle,
+            AddOnQuantities = new Dictionary<Guid, int>(request.AddOnQuantities),
+            CreatedAtUtc = now,
+            ExpiresUtc = now.Add(CheckoutDraftLifetime)
+        };
+
+        await context.CheckoutDrafts.AddAsync(draft, CancellationToken.None);
+        await context.SaveChangesAsync(cancellationToken);
+
+        CheckoutDraftSaved(logger, draft.Id, request.UserId ?? "ukendt (ikke logget ind endnu)");
+
+        return draft.Id;
+    }
+
+    public async Task<CheckoutDraftDto?> GetCheckoutDraftAsync(
+        Guid draftId, CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var draft = await context.CheckoutDrafts.SingleOrDefaultAsync(d => d.Id == draftId, cancellationToken);
+
+        return draft is null || draft.ExpiresUtc < timeProvider.GetUtcNow() ? null : ToDraftDto(draft);
+    }
+
+    public async Task<PaidGardenProvisionResultDto> ProvisionPaidGardenFromDraftAsync(
+        Guid draftId, string userId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+        var now = timeProvider.GetUtcNow();
+
+        var draft = await context.CheckoutDrafts.SingleOrDefaultAsync(d => d.Id == draftId, cancellationToken)
+            ?? throw new InvalidOperationException("Konfigurationen findes ikke eller er allerede brugt.");
+
+        if (draft.ExpiresUtc < now)
+        {
+            context.CheckoutDrafts.Remove(draft);
+            await context.SaveChangesAsync(cancellationToken);
+
+            CheckoutDraftProvisionFailed(logger, draftId, "udløbet");
+            throw new InvalidOperationException("Konfigurationen er udløbet. Start venligst forfra.");
+        }
+
+        var request = new PaidGardenProvisionRequestDto(
+            userId, draft.GardenName, draft.Description, draft.Layer, draft.Category,
+            draft.BillingCycle, draft.AddOnQuantities);
+
+        var (garden, membership, entitlement) = await ProvisionPaidGardenCoreAsync(context, request, now, cancellationToken);
+
+        context.CheckoutDrafts.Remove(draft);
+        await context.SaveChangesAsync(cancellationToken);
+
+        CheckoutDraftProvisioned(logger, draftId, garden.Id, userId);
 
         return new PaidGardenProvisionResultDto(garden.Id, membership.Id, entitlement.Id);
     }
@@ -210,7 +276,6 @@ public sealed partial class OnboardingService(
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
         var invitation = await context.GardenInvitations.SingleOrDefaultAsync(i => i.TokenHash == hash, cancellationToken);
-
         return invitation switch
         {
             null => new InvitationValidationResultDto(
@@ -276,18 +341,137 @@ public sealed partial class OnboardingService(
         return await CalculateFreeQuotaAsync(context, gardenId, userId, cancellationToken);
     }
 
+    public async Task<AcceptInvitationResultDto> AcceptInvitationAsync(
+        AcceptInvitationRequestDto request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.RawToken);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.UserId);
+
+        var hash = tokenService.HashToken(request.RawToken);
+
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+        var now = timeProvider.GetUtcNow();
+
+        var invitation = await context.GardenInvitations.SingleOrDefaultAsync(i => i.TokenHash == hash, cancellationToken)
+            ?? throw new InvalidOperationException("Invitationen findes ikke eller er ugyldig.");
+
+        if (invitation.IsRevoked)
+        {
+            InvitationAcceptanceRejected(logger, request.UserId, "invitationen er tilbagekaldt");
+            throw new InvalidOperationException("Invitationen er blevet tilbagekaldt.");
+        }
+
+        if (invitation.IsAccepted)
+        {
+            InvitationAcceptanceRejected(logger, request.UserId, "invitationen er allerede accepteret");
+            throw new InvalidOperationException("Invitationen er allerede accepteret.");
+        }
+
+        if (invitation.ExpiresUtc < now)
+        {
+            InvitationAcceptanceRejected(logger, request.UserId, "invitationen er udløbet");
+            throw new InvalidOperationException("Invitationen er udløbet.");
+        }
+
+        if (!IsWithinInvitationCeiling(request.GrantedLayer, request.GrantedCategory, invitation))
+        {
+            InvitationAcceptanceRejected(logger, request.UserId, "GrantedLayer/GrantedCategory overstiger invitationens loft");
+            throw new InvalidOperationException("Det valgte niveau overstiger invitationens tilladte loft.");
+        }
+
+        var alreadyMember = await context.GardenMemberships.AnyAsync(
+            m => m.GardenId == invitation.GardenId && m.UserId == request.UserId, cancellationToken);
+        if (alreadyMember)
+        {
+            InvitationAcceptanceRejected(logger, request.UserId, "brugeren er allerede medlem af haven");
+            throw new InvalidOperationException("Du er allerede medlem af denne have.");
+        }
+
+        var membership = new GardenMembership
+        {
+            GardenId = invitation.GardenId,
+            UserId = request.UserId,
+            IsOwner = false,
+            Layer = request.GrantedLayer,
+            Category = request.GrantedCategory,
+            JoinedAtUtc = now
+        };
+        await context.GardenMemberships.AddAsync(membership, CancellationToken.None);
+
+        Guid? entitlementId = null;
+        if (request.UpgradeBillingCycle is { } billingCycle)
+        {
+            var entitlement = new UserEntitlement
+            {
+                UserId = request.UserId,
+                GardenId = invitation.GardenId,
+                Layer = request.GrantedLayer,
+                Category = request.GrantedCategory,
+                BillingCycle = billingCycle,
+                IsTrial = false,
+                ValidToUtc = ComputeValidTo(billingCycle, now)
+            };
+
+            await ApplyAddOnQuantitiesAsync(context, entitlement, request.AddOnQuantities, cancellationToken);
+
+            await context.UserEntitlements.AddAsync(entitlement, CancellationToken.None);
+            entitlementId = entitlement.Id;
+        }
+
+        invitation.IsAccepted = true;
+
+        await context.SaveChangesAsync(cancellationToken);
+
+        InvitationAccepted(logger, invitation.Id, request.UserId, membership.Id);
+
+        return new AcceptInvitationResultDto(invitation.GardenId, membership.Id, entitlementId);
+    }
+
+    private static async Task<(Garden Garden, GardenMembership Membership, UserEntitlement Entitlement)> ProvisionPaidGardenCoreAsync(
+        PlannerDbContext context, PaidGardenProvisionRequestDto request, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var garden = new Garden { Name = request.GardenName, Description = request.Description };
+        var membership = new GardenMembership
+        {
+            GardenId = garden.Id,
+            UserId = request.UserId,
+            IsOwner = true,
+            Layer = request.Layer,
+            Category = request.Category,
+            JoinedAtUtc = now
+        };
+        var entitlement = new UserEntitlement
+        {
+            UserId = request.UserId,
+            GardenId = garden.Id,
+            Layer = request.Layer,
+            Category = request.Category,
+            BillingCycle = request.BillingCycle,
+            IsTrial = false,
+            ValidToUtc = ComputeValidTo(request.BillingCycle, now)
+        };
+
+        await ApplyAddOnQuantitiesAsync(context, entitlement, request.AddOnQuantities, cancellationToken);
+
+        await context.Gardens.AddAsync(garden, CancellationToken.None);
+        await context.GardenMemberships.AddAsync(membership, CancellationToken.None);
+        await context.UserEntitlements.AddAsync(entitlement, CancellationToken.None);
+
+        return (garden, membership, entitlement);
+    }
+
     private async Task<FreeInvitationQuotaDto> CalculateFreeQuotaAsync(
         PlannerDbContext context, Guid gardenId, string userId, CancellationToken cancellationToken)
     {
         var now = timeProvider.GetUtcNow();
 
-        // OBS: ValidToUtc-sammenligningen kan ikke oversættes til SQL på SQLite (se
-        // memory-noter om DateTimeOffset-begrænsning) — entitlements materialiseres
-        // derfor først, og tidsvindue-filtreres i hukommelsen bagefter, samme mønster
-        // som JitElevationService.HasActiveElevationAsync.
+        // OBS: ValidToUtc-sammenligningen kan ikke oversættes til SQL på SQLite —
+        // entitlements materialiseres derfor først, og tidsvindue-filtreres i
+        // hukommelsen bagefter, samme mønster som JitElevationService.HasActiveElevationAsync.
         var candidateEntitlements = await context.UserEntitlements
-                    .Where(e => e.GardenId == gardenId && e.UserId == userId && !e.IsTrial)
-                    .ToListAsync(cancellationToken);
+            .Where(e => e.GardenId == gardenId && e.UserId == userId && !e.IsTrial)
+            .ToListAsync(cancellationToken);
 
         var totalFreeSlots = candidateEntitlements.Count(e => e.ValidToUtc == null || e.ValidToUtc > now);
 
@@ -302,6 +486,11 @@ public sealed partial class OnboardingService(
 
     private static bool IsWithinOwnRights(GardenAccessLevel layer, AccessCategory category, GardenMembership own) =>
         (int)layer >= (int)own.Layer && (int)category <= (int)own.Category;
+
+    private static bool IsWithinInvitationCeiling(
+        GardenAccessLevel grantedLayer, AccessCategory grantedCategory, GardenInvitation invitation) =>
+        (int)grantedLayer >= (int)invitation.MaxAllowedLayer && (int)grantedLayer <= (int)invitation.TargetLayer
+        && (int)grantedCategory <= (int)invitation.MaxAllowedCategory && (int)grantedCategory >= (int)invitation.TargetCategory;
 
     private static DateTimeOffset? ComputeValidTo(BillingCycle billingCycle, DateTimeOffset now) => billingCycle switch
     {
@@ -344,7 +533,7 @@ public sealed partial class OnboardingService(
                     entitlement.ExtraCategoryBArtifactsCount += quantity;
                     break;
                 case AddOnType.BedeINiveau2:
-                    // OBS: intet dedikeret kvotefelt på UserEntitlement endnu — se antagelse #9.
+                    // OBS: intet dedikeret kvotefelt på UserEntitlement endnu — kendt gab fra Prompt 1.
                     break;
             }
         }
@@ -354,4 +543,8 @@ public sealed partial class OnboardingService(
         invitation.Id, invitation.GardenId, invitation.InvitedByUserId, invitation.Email,
         invitation.TargetLayer, invitation.TargetCategory, invitation.IsFreeSlot, invitation.AllowSelfUpgrade,
         invitation.ExpiresUtc, invitation.IsAccepted, invitation.IsRevoked, invitation.CreatedAtUtc);
+
+    private static CheckoutDraftDto ToDraftDto(CheckoutDraft draft) => new(
+        draft.Id, draft.UserId, draft.GardenName, draft.Description,
+        draft.Layer, draft.Category, draft.BillingCycle, draft.AddOnQuantities, draft.ExpiresUtc);
 }

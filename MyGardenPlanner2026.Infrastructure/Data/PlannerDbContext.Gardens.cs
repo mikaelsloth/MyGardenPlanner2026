@@ -9,6 +9,7 @@ public partial class PlannerDbContext
     public DbSet<GardenMembership> GardenMemberships => Set<GardenMembership>();
     public DbSet<UserEntitlement> UserEntitlements => Set<UserEntitlement>();
     public DbSet<GardenInvitation> GardenInvitations => Set<GardenInvitation>();
+    public DbSet<CheckoutDraft> CheckoutDrafts => Set<CheckoutDraft>();
 
     /// <summary>
     /// Gardens-entiteterne ligger i standard (dbo) schema og bruger IKKE temporal tables
@@ -66,6 +67,20 @@ public partial class PlannerDbContext
                   .HasForeignKey(e => e.GardenId)
                   .OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(e => e.TokenHash).IsUnique();
+        });
+
+        modelBuilder.Entity<CheckoutDraft>(entity =>
+        {
+            entity.ToTable("CheckoutDrafts");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.UserId).HasMaxLength(450);
+            entity.Property(e => e.GardenName).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Description).HasMaxLength(2000);
+            entity.Property(e => e.AddOnQuantities)
+                              .HasConversion(AddOnQuantitiesConverter)
+                              .Metadata.SetValueComparer(AddOnQuantitiesComparer);
+            entity.HasIndex(e => e.ExpiresUtc);
         });
     }
 }

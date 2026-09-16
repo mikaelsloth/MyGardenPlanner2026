@@ -53,8 +53,33 @@ public sealed class GardenAccessQueryService(
         return [.. invitations.OrderByDescending(i => i.CreatedAtUtc).Select(ToDto)];
     }
 
+    public async Task<OwnedGardenCountsDto> GetOwnedGardenCountsAsync(
+        string userId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var ownedGardenIds = await context.GardenMemberships
+            .Where(m => m.UserId == userId && m.IsOwner)
+            .Select(m => m.GardenId)
+            .ToListAsync(cancellationToken);
+
+        if (ownedGardenIds.Count == 0)
+        {
+            return new OwnedGardenCountsDto(0, 0);
+        }
+
+        var archivedFlags = await context.Gardens
+                    .Where(g => ownedGardenIds.Contains(g.Id))
+                    .Select(g => g.Archived)
+                    .ToListAsync(cancellationToken);
+
+        return new OwnedGardenCountsDto(archivedFlags.Count(a => !a), archivedFlags.Count(a => a));
+    }
+
     private static GardenMembershipDto ToDto(GardenMembership m) =>
-        new(m.Id, m.GardenId, m.UserId, m.IsOwner, m.Layer, m.Category, m.JoinedAtUtc);
+       new(m.Id, m.GardenId, m.UserId, m.IsOwner, m.Layer, m.Category, m.JoinedAtUtc);
 
     private static GardenInvitationDto ToDto(GardenInvitation i) => new(
         i.Id, i.GardenId, i.InvitedByUserId, i.Email, i.TargetLayer, i.TargetCategory,

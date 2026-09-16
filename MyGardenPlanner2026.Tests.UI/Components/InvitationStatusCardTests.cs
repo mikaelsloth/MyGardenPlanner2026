@@ -11,7 +11,7 @@ public sealed class InvitationStatusCardTests : BunitContext
 {
     private static GardenInvitationDto CreateInvitation(
         bool isAccepted = false, bool isRevoked = false, DateTimeOffset? expiresUtc = null) =>
-        new(Guid.NewGuid(), Guid.NewGuid(), "invited@example.com",
+        new(Guid.NewGuid(), Guid.NewGuid(), "user-id", "invited@example.com",
             GardenAccessLevel.BedDesigner, AccessCategory.Editor, false, false,
             expiresUtc ?? DateTimeOffset.UtcNow.AddDays(7), isAccepted, isRevoked, DateTimeOffset.UtcNow);
 

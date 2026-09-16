@@ -1,5 +1,6 @@
 ﻿namespace MyGardenPlanner2026.Configuration.Extensions;
 
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MyGardenPlanner2026.Core.Contracts.Onboarding;
 using MyGardenPlanner2026.Infrastructure.Services.Onboarding;
 using MyGardenPlanner2026.Services;
@@ -15,6 +16,9 @@ public static class OnboardingServicesExtensions
     {
         services.AddSingleton<IInvitationTokenService, InvitationTokenService>();
         services.AddScoped<OnboardingStateContainer>();
+        services.AddScoped<IGardenAccessQueryService, GardenAccessQueryService>();
+        services.AddScoped<IOnboardingService, OnboardingService>();
+        services.TryAddSingleton(TimeProvider.System);
 
         return services;
     }

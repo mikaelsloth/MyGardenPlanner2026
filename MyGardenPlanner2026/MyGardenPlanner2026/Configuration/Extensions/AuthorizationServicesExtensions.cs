@@ -12,6 +12,7 @@ public static class AuthorizationServicesExtensions
     public const string RequireAuditViewerPolicy = "RequireAuditViewer";
     public const string RequireRecentAuthenticationPolicy = "RequireRecentAuthentication";
     public const string RequireAnyAdminRolePolicy = "RequireAnyAdminRole";
+    public const string RequireGardenMemberPolicy = "RequireGardenMember";
 
     public const string SystemAdminRole = RoleNames.SystemAdmin;
     public const string DataAdminRole = RoleNames.DataAdmin;
@@ -27,7 +28,8 @@ public static class AuthorizationServicesExtensions
     public static IServiceCollection AddAuthorizationServices(this IServiceCollection services)
     {
         services.AddScoped<IAuthorizationHandler, MfaAuthorizationHandler>();
-        services.AddScoped<IAuthorizationHandler, RequireRecentAuthenticationHandler>();   // NY
+        services.AddScoped<IAuthorizationHandler, RequireRecentAuthenticationHandler>();
+        services.AddScoped<IAuthorizationHandler, GardenMemberAuthorizationHandler>();
 
         services.AddAuthorizationBuilder()
             .AddPolicy(RequireGlobalAdminPolicy, policy => policy.RequireRole(SystemAdminRole))
@@ -38,7 +40,10 @@ public static class AuthorizationServicesExtensions
             .AddPolicy(RequireRecentAuthenticationPolicy, policy => policy.RequireAuthenticatedUser().AddRequirements(new RequireRecentAuthenticationRequirement()))
             .AddPolicy(RequireAnyAdminRolePolicy, policy => policy
                 .AddRequirements(new AnyAdminRoleRequirement(AllAdminRoles))
-                .AddRequirements(new MfaRequirement()));
+                .AddRequirements(new MfaRequirement()))
+            .AddPolicy(RequireGardenMemberPolicy, policy => policy
+                .RequireAuthenticatedUser()
+                .AddRequirements(new GardenMemberRequirement()));
 
         return services;
     }

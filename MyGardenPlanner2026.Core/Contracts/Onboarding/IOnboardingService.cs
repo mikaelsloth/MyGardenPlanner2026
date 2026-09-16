@@ -47,4 +47,37 @@ public interface IOnboardingService
     /// </summary>
     Task<FreeInvitationQuotaDto> GetFreeInvitationQuotaAsync(
         Guid gardenId, string userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gemmer brugerens valgte konfiguration (have, lag/kategori, betalingsfrekvens,
+    /// tilkøb) som en midlertidig draft, der overlever navigationen til Login/Register
+    /// (static SSR, river OnboardingStateContainer ned). Udløber efter en fast levetid
+    /// (se OnboardingService.CheckoutDraftLifetime).
+    /// </summary>
+    Task<Guid> SaveCheckoutDraftAsync(
+        SaveCheckoutDraftRequestDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>Henter en gemt checkout-draft. Returnerer null hvis den ikke findes eller er udløbet.</summary>
+    Task<CheckoutDraftDto?> GetCheckoutDraftAsync(
+        Guid draftId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Provisionerer en betalt have ud fra en tidligere gemt draft (se
+    /// SaveCheckoutDraftAsync) — kaldes efter brugeren er vendt tilbage fra
+    /// Login/Register og har gennemført mock-betalingen. Sletter draften atomisk
+    /// sammen med oprettelsen af have/medlemskab/entitlement.
+    /// </summary>
+    Task<PaidGardenProvisionResultDto> ProvisionPaidGardenFromDraftAsync(
+        Guid draftId, string userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Accepterer en invitation: opretter GardenMembership til brugeren på det angivne
+    /// niveau (GrantedLayer/GrantedCategory, valideret mod invitationens
+    /// TargetLayer/MaxAllowedLayer-loft), markerer invitationen som accepteret, og —
+    /// hvis brugeren selv har betalt for en opgradering (UpgradeBillingCycle angivet) —
+    /// opretter ét samlet UserEntitlement direkte på det opgraderede niveau. Uden
+    /// selvbetalt opgradering oprettes intet entitlement.
+    /// </summary>
+    Task<AcceptInvitationResultDto> AcceptInvitationAsync(
+        AcceptInvitationRequestDto request, CancellationToken cancellationToken = default);
 }

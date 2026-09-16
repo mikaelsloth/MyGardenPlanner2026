@@ -14,4 +14,11 @@ public interface IGardenAccessQueryService
     Task<IReadOnlyList<GardenMembershipDto>> GetMembersAsync(Guid gardenId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<GardenInvitationDto>> GetInvitationsAsync(Guid gardenId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Tæller brugerens EGNE (IsOwner) haver, opdelt på aktive/arkiverede — bruges til at
+    /// vise korrekt volumenrabat-trin i onboarding-checkout for allerede
+    /// autentificerede brugere, der opretter endnu en have.
+    /// </summary>
+    Task<OwnedGardenCountsDto> GetOwnedGardenCountsAsync(string userId, CancellationToken cancellationToken = default);
 }

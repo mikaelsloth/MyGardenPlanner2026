@@ -1,0 +1,48 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Subscriptions
+
+<div class="card payment-mock-page stack-md" data-density="default">
+    <h2 class="h4">Betaling</h2>
+    <p class="card-description">
+        Dette er en simuleret betaling — ingen rigtige kortoplysninger behandles.
+    </p>
+
+    <div class="read-only-section">
+        <div class="read-only-field">
+            <span class="read-only-label">Have</span>
+            <span class="read-only-value">@GardenName</span>
+        </div>
+        <div class="read-only-field">
+            <span class="read-only-label">Betalingsfrekvens</span>
+            <span class="read-only-value">@CycleLabel</span>
+        </div>
+    </div>
+
+    <div class="summary-grid">
+        <div class="summary-card">
+            <span class="summary-card-label">Have-subtotal</span>
+            <span class="summary-card-value numeric">@PriceResult.GardenSubtotal.ToString("C2", DanishCulture)</span>
+        </div>
+        <div class="summary-card">
+            <span class="summary-card-label">Tilkøb i alt</span>
+            <span class="summary-card-value numeric">@PriceResult.AddOnsTotal.ToString("C2", DanishCulture)</span>
+        </div>
+        <div class="summary-card">
+            <span class="summary-card-label">Total</span>
+            <span class="summary-card-value numeric">@PriceResult.Total.ToString("C2", DanishCulture)</span>
+        </div>
+    </div>
+
+    @if (ErrorMessage is not null)
+    {
+        <div class="status-message status-danger status-form" role="alert">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div class="status-message-text"><p>@ErrorMessage</p></div>
+        </div>
+    }
+
+    <div class="form-actions">
+        <Button Variant="Button.ButtonVariant.Primary" Loading="IsProcessing" OnClick="OnConfirmPayment">
+            @ConfirmButtonLabel
+        </Button>
+    </div>
+</div>

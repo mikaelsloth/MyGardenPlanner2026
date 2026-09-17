@@ -1,0 +1,112 @@
+﻿@page "/onboarding/checkout"
+@layout MyGardenPlanner2026.Components.Layout.PublicLayout
+@rendermode InteractiveServer
+
+<PageTitle>Opret betalt have – MyGardenPlanner</PageTitle>
+
+<section class="section">
+    <div class="container-fluid px-3 px-md-4 onboarding-checkout-page">
+        @if (isLoading)
+        {
+            <div class="skeleton-card" aria-hidden="true">
+                <div class="skeleton-line skeleton-title"></div>
+                <div class="skeleton-line skeleton-meta"></div>
+            </div>
+        }
+        else if (draftNotFound)
+        {
+            <EmptyState Variant="EmptyState.EmptyStateVariant.Error"
+                        IconClass="bi-exclamation-triangle"
+                        Title="Konfigurationen er udløbet"
+                        Description="Din tidligere konfiguration kunne ikke findes eller er udløbet. Start venligst forfra.">
+                <Actions>
+                    <a href="/onboarding/checkout" class="btn btn-primary">Start forfra</a>
+                </Actions>
+            </EmptyState>
+        }
+        else if (loadErrorMessage is not null)
+        {
+            <EmptyState Variant="EmptyState.EmptyStateVariant.Error"
+                        IconClass="bi-exclamation-triangle"
+                        Title="Der opstod en fejl"
+                        Description="@loadErrorMessage" />
+        }
+        else
+        {
+            <h1>Opret betalt have</h1>
+
+            <div class="context-tabs onboarding-steps" aria-hidden="true">
+                <span class="context-tab @(currentStep == CheckoutStep.Configuration ? "active" : string.Empty)">1. Konfiguration</span>
+                <span class="context-tab @(currentStep == CheckoutStep.ChooseAuthentication ? "active" : string.Empty)">2. Konto</span>
+                <span class="context-tab @(currentStep == CheckoutStep.Payment ? "active" : string.Empty)">3. Betaling</span>
+            </div>
+
+            @switch (currentStep)
+            {
+                case CheckoutStep.Configuration:
+                    <FormSection Title="Din have" Columns="2">
+                        <div class="field">
+                            <label class="field-label" for="garden-name">Havenavn</label>
+                            <input id="garden-name" class="form-control" @bind="gardenName" placeholder="Min have" />
+                        </div>
+                        <div class="field">
+                            <label class="field-label" for="garden-description">Beskrivelse <span class="optional-label">(valgfri)</span></label>
+                            <input id="garden-description" class="form-control" @bind="description" />
+                        </div>
+                    </FormSection>
+
+                    @if (configurationErrorMessage is not null)
+                    {
+                        <div class="status-message status-danger status-form" role="alert">
+                            <span class="status-dot" aria-hidden="true"></span>
+                            <div class="status-message-text"><p>@configurationErrorMessage</p></div>
+                        </div>
+                    }
+
+                    @if (string.IsNullOrWhiteSpace(gardenName))
+                    {
+                        <p class="help">Angiv et navn til din have for at se priser og fortsætte.</p>
+                    }
+                    else
+                    {
+                        @if (!isAuthenticated)
+                        {
+                            <StatusBanner Variant="StatusBanner.StatusBannerVariant.Info" IconClass="bi-info-circle">
+                                Prisen herunder er beregnet uden trapperabat, da vi endnu ikke kender dine øvrige haver. Den korrekte pris beregnes, når du har oprettet eller logget ind på din konto.
+                            </StatusBanner>
+                        }
+
+                        <PricingCalculator FixedActiveGardens="fixedActiveGardens"
+                                           FixedArchivedGardens="fixedArchivedGardens"
+                                           ContinueButtonLabel="Fortsæt"
+                                           OnContinue="HandleConfigurationContinueAsync" />
+                    }
+                    break;
+
+                case CheckoutStep.ChooseAuthentication:
+                    <div class="card stack-md onboarding-auth-choice">
+                        <h2 class="h4">Opret konto eller log ind for at fortsætte</h2>
+                        <p class="card-description">Din konfiguration er gemt. Opret en ny konto, eller log ind hvis du allerede har en — du vender automatisk tilbage hertil bagefter.</p>
+                        <div class="btn-row">
+                            <Button Variant="Button.ButtonVariant.Primary" OnClick="ContinueToRegisterAsync">Opret ny konto</Button>
+                            <Button Variant="Button.ButtonVariant.Secondary" OnClick="ContinueToLoginAsync">Jeg har allerede en konto — Log ind</Button>
+                        </div>
+                        <button type="button" class="btn btn-ghost btn-sm" @onclick="BackToConfiguration">← Tilbage til konfiguration</button>
+                    </div>
+                    break;
+
+                case CheckoutStep.Payment:
+                    @if (pendingSelection is not null)
+                    {
+                        <PaymentMockPage GardenName="@gardenName"
+                                         PriceResult="pendingSelection.PriceResult"
+                                         BillingCycle="pendingSelection.BillingCycle"
+                                         IsProcessing="isSubmittingPayment"
+                                         ErrorMessage="@paymentErrorMessage"
+                                         OnConfirmPayment="ConfirmPaymentAsync" />
+                    }
+                    break;
+            }
+        }
+    </div>
+</section>

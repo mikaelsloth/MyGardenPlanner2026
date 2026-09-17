@@ -1,0 +1,13 @@
+/* CSS for OnboardingCheckoutPage component */
+.onboarding-checkout-page {
+    padding-top: var(--mgp-page-y);
+    padding-bottom: var(--mgp-page-y);
+    display: grid;
+    gap: var(--mgp-space-lg);
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.onboarding-steps {
+    pointer-events: none;
+}

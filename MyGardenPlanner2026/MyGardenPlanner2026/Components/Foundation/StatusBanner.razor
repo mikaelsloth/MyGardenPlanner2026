@@ -1,0 +1,17 @@
+﻿@namespace MyGardenPlanner2026.Components.Foundation
+
+<div class="status-banner status-banner-@VariantClass" role="@Role">
+    <div class="status-banner-content">
+        @if (!string.IsNullOrWhiteSpace(IconClass))
+        {
+            <i class="bi @IconClass" aria-hidden="true"></i>
+        }
+        <span>@ChildContent</span>
+    </div>
+    @if (Dismissible)
+    {
+        <button type="button" class="status-banner-dismiss" aria-label="Luk besked" @onclick="HandleDismissAsync">
+            <i class="bi bi-x-lg" aria-hidden="true"></i>
+        </button>
+    }
+</div>

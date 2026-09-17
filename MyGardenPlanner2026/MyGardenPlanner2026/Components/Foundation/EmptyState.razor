@@ -1,0 +1,32 @@
+﻿@namespace MyGardenPlanner2026.Components.Foundation
+
+<div class="empty-state @VariantClass @(Inline ? "empty-state-inline" : string.Empty)">
+    <div class="empty-icon" aria-hidden="true">
+        <i class="bi @IconClass"></i>
+    </div>
+    <div class="empty-content">
+        @if (HeadingLevel == 1)
+        {
+            <h1>@Title</h1>
+        }
+        else if (HeadingLevel == 3)
+        {
+            <h3>@Title</h3>
+        }
+        else
+        {
+            <h2>@Title</h2>
+        }
+        @if (!string.IsNullOrWhiteSpace(Description))
+        {
+            <p>@Description</p>
+        }
+        @ChildContent
+    </div>
+    @if (Actions is not null)
+    {
+        <div class="empty-actions">
+            @Actions
+        </div>
+    }
+</div>

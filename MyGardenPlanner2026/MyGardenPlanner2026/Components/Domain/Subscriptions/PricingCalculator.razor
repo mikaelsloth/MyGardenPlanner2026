@@ -7,7 +7,7 @@
         <div class="field">
             <label class="field-label" for="calc-level">Lag</label>
             <select id="calc-level" class="form-select" @bind="selectedLevel">
-                @foreach (var level in Enum.GetValues<GardenAccessLevel>())
+                @foreach (var level in Levels)
                 {
                     <option value="@level">@level.ToDisplayName()</option>
                 }
@@ -17,7 +17,7 @@
         <div class="field">
             <label class="field-label" for="calc-category">Adgangskategori</label>
             <select id="calc-category" class="form-select" @bind="selectedCategory">
-                @foreach (var category in Enum.GetValues<AccessCategory>())
+                @foreach (var category in Categories)
                 {
                     <option value="@category">@category</option>
                 }
@@ -33,15 +33,35 @@
             </select>
         </div>
 
-        <div class="field">
-            <label class="field-label" for="calc-active">Aktive haver</label>
-            <input id="calc-active" type="number" min="0" class="form-control" @bind="activeGardens" />
-        </div>
+        @if (FixedActiveGardens.HasValue)
+        {
+            <div class="field">
+                <span class="field-label-placeholder" aria-hidden="true">Aktive haver</span>
+                <p class="help">Aktive haver: <strong class="numeric">@FixedActiveGardens</strong> (låst til denne bestilling)</p>
+            </div>
+        }
+        else
+        {
+            <div class="field">
+                <label class="field-label" for="calc-active">Aktive haver</label>
+                <input id="calc-active" type="number" min="0" class="form-control" @bind="EffectiveActiveGardens" />
+            </div>
+        }
 
-        <div class="field">
-            <label class="field-label" for="calc-archived">Arkiverede haver</label>
-            <input id="calc-archived" type="number" min="0" class="form-control" @bind="archivedGardens" />
-        </div>
+        @if (FixedArchivedGardens.HasValue)
+        {
+            <div class="field">
+                <span class="field-label-placeholder" aria-hidden="true">Arkiverede haver</span>
+                <p class="help">Arkiverede haver: <strong class="numeric">@FixedArchivedGardens</strong> (låst til denne bestilling)</p>
+            </div>
+        }
+        else
+        {
+            <div class="field">
+                <label class="field-label" for="calc-archived">Arkiverede haver</label>
+                <input id="calc-archived" type="number" min="0" class="form-control" @bind="EffectiveArchivedGardens" />
+            </div>
+        }
     </div>
 
     <h4 class="pricing-calculator-addons-title">Tilkøb</h4>
@@ -62,6 +82,10 @@
 
     <div class="form-actions">
         <button type="button" class="btn btn-primary" @onclick="CalculateAsync">Beregn pris</button>
+        @if (ContinueButtonLabel is not null)
+        {
+            <button type="button" class="btn btn-accent" @onclick="ContinueAsync">@ContinueButtonLabel</button>
+        }
     </div>
 
     @if (errorMessage is not null)

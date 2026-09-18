@@ -1,0 +1,91 @@
+﻿@page "/invite"
+@layout MyGardenPlanner2026.Components.Layout.PublicLayout
+@rendermode InteractiveServer
+
+<PageTitle>Accepter invitation – MyGardenPlanner</PageTitle>
+
+<section class="section">
+    <div class="container-fluid px-3 px-md-4 invite-acceptance-page">
+        @if (isLoading)
+        {
+            <div class="skeleton-card" aria-hidden="true">
+                <div class="skeleton-line skeleton-title"></div>
+                <div class="skeleton-line skeleton-meta"></div>
+            </div>
+        }
+        else if (!isTokenValid)
+        {
+            <EmptyState Variant="EmptyState.EmptyStateVariant.Error"
+                        IconClass="bi-exclamation-triangle"
+                        Title="Invitationen kunne ikke bekræftes"
+                        Description="Invitationen er ugyldig eller udløbet. Kontakt venligst den person, der inviterede dig." />
+        }
+        else
+        {
+            <h1>Du er inviteret</h1>
+
+            <div class="card stack-sm invite-details-card" data-density="default">
+                <p class="compact-row-title">@gardenName</p>
+                <RoleBadge Category="invitation.TargetCategory" IsOwner="false" />
+                <p class="meta">@invitation.TargetLayer.ToDisplayName() · Udløber @invitation.ExpiresUtc.ToLocalTime().ToString("d. MMM yyyy", DanishCulture)</p>
+            </div>
+
+            @switch (currentStep)
+            {
+                case InviteStep.Details:
+                    @if (acceptErrorMessage is not null)
+                    {
+                        <div class="status-message status-danger status-form" role="alert">
+                            <span class="status-dot" aria-hidden="true"></span>
+                            <div class="status-message-text"><p>@acceptErrorMessage</p></div>
+                        </div>
+                    }
+
+                    <div class="form-actions">
+                        <Button Variant="Button.ButtonVariant.Primary" Loading="isAccepting" OnClick="AcceptBaselineAsync">
+                            @(invitation.AllowSelfUpgrade ? "Accepter invitation uden opgradering" : "Accepter invitation og fortsæt")
+                        </Button>
+                    </div>
+
+                    @if (invitation.AllowSelfUpgrade)
+                    {
+                        <FormSection Title="Vil du opgradere dine rettigheder?"
+                                     Intro="Du kan selv betale for udvidet adgang til denne have, op til det niveau haveejeren har tilladt." />
+                        <PricingCalculator AllowedLevels="allowedLevels"
+                                           AllowedCategories="allowedCategories"
+                                           InitialLevel="invitation.TargetLayer"
+                                           InitialCategory="invitation.TargetCategory"
+                                           FixedActiveGardens="1"
+                                           FixedArchivedGardens="0"
+                                           ContinueButtonLabel="Fortsæt til betaling"
+                                           OnContinue="HandleUpgradeContinueAsync" />
+                    }
+                    break;
+
+                case InviteStep.ChooseAuthentication:
+                    <div class="card stack-md invite-auth-choice">
+                        <h2 class="h4">Opret konto eller log ind for at fortsætte</h2>
+                        <p class="card-description">Log ind eller opret en konto for at acceptere invitationen — du vender automatisk tilbage hertil bagefter.</p>
+                        <div class="btn-row">
+                            <Button Variant="Button.ButtonVariant.Primary" OnClick="ContinueToRegisterAsync">Opret ny konto</Button>
+                            <Button Variant="Button.ButtonVariant.Secondary" OnClick="ContinueToLoginAsync">Jeg har allerede en konto — Log ind</Button>
+                        </div>
+                        <button type="button" class="btn btn-ghost btn-sm" @onclick="BackToDetails">← Tilbage</button>
+                    </div>
+                    break;
+
+                case InviteStep.Payment:
+                    @if (pendingUpgradeSelection is not null)
+                    {
+                        <PaymentMockPage GardenName="@gardenName"
+                                         PriceResult="pendingUpgradeSelection.PriceResult"
+                                         BillingCycle="pendingUpgradeSelection.BillingCycle"
+                                         IsProcessing="isAccepting"
+                                         ErrorMessage="@acceptErrorMessage"
+                                         OnConfirmPayment="ConfirmUpgradePaymentAsync" />
+                    }
+                    break;
+            }
+        }
+    </div>
+</section>

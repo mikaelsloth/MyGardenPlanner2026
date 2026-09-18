@@ -85,7 +85,8 @@ public sealed class GardenAccessManagementPageTests : BunitContext
         queryService.GetInvitationsAsync(gardenId, Arg.Any<CancellationToken>())
             .Returns([new GardenInvitationDto(invitationId, gardenId, "user-1", "invited@example.com",
                 GardenAccessLevel.HaveArkitekt, AccessCategory.Administrator, false, false,
-                DateTimeOffset.UtcNow.AddDays(7), false, false, DateTimeOffset.UtcNow)]);
+                DateTimeOffset.UtcNow.AddDays(7), false, false, DateTimeOffset.UtcNow,
+                GardenAccessLevel.HaveArkitekt, AccessCategory.Administrator)]);
         onboardingService.GetFreeInvitationQuotaAsync(gardenId, "user-1", Arg.Any<CancellationToken>())
     .Returns(new FreeInvitationQuotaDto(1, 0, 1));
 

@@ -542,7 +542,8 @@ public sealed partial class OnboardingService(
     private static GardenInvitationDto ToDto(GardenInvitation invitation) => new(
         invitation.Id, invitation.GardenId, invitation.InvitedByUserId, invitation.Email,
         invitation.TargetLayer, invitation.TargetCategory, invitation.IsFreeSlot, invitation.AllowSelfUpgrade,
-        invitation.ExpiresUtc, invitation.IsAccepted, invitation.IsRevoked, invitation.CreatedAtUtc);
+        invitation.ExpiresUtc, invitation.IsAccepted, invitation.IsRevoked, invitation.CreatedAtUtc,
+        invitation.MaxAllowedLayer, invitation.MaxAllowedCategory);
 
     private static CheckoutDraftDto ToDraftDto(CheckoutDraft draft) => new(
         draft.Id, draft.UserId, draft.GardenName, draft.Description,

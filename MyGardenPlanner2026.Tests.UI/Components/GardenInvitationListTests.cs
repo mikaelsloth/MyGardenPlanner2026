@@ -13,8 +13,9 @@ public sealed class GardenInvitationListTests : BunitContext
         string invitedBy = "owner", bool isAccepted = false, bool isRevoked = false,
         DateTimeOffset? expiresUtc = null) =>
         new(Guid.NewGuid(), Guid.NewGuid(), invitedBy, "invited@example.com",
-            GardenAccessLevel.BedDesigner, AccessCategory.Editor, false, false,
-            expiresUtc ?? DateTimeOffset.UtcNow.AddDays(7), isAccepted, isRevoked, DateTimeOffset.UtcNow);
+        GardenAccessLevel.BedDesigner, AccessCategory.Editor, false, false,
+        expiresUtc ?? DateTimeOffset.UtcNow.AddDays(7), isAccepted, isRevoked, DateTimeOffset.UtcNow,
+        GardenAccessLevel.BedDesigner, AccessCategory.Editor);
 
     [Fact]
     public void GroupsInvitationsIntoCorrectSections()

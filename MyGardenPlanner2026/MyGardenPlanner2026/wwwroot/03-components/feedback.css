@@ -392,3 +392,11 @@
         align-items: flex-start;
     }
 }
+
+/* Permission Hint — kompakt forklarende tekst under deaktiveret indhold (PermissionGate) */
+.permission-hint {
+    font-size: var(--font-size-xs);
+    color: var(--mgp-text-muted);
+    margin-top: var(--mgp-space-2xs);
+    margin-bottom: 0;
+}

@@ -1,0 +1,16 @@
+﻿@namespace MyGardenPlanner2026.Components.Foundation
+
+@if (IsAuthorized)
+{
+    @ChildContent
+}
+else if (Mode == PermissionGateMode.Disable)
+{
+    <div class="permission-gate-disabled" aria-disabled="true">
+        @ChildContent
+    </div>
+    @if (!string.IsNullOrWhiteSpace(HintText))
+    {
+        <PermissionHint>@HintText</PermissionHint>
+    }
+}

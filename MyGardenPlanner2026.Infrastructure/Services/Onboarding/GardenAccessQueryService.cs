@@ -83,5 +83,6 @@ public sealed class GardenAccessQueryService(
 
     private static GardenInvitationDto ToDto(GardenInvitation i) => new(
         i.Id, i.GardenId, i.InvitedByUserId, i.Email, i.TargetLayer, i.TargetCategory,
-        i.IsFreeSlot, i.AllowSelfUpgrade, i.ExpiresUtc, i.IsAccepted, i.IsRevoked, i.CreatedAtUtc);
+        i.IsFreeSlot, i.AllowSelfUpgrade, i.ExpiresUtc, i.IsAccepted, i.IsRevoked, i.CreatedAtUtc,
+        i.MaxAllowedLayer, i.MaxAllowedCategory);
 }

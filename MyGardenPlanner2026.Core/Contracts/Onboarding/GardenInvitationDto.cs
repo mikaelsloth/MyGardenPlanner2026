@@ -15,4 +15,6 @@ public sealed record GardenInvitationDto(
     DateTimeOffset ExpiresUtc,
     bool IsAccepted,
     bool IsRevoked,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc,
+    GardenAccessLevel MaxAllowedLayer,
+    AccessCategory MaxAllowedCategory);

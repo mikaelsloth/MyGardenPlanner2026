@@ -1,0 +1,9 @@
+/* CSS for InviteAcceptancePage component */
+.invite-acceptance-page {
+    padding-top: var(--mgp-page-y);
+    padding-bottom: var(--mgp-page-y);
+    display: grid;
+    gap: var(--mgp-space-lg);
+    max-width: 720px;
+    margin: 0 auto;
+}

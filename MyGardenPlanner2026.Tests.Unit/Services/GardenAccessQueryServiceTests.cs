@@ -18,7 +18,7 @@ public sealed class GardenAccessQueryServiceTests : TestDbContext
             await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var sut = new GardenAccessQueryService(CreateDbContextFactory());
+        var sut = new GardenAccessQueryService(CreateDbContextFactory(), new TestTimeProvider(DateTimeOffset.Now));
 
         var result = await sut.GetGardenSummaryAsync(garden.Id, TestContext.Current.CancellationToken);
 
@@ -29,7 +29,7 @@ public sealed class GardenAccessQueryServiceTests : TestDbContext
     [Fact]
     public async Task GetGardenSummaryAsync_UnknownGarden_ReturnsNull()
     {
-        var sut = new GardenAccessQueryService(CreateDbContextFactory());
+        var sut = new GardenAccessQueryService(CreateDbContextFactory(), new TestTimeProvider(DateTimeOffset.Now));
 
         var result = await sut.GetGardenSummaryAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
 
@@ -55,7 +55,7 @@ public sealed class GardenAccessQueryServiceTests : TestDbContext
             await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var sut = new GardenAccessQueryService(CreateDbContextFactory());
+        var sut = new GardenAccessQueryService(CreateDbContextFactory(), new TestTimeProvider(DateTimeOffset.Now));
 
         var result = await sut.GetMembershipAsync(garden.Id, "user-1", TestContext.Current.CancellationToken);
 
@@ -77,7 +77,7 @@ public sealed class GardenAccessQueryServiceTests : TestDbContext
             await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var sut = new GardenAccessQueryService(CreateDbContextFactory());
+        var sut = new GardenAccessQueryService(CreateDbContextFactory(), new TestTimeProvider(DateTimeOffset.Now));
 
         var result = await sut.GetMembersAsync(garden.Id, TestContext.Current.CancellationToken);
 
@@ -98,7 +98,7 @@ public sealed class GardenAccessQueryServiceTests : TestDbContext
             await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var sut = new GardenAccessQueryService(CreateDbContextFactory());
+        var sut = new GardenAccessQueryService(CreateDbContextFactory(), new TestTimeProvider(DateTimeOffset.Now));
 
         var result = await sut.GetInvitationsAsync(garden.Id, TestContext.Current.CancellationToken);
 

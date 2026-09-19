@@ -6,7 +6,8 @@ using MyGardenPlanner2026.Core.Entities.Gardens;
 using MyGardenPlanner2026.Infrastructure.Data;
 
 public sealed class GardenAccessQueryService(
-    IDbContextFactory<PlannerDbContext> contextFactory) : IGardenAccessQueryService
+    IDbContextFactory<PlannerDbContext> contextFactory,
+    TimeProvider timeProvider) : IGardenAccessQueryService
 {
     public async Task<GardenSummaryDto?> GetGardenSummaryAsync(
         Guid gardenId, CancellationToken cancellationToken = default)
@@ -78,8 +79,33 @@ public sealed class GardenAccessQueryService(
         return new OwnedGardenCountsDto(archivedFlags.Count(a => !a), archivedFlags.Count(a => a));
     }
 
-    private static GardenMembershipDto ToDto(GardenMembership m) =>
-       new(m.Id, m.GardenId, m.UserId, m.IsOwner, m.Layer, m.Category, m.JoinedAtUtc);
+    public async Task<bool> HasAnyGardenAccessAsync(
+        string userId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var hasMembership = await context.GardenMemberships
+            .AnyAsync(m => m.UserId == userId, cancellationToken);
+
+        if (!hasMembership)
+        {
+            return false;
+        }
+
+        // OBS: ValidToUtc-sammenligningen kan ikke oversættes til SQL på SQLite —
+        // entitlements materialiseres derfor først, og tidsvindue-filtreres i
+        // hukommelsen bagefter, samme mønster som CalculateFreeQuotaAsync.
+        var candidateEntitlements = await context.UserEntitlements
+                    .Where(e => e.UserId == userId)
+                    .ToListAsync(cancellationToken);
+
+        var now = timeProvider.GetUtcNow();
+        return candidateEntitlements.Any(e => e.ValidToUtc == null || e.ValidToUtc > now);
+    }
+
+    private static GardenMembershipDto ToDto(GardenMembership m) => new(m.Id, m.GardenId, m.UserId, m.IsOwner, m.Layer, m.Category, m.JoinedAtUtc);
 
     private static GardenInvitationDto ToDto(GardenInvitation i) => new(
         i.Id, i.GardenId, i.InvitedByUserId, i.Email, i.TargetLayer, i.TargetCategory,

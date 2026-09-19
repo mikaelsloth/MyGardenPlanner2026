@@ -12,7 +12,7 @@ public sealed class GardenAccessQueryServiceOwnedGardenCountsTests : TestDbConte
     public async Task GetOwnedGardenCountsAsync_NoOwnedGardens_ReturnsZeroZero()
     {
         var testContext = CreateDbContextFactory();
-        var sut = new GardenAccessQueryService(testContext);
+        var sut = new GardenAccessQueryService(testContext, new TestTimeProvider(DateTimeOffset.Now));
 
         var result = await sut.GetOwnedGardenCountsAsync("user-1", TestContext.Current.CancellationToken);
 
@@ -35,7 +35,7 @@ public sealed class GardenAccessQueryServiceOwnedGardenCountsTests : TestDbConte
             await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var sut = new GardenAccessQueryService(CreateDbContextFactory());
+        var sut = new GardenAccessQueryService(CreateDbContextFactory(), new TestTimeProvider(DateTimeOffset.Now));
 
         var result = await sut.GetOwnedGardenCountsAsync("user-1", TestContext.Current.CancellationToken);
 
@@ -62,7 +62,7 @@ public sealed class GardenAccessQueryServiceOwnedGardenCountsTests : TestDbConte
             await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var sut = new GardenAccessQueryService(CreateDbContextFactory());
+        var sut = new GardenAccessQueryService(CreateDbContextFactory(), new TestTimeProvider(DateTimeOffset.Now));
 
         var result = await sut.GetOwnedGardenCountsAsync("user-1", TestContext.Current.CancellationToken);
 

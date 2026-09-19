@@ -21,4 +21,14 @@ public interface IGardenAccessQueryService
     /// autentificerede brugere, der opretter endnu en have.
     /// </summary>
     Task<OwnedGardenCountsDto> GetOwnedGardenCountsAsync(string userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// True hvis brugeren har mindst ét GardenMembership (som ejer eller inviteret medlem)
+    /// OG mindst ét ikke-udløbet UserEntitlement (trial eller betalt). Bruges af
+    /// OnboardingGate til at afgøre, om brugeren skal sendes til onboarding-welcome.
+    /// Begge tjekkes, da et medlemskab principielt kan eksistere uden et gyldigt
+    /// entitlement (fx et udløbet trial) — i praksis opretter alle nuværende flows
+    /// (Sandkasse, betalt have, accepteret invitation) altid begge dele samlet.
+    /// </summary>
+    Task<bool> HasAnyGardenAccessAsync(string userId, CancellationToken cancellationToken = default);
 }

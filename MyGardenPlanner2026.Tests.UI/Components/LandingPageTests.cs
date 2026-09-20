@@ -71,6 +71,6 @@ public class LandingPageTests : BunitContext
 
         cut.FindComponents<PricingCard>()[0].Find("button").Click();
 
-        navMan.Uri.Should().EndWith("/pricing");
+        navMan.Uri.Should().Contain("/onboarding/checkout?level=");
     }
 }

@@ -19,5 +19,12 @@ public partial class LandingPage
         featuredTiers = await PricingService.GetFeaturedTiersAsync(BillingCycle.Annual);
     }
 
-    private void HandleSelectPlan(Guid tierId) => NavigationManager.NavigateTo("/pricing");
+    private void HandleSelectPlan(Guid tierId)
+    {
+        var tier = featuredTiers?.FirstOrDefault(t => t.Id == tierId);
+
+        NavigationManager.NavigateTo(tier is null
+            ? "/onboarding/checkout"
+            : $"/onboarding/checkout?level={tier.Level}&category={tier.AccessCategory}");
+    }
 }

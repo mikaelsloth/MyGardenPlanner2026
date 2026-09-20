@@ -1,0 +1,23 @@
+﻿@page "/demo-dashboard"
+@layout MyGardenPlanner2026.Components.Layout.AppShell
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@rendermode InteractiveServer
+
+<PageTitle>Demo Dashboard – MyGardenPlanner</PageTitle>
+
+<div class="container-fluid px-3 px-md-4 demo-dashboard-page">
+    <StatusBanner Variant="StatusBanner.StatusBannerVariant.Warning" IconClass="bi-exclamation-triangle">
+        Du benytter i øjeblikket en gratis prøveversion af MyGardenPlanner. Du har begrænset adgang til funktioner og oprettelse.
+        <a href="/onboarding/checkout" class="btn btn-primary btn-sm ms-3">Opgrader abonnement nu</a>
+    </StatusBanner>
+
+    <h1>Din sandkasse-have</h1>
+
+    <Card Variant="Card.CardVariant.Entity"
+          Title="Bede"
+          Description="Udforsk grundfunktionerne i din prøveperiode.">
+        <PermissionGate IsAuthorized="false" HintText="Tilkøb abonnement for at oprette ubegrænsede bede">
+            <button type="button" class="btn btn-primary" disabled>Opret nyt bed</button>
+        </PermissionGate>
+    </Card>
+</div>

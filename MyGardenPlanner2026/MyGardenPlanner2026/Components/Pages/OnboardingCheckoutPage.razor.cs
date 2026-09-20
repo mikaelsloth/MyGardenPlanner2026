@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Components.Authorization;
 using MyGardenPlanner2026.Components.Account.Shared;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
 using MyGardenPlanner2026.Core.Contracts.Onboarding;
+using MyGardenPlanner2026.Core.Entities.Common;
+using MyGardenPlanner2026.Core.Entities.Layer1;
 
 /// <summary>
 /// Trin 1 (konfiguration) og trin 3 (betaling) foregår inden for samme kredsløb/side —
@@ -28,6 +30,25 @@ public partial class OnboardingCheckoutPage
     /// <summary>Public (fraviger ellers privat konvention for SupplyParameterFromQuery) så bUnit kan sætte den direkte uden router-integration.</summary>
     [SupplyParameterFromQuery(Name = "draft")]
     public Guid? DraftId { get; set; }
+
+    /// <summary>Bruges til at deep-linke fra fx landingssidens prisknapper direkte ind i en forudkonfigureret checkout.</summary>
+    [SupplyParameterFromQuery(Name = "level")]
+    public string? PreselectedLevel { get; set; }
+
+    [SupplyParameterFromQuery(Name = "category")]
+    public string? PreselectedCategory { get; set; }
+
+    [SupplyParameterFromQuery(Name = "cycle")]
+    public string? PreselectedCycle { get; set; }
+
+    private GardenAccessLevel? InitialLevel =>
+        Enum.TryParse<GardenAccessLevel>(PreselectedLevel, out var level) ? level : null;
+
+    private AccessCategory? InitialCategory =>
+        Enum.TryParse<AccessCategory>(PreselectedCategory, out var category) ? category : null;
+
+    private BillingCycle? InitialCycle =>
+        Enum.TryParse<BillingCycle>(PreselectedCycle, out var cycle) ? cycle : null;
 
     private bool isLoading = true;
     private bool isAuthenticated;

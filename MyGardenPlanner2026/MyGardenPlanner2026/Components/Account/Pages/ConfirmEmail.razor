@@ -10,4 +10,8 @@
 
 <AuthPageShell Title="Bekræft e-mail">
     <StatusMessage Message="@statusMessage" />
+    @if (confirmationSucceeded)
+    {
+        <p><a href="@LoginUrl">Klik her for at logge ind</a></p>
+    }
 </AuthPageShell>

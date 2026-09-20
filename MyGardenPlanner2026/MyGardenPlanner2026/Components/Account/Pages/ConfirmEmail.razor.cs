@@ -17,6 +17,15 @@ public partial class ConfirmEmail
     [SupplyParameterFromQuery]
     private string? Code { get; set; }
 
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    private bool confirmationSucceeded;
+
+    private string LoginUrl => string.IsNullOrWhiteSpace(ReturnUrl)
+        ? "Account/Login"
+        : $"Account/Login?ReturnUrl={Uri.EscapeDataString(ReturnUrl)}";
+
     protected override async Task OnInitializedAsync()
     {
         if (UserId is null || Code is null)
@@ -38,6 +47,7 @@ public partial class ConfirmEmail
             statusMessage = result.Succeeded
                 ? "Tak, fordi du bekræftede din e-mail."
                 : "Error: Der opstod en fejl ved bekræftelse af din e-mail.";
+            confirmationSucceeded = result.Succeeded;
         }
     }
 }

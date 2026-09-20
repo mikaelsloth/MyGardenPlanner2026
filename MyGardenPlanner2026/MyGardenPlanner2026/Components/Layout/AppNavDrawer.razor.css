@@ -1,0 +1,21 @@
+/* CSS for AppNavDrawer component */
+.app-nav-drawer-brand {
+    display: block;
+    font-weight: var(--font-weight-heavy);
+    color: var(--mgp-primary-dark);
+    margin-bottom: var(--mgp-space-sm);
+}
+
+.app-nav-drawer-email {
+    font-size: var(--font-size-sm);
+    color: var(--mgp-text-muted);
+    overflow-wrap: anywhere;
+}
+
+.app-nav-drawer-logout-btn {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+}

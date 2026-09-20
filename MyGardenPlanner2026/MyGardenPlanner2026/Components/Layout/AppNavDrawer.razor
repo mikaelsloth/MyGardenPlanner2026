@@ -1,0 +1,27 @@
+﻿@namespace MyGardenPlanner2026.Components.Layout
+
+@if (IsOpen)
+{
+    <div class="drawer-backdrop" @onclick="HandleCloseAsync"></div>
+}
+
+<nav class="nav-drawer @(IsOpen ? "open" : string.Empty)"
+     aria-label="Brugermenu"
+     tabindex="-1"
+     @ref="drawerElement"
+     @onkeydown="HandleKeyDownAsync">
+    <div class="stack-md">
+        <span class="app-nav-drawer-brand">MyGardenPlanner</span>
+
+        <AuthorizeView>
+            <Authorized>
+                <p class="app-nav-drawer-email">@context.User.Identity?.Name</p>
+                <form action="Account/Logout" method="post">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="returnUrl" value="/" />
+                    <button type="submit" class="nav-link-item app-nav-drawer-logout-btn">Log ud</button>
+                </form>
+            </Authorized>
+        </AuthorizeView>
+    </div>
+</nav>

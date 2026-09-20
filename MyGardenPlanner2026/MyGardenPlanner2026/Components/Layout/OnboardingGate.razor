@@ -1,0 +1,13 @@
+﻿@namespace MyGardenPlanner2026.Components.Layout
+
+@if (isChecking)
+{
+    <div class="skeleton-card" aria-hidden="true">
+        <div class="skeleton-line skeleton-title"></div>
+        <div class="skeleton-line skeleton-meta"></div>
+    </div>
+}
+else if (hasAccess)
+{
+    @ChildContent
+}

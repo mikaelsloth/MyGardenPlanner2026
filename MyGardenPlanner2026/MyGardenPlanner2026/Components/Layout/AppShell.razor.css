@@ -1,0 +1,39 @@
+/* CSS for AppShell component */
+.app-sidebar-brand-text {
+    color: var(--mgp-primary-dark);
+    font-weight: var(--font-weight-heavy);
+    font-size: var(--font-size-md);
+}
+
+.app-sidebar-user {
+    display: grid;
+    gap: var(--mgp-space-xs);
+    padding-top: var(--mgp-space-md);
+    border-top: 1px solid var(--mgp-border);
+}
+
+.app-sidebar-user-email {
+    font-size: var(--font-size-sm);
+    color: var(--mgp-text-muted);
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.app-sidebar-logout-btn {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+}
+
+.app-shell-main-column {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.app-mobile-header-brand {
+    color: var(--mgp-primary-dark);
+    font-weight: var(--font-weight-heavy);
+}

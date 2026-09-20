@@ -1,0 +1,46 @@
+﻿@page "/onboarding/welcome"
+@layout MyGardenPlanner2026.Components.Layout.PublicLayout
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@rendermode InteractiveServer
+
+<PageTitle>Kom i gang – MyGardenPlanner</PageTitle>
+
+<section class="section">
+    <div class="container-fluid px-3 px-md-4 onboarding-welcome-page">
+        <h1>Velkommen til MyGardenPlanner</h1>
+        <p class="card-description">Du har endnu ikke adgang til nogen have. Vælg hvordan du vil komme i gang.</p>
+
+        @if (errorMessage is not null)
+        {
+            <div class="status-message status-danger status-page" role="alert">
+                <span class="status-dot" aria-hidden="true"></span>
+                <div class="status-message-text"><p>@errorMessage</p></div>
+            </div>
+        }
+
+        <div class="row g-4">
+            <div class="col-md-6">
+                <Card Variant="Card.CardVariant.Entity"
+                      Title="Prøv gratis"
+                      Description="Opret en sandkasse-have med begrænset adgang i 30 dage — ingen binding, ingen betaling.">
+                    <Actions>
+                        <Button Variant="Button.ButtonVariant.Primary" Loading="isCreatingSandbox" OnClick="CreateSandboxAsync">
+                            Opret gratis prøveperiode
+                        </Button>
+                    </Actions>
+                </Card>
+            </div>
+            <div class="col-md-6">
+                <Card Variant="Card.CardVariant.Entity"
+                      Title="Vælg abonnement"
+                      Description="Opret en betalt have med det niveau og de rettigheder, der passer til dit behov.">
+                    <Actions>
+                        <Button Variant="Button.ButtonVariant.Secondary" OnClick="GoToCheckout">
+                            Vælg abonnement og opret have
+                        </Button>
+                    </Actions>
+                </Card>
+            </div>
+        </div>
+    </div>
+</section>

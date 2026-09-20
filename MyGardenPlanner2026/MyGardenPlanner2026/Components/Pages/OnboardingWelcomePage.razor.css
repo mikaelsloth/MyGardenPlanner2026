@@ -1,0 +1,7 @@
+/* CSS for OnboardingWelcomePage component */
+.onboarding-welcome-page {
+    padding-top: var(--mgp-page-y);
+    padding-bottom: var(--mgp-page-y);
+    display: grid;
+    gap: var(--mgp-space-lg);
+}

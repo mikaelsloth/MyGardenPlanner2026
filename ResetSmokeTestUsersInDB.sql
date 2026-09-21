@@ -1,0 +1,1 @@
+DELETE FROM dbo.AspNetUsers WHERE Email LIKE N'%@test.dk';

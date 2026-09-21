@@ -22,6 +22,10 @@ builder.Services
     .AddAuditLogServices()
     .AddOnboardingServices();
 
+#if DEBUG
+builder.Services.AddSmokeTestUserSeeding(builder.Configuration);
+#endif
+
 var app = builder.Build();
 
 var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
@@ -35,6 +39,14 @@ if (app.Environment.IsDevelopment())
 
 // 1.2 Bootstrap SystemAdmin-rolle og -bruger (Development OG Production)
 await app.Services.SeedIdentityBootstrapAsync();
+
+#if DEBUG
+// 1.2b Smoke-test-brugere (kun Debug-build OG Development) — SKAL fjernes/afvikles efter smoke test
+if (app.Environment.IsDevelopment())
+{
+    await app.Services.SeedSmokeTestUsersAsync();
+}
+#endif
 
 // 1.3 Seed sikkerhedspolicy-indstillinger (Development OG Production)
 await app.Services.SeedSecurityPolicySettingsAsync();

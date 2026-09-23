@@ -61,7 +61,7 @@ app.MapRoutingEndpoints();
 app.Run();
 #pragma warning restore S6966
 
-partial class Program
+public partial class Program
 {
     [LoggerMessage(EventId = 1065, Level = LogLevel.Information, Message = "Environment: {EnvironmentName}, DatabaseProvider: {DatabaseProvider}.")]
     static partial void StartupEnvironment(ILogger logger, string EnvironmentName, string DatabaseProvider);

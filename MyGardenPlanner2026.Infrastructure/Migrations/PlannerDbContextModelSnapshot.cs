@@ -665,7 +665,7 @@ namespace MyGardenPlanner2026.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Plants");
+                    b.ToTable("Plants", (string)null);
                 });
 
             modelBuilder.Entity("MyGardenPlanner2026.Core.Entities.Gardens.CheckoutDraft", b =>
@@ -1204,7 +1204,7 @@ namespace MyGardenPlanner2026.Infrastructure.Migrations
 
                             b1.HasKey("IdentityUserPasskeyCredentialId");
 
-                            b1.ToTable("AspNetUserPasskeys");
+                            b1.ToTable("AspNetUserPasskeys", (string)null);
 
                             b1
                                 .ToJson("Data")

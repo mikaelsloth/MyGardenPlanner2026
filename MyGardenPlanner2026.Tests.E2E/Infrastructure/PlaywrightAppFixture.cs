@@ -25,7 +25,10 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
     private IPlaywright _playwright = default!;
 
     public string RootUri { get; private set; } = default!;
+
     public IBrowser Browser { get; private set; } = default!;
+
+    public IReadOnlyDictionary<string, SmokeTestUser> SmokeTestUsers { get; private set; } = default!;
 
     public async ValueTask InitializeAsync()
     {
@@ -35,7 +38,10 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
 
         await MigrateDatabaseAsync();
 
+        SmokeTestUsers = await SmokeTestDataSeeder.SeedAsync(_connectionString);
+
         var port = GetFreeTcpPort();
+
         RootUri = $"http://127.0.0.1:{port}";
         _appProcess = StartAppProcess(port);
 

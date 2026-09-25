@@ -23,7 +23,7 @@ public sealed class SmokeTestDataSeederTests : IAsyncLifetime
 
         if (E2ESqlEnvironment.IsCi)
         {
-            await CiSqlProvisioner.ProvisionAsync(_databaseName);
+            await CiSqlProvisioner.ProvisionDatabaseAndUsersAsync(_databaseName);
         }
 
         var options = new DbContextOptionsBuilder<PlannerDbContext>()
@@ -33,6 +33,11 @@ public sealed class SmokeTestDataSeederTests : IAsyncLifetime
 
         await using var context = new PlannerDbContext(options);
         await context.Database.MigrateAsync();
+
+        if (E2ESqlEnvironment.IsCi)
+        {
+            await CiSqlProvisioner.RestrictAuditLogsAsync();
+        }
     }
 
     public async ValueTask DisposeAsync()

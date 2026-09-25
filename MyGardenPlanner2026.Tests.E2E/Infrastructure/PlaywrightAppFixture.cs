@@ -12,47 +12,48 @@ using Xunit;
 /// <summary>
 /// Starter appen som en RIGTIG separat proces (dotnet MyGardenPlanner2026.dll) på en
 /// tilfældig ledig port, mod en engangs-SQL-database. Undgår WebApplicationFactory helt,
-/// da dens Server-property er hårdkodet til TestServer og derfor ikke kan bruges sammen
-/// med ægte Kestrel (nødvendigt for Blazor Server/SignalR mod en rigtig browser).
+/// da dens Server-property er hårdkodet til TestServer. Lokalt bruges Trusted_Connection
+/// mod .\SQLEXPRESS til alt; i CI (E2ESqlEnvironment.IsCi) provisioneres database,
+/// admin-schema og de to begrænsede databasebrugere først (se CiSqlProvisioner), og
+/// appen startes med de reelle mgp_app_user/mgp_admin_user-forbindelser.
 /// </summary>
 public sealed class PlaywrightAppFixture : IAsyncLifetime
 {
-    private const string SqlExpressServer = @".\SQLEXPRESS";
-
     private string _databaseName = default!;
     private Process _appProcess = default!;
     private IPlaywright _playwright = default!;
 
     public string RootUri { get; private set; } = default!;
-
     public IBrowser Browser { get; private set; } = default!;
-
-    public string ConnectionString { get; private set; } = default!;
-
     public IReadOnlyDictionary<string, SmokeTestUser> SmokeTestUsers { get; private set; } = default!;
-
-    private readonly List<IBrowserContext> _contexts = [];
 
     public async ValueTask InitializeAsync()
     {
-        _databaseName = $"MyGardenPlanner2026_E2E_{Guid.NewGuid():N}";
-        ConnectionString =
-            $@"Server={SqlExpressServer};Database={_databaseName};Trusted_Connection=True;TrustServerCertificate=True";
+        _databaseName = E2ESqlEnvironment.ResolveDatabaseName();
+
+        if (E2ESqlEnvironment.IsCi)
+        {
+            await CiSqlProvisioner.ProvisionAsync(_databaseName);
+        }
 
         await MigrateDatabaseAsync();
 
-        SmokeTestUsers = await SmokeTestDataSeeder.SeedAsync(ConnectionString);
+        var appConnectionString = E2ESqlEnvironment.AppConnectionString(_databaseName);
+        var adminConnectionString = E2ESqlEnvironment.AdminConnectionString(_databaseName);
+
+        SmokeTestUsers = await SmokeTestDataSeeder.SeedAsync(appConnectionString);
 
         var port = GetFreeTcpPort();
-
         RootUri = $"http://127.0.0.1:{port}";
-        _appProcess = StartAppProcess(port);
+        _appProcess = StartAppProcess(port, appConnectionString, adminConnectionString);
 
         await WaitUntilReadyAsync(TimeSpan.FromSeconds(60));
 
         _playwright = await Playwright.CreateAsync();
         Browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
     }
+
+    private readonly List<IBrowserContext> _contexts = [];
 
     public async ValueTask DisposeAsync()
     {
@@ -72,7 +73,10 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
 
         _appProcess.Dispose();
 
-        await DropDatabaseAsync();
+        if (!E2ESqlEnvironment.IsCi)
+        {
+            await DropDatabaseAsync();
+        }
     }
 
     public async Task<IPage> NewPageAsync()
@@ -82,7 +86,7 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         return await context.NewPageAsync();
     }
 
-    private Process StartAppProcess(int port)
+    private static Process StartAppProcess(int port, string appConnectionString, string adminConnectionString)
     {
         var dllPath = Path.Combine(AppContext.BaseDirectory, "MyGardenPlanner2026.dll");
 
@@ -99,10 +103,17 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         startInfo.EnvironmentVariables["ASPNETCORE_URLS"] = $"http://127.0.0.1:{port}";
         startInfo.EnvironmentVariables["ASPNETCORE_ENVIRONMENT"] = "Development";
         startInfo.EnvironmentVariables["DatabaseProvider"] = "SqlExpressConnection";
-        startInfo.EnvironmentVariables["ConnectionStrings__SqlExpressConnection"] = ConnectionString;
-        startInfo.EnvironmentVariables["ConnectionStrings__AdminSqlExpressConnection"] = ConnectionString;
+        startInfo.EnvironmentVariables["ConnectionStrings__SqlExpressConnection"] = appConnectionString;
+        startInfo.EnvironmentVariables["ConnectionStrings__AdminSqlExpressConnection"] = adminConnectionString;
+
+        // Neutraliserer Program.cs' #if DEBUG SeedSmokeTestUsersAsync(): uden dette
+        // overskriver appens egen (evt. user-secrets-konfigurerede) smoke-test-seeder
+        // vores fixture-seedede brugeres 2FA-nøgler ved opstart, da e-mails er identiske.
         startInfo.EnvironmentVariables["SmokeTestUsers__Password"] = "";
         startInfo.EnvironmentVariables["SmokeTestUsers__AuthenticatorKey"] = "";
+
+        // Login-rate-limiten (default 5 forsøg/60 sek., §4.1) er pr.-IP og deles af alle
+        // tests i kollektionen. Hæves markant for E2E.
         startInfo.EnvironmentVariables["LoginRateLimit__PermitLimit"] = "1000";
         startInfo.EnvironmentVariables["LoginRateLimit__WindowSeconds"] = "60";
 
@@ -156,7 +167,7 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
 
     private async Task MigrateDatabaseAsync()
     {
-        var options = CreateContextOptions(ConnectionString);
+        var options = CreateContextOptions(E2ESqlEnvironment.MigrationConnectionString(_databaseName));
 
         await using var context = new PlannerDbContext(options);
         await context.Database.MigrateAsync();
@@ -164,10 +175,7 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
 
     private async Task DropDatabaseAsync()
     {
-        var masterConnectionString =
-            $@"Server={SqlExpressServer};Database=master;Trusted_Connection=True;TrustServerCertificate=True";
-
-        var options = CreateContextOptions(masterConnectionString);
+        var options = CreateContextOptions(E2ESqlEnvironment.MasterConnectionString());
 
         await using var context = new PlannerDbContext(options);
 #pragma warning disable EF1003 // Risk of vulnerability to SQL injection.

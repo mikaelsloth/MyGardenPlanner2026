@@ -11,22 +11,23 @@ using Xunit;
 /// <summary>
 /// Verificerer SmokeTestDataSeeder isoleret mod sin egen engangs-database — uden
 /// PlaywrightAppCollection/browser, for hurtig feedback hvis seed-logikken går i stykker.
+/// Kører samme lokal/CI-skift som PlaywrightAppFixture via E2ESqlEnvironment.
 /// </summary>
 public sealed class SmokeTestDataSeederTests : IAsyncLifetime
 {
-    private const string SqlExpressServer = @".\SQLEXPRESS";
-
     private string _databaseName = default!;
-    private string _connectionString = default!;
 
     public async ValueTask InitializeAsync()
     {
-        _databaseName = $"MyGardenPlanner2026_E2E_SeederTest_{Guid.NewGuid():N}";
-        _connectionString =
-            $@"Server={SqlExpressServer};Database={_databaseName};Trusted_Connection=True;TrustServerCertificate=True";
+        _databaseName = E2ESqlEnvironment.ResolveDatabaseName();
+
+        if (E2ESqlEnvironment.IsCi)
+        {
+            await CiSqlProvisioner.ProvisionAsync(_databaseName);
+        }
 
         var options = new DbContextOptionsBuilder<PlannerDbContext>()
-            .UseSqlServer(_connectionString)
+            .UseSqlServer(E2ESqlEnvironment.MigrationConnectionString(_databaseName))
             .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
             .Options;
 
@@ -36,11 +37,13 @@ public sealed class SmokeTestDataSeederTests : IAsyncLifetime
 
     public async ValueTask DisposeAsync()
     {
-        var masterConnectionString =
-            $@"Server={SqlExpressServer};Database=master;Trusted_Connection=True;TrustServerCertificate=True";
+        if (E2ESqlEnvironment.IsCi)
+        {
+            return;
+        }
 
         var options = new DbContextOptionsBuilder<PlannerDbContext>()
-            .UseSqlServer(masterConnectionString)
+            .UseSqlServer(E2ESqlEnvironment.MasterConnectionString())
             .Options;
 
         await using var context = new PlannerDbContext(options);
@@ -54,7 +57,8 @@ public sealed class SmokeTestDataSeederTests : IAsyncLifetime
     [Fact]
     public async Task SeedAsync_OpretterAlleSyvBrugereMedKorrekteRollerOgToFactorFlag()
     {
-        var users = await SmokeTestDataSeeder.SeedAsync(_connectionString);
+        var connectionString = E2ESqlEnvironment.AppConnectionString(_databaseName);
+        var users = await SmokeTestDataSeeder.SeedAsync(connectionString);
 
         users.Should().HaveCount(7);
 
@@ -65,6 +69,20 @@ public sealed class SmokeTestDataSeederTests : IAsyncLifetime
         AssertUser(users, "NoMfa", "noMfa@test.dk", RoleNames.SystemAdmin, twoFactorEnabled: false);
         AssertUser(users, "Requester", "requester@test.dk", role: null, twoFactorEnabled: true);
         AssertUser(users, "Plain", "plain@test.dk", role: null, twoFactorEnabled: false);
+    }
+
+    [Fact]
+    public async Task SeedAsync_GenereretTotpKode_ErGyldigUmiddelbartEfterSeeding()
+    {
+        var connectionString = E2ESqlEnvironment.AppConnectionString(_databaseName);
+        var users = await SmokeTestDataSeeder.SeedAsync(connectionString);
+        var admin = users["Admin"];
+
+        var code = TotpHelper.GenerateCode(admin.AuthenticatorKey!);
+        var isValid = await SmokeTestDataSeeder.VerifyAuthenticatorCodeAsync(connectionString, admin.Email, code);
+
+        isValid.Should().BeTrue(
+            "koden er genereret ud fra nøglen umiddelbart efter seeding, uden browser eller separat proces involveret");
     }
 
     private static void AssertUser(
@@ -86,18 +104,5 @@ public sealed class SmokeTestDataSeederTests : IAsyncLifetime
         {
             user.AuthenticatorKey.Should().BeNull();
         }
-    }
-
-    [Fact]
-    public async Task SeedAsync_GenereretTotpKode_ErGyldigUmiddelbartEfterSeeding()
-    {
-        var users = await SmokeTestDataSeeder.SeedAsync(_connectionString);
-        var admin = users["Admin"];
-
-        var code = TotpHelper.GenerateCode(admin.AuthenticatorKey!);
-        var isValid = await SmokeTestDataSeeder.VerifyAuthenticatorCodeAsync(_connectionString, admin.Email, code);
-
-        isValid.Should().BeTrue(
-            "koden er genereret ud fra nøglen umiddelbart efter seeding, uden browser eller separat proces involveret");
     }
 }

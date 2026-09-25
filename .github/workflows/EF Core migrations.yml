@@ -3,7 +3,7 @@ name: EF Core Migrations
 on:
   pull_request:
     branches:
-      - main
+      - master
 
 jobs:
   build-test:

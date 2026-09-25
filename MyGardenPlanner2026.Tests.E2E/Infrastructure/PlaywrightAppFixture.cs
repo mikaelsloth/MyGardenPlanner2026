@@ -20,7 +20,6 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
     private const string SqlExpressServer = @".\SQLEXPRESS";
 
     private string _databaseName = default!;
-    private string _connectionString = default!;
     private Process _appProcess = default!;
     private IPlaywright _playwright = default!;
 
@@ -28,17 +27,21 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
 
     public IBrowser Browser { get; private set; } = default!;
 
+    public string ConnectionString { get; private set; } = default!;
+
     public IReadOnlyDictionary<string, SmokeTestUser> SmokeTestUsers { get; private set; } = default!;
+
+    private readonly List<IBrowserContext> _contexts = [];
 
     public async ValueTask InitializeAsync()
     {
         _databaseName = $"MyGardenPlanner2026_E2E_{Guid.NewGuid():N}";
-        _connectionString =
+        ConnectionString =
             $@"Server={SqlExpressServer};Database={_databaseName};Trusted_Connection=True;TrustServerCertificate=True";
 
         await MigrateDatabaseAsync();
 
-        SmokeTestUsers = await SmokeTestDataSeeder.SeedAsync(_connectionString);
+        SmokeTestUsers = await SmokeTestDataSeeder.SeedAsync(ConnectionString);
 
         var port = GetFreeTcpPort();
 
@@ -53,6 +56,11 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
 
     public async ValueTask DisposeAsync()
     {
+        foreach (var context in _contexts)
+        {
+            await context.CloseAsync();
+        }
+
         await Browser.DisposeAsync();
         _playwright.Dispose();
 
@@ -67,7 +75,12 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         await DropDatabaseAsync();
     }
 
-    public Task<IPage> NewPageAsync() => Browser.NewPageAsync();
+    public async Task<IPage> NewPageAsync()
+    {
+        var context = await Browser.NewContextAsync();
+        _contexts.Add(context);
+        return await context.NewPageAsync();
+    }
 
     private Process StartAppProcess(int port)
     {
@@ -86,8 +99,12 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         startInfo.EnvironmentVariables["ASPNETCORE_URLS"] = $"http://127.0.0.1:{port}";
         startInfo.EnvironmentVariables["ASPNETCORE_ENVIRONMENT"] = "Development";
         startInfo.EnvironmentVariables["DatabaseProvider"] = "SqlExpressConnection";
-        startInfo.EnvironmentVariables["ConnectionStrings__SqlExpressConnection"] = _connectionString;
-        startInfo.EnvironmentVariables["ConnectionStrings__AdminSqlExpressConnection"] = _connectionString;
+        startInfo.EnvironmentVariables["ConnectionStrings__SqlExpressConnection"] = ConnectionString;
+        startInfo.EnvironmentVariables["ConnectionStrings__AdminSqlExpressConnection"] = ConnectionString;
+        startInfo.EnvironmentVariables["SmokeTestUsers__Password"] = "";
+        startInfo.EnvironmentVariables["SmokeTestUsers__AuthenticatorKey"] = "";
+        startInfo.EnvironmentVariables["LoginRateLimit__PermitLimit"] = "1000";
+        startInfo.EnvironmentVariables["LoginRateLimit__WindowSeconds"] = "60";
 
         return Process.Start(startInfo)
             ?? throw new InvalidOperationException("Kunne ikke starte MyGardenPlanner2026.dll.");
@@ -139,7 +156,7 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
 
     private async Task MigrateDatabaseAsync()
     {
-        var options = CreateContextOptions(_connectionString);
+        var options = CreateContextOptions(ConnectionString);
 
         await using var context = new PlannerDbContext(options);
         await context.Database.MigrateAsync();

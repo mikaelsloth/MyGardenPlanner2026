@@ -87,4 +87,17 @@ public sealed class SmokeTestDataSeederTests : IAsyncLifetime
             user.AuthenticatorKey.Should().BeNull();
         }
     }
+
+    [Fact]
+    public async Task SeedAsync_GenereretTotpKode_ErGyldigUmiddelbartEfterSeeding()
+    {
+        var users = await SmokeTestDataSeeder.SeedAsync(_connectionString);
+        var admin = users["Admin"];
+
+        var code = TotpHelper.GenerateCode(admin.AuthenticatorKey!);
+        var isValid = await SmokeTestDataSeeder.VerifyAuthenticatorCodeAsync(_connectionString, admin.Email, code);
+
+        isValid.Should().BeTrue(
+            "koden er genereret ud fra nøglen umiddelbart efter seeding, uden browser eller separat proces involveret");
+    }
 }

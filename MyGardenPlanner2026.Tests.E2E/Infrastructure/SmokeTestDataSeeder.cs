@@ -21,21 +21,22 @@ public static class SmokeTestDataSeeder
 
     public static async Task<IReadOnlyDictionary<string, SmokeTestUser>> SeedAsync(string connectionString)
     {
-        var services = new ServiceCollection();
+        await using var provider = BuildServiceProvider(connectionString);
+        using var scope = provider.CreateScope(); var services = new ServiceCollection();
 
-        services.AddDbContext<PlannerDbContext>(options =>
-            options.UseSqlServer(connectionString)
-                   .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
+        //services.AddDbContext<PlannerDbContext>(options =>
+        //    options.UseSqlServer(connectionString)
+        //           .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
 
-        services.AddDataProtection();
+        //services.AddDataProtection();
 
-        services.AddIdentityCore<ApplicationUser>()
-            .AddRoles<IdentityRole>()
-            .AddEntityFrameworkStores<PlannerDbContext>()
-            .AddDefaultTokenProviders();
+        //services.AddIdentityCore<ApplicationUser>()
+        //    .AddRoles<IdentityRole>()
+        //    .AddEntityFrameworkStores<PlannerDbContext>()
+        //    .AddDefaultTokenProviders();
 
-        await using var provider = services.BuildServiceProvider();
-        using var scope = provider.CreateScope();
+        //await using var provider = services.BuildServiceProvider();
+        //using var scope = provider.CreateScope();
 
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
@@ -106,5 +107,41 @@ public static class SmokeTestDataSeeder
         }
 
         return new SmokeTestUser(email, SharedPassword, role, twoFactorEnabled, authenticatorKey);
+    }
+
+    /// <summary>
+    /// Diagnostik-hjælper: verificerer en TOTP-kode direkte mod databasen, uden browser
+    /// eller separat app-proces involveret. Bruges til at isolere om en "Ugyldig
+    /// godkendelseskode"-fejl skyldes encoding-mismatch (Otp.NET vs. Identitys eget
+    /// Base32) eller timing/latency i selve E2E-flowet.
+    /// </summary>
+    public static async Task<bool> VerifyAuthenticatorCodeAsync(string connectionString, string email, string code)
+    {
+        await using var provider = BuildServiceProvider(connectionString);
+        using var scope = provider.CreateScope();
+
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await userManager.FindByEmailAsync(email)
+            ?? throw new InvalidOperationException($"Bruger '{email}' findes ikke.");
+
+        return await userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultAuthenticatorProvider, code);
+    }
+
+    private static ServiceProvider BuildServiceProvider(string connectionString)
+    {
+        var services = new ServiceCollection();
+
+        services.AddDbContext<PlannerDbContext>(options =>
+            options.UseSqlServer(connectionString)
+                   .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
+
+        services.AddDataProtection();
+
+        services.AddIdentityCore<ApplicationUser>()
+            .AddRoles<IdentityRole>()
+            .AddEntityFrameworkStores<PlannerDbContext>()
+            .AddDefaultTokenProviders();
+
+        return services.BuildServiceProvider();
     }
 }

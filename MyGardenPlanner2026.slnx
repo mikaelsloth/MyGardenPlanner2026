@@ -110,6 +110,7 @@
     <File Path=".github/workflows/EF Core migrations.yml" />
     <File Path=".github/workflows/Pull Request Quality Gate.yml" />
     <File Path=".github/workflows/Vulnerability.yml" />
+    <File Path="E2E Tests.yml" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="MyGardenPlanner2026.Core/MyGardenPlanner2026.Core.csproj" />

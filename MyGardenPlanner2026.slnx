@@ -107,10 +107,10 @@
   </Folder>
   <Folder Name="/Solution Items/.github/workflows/">
     <File Path=".github/workflows/Coverage.yml" />
+    <File Path=".github/workflows/E2E Tests.yml" />
     <File Path=".github/workflows/EF Core migrations.yml" />
     <File Path=".github/workflows/Pull Request Quality Gate.yml" />
     <File Path=".github/workflows/Vulnerability.yml" />
-    <File Path="E2E Tests.yml" />
   </Folder>
   <Folder Name="/src/">
     <Project Path="MyGardenPlanner2026.Core/MyGardenPlanner2026.Core.csproj" />

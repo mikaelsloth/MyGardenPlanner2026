@@ -15,16 +15,19 @@ public static partial class CiSqlProvisioner
     [GeneratedRegex(@"^\s*GO\s*$", RegexOptions.Multiline | RegexOptions.IgnoreCase)]
     private static partial Regex GoBatchSeparator { get; }
 
-    public static async Task ProvisionAsync(string databaseName)
+    /// <summary>Kaldes FØR migrationer: opretter database, admin-schema og de to databasebrugere.</summary>
+    public static async Task ProvisionDatabaseAndUsersAsync(string databaseName)
     {
         await CreateDatabaseAsync(databaseName);
 
         await RunScriptAsync("01-CreateAdminSchemaAndUsers.sql", script => script
             .Replace("CHANGE_ME_APP_STRONG_PW!", E2ESqlEnvironment.AppUserPassword())
             .Replace("CHANGE_ME_ADMIN_STRONG_PW!", E2ESqlEnvironment.AdminUserPassword()));
-
-        await RunScriptAsync("04-RestrictAuditLogsToInsertOnly.sql", script => script);
     }
+
+    /// <summary>Kaldes EFTER migrationer: admin.AuditLogs skal eksistere, før DENY/GRANT kan sættes på den.</summary>
+    public static async Task RestrictAuditLogsAsync() =>
+        await RunScriptAsync("04-RestrictAuditLogsToInsertOnly.sql", script => script);
 
     private static async Task CreateDatabaseAsync(string databaseName)
     {

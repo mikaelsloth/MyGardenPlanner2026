@@ -33,10 +33,15 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
 
         if (E2ESqlEnvironment.IsCi)
         {
-            await CiSqlProvisioner.ProvisionAsync(_databaseName);
+            await CiSqlProvisioner.ProvisionDatabaseAndUsersAsync(_databaseName);
         }
 
         await MigrateDatabaseAsync();
+
+        if (E2ESqlEnvironment.IsCi)
+        {
+            await CiSqlProvisioner.RestrictAuditLogsAsync();
+        }
 
         var appConnectionString = E2ESqlEnvironment.AppConnectionString(_databaseName);
         var adminConnectionString = E2ESqlEnvironment.AdminConnectionString(_databaseName);
@@ -62,16 +67,20 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
             await context.CloseAsync();
         }
 
-        await Browser.DisposeAsync();
-        _playwright.Dispose();
+        if (Browser is not null)
+        {
+            await Browser.DisposeAsync();
+        }
 
-        if (!_appProcess.HasExited)
+        _playwright?.Dispose();
+
+        if (_appProcess is not null && !_appProcess.HasExited)
         {
             _appProcess.Kill(entireProcessTree: true);
             await _appProcess.WaitForExitAsync();
         }
 
-        _appProcess.Dispose();
+        _appProcess?.Dispose();
 
         if (!E2ESqlEnvironment.IsCi)
         {

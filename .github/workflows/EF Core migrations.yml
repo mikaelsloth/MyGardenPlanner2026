@@ -10,10 +10,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v7
-
-      - name: Check migrations
-        run:
-          dotnet tool install --global dotnet-ef    
-
-          dotnet ef migrations has-pending-model-changes --project MyGardenPlanner2026.Infrastructure --startup-project MyGardenPlanner2026\MygardenPlanner2026
+    - uses: actions/checkout@v4
+ 
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+      dotnet-version: '10.0.x'
+ 
+    - name: Restore
+      run: dotnet restore
+ 
+    - name: Install EF
+      run: dotnet tool install --global dotnet-ef
+ 
+    - name: Check migrations
+      run: |
+      dotnet ef migrations has-pending-model-changes \
+      --project MyGardenPlanner2026.Infrastructure \
+      --startup-project MyGardenPlanner2026/MyGardenPlanner2026

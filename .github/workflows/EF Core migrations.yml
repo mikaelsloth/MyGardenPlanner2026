@@ -13,6 +13,5 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Check migrations
-        run: |
-          dotnet ef migrations has-pending-model-changes \
-          --project src/MyGardenPlanner2026.Infrastructure
+        run:
+          dotnet ef migrations has-pending-model-changes --project MyGardenPlanner2026.Infrastructure --startup-project MyGardenPlanner2026\MygardenPlanner2026

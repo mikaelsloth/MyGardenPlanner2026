@@ -11,8 +11,23 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+        
+      - name: Restore
+        run: dotnet restore
+        
+      - name: Build
+        run: dotnet build --no-restore
+        
+      - name: Install EF
+        run: dotnet tool install --global dotnet-ef
+        
       - name: Check migrations
         run: |
           dotnet ef migrations has-pending-model-changes \
-          --project src/MyGardenPlanner2026.Infrastructure
+          --project MyGardenPlanner2026.Infrastructure \
+          --startup-project MyGardenPlanner2026/MyGardenPlanner2026

@@ -11,12 +11,21 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
+      
+      - name: Restore
+        run: dotnet restore
+        
+      - name: Test run
+        run: |
+          dotnet test \
+           /p:CollectCoverage=true \
+           /p:CoverletOutputFormat=cobertura
 
       - name: Generate coverage report
         run: |
           dotnet tool install -g dotnet-reportgenerator-globaltool
 
           reportgenerator \
-           -reports:"coverage/**/coverage.cobertura.xml" \
+           -reports:"**/coverage.cobertura.xml" \
            -targetdir:"coveragereport" \
            -reporttypes:"Html;MarkdownSummary"

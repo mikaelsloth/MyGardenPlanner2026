@@ -11,9 +11,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
-
-      - name: Run test
-      - run: |
+      
+      - name: Restore
+        run: dotnet restore
+        
+      - name: Test run
+        run: |
           dotnet test \
            /p:CollectCoverage=true \
            /p:CoverletOutputFormat=cobertura

@@ -11,21 +11,21 @@ jobs:
 
     steps:
       - uses: actions/checkout@v7
- 
+      
       - name: Setup .NET
         uses: actions/setup-dotnet@v7
         with:
         dotnet-version: '10.0.x'
- 
+Â 
       - name: Restore
         run: dotnet restore
- 
+Â 
       - name: Build
         run: dotnet build --no-restore
 
       - name: Install EF
         run: dotnet tool install --global dotnet-ef
- 
+Â 
       - name: Check migrations
         run: |
         dotnet ef migrations has-pending-model-changes \

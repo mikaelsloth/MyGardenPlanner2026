@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - master
+  workflow_dispatch:
 
 jobs:
   build-test:
@@ -55,6 +56,6 @@ jobs:
           dotnet tool install -g dotnet-reportgenerator-globaltool
 
           reportgenerator \
-           -reports:"**/coverage.cobertura.xml" \
+           -reports:"**/*cobertura*.xml" \
            -targetdir:"coveragereport" \
            -reporttypes:"Html;MarkdownSummary"

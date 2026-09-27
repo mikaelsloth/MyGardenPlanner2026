@@ -9,6 +9,19 @@ jobs:
   build-test:
     runs-on: ubuntu-latest
 
+    # Ephemer, engangsbrugs-container — samme mønster som E2E Tests.yml.
+    env:
+      MGP_TEST_SQLSERVER_CONNECTION: Server=localhost,1433;User Id=sa;Password=CiUnitTest!Passw0rd;TrustServerCertificate=True
+
+    services:
+      mssql:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_SA_PASSWORD: CiUnitTest!Passw0rd
+        ports:
+          - 1433:1433
+          
     steps:
       - uses: actions/checkout@v7
 
@@ -17,6 +30,15 @@ jobs:
         with:
           dotnet-version: 10.x
 
+      - name: Wait for SQL Server
+        run: |
+          for i in {1..30}; do
+            (exec 3<>/dev/tcp/localhost/1433) 2>/dev/null && exec 3<&- && break
+            echo "Venter på SQL Server... ($i)"
+            sleep 2
+          done
+          sleep 5
+          
       - name: Restore
         run: dotnet restore
 

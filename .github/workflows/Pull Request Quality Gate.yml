@@ -44,6 +44,6 @@ jobs:
 
       - name: Build
         run: dotnet build --configuration Release --no-restore
-
+        
       - name: Test
-        run: dotnet test --configuration Release --no-build
+        run: dotnet test MyGardenPlanner2026.Tests.Unit/MyGardenPlanner2026.Tests.Unit.csproj MyGardenPlanner2026.Tests.UI/MyGardenPlanner2026.Tests.UI.csproj --configuration Release --no-build

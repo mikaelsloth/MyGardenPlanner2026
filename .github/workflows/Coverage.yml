@@ -51,14 +51,11 @@ jobs:
       - name: Test (UI) with coverage
         run: dotnet test MyGardenPlanner2026.Tests.UI/MyGardenPlanner2026.Tests.UI.csproj --configuration Release --no-build --coverlet --coverlet-output-format cobertura
 
-      - name: List generated coverage files (diagnostik)
-        run: find . -iname "*cobertura*" -o -iname "*coverage.json" 2>/dev/null
-
       - name: Generate coverage report
         run: |
           dotnet tool install -g dotnet-reportgenerator-globaltool
 
           reportgenerator \
-           -reports:"**/*coverage*.cobertura.xml" \
+           -reports:"**/*cobertura*.xml" \
            -targetdir:"coveragereport" \
            -reporttypes:"Html;MarkdownSummary"

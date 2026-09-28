@@ -11,6 +11,7 @@ public static class AuditLogServicesExtensions
         services.AddScoped<IAuditLogQueryService, AuditLogQueryService>();
         services.AddScoped<IAuditLogViewerPreferenceService, AuditLogViewerPreferenceService>();
         services.AddScoped<IAuditLogExportService, AuditLogExportService>();
+        services.AddScoped<IAuditLogExportJobService, AuditLogExportJobService>();
 
         services.AddDataProtection();
         services.TryAddSingleton(TimeProvider.System);

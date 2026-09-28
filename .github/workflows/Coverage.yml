@@ -59,3 +59,12 @@ jobs:
            -reports:"**/*cobertura*.xml" \
            -targetdir:"coveragereport" \
            -reporttypes:"Html;MarkdownSummary"
+      
+      - name: Publish summary to job overview
+        run: cat coveragereport/Summary.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload coverage report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coveragereport/

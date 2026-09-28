@@ -16,6 +16,7 @@ using Xunit;
 
 public sealed class AuditLogExportJobServiceTests : IDisposable
 {
+    private const int DefaultMaxActive = 3;
     private static readonly DateTimeOffset Now = new(2026, 9, 28, 12, 0, 0, TimeSpan.Zero);
     private static readonly JsonSerializerOptions Options = new() { Converters = { new JsonStringEnumConverter() } };
     private readonly SqliteConnection connection;
@@ -34,7 +35,10 @@ public sealed class AuditLogExportJobServiceTests : IDisposable
         }
 
         service = new AuditLogExportJobService(
-            factory, new FixedTimeProvider(Now), NullLogger<AuditLogExportJobService>.Instance);
+            factory,
+            new FixedTimeProvider(Now),
+            new ExportTestOptionsMonitor<AuditLogExportJobOptions>(new AuditLogExportJobOptions()),
+            NullLogger<AuditLogExportJobService>.Instance);
     }
 
     public void Dispose() => connection.Dispose();
@@ -115,7 +119,7 @@ public sealed class AuditLogExportJobServiceTests : IDisposable
     [Fact]
     public async Task EnqueueAsync_MaxActiveJobsReached_ThrowsInvalidOperationException()
     {
-        for (var i = 0; i < AuditLogExportJobService.MaxActiveJobsPerUser; i++)
+        for (var i = 0; i < DefaultMaxActive; i++)
         {
             await service.EnqueueAsync("user-1", Filter(), AuditLogExportFormat.Csv, TestContext.Current.CancellationToken);
         }
@@ -141,7 +145,7 @@ public sealed class AuditLogExportJobServiceTests : IDisposable
     [Fact]
     public async Task EnqueueAsync_ActiveJobsOfOtherUser_DoNotBlockThisUser()
     {
-        for (var i = 0; i < AuditLogExportJobService.MaxActiveJobsPerUser; i++)
+        for (var i = 0; i < DefaultMaxActive; i++)
         {
             await service.EnqueueAsync("user-1", Filter(), AuditLogExportFormat.Csv, TestContext.Current.CancellationToken);
         }
@@ -232,5 +236,20 @@ public sealed class AuditLogExportJobServiceTests : IDisposable
 
         public Task<PlannerDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(CreateDbContext());
+    }
+
+    [Fact]
+    public async Task EnqueueAsync_ConfiguredLimitOfOne_BlocksSecondActiveJob()
+    {
+        var limitedService = new AuditLogExportJobService(
+            factory,
+            new FixedTimeProvider(Now),
+            new ExportTestOptionsMonitor<AuditLogExportJobOptions>(new AuditLogExportJobOptions { MaxActiveJobsPerUser = 1 }),
+            NullLogger<AuditLogExportJobService>.Instance);
+
+        await limitedService.EnqueueAsync("user-1", Filter(), AuditLogExportFormat.Csv, TestContext.Current.CancellationToken);
+        var act = () => limitedService.EnqueueAsync("user-1", Filter(), AuditLogExportFormat.Csv);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
     }
 }

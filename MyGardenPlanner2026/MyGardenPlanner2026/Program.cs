@@ -20,6 +20,7 @@ builder.Services
     .AddSecurityPolicySettingsSeeding(builder.Configuration)
     .AddSecurityPolicyRuntimeReload()
     .AddAuditLogServices()
+    .AddAuditLogExportJobs(builder.Configuration)
     .AddOnboardingServices();
 
 #if DEBUG

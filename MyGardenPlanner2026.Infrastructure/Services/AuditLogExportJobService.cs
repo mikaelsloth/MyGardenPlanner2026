@@ -2,6 +2,7 @@
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
@@ -19,10 +20,9 @@ using System.Text.Json.Serialization;
 public sealed partial class AuditLogExportJobService(
     IAdminDbContextFactory contextFactory,
     TimeProvider timeProvider,
+    IOptionsMonitor<AuditLogExportJobOptions> optionsMonitor,
     ILogger<AuditLogExportJobService> logger) : IAuditLogExportJobService
 {
-    public const int MaxActiveJobsPerUser = 3;
-
     private static readonly JsonSerializerOptions SerializationOptions = new()
     {
         Converters = { new JsonStringEnumConverter() }
@@ -60,11 +60,13 @@ public sealed partial class AuditLogExportJobService(
                 && (j.Status == AuditLogExportJobStatus.Pending || j.Status == AuditLogExportJobStatus.Running),
             cancellationToken);
 
-        if (activeCount >= MaxActiveJobsPerUser)
+        var maxActive = Math.Max(1, optionsMonitor.CurrentValue.MaxActiveJobsPerUser);
+
+        if (activeCount >= maxActive)
         {
             EnqueueRejected(logger, userId, "maks. antal aktive eksportjobs nået");
             throw new InvalidOperationException(
-                $"Du har allerede {MaxActiveJobsPerUser} igangværende eksporter. Vent til en af dem er færdig og prøv igen.");
+                $"Du har allerede {maxActive} igangværende eksporter. Vent til en af dem er færdig og prøv igen.");
         }
 
         var job = new AuditLogExportJob

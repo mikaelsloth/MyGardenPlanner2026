@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Layout;
 using MyGardenPlanner2026.Configuration.Extensions;
+using MyGardenPlanner2026.Core.Contracts.Admin;
 using NSubstitute;
 using System.Security.Claims;
 using Xunit;
@@ -14,10 +15,14 @@ using Xunit;
 public class AdminNavMenuTests : BunitContext
 {
     private readonly IAuthorizationService authorizationService = Substitute.For<IAuthorizationService>();
+    private readonly IAuditLogExportJobService exportJobService = Substitute.For<IAuditLogExportJobService>();
 
     public AdminNavMenuTests()
     {
         Services.AddSingleton(authorizationService);
+        Services.AddSingleton(exportJobService);
+        exportJobService.CountUnseenCompletedAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(0));
 
         // Default: alle policies fejler, medmindre andet er sat op eksplicit i den enkelte test.
         authorizationService
@@ -102,5 +107,45 @@ public class AdminNavMenuTests : BunitContext
 
         var link = cut.FindAll("a.nav-link-item").Should().ContainSingle().Subject;
         link.GetAttribute("href").Should().Be("admin/jit-requests");
+    }
+
+    [Fact]
+    public void AuditViewerPolicySucceeds_UnseenExportJobsExist_ShowsBadgeWithCount()
+    {
+        SetSucceedingPolicies(AuthorizationServicesExtensions.RequireAuditViewerPolicy);
+        exportJobService.CountUnseenCompletedAsync("user-1", Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(3));
+
+        var cut = RenderWithAuthState(AuthenticatedUser());
+
+        cut.Find("a.nav-link-item .nav-badge").TextContent.Trim().Should().Be("3");
+    }
+
+    [Fact]
+    public void AuditViewerPolicySucceeds_NoUnseenExportJobs_DoesNotShowBadge()
+    {
+        SetSucceedingPolicies(AuthorizationServicesExtensions.RequireAuditViewerPolicy);
+
+        var cut = RenderWithAuthState(AuthenticatedUser());
+
+        cut.FindAll(".nav-badge").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AuditViewerPolicyFails_DoesNotCallCountUnseenCompletedAsync()
+    {
+        RenderWithAuthState(AuthenticatedUser());
+
+        _ = exportJobService.DidNotReceive().CountUnseenCompletedAsync(
+            Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public void NullAuthenticationStateTask_DoesNotCallCountUnseenCompletedAsync()
+    {
+        Render<AdminNavMenu>();
+
+        _ = exportJobService.DidNotReceive().CountUnseenCompletedAsync(
+            Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 }

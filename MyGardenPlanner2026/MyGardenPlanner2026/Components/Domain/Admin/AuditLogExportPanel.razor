@@ -24,7 +24,18 @@
 
     <div class="form-actions">
         <button type="button" class="btn btn-primary" @onclick="ExportButtonClickedAsync">Eksportér</button>
+        <button type="button" class="btn btn-secondary" @onclick="EnqueueBackgroundExportButtonClickedAsync">
+            Send til baggrundseksport
+        </button>
     </div>
+
+    @if (successMessage is not null)
+    {
+        <div class="status-message status-success status-form" role="status" aria-live="polite">
+            <span class="status-dot" aria-hidden="true"></span>
+            <div class="status-message-text"><p>@successMessage</p></div>
+        </div>
+    }
 
     @if (showThresholdConfirm)
     {

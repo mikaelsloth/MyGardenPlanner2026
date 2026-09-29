@@ -24,6 +24,7 @@ public class AdminAuditLogPageTests : BunitContext
     private readonly IReAuthenticationService reAuthenticationService = Substitute.For<IReAuthenticationService>();
     private readonly IReAuthFailureTracker reAuthFailureTracker = Substitute.For<IReAuthFailureTracker>();
     private readonly ICurrentUserAccessor currentUserAccessor = Substitute.For<ICurrentUserAccessor>();
+    private readonly IAuditLogExportJobService exportJobService = Substitute.For<IAuditLogExportJobService>();
 
     private static AuditLogEntryDto Entry(long id = 1) => new(
         id, "user-1", "user1@example.com", "127.0.0.1", AuditAction.Update,
@@ -40,6 +41,9 @@ public class AdminAuditLogPageTests : BunitContext
         Services.AddSingleton(reAuthenticationService);
         Services.AddSingleton(reAuthFailureTracker);
         Services.AddSingleton(currentUserAccessor);
+        Services.AddSingleton(exportJobService);
+        exportJobService.GetJobsForUserAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<AuditLogExportJobDto>>([]));
 
         queryService.GetDistinctEntityNamesAsync(Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<string>>(["SubscriptionAddOn", "SubscriptionTier"]));
@@ -159,5 +163,16 @@ public class AdminAuditLogPageTests : BunitContext
         cut.Find(".confirm-dialog-actions button").Click();
 
         cut.FindAll(".confirm-dialog-backdrop").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void OnInitialized_RendersExportJobsPanel()
+    {
+        queryService.SearchAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new AuditLogQueryResultDto([], 0, 1, 25)));
+
+        var cut = RenderPage();
+
+        cut.Markup.Should().Contain("Baggrundseksporter");
     }
 }

@@ -47,6 +47,12 @@ public partial class AuditLogExportPanel
     [Inject]
     private ILogger<AuditLogExportPanel> Logger { get; set; } = default!;
 
+    [Inject]
+    private IAuditLogExportJobService JobService { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback OnJobEnqueued { get; set; }
+
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
@@ -59,6 +65,7 @@ public partial class AuditLogExportPanel
     private int pendingRowCount;
     private StepUpGuard stepUpGuard = default!;
     private AdminActionGuard adminActionGuard = default!;
+    private string? successMessage;
 
     [LoggerMessage(EventId = 1042, Level = LogLevel.Information, Message = "Bruger '{UserId}' anmodede om AuditLog-eksport i format '{Format}'.")]
     static partial void ExportRequested(ILogger logger, string UserId, AuditLogExportFormat Format);
@@ -95,6 +102,7 @@ public partial class AuditLogExportPanel
     private async Task CheckAndExportCoreAsync()
     {
         errorMessage = null;
+        successMessage = null;
         showThresholdConfirm = false;
 
         var userId = await CurrentUserIdResolver.ResolveAsync(AuthenticationStateTask);
@@ -152,6 +160,42 @@ public partial class AuditLogExportPanel
         ExportDownloadTriggered(Logger, userId, selectedFormat);
 
         await JS.InvokeVoidAsync("open", url, "_blank");
+    }
+
+    private async Task EnqueueBackgroundExportButtonClickedAsync()
+    {
+        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
+            stepUpGuard.RunAsync(AuthenticationStateTask, EnqueueBackgroundExportCoreAsync));
+
+        if (adminActionGuard.IsRateLimited)
+        {
+            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
+        }
+    }
+
+    private async Task EnqueueBackgroundExportCoreAsync()
+    {
+        errorMessage = null;
+        successMessage = null;
+
+        var userId = await CurrentUserIdResolver.ResolveAsync(AuthenticationStateTask);
+        if (userId is null)
+        {
+            errorMessage = "Error: Kunne ikke bestemme den aktuelle bruger.";
+            ExportCurrentUserCouldNotBeResolved(Logger);
+            return;
+        }
+
+        try
+        {
+            await JobService.EnqueueAsync(userId, CurrentFilter, selectedFormat);
+            successMessage = "Eksporten er sat i kø. Følg status og hent filen under Baggrundseksporter nedenfor.";
+            await OnJobEnqueued.InvokeAsync();
+        }
+        catch (InvalidOperationException ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
     }
 
     private string BuildExportUrl(string token)

@@ -3,7 +3,9 @@ namespace MyGardenPlanner2026.Components.Layout;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using MyGardenPlanner2026.Components.Account.Shared;
 using MyGardenPlanner2026.Configuration.Extensions;
+using MyGardenPlanner2026.Core.Contracts.Admin;
 
 /// <summary>
 /// Viser kun links til admin-sider, som den aktuelle bruger har adgang til.
@@ -25,6 +27,13 @@ public partial class AdminNavMenu
         new("admin/audit-log", "AuditLog", AuthorizationServicesExtensions.RequireAuditViewerPolicy)
     ];
 
+    private const string AuditLogHref = "admin/audit-log";
+
+    [Inject]
+    private IAuditLogExportJobService ExportJobService { get; set; } = default!;
+
+    private int unseenExportJobCount;
+
     [Inject]
     private IAuthorizationService AuthorizationService { get; set; } = default!;
 
@@ -36,6 +45,15 @@ public partial class AdminNavMenu
     protected override async Task OnInitializedAsync()
     {
         visibleItems = await ResolveVisibleItemsAsync();
+
+        if (visibleItems.Any(i => i.Href == AuditLogHref))
+        {
+            var userId = await CurrentUserIdResolver.ResolveAsync(AuthenticationStateTask);
+            if (userId is not null)
+            {
+                unseenExportJobCount = await ExportJobService.CountUnseenCompletedAsync(userId);
+            }
+        }
     }
 
     private async Task<IReadOnlyList<AdminNavItem>> ResolveVisibleItemsAsync()

@@ -12,7 +12,9 @@
 
     <AuditLogResultsTable Result="result" OnPageChanged="HandlePageChangedAsync" OnViewDetails="HandleViewDetails" />
 
-    <AuditLogExportPanel CurrentFilter="currentFilter" />
+    <AuditLogExportPanel CurrentFilter="currentFilter" OnJobEnqueued="HandleJobEnqueuedAsync" />
+
+    <AuditLogExportJobsPanel @ref="exportJobsPanel" />
 
     <AuditLogDetailModal Entry="selectedEntryForDetail" IsOpen="showDetailModal" OnClose="HandleCloseDetail" />
 </div>

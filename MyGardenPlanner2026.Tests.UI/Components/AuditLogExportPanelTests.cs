@@ -3,12 +3,14 @@
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Domain.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Contracts.Common;
+using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Tests.UI.Identity;
 using NSubstitute;
 using System.Security.Claims;
@@ -23,6 +25,7 @@ public class AuditLogExportPanelTests : BunitContext
     private readonly IReAuthenticationService reAuthenticationService = Substitute.For<IReAuthenticationService>();
     private readonly IReAuthFailureTracker reAuthFailureTracker = Substitute.For<IReAuthFailureTracker>();
     private readonly ICurrentUserAccessor currentUserAccessor = Substitute.For<ICurrentUserAccessor>();
+    private readonly IAuditLogExportJobService exportJobService = Substitute.For<IAuditLogExportJobService>();
 
     private static AuditLogFilterDto EmptyFilter() => new(null, null, null, null, null, null, null);
 
@@ -37,6 +40,7 @@ public class AuditLogExportPanelTests : BunitContext
         Services.AddSingleton(reAuthFailureTracker);
         Services.AddSingleton(currentUserAccessor);
         Services.AddSingleton(Substitute.For<ILogger<AuditLogExportPanel>>());
+        Services.AddSingleton(exportJobService);
 
         // Standard: reauth gyldig, permit ledig, 0 rækker at eksportere.
         rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
@@ -48,15 +52,21 @@ public class AuditLogExportPanelTests : BunitContext
         JSInterop.Mode = JSRuntimeMode.Loose;
     }
 
-    private IRenderedComponent<AuditLogExportPanel> RenderPanel()
+    private IRenderedComponent<AuditLogExportPanel> RenderPanel(EventCallback? onJobEnqueued = null)
     {
         var principal = new ClaimsPrincipal(new ClaimsIdentity(
             [new Claim(ClaimTypes.NameIdentifier, "user-1")], "TestAuth"));
         var authState = Task.FromResult(new AuthenticationState(principal));
 
-        return Render<AuditLogExportPanel>(p => p
-            .AddCascadingValue(authState)
-            .Add(x => x.CurrentFilter, EmptyFilter()));
+        return Render<AuditLogExportPanel>(p =>
+        {
+            p.AddCascadingValue(authState);
+            p.Add(x => x.CurrentFilter, EmptyFilter());
+            if (onJobEnqueued is { } callback)
+            {
+                p.Add(x => x.OnJobEnqueued, callback);
+            }
+        });
     }
 
     [Fact]
@@ -164,5 +174,80 @@ public class AuditLogExportPanelTests : BunitContext
         cut.Find(".status-message.status-danger").Should().NotBeNull();
         cut.FindAll(".inline-confirm").Should().BeEmpty();
         JSInterop.Invocations.Should().NotContain(i => i.InvocationMethodName == "open");
+    }
+
+    private static AuditLogExportJobDto PendingJobDto() => new(
+    Guid.NewGuid(), "user-1", AuditLogExportFormat.Csv, AuditLogExportJobStatus.Pending,
+    DateTimeOffset.UtcNow, null, null, null, null, null, null, null);
+
+    [Fact]
+    public async Task ReAuthValid_ClickingSendTilBaggrundseksport_CallsEnqueueAsync_AndShowsSuccessMessage()
+    {
+        exportJobService.EnqueueAsync("user-1", Arg.Any<AuditLogFilterDto>(), AuditLogExportFormat.Csv, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(PendingJobDto()));
+
+        var cut = RenderPanel();
+
+        await cut.Find("button.btn-secondary").ClickAsync();
+
+        cut.Find(".status-message.status-success").Should().NotBeNull();
+        await exportJobService.Received().EnqueueAsync(
+            "user-1", Arg.Any<AuditLogFilterDto>(), AuditLogExportFormat.Csv, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ReAuthExpired_ClickingSendTilBaggrundseksport_OpensStepUpModal_WithoutEnqueuing()
+    {
+        authorizationService.AuthorizeAsync(Arg.Any<ClaimsPrincipal>(), Arg.Any<object?>(), Arg.Any<string>())
+            .Returns(Task.FromResult(AuthorizationResult.Failed()));
+
+        var cut = RenderPanel();
+
+        await cut.Find("button.btn-secondary").ClickAsync();
+
+        cut.Find(".confirm-dialog-backdrop").Should().NotBeNull();
+        await exportJobService.DidNotReceive().EnqueueAsync(
+            Arg.Any<string>(), Arg.Any<AuditLogFilterDto>(), Arg.Any<AuditLogExportFormat>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RateLimited_ClickingSendTilBaggrundseksport_DoesNotCallEnqueueAsync_AndShowsErrorMessage()
+    {
+        rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(false));
+
+        var cut = RenderPanel();
+
+        await cut.Find("button.btn-secondary").ClickAsync();
+
+        cut.Find(".status-message.status-danger").Should().NotBeNull();
+        await exportJobService.DidNotReceive().EnqueueAsync(
+            Arg.Any<string>(), Arg.Any<AuditLogFilterDto>(), Arg.Any<AuditLogExportFormat>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ClickingSendTilBaggrundseksport_ServiceThrowsInvalidOperationException_ShowsErrorMessage()
+    {
+        exportJobService.EnqueueAsync(Arg.Any<string>(), Arg.Any<AuditLogFilterDto>(), Arg.Any<AuditLogExportFormat>(), Arg.Any<CancellationToken>())
+            .Returns<Task<AuditLogExportJobDto>>(_ => throw new InvalidOperationException("Du har allerede 3 igangværende eksporter."));
+
+        var cut = RenderPanel();
+
+        await cut.Find("button.btn-secondary").ClickAsync();
+
+        cut.Find(".status-message.status-danger").TextContent.Should().Contain("igangværende eksporter");
+    }
+
+    [Fact]
+    public async Task ClickingSendTilBaggrundseksport_Success_InvokesOnJobEnqueued()
+    {
+        exportJobService.EnqueueAsync(Arg.Any<string>(), Arg.Any<AuditLogFilterDto>(), Arg.Any<AuditLogExportFormat>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(PendingJobDto()));
+        var invoked = false;
+
+        var cut = RenderPanel(EventCallback.Factory.Create(this, () => invoked = true));
+
+        await cut.Find("button.btn-secondary").ClickAsync();
+
+        invoked.Should().BeTrue();
     }
 }

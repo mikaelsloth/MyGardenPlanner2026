@@ -1,0 +1,4 @@
+/* CSS for AuditLogExportJobsPanel component */
+.audit-log-export-jobs-panel .card-header {
+    align-items: center;
+}

@@ -118,4 +118,63 @@ public sealed partial class AuditLogExportJobService(
         var now = timeProvider.GetUtcNow();
         return expiryTimes.Count(expiresAt => expiresAt is null || expiresAt > now);
     }
+
+    public async Task<AuditLogExportJobFileDto?> GetDownloadableFileAsync(
+    Guid jobId, string userId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var job = await context.AuditLogExportJobs
+            .SingleOrDefaultAsync(j => j.Id == jobId, cancellationToken);
+
+        if (job is null || job.RequestedByUserId != userId || job.Status != AuditLogExportJobStatus.Completed)
+        {
+            return null;
+        }
+
+        var now = timeProvider.GetUtcNow();
+        if (job.ExpiresAtUtc is { } expiresAt && expiresAt <= now)
+        {
+            return null;
+        }
+
+        if (job.FileContent is null || job.FileName is null || job.ContentType is null)
+        {
+            return null;
+        }
+
+        if (job.NotificationSeenAtUtc is null)
+        {
+            job.NotificationSeenAtUtc = now;
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
+        return new AuditLogExportJobFileDto(job.FileName, job.ContentType, job.FileContent);
+    }
+
+    public async Task<bool> MarkNotificationSeenAsync(
+        Guid jobId, string userId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var job = await context.AuditLogExportJobs
+            .SingleOrDefaultAsync(j => j.Id == jobId, cancellationToken);
+
+        if (job is null || job.RequestedByUserId != userId)
+        {
+            return false;
+        }
+
+        if (job.NotificationSeenAtUtc is null)
+        {
+            job.NotificationSeenAtUtc = timeProvider.GetUtcNow();
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
+        return true;
+    }
 }

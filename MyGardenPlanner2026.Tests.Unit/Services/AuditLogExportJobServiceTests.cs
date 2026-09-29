@@ -252,4 +252,168 @@ public sealed class AuditLogExportJobServiceTests : IDisposable
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
+
+    [Fact]
+    public async Task GetDownloadableFileAsync_CompletedOwnJob_ReturnsFile_AndMarksSeen()
+    {
+        var job = Job("user-1", AuditLogExportJobStatus.Completed);
+        job.FileName = "audit-log-export.csv";
+        job.ContentType = "text/csv";
+        job.FileContent = [1, 2, 3];
+        await SeedAsync(job);
+
+        var file = await service.GetDownloadableFileAsync(job.Id, "user-1", TestContext.Current.CancellationToken);
+
+        file.Should().NotBeNull();
+        file!.FileName.Should().Be("audit-log-export.csv");
+        file.ContentType.Should().Be("text/csv");
+        file.Content.Should().Equal(1, 2, 3);
+
+        await using var context = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        var row = await context.AuditLogExportJobs.SingleAsync(j => j.Id == job.Id, cancellationToken: TestContext.Current.CancellationToken);
+        row.NotificationSeenAtUtc.Should().Be(Now);
+    }
+
+    [Fact]
+    public async Task GetDownloadableFileAsync_AlreadySeen_DoesNotOverwriteTimestamp()
+    {
+        var seenAt = Now.AddHours(-1);
+        var job = Job("user-1", AuditLogExportJobStatus.Completed, seenAt: seenAt);
+        job.FileName = "a.csv";
+        job.ContentType = "text/csv";
+        job.FileContent = [1];
+        await SeedAsync(job);
+
+        await service.GetDownloadableFileAsync(job.Id, "user-1", TestContext.Current.CancellationToken);
+
+        await using var context = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        (await context.AuditLogExportJobs.SingleAsync(j => j.Id == job.Id, cancellationToken: TestContext.Current.CancellationToken)).NotificationSeenAtUtc.Should().Be(seenAt);
+    }
+
+    [Fact]
+    public async Task GetDownloadableFileAsync_UnknownJob_ReturnsNull()
+    {
+        var file = await service.GetDownloadableFileAsync(Guid.NewGuid(), "user-1", TestContext.Current.CancellationToken);
+
+        file.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetDownloadableFileAsync_ForeignUser_ReturnsNull()
+    {
+        var job = Job("user-2", AuditLogExportJobStatus.Completed);
+        job.FileName = "a.csv";
+        job.ContentType = "text/csv";
+        job.FileContent = [1];
+        await SeedAsync(job);
+
+        var file = await service.GetDownloadableFileAsync(job.Id, "user-1", TestContext.Current.CancellationToken);
+
+        file.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(AuditLogExportJobStatus.Pending)]
+    [InlineData(AuditLogExportJobStatus.Running)]
+    [InlineData(AuditLogExportJobStatus.Failed)]
+    public async Task GetDownloadableFileAsync_NotCompleted_ReturnsNull(AuditLogExportJobStatus status)
+    {
+        var job = Job("user-1", status);
+        await SeedAsync(job);
+
+        var file = await service.GetDownloadableFileAsync(job.Id, "user-1", TestContext.Current.CancellationToken);
+
+        file.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetDownloadableFileAsync_Expired_ReturnsNull()
+    {
+        var job = Job("user-1", AuditLogExportJobStatus.Completed, expiresAt: Now.AddMinutes(-1));
+        job.FileName = "a.csv";
+        job.ContentType = "text/csv";
+        job.FileContent = [1];
+        await SeedAsync(job);
+
+        var file = await service.GetDownloadableFileAsync(job.Id, "user-1", TestContext.Current.CancellationToken);
+
+        file.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task GetDownloadableFileAsync_CompletedButMissingFileContent_ReturnsNull()
+    {
+        var job = Job("user-1", AuditLogExportJobStatus.Completed);
+        await SeedAsync(job);
+
+        var file = await service.GetDownloadableFileAsync(job.Id, "user-1", TestContext.Current.CancellationToken);
+
+        file.Should().BeNull();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task GetDownloadableFileAsync_MissingUserId_ThrowsArgumentException(string? userId)
+    {
+        var act = () => service.GetDownloadableFileAsync(Guid.NewGuid(), userId!);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
+
+    [Fact]
+    public async Task MarkNotificationSeenAsync_OwnUnseenJob_SetsTimestamp_AndReturnsTrue()
+    {
+        var job = Job("user-1", AuditLogExportJobStatus.Completed);
+        await SeedAsync(job);
+
+        var result = await service.MarkNotificationSeenAsync(job.Id, "user-1", TestContext.Current.CancellationToken);
+
+        result.Should().BeTrue();
+        await using var context = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        (await context.AuditLogExportJobs.SingleAsync(j => j.Id == job.Id, cancellationToken: TestContext.Current.CancellationToken)).NotificationSeenAtUtc.Should().Be(Now);
+    }
+
+    [Fact]
+    public async Task MarkNotificationSeenAsync_AlreadySeen_ReturnsTrue_WithoutChangingTimestamp()
+    {
+        var seenAt = Now.AddHours(-2);
+        var job = Job("user-1", AuditLogExportJobStatus.Completed, seenAt: seenAt);
+        await SeedAsync(job);
+
+        var result = await service.MarkNotificationSeenAsync(job.Id, "user-1", TestContext.Current.CancellationToken);
+
+        result.Should().BeTrue();
+        await using var context = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        (await context.AuditLogExportJobs.SingleAsync(j => j.Id == job.Id, cancellationToken: TestContext.Current.CancellationToken)).NotificationSeenAtUtc.Should().Be(seenAt);
+    }
+
+    [Fact]
+    public async Task MarkNotificationSeenAsync_UnknownJob_ReturnsFalse()
+    {
+        var result = await service.MarkNotificationSeenAsync(Guid.NewGuid(), "user-1", TestContext.Current.CancellationToken);
+
+        result.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task MarkNotificationSeenAsync_ForeignUser_ReturnsFalse()
+    {
+        var job = Job("user-2", AuditLogExportJobStatus.Completed);
+        await SeedAsync(job);
+
+        var result = await service.MarkNotificationSeenAsync(job.Id, "user-1", TestContext.Current.CancellationToken);
+
+        result.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task MarkNotificationSeenAsync_MissingUserId_ThrowsArgumentException(string? userId)
+    {
+        var act = () => service.MarkNotificationSeenAsync(Guid.NewGuid(), userId!);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
 }

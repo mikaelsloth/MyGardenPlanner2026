@@ -33,6 +33,12 @@ public static partial class AuditLogEndpointsExtension
     [LoggerMessage(EventId = 1052, Level = LogLevel.Information, Message = "AuditLog-eksport gennemført for bruger '{UserId}': {Count} rækker, format '{Format}'.")]
     static partial void ExportEndpointSucceeded(ILogger logger, string UserId, int Count, AuditLogExportFormat Format);
 
+    [LoggerMessage(EventId = 1128, Level = LogLevel.Information, Message = "Bruger '{UserId}' downloadede eksportjob '{JobId}'.")]
+    static partial void ExportJobDownloaded(ILogger logger, string UserId, Guid JobId);
+
+    [LoggerMessage(EventId = 1129, Level = LogLevel.Information, Message = "Bruger '{UserId}' markerede eksportjob '{JobId}' som set.")]
+    static partial void ExportJobMarkedSeen(ILogger logger, string UserId, Guid JobId);
+
     public static IEndpointRouteBuilder MapAuditLogEndpoints(this IEndpointRouteBuilder endpoints)
     {
         ArgumentNullException.ThrowIfNull(endpoints);
@@ -124,6 +130,54 @@ public static partial class AuditLogEndpointsExtension
 
                 return Results.File(memoryStream.ToArray(), contentType, fileName);
             }
+        });
+
+        group.MapGet("/export-jobs/{jobId:guid}/download", async (
+            Guid jobId,
+            HttpContext context,
+            [FromServices] IAuditLogExportJobService jobService,
+            CancellationToken cancellationToken) =>
+        {
+            var currentUserId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                ExportEndpointForbidden(exportLogger);
+                return Results.Forbid();
+            }
+
+            var file = await jobService.GetDownloadableFileAsync(jobId, currentUserId, cancellationToken);
+            if (file is null)
+            {
+                return Results.NotFound();
+            }
+
+            ExportJobDownloaded(exportLogger, currentUserId, jobId);
+
+            return Results.File(file.Content, file.ContentType, file.FileName);
+        });
+
+        group.MapPost("/export-jobs/{jobId:guid}/mark-seen", async (
+            Guid jobId,
+            HttpContext context,
+            [FromServices] IAuditLogExportJobService jobService,
+            CancellationToken cancellationToken) =>
+        {
+            var currentUserId = context.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                ExportEndpointForbidden(exportLogger);
+                return Results.Forbid();
+            }
+
+            var marked = await jobService.MarkNotificationSeenAsync(jobId, currentUserId, cancellationToken);
+            if (!marked)
+            {
+                return Results.NotFound();
+            }
+
+            ExportJobMarkedSeen(exportLogger, currentUserId, jobId);
+
+            return Results.Ok();
         });
 
         return endpoints;

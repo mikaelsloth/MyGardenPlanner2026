@@ -17,4 +17,19 @@ public interface IAuditLogExportJobService
     /// <summary>Antal færdige, ikke-udløbne jobs hvor notifikationen endnu ikke er set (badge).</summary>
     Task<int> CountUnseenCompletedAsync(
         string userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returnerer filen for download, hvis jobbet tilhører <paramref name="userId"/>, er
+    /// Completed, og ikke er udløbet — ellers null. Markerer samtidig notifikationen som
+    /// set, hvis den ikke allerede er det.
+    /// </summary>
+    Task<AuditLogExportJobFileDto?> GetDownloadableFileAsync(
+        Guid jobId, string userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Markerer notifikationen som set uden download. Returnerer true, hvis jobbet
+    /// findes og tilhører brugeren (uanset om det allerede var set) — ellers false.
+    /// </summary>
+    Task<bool> MarkNotificationSeenAsync(
+        Guid jobId, string userId, CancellationToken cancellationToken = default);
 }

@@ -5,7 +5,13 @@
         @foreach (var item in visibleItems)
         {
             <li @key="item.Href">
-                <NavLink class="nav-link-item" href="@item.Href">@item.Label</NavLink>
+                <NavLink class="nav-link-item" href="@item.Href">
+                    @item.Label
+                    @if (item.Href == AuditLogHref && unseenExportJobCount > 0)
+                    {
+                        <span class="nav-badge" aria-label="@($"{unseenExportJobCount} nye eksportfiler klar")">@unseenExportJobCount</span>
+                    }
+                </NavLink>
             </li>
         }
     </ul>

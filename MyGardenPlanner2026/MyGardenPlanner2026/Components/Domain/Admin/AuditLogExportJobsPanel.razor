@@ -1,0 +1,68 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Admin
+@using System.Globalization
+
+<div class="card card-entity audit-log-export-jobs-panel" data-density="default">
+    <div class="card-header">
+        <h3 class="h6">Baggrundseksporter</h3>
+        <button type="button" class="btn btn-secondary btn-sm" @onclick="RefreshAsync">Opdater</button>
+    </div>
+
+    @if (jobs is null)
+    {
+        <div class="skeleton-card" aria-hidden="true">
+            <div class="skeleton-line skeleton-title"></div>
+            <div class="skeleton-line skeleton-meta"></div>
+        </div>
+    }
+    else if (jobs.Count == 0)
+    {
+        <p class="card-description">Ingen baggrundseksporter endnu. Opret en ovenfor under "Send til baggrundseksport".</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="data-table data-table-compact" data-density="compact">
+                <thead>
+                    <tr>
+                        <th scope="col">Oprettet</th>
+                        <th scope="col">Format</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">Rækker</th>
+                        <th scope="col">Handling</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var job in jobs)
+                    {
+                        <tr @key="job.Id">
+                            <td>@job.CreatedAtUtc.ToLocalTime().ToString("g", DanishCulture)</td>
+                            <td>@job.Format</td>
+                            <td><span class="badge-role @StatusBadgeClass(job)">@StatusLabel(job)</span></td>
+                            <td class="numeric">@(job.RowCount?.ToString(CultureInfo.InvariantCulture) ?? "–")</td>
+                            <td class="btn-row">
+                                @if (CanDownload(job))
+                                {
+                                    <a class="btn btn-primary btn-sm" href="@DownloadUrl(job)" target="_blank">Download</a>
+                                }
+                                else if (job.Status == AuditLogExportJobStatus.Completed)
+                                {
+                                    <span class="meta">Udløbet</span>
+                                }
+                                else if (job.Status == AuditLogExportJobStatus.Failed)
+                                {
+                                    <span class="meta">@job.ErrorMessage</span>
+                                }
+                                @if (job.NotificationSeenAtUtc is null && job.Status == AuditLogExportJobStatus.Completed)
+                                {
+                                    <button type="button" class="btn btn-ghost btn-sm" @onclick="() => ClearNotificationAsync(job.Id)">
+                                        Ryd notifikation
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

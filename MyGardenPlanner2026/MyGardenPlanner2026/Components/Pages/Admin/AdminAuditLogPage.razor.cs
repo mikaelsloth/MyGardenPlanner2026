@@ -3,6 +3,7 @@ namespace MyGardenPlanner2026.Components.Pages.Admin;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using MyGardenPlanner2026.Components.Account.Shared;
+using MyGardenPlanner2026.Components.Domain.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 
 public partial class AdminAuditLogPage
@@ -21,6 +22,7 @@ public partial class AdminAuditLogPage
     private AuditLogQueryResultDto? result;
     private AuditLogEntryDto? selectedEntryForDetail;
     private bool showDetailModal;
+    private AuditLogExportJobsPanel exportJobsPanel = default!;
 
     protected override async Task OnInitializedAsync()
     {
@@ -65,6 +67,8 @@ public partial class AdminAuditLogPage
                 userId, new AuditLogViewerPreferenceDto(currentFilter.PageSize, currentFilter));
         }
     }
+
+    private Task HandleJobEnqueuedAsync() => exportJobsPanel.RefreshAsync();
 
     private void HandleViewDetails(AuditLogEntryDto entry)
     {

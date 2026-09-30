@@ -3,6 +3,7 @@
 using MyGardenPlanner2026.Core.Contracts.Layer1;
 using MyGardenPlanner2026.Infrastructure.Data.Seed;
 using MyGardenPlanner2026.Infrastructure.Services;
+using MyGardenPlanner2026.Infrastructure.Services.Layer1;
 
 public static class SubscriptionServicesExtensions
 {

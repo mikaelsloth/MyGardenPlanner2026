@@ -3,7 +3,8 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
-using MyGardenPlanner2026.Infrastructure.Services;
+using MyGardenPlanner2026.Infrastructure.Services.AuditLog.Export;
+using MyGardenPlanner2026.Infrastructure.Services.ReAuthentication;
 using Xunit;
 
 public sealed class AuditLogExportTokenServiceTests

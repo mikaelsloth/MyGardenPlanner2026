@@ -4,7 +4,7 @@ using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Admin;
-using MyGardenPlanner2026.Infrastructure.Services;
+using MyGardenPlanner2026.Infrastructure.Services.AuditLog.ExportJobs;
 using Xunit;
 
 public sealed class AuditLogExportJobPolicyAdminServiceTests : IDisposable

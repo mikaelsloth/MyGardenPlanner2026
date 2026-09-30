@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Infrastructure.Services;
+using MyGardenPlanner2026.Infrastructure.Services.AuditLog.ExportJobs;
 using Xunit;
 
 public sealed class AuditLogExportBackgroundServiceTests

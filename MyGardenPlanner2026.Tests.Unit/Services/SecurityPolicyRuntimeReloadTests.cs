@@ -6,6 +6,9 @@ using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Infrastructure.Services;
+using MyGardenPlanner2026.Infrastructure.Services.Jit;
+using MyGardenPlanner2026.Infrastructure.Services.PolicyRuntime;
+using MyGardenPlanner2026.Infrastructure.Services.ReAuthentication;
 using NSubstitute;
 using Xunit;
 

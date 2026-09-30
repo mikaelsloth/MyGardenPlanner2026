@@ -2,7 +2,7 @@
 
 using FluentAssertions;
 using MyGardenPlanner2026.Infrastructure.Data.Seed;
-using MyGardenPlanner2026.Infrastructure.Services;
+using MyGardenPlanner2026.Infrastructure.Services.Layer1;
 using Xunit;
 
 public class SubscriptionAddOnServiceTests : TestDbContext

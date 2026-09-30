@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Configuration.Extensions;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Infrastructure.Services;
+using MyGardenPlanner2026.Infrastructure.Services.AuditLog.ExportJobs;
 using Xunit;
 
 public sealed class AuditLogExportJobServicesExtensionsTests

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using MyGardenPlanner2026.Configuration.Authorization;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Infrastructure.Services;
+using MyGardenPlanner2026.Infrastructure.Services.Jit;
 
 public static class JitServicesExtensions
 {

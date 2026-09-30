@@ -3,7 +3,7 @@
 using FluentAssertions;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Admin;
-using MyGardenPlanner2026.Infrastructure.Services;
+using MyGardenPlanner2026.Infrastructure.Services.RateLimiting;
 using NSubstitute;
 using Xunit;
 

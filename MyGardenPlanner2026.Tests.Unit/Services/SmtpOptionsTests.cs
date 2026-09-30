@@ -1,7 +1,7 @@
 ﻿namespace MyGardenPlanner2026.Tests.Unit.Services;
 
 using FluentAssertions;
-using MyGardenPlanner2026.Infrastructure.Services;
+using MyGardenPlanner2026.Infrastructure.Services.SecurityAlerting;
 using Xunit;
 
 public class SmtpOptionsTests

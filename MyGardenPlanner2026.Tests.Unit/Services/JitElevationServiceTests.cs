@@ -7,6 +7,7 @@ using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Infrastructure.Services;
+using MyGardenPlanner2026.Infrastructure.Services.Jit;
 using NSubstitute;
 using Xunit;
 

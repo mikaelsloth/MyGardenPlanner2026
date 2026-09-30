@@ -3,7 +3,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Contracts.Admin;
-using MyGardenPlanner2026.Infrastructure.Services;
+using MyGardenPlanner2026.Infrastructure.Services.ReAuthentication;
 
 /// <summary>
 /// Godkender kun RequireRecentAuthenticationRequirement, hvis brugerens seneste

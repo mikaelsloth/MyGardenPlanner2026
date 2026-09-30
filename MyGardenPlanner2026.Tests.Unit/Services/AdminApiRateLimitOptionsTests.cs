@@ -1,7 +1,7 @@
 ﻿namespace MyGardenPlanner2026.Tests.Unit.Services;
 
 using FluentAssertions;
-using MyGardenPlanner2026.Infrastructure.Services;
+using MyGardenPlanner2026.Infrastructure.Services.RateLimiting;
 using Xunit;
 
 public class AdminApiRateLimitOptionsTests

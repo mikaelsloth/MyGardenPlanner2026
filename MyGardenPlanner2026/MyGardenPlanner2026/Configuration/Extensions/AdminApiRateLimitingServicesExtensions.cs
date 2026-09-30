@@ -2,6 +2,7 @@
 
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Infrastructure.Services;
+using MyGardenPlanner2026.Infrastructure.Services.RateLimiting;
 
 public static class AdminApiRateLimitingServicesExtensions
 {

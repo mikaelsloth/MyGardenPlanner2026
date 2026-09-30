@@ -5,7 +5,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Configuration.Extensions;
 using MyGardenPlanner2026.Core.Contracts.Admin;
-using MyGardenPlanner2026.Infrastructure.Services;
+using MyGardenPlanner2026.Infrastructure.Services.Jit;
+using MyGardenPlanner2026.Infrastructure.Services.RateLimiting;
+using MyGardenPlanner2026.Infrastructure.Services.ReAuthentication;
 using Xunit;
 
 public class SecurityPolicyRuntimeReloadServicesExtensionsTests

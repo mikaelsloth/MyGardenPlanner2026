@@ -1,11 +1,11 @@
-﻿namespace MyGardenPlanner2026.Tests.E2E;
+﻿namespace MyGardenPlanner2026.Tests.E2E.Seeding;
 
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Infrastructure.Data;
-using MyGardenPlanner2026.Tests.E2E.Infrastructure;
+using MyGardenPlanner2026.Tests.E2E;
 using Xunit;
 
 /// <summary>

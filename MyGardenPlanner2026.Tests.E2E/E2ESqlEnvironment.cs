@@ -1,4 +1,4 @@
-﻿namespace MyGardenPlanner2026.Tests.E2E.Infrastructure;
+﻿namespace MyGardenPlanner2026.Tests.E2E;
 
 /// <summary>
 /// Løser hvilken SQL Server-instans og hvilke akkreditiver E2E-testene skal bruge.

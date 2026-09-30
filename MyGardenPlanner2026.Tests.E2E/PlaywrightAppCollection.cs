@@ -1,4 +1,4 @@
-﻿namespace MyGardenPlanner2026.Tests.E2E.Infrastructure;
+﻿namespace MyGardenPlanner2026.Tests.E2E;
 
 using Xunit;
 

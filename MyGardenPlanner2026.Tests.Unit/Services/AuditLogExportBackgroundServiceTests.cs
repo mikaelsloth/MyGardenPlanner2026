@@ -22,7 +22,7 @@ public sealed class AuditLogExportBackgroundServiceTests
     }
 
     [Fact]
-    public async Task RunOnceAsync_RecoversStaleJobs_ThenProcessesUntilNoneLeft()
+    public async Task RunOnceAsync_RecoversStaleJobs_ThenDeletesExpired_ThenProcessesUntilNoneLeft()
     {
         var processor = new FakeProcessor(true, true, false);
 
@@ -30,6 +30,7 @@ public sealed class AuditLogExportBackgroundServiceTests
 
         processed.Should().Be(2);
         processor.StaleCalls.Should().Be(1);
+        processor.DeleteExpiredCalls.Should().Be(1);
         processor.ProcessCalls.Should().Be(3);
     }
 
@@ -62,6 +63,7 @@ public sealed class AuditLogExportBackgroundServiceTests
 
         public int ProcessCalls { get; private set; }
         public int StaleCalls { get; private set; }
+        public int DeleteExpiredCalls { get; private set; }
 
         public Task<bool> ProcessNextAsync(CancellationToken cancellationToken = default)
         {
@@ -72,6 +74,12 @@ public sealed class AuditLogExportBackgroundServiceTests
         public Task<int> FailStaleRunningJobsAsync(CancellationToken cancellationToken = default)
         {
             StaleCalls++;
+            return Task.FromResult(0);
+        }
+
+        public Task<int> DeleteExpiredJobsAsync(CancellationToken cancellationToken = default)
+        {
+            DeleteExpiredCalls++;
             return Task.FromResult(0);
         }
     }

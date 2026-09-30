@@ -45,6 +45,13 @@ public static class SecurityPolicySettingsSeedExtensions
         services.AddScoped(sp => CreateSeeder<LoginRateLimitSettings, LoginRateLimitOptions>(
             sp, o => new LoginRateLimitSettings { PermitLimit = o.PermitLimit, WindowSeconds = o.WindowSeconds }));
 
+        services.AddScoped(sp => CreateSeeder<AuditLogExportJobPolicySettings, AuditLogExportJobOptions>(
+            sp, o => new AuditLogExportJobPolicySettings
+            {
+                RetentionHours = o.RetentionHours,
+                MaxActiveJobsPerUser = o.MaxActiveJobsPerUser
+            }));
+
         return services;
     }
 
@@ -58,6 +65,7 @@ public static class SecurityPolicySettingsSeedExtensions
         await sp.GetRequiredService<SecurityPolicySettingsSeeder<ReAuthFailureTrackerSettings>>().SeedAsync();
         await sp.GetRequiredService<SecurityPolicySettingsSeeder<AdminApiRateLimitSettings>>().SeedAsync();
         await sp.GetRequiredService<SecurityPolicySettingsSeeder<LoginRateLimitSettings>>().SeedAsync();
+        await sp.GetRequiredService<SecurityPolicySettingsSeeder<AuditLogExportJobPolicySettings>>().SeedAsync();
     }
 
     private static SecurityPolicySettingsSeeder<TEntity> CreateSeeder<TEntity, TOptions>(

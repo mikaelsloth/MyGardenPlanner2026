@@ -302,4 +302,58 @@ public sealed class AuditLogExportJobProcessorTests : IDisposable
             return behavior?.Invoke(destination, cancellationToken) ?? Task.CompletedTask;
         }
     }
+
+    [Fact]
+    public async Task DeleteExpiredJobsAsync_CompletedAndExpired_DeletesRow()
+    {
+        var job = PendingJob();
+        job.Status = AuditLogExportJobStatus.Completed;
+        job.ExpiresAtUtc = Now.AddMinutes(-1);
+        await SeedAsync(job);
+
+        var count = await CreateProcessor(new FakeExportService()).DeleteExpiredJobsAsync(TestContext.Current.CancellationToken);
+
+        count.Should().Be(1);
+        await using var context = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        (await context.AuditLogExportJobs.AnyAsync(j => j.Id == job.Id, cancellationToken: TestContext.Current.CancellationToken)).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task DeleteExpiredJobsAsync_CompletedButNotYetExpired_KeepsRow()
+    {
+        var job = PendingJob();
+        job.Status = AuditLogExportJobStatus.Completed;
+        job.ExpiresAtUtc = Now.AddHours(1);
+        await SeedAsync(job);
+
+        var count = await CreateProcessor(new FakeExportService()).DeleteExpiredJobsAsync(TestContext.Current.CancellationToken);
+
+        count.Should().Be(0);
+        (await LoadAsync(job.Id)).Should().NotBeNull();
+    }
+
+    [Theory]
+    [InlineData(AuditLogExportJobStatus.Pending)]
+    [InlineData(AuditLogExportJobStatus.Running)]
+    [InlineData(AuditLogExportJobStatus.Failed)]
+    public async Task DeleteExpiredJobsAsync_NonCompletedStatus_IsNeverDeleted_RegardlessOfExpiresAtUtc(AuditLogExportJobStatus status)
+    {
+        var job = PendingJob();
+        job.Status = status;
+        job.ExpiresAtUtc = Now.AddMinutes(-1);
+        await SeedAsync(job);
+
+        var count = await CreateProcessor(new FakeExportService()).DeleteExpiredJobsAsync(TestContext.Current.CancellationToken);
+
+        count.Should().Be(0);
+        (await LoadAsync(job.Id)).Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task DeleteExpiredJobsAsync_NothingExpired_ReturnsZero()
+    {
+        var count = await CreateProcessor(new FakeExportService()).DeleteExpiredJobsAsync(TestContext.Current.CancellationToken);
+
+        count.Should().Be(0);
+    }
 }

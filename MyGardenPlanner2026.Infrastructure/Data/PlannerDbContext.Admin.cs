@@ -14,6 +14,7 @@ public partial class PlannerDbContext
     public DbSet<ReAuthFailureTrackerSettings> ReAuthFailureTrackerSettings => Set<ReAuthFailureTrackerSettings>();
     public DbSet<AdminApiRateLimitSettings> AdminApiRateLimitSettings => Set<AdminApiRateLimitSettings>();
     public DbSet<LoginRateLimitSettings> LoginRateLimitSettings => Set<LoginRateLimitSettings>();
+    public DbSet<AuditLogExportJobPolicySettings> AuditLogExportJobPolicySettings => Set<AuditLogExportJobPolicySettings>();
 
     /// <summary>
     /// Instansmetode (var static): Database.IsSqlServer() kræver context-instansen,
@@ -36,6 +37,7 @@ public partial class PlannerDbContext
         ConfigureSingletonSettings<ReAuthFailureTrackerSettings>(modelBuilder, "ReAuthFailureTrackerSettings", useTemporalTables);
         ConfigureSingletonSettings<AdminApiRateLimitSettings>(modelBuilder, "AdminApiRateLimitSettings", useTemporalTables);
         ConfigureSingletonSettings<LoginRateLimitSettings>(modelBuilder, "LoginRateLimitSettings", useTemporalTables);
+        ConfigureSingletonSettings<AuditLogExportJobPolicySettings>(modelBuilder, "AuditLogExportJobPolicySettings", useTemporalTables);
     }
 
     private static void ConfigureSingletonSettings<TEntity>(

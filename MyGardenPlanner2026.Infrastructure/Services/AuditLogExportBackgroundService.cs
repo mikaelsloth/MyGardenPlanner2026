@@ -58,6 +58,7 @@ public sealed partial class AuditLogExportBackgroundService(
         {
             var recovery = recoveryScope.ServiceProvider.GetRequiredService<IAuditLogExportJobProcessor>();
             await recovery.FailStaleRunningJobsAsync(cancellationToken);
+            await recovery.DeleteExpiredJobsAsync(cancellationToken);
         }
 
         var processed = 0;

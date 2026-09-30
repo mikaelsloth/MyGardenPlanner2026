@@ -17,10 +17,10 @@ builder.Services
     .AddAdminApiRateLimiting(builder.Configuration)
     .AddSecurityAlertingServices(builder.Configuration)
     .AddReAuthFailureTracking(builder.Configuration)
+    .AddAuditLogExportJobs(builder.Configuration)
     .AddSecurityPolicySettingsSeeding(builder.Configuration)
     .AddSecurityPolicyRuntimeReload()
     .AddAuditLogServices()
-    .AddAuditLogExportJobs(builder.Configuration)
     .AddOnboardingServices();
 
 #if DEBUG

@@ -11,4 +11,7 @@ public interface IAuditLogExportJobProcessor
 
     /// <summary>Sætter jobs, der har stået i Running for længe (fx efter nedbrud), til Failed. Returnerer antal.</summary>
     Task<int> FailStaleRunningJobsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Sletter fysisk Completed-jobs, hvor ExpiresAtUtc er passeret (frigør varbinary-lagerpladsen). Returnerer antal slettede.</summary>
+    Task<int> DeleteExpiredJobsAsync(CancellationToken cancellationToken = default);
 }

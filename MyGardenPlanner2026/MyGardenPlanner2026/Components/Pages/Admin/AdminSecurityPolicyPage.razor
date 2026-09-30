@@ -37,6 +37,10 @@
                 aria-selected="@(activeTab == AdminTab.LoginRateLimit)" @onclick="() => SelectTab(AdminTab.LoginRateLimit)">
             Login rate limit
         </button>
+        <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.AuditLogExportJob ? "active" : string.Empty)"
+                aria-selected="@(activeTab == AdminTab.AuditLogExportJob)" @onclick="() => SelectTab(AdminTab.AuditLogExportJob)">
+            AuditLog-eksport
+        </button>
     </div>
 
     <div class="admin-tab-content">
@@ -56,6 +60,9 @@
                 break;
             case AdminTab.LoginRateLimit:
                 <LoginRateLimitEditor OnStatusMessage="SetStatusMessage" />
+                break;
+            case AdminTab.AuditLogExportJob:
+                <AuditLogExportJobPolicyEditor OnStatusMessage="SetStatusMessage" />
                 break;
         }
     </div>

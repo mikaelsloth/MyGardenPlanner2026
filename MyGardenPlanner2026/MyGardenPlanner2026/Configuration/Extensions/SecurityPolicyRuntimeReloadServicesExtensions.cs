@@ -25,12 +25,14 @@ public static class SecurityPolicyRuntimeReloadServicesExtensions
         AddReloadable<ReAuthFailureTrackerOptions, ReAuthFailureTrackerOptionsConfigurator>(services);
         AddReloadable<AdminApiRateLimitOptions, AdminApiRateLimitOptionsConfigurator>(services);
         AddReloadable<LoginRateLimitOptions, LoginRateLimitOptionsConfigurator>(services);
+        AddReloadable<AuditLogExportJobOptions, AuditLogExportJobOptionsConfigurator>(services);
 
         services.AddScoped<IJitElevationPolicyAdminService, JitElevationPolicyAdminService>();
         services.AddScoped<IReAuthenticationPolicyAdminService, ReAuthenticationPolicyAdminService>();
         services.AddScoped<IReAuthFailureTrackerPolicyAdminService, ReAuthFailureTrackerPolicyAdminService>();
         services.AddScoped<IAdminApiRateLimitPolicyAdminService, AdminApiRateLimitPolicyAdminService>();
         services.AddScoped<ILoginRateLimitPolicyAdminService, LoginRateLimitPolicyAdminService>();
+        services.AddScoped<IAuditLogExportJobPolicyAdminService, AuditLogExportJobPolicyAdminService>();
 
         return services;
     }

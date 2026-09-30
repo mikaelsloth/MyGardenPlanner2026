@@ -55,6 +55,10 @@ public class AdminSecurityPolicyPageTests : BunitContext
         userManager.GetUserAsync(Arg.Any<ClaimsPrincipal>()).Returns(Task.FromResult<ApplicationUser?>(null));
         Services.AddSingleton(userManager);
 
+        var auditLogExportJobService = Substitute.For<IAuditLogExportJobPolicyAdminService>();
+        auditLogExportJobService.GetAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult(new AuditLogExportJobPolicyDto(24, 3)));
+        Services.AddSingleton(auditLogExportJobService);
+
         Services.AddSingleton(Substitute.For<IReAuthenticationService>());
         Services.AddSingleton(Substitute.For<IReAuthFailureTracker>());
         Services.AddSingleton(Substitute.For<ICurrentUserAccessor>());
@@ -65,13 +69,13 @@ public class AdminSecurityPolicyPageTests : BunitContext
     }
 
     [Fact]
-    public void AdminSecurityPolicyPage_RendersFiveTabs()
+    public void AdminSecurityPolicyPage_RendersSixTabs()
     {
         RegisterFakes();
 
         var cut = Render<AdminSecurityPolicyPage>(p => p.AddCascadingValue(CreateAuthStateAsync()));
 
-        cut.FindAll(".context-tab").Should().HaveCount(5);
+        cut.FindAll(".context-tab").Should().HaveCount(6);
     }
 
     [Fact]
@@ -93,5 +97,16 @@ public class AdminSecurityPolicyPageTests : BunitContext
         cut.FindAll(".context-tab")[4].Click();
 
         cut.FindAll("#login-permit").Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void AdminSecurityPolicyPage_ClickingAuditLogExportJobTab_RendersAuditLogExportJobPolicyEditor()
+    {
+        RegisterFakes();
+        var cut = Render<AdminSecurityPolicyPage>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+
+        cut.FindAll(".context-tab")[5].Click();
+
+        cut.FindAll("#exportjob-retention").Should().HaveCount(1);
     }
 }

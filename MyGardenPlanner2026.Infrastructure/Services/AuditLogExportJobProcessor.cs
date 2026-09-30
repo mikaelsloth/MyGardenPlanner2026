@@ -53,6 +53,9 @@ public sealed partial class AuditLogExportJobProcessor(
     [LoggerMessage(EventId = 1126, Level = LogLevel.Error, Message = "Uventet fejl under behandling af AuditLog-eksportjob '{JobId}'.")]
     static partial void JobProcessingError(ILogger logger, Exception ex, Guid JobId);
 
+    [LoggerMessage(EventId = 1131, Level = LogLevel.Information, Message = "{Count} udløbne AuditLog-eksportfiler ryddet.")]
+    static partial void ExpiredJobsDeleted(ILogger logger, int Count);
+
     public async Task<bool> ProcessNextAsync(CancellationToken cancellationToken = default)
     {
         var claimed = await ClaimNextAsync(cancellationToken);
@@ -145,6 +148,39 @@ public sealed partial class AuditLogExportJobProcessor(
         }
 
         return affected;
+    }
+
+    public async Task<int> DeleteExpiredJobsAsync(CancellationToken cancellationToken = default)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        var now = timeProvider.GetUtcNow();
+
+        var candidates = await context.AuditLogExportJobs
+            .Where(j => j.Status == AuditLogExportJobStatus.Completed && j.ExpiresAtUtc != null)
+            .Select(j => new { j.Id, j.ExpiresAtUtc })
+            .ToListAsync(cancellationToken);
+
+        var expiredIds = candidates
+            .Where(j => j.ExpiresAtUtc <= now)
+            .Select(j => j.Id)
+            .ToList();
+
+        if (expiredIds.Count == 0)
+        {
+            return 0;
+        }
+
+        var deleted = await context.AuditLogExportJobs
+            .Where(j => expiredIds.Contains(j.Id) && j.Status == AuditLogExportJobStatus.Completed)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        if (deleted > 0)
+        {
+            ExpiredJobsDeleted(logger, deleted);
+        }
+
+        return deleted;
     }
 
     private async Task<ClaimedJob?> ClaimNextAsync(CancellationToken cancellationToken)

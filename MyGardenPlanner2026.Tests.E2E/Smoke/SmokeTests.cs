@@ -1,8 +1,8 @@
-﻿namespace MyGardenPlanner2026.Tests.E2E;
+﻿namespace MyGardenPlanner2026.Tests.E2E.Smoke;
 
 using FluentAssertions;
 using Microsoft.Playwright;
-using MyGardenPlanner2026.Tests.E2E.Infrastructure;
+using MyGardenPlanner2026.Tests.E2E;
 using Xunit;
 
 [Collection(PlaywrightAppCollection.Name)]

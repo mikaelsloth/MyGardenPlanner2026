@@ -2,11 +2,9 @@
 
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Infrastructure.Interceptors;
-using NSubstitute;
 using Xunit;
 
 public class RoleElevationRequestPersistenceTests : TestDbContext
@@ -69,8 +67,7 @@ public class RoleElevationRequestPersistenceTests : TestDbContext
     [Fact]
     public async Task DefaultQuery_ExcludesSoftDeletedRequests()
     {
-        var currentUser = Substitute.For<ICurrentUserAccessor>();
-        currentUser.GetCurrent().Returns(new CurrentUserInfo("user-3", "user3@example.dk", "127.0.0.1"));
+        var currentUser = FakeCurrentUser.Create("user-3", "user3@example.dk", "127.0.0.1");
 
         using var context = CreateDbContextWithInterceptors(new SoftDeleteInterceptor(currentUser));
 

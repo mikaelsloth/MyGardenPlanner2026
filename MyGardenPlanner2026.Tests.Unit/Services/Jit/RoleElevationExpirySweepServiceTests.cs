@@ -3,7 +3,6 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Infrastructure.Interceptors;
@@ -115,9 +114,7 @@ public class RoleElevationExpirySweepServiceTests : TestDbContext
     public async Task SweepOnceAsync_TransitionToExpired_WritesAuditLogUpdateEntry()
     {
         var timeProvider = new TestTimeProvider(new DateTimeOffset(2026, 8, 28, 10, 0, 0, TimeSpan.Zero));
-        var currentUser = Substitute.For<ICurrentUserAccessor>();
-        currentUser.GetCurrent().Returns(new CurrentUserInfo("system", "system@mygardenplanner.dk", null));
-
+        var currentUser = FakeCurrentUser.Create("system", "system@mygardenplanner.dk", null);
         var contextFactory = CreateAdminDbContextFactoryWithInterceptors(
             new SoftDeleteInterceptor(currentUser), new AuditLoggingInterceptor(currentUser));
 

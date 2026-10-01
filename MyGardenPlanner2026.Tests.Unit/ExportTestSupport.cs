@@ -6,11 +6,6 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Infrastructure.Data;
 
-internal sealed class ExportTestTimeProvider(DateTimeOffset now) : TimeProvider
-{
-    public override DateTimeOffset GetUtcNow() => now;
-}
-
 internal sealed class ExportTestOptionsMonitor<T>(T value) : IOptionsMonitor<T>
     where T : class
 {

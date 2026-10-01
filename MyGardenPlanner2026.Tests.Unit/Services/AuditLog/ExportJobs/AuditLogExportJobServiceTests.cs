@@ -37,7 +37,7 @@ public sealed class AuditLogExportJobServiceTests : IDisposable
 
         service = new AuditLogExportJobService(
             factory,
-            new FixedTimeProvider(Now),
+            new TestTimeProvider(Now),
             new ExportTestOptionsMonitor<AuditLogExportJobOptions>(new AuditLogExportJobOptions()),
             NullLogger<AuditLogExportJobService>.Instance);
     }
@@ -220,11 +220,6 @@ public sealed class AuditLogExportJobServiceTests : IDisposable
         await act.Should().ThrowAsync<ArgumentException>();
     }
 
-    private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
-    {
-        public override DateTimeOffset GetUtcNow() => now;
-    }
-
     private sealed class SqliteAdminFactory(SqliteConnection connection) : IAdminDbContextFactory
     {
         private readonly DbContextOptions<PlannerDbContext> options =
@@ -244,7 +239,7 @@ public sealed class AuditLogExportJobServiceTests : IDisposable
     {
         var limitedService = new AuditLogExportJobService(
             factory,
-            new FixedTimeProvider(Now),
+            new TestTimeProvider(Now),
             new ExportTestOptionsMonitor<AuditLogExportJobOptions>(new AuditLogExportJobOptions { MaxActiveJobsPerUser = 1 }),
             NullLogger<AuditLogExportJobService>.Instance);
 

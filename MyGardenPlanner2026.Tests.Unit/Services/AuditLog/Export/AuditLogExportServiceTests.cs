@@ -8,6 +8,7 @@ using NSubstitute;
 using System.Text;
 using System.Text.Json;
 using Xunit;
+using static MyGardenPlanner2026.Tests.Unit.Services.AuditLog.AuditLogTestData;
 
 public sealed class AuditLogExportServiceTests
 {
@@ -18,8 +19,6 @@ public sealed class AuditLogExportServiceTests
     {
         sut = new AuditLogExportService(queryService);
     }
-
-    private static AuditLogFilterDto EmptyFilter() => new(null, null, null, null, null, null, null);
 
     private static AuditLogEntryDto Entry(long id = 1, string? oldValues = null) => new(
         id, "user-1", "user1@example.com", "127.0.0.1", AuditAction.Update,
@@ -41,7 +40,7 @@ public sealed class AuditLogExportServiceTests
         SetupQueryResults([Entry()]);
         using var stream = new MemoryStream();
 
-        await sut.ExportAsync(EmptyFilter(), AuditLogExportFormat.Csv, stream, TestContext.Current.CancellationToken);
+        await sut.ExportAsync(EmptyFilter, AuditLogExportFormat.Csv, stream, TestContext.Current.CancellationToken);
 
         stream.Position = 0;
         using var reader = new StreamReader(stream, Encoding.UTF8);
@@ -58,7 +57,7 @@ public sealed class AuditLogExportServiceTests
         SetupQueryResults([Entry(oldValues: "{\"Name\":\"A, B\"}")]);
         using var stream = new MemoryStream();
 
-        await sut.ExportAsync(EmptyFilter(), AuditLogExportFormat.Csv, stream, TestContext.Current.CancellationToken);
+        await sut.ExportAsync(EmptyFilter, AuditLogExportFormat.Csv, stream, TestContext.Current.CancellationToken);
 
         stream.Position = 0;
         using var reader = new StreamReader(stream, Encoding.UTF8);
@@ -73,7 +72,7 @@ public sealed class AuditLogExportServiceTests
         SetupQueryResults([Entry(1), Entry(2)]);
         using var stream = new MemoryStream();
 
-        await sut.ExportAsync(EmptyFilter(), AuditLogExportFormat.Json, stream, TestContext.Current.CancellationToken);
+        await sut.ExportAsync(EmptyFilter, AuditLogExportFormat.Json, stream, TestContext.Current.CancellationToken);
 
         stream.Position = 0;
         using var doc = await JsonDocument.ParseAsync(stream, default, TestContext.Current.CancellationToken);
@@ -87,7 +86,7 @@ public sealed class AuditLogExportServiceTests
         SetupQueryResults([Entry()]);
         using var stream = new MemoryStream();
 
-        await sut.ExportAsync(EmptyFilter(), AuditLogExportFormat.Json, stream, TestContext.Current.CancellationToken);
+        await sut.ExportAsync(EmptyFilter, AuditLogExportFormat.Json, stream, TestContext.Current.CancellationToken);
 
         stream.Position = 0;
         using var doc = await JsonDocument.ParseAsync(stream, default, TestContext.Current.CancellationToken);
@@ -101,7 +100,7 @@ public sealed class AuditLogExportServiceTests
         SetupQueryResults([Entry()]);
         using var stream = new MemoryStream();
 
-        await sut.ExportAsync(EmptyFilter(), AuditLogExportFormat.Xlsx, stream, TestContext.Current.CancellationToken);
+        await sut.ExportAsync(EmptyFilter, AuditLogExportFormat.Xlsx, stream, TestContext.Current.CancellationToken);
 
         stream.Length.Should().BeGreaterThan(0);
     }
@@ -112,7 +111,7 @@ public sealed class AuditLogExportServiceTests
         SetupQueryResults([]);
         using var stream = new MemoryStream();
 
-        await sut.ExportAsync(EmptyFilter(), AuditLogExportFormat.Csv, stream, TestContext.Current.CancellationToken);
+        await sut.ExportAsync(EmptyFilter, AuditLogExportFormat.Csv, stream, TestContext.Current.CancellationToken);
 
         stream.Position = 0;
         using var reader = new StreamReader(stream, Encoding.UTF8);
@@ -128,7 +127,7 @@ public sealed class AuditLogExportServiceTests
             .Returns(Task.FromResult(IAuditLogExportService.HardRowLimit + 1));
         using var stream = new MemoryStream();
 
-        var act = async () => await sut.ExportAsync(EmptyFilter(), AuditLogExportFormat.Csv, stream);
+        var act = async () => await sut.ExportAsync(EmptyFilter, AuditLogExportFormat.Csv, stream);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
         await queryService.DidNotReceive().SearchAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>());
@@ -142,7 +141,7 @@ public sealed class AuditLogExportServiceTests
             .Returns(Task.FromResult(IAuditLogExportService.HardRowLimit));
         using var stream = new MemoryStream();
 
-        var act = async () => await sut.ExportAsync(EmptyFilter(), AuditLogExportFormat.Csv, stream);
+        var act = async () => await sut.ExportAsync(EmptyFilter, AuditLogExportFormat.Csv, stream);
 
         await act.Should().NotThrowAsync();
     }
@@ -160,7 +159,7 @@ public sealed class AuditLogExportServiceTests
     [Fact]
     public async Task ExportAsync_NullDestination_ThrowsArgumentNullException()
     {
-        var act = async () => await sut.ExportAsync(EmptyFilter(), AuditLogExportFormat.Csv, null!);
+        var act = async () => await sut.ExportAsync(EmptyFilter, AuditLogExportFormat.Csv, null!);
 
         await act.Should().ThrowAsync<ArgumentNullException>();
     }

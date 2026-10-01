@@ -1,11 +1,11 @@
 ﻿namespace MyGardenPlanner2026.Tests.Unit.Services.AuditLog;
 
 using FluentAssertions;
-using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Infrastructure.Services.AuditLog;
 using Xunit;
+using static MyGardenPlanner2026.Tests.Unit.Services.AuditLog.AuditLogTestData;
 
 public sealed class AuditLogQueryServiceTests : TestDbContext
 {
@@ -16,35 +16,14 @@ public sealed class AuditLogQueryServiceTests : TestDbContext
         sut = new AuditLogQueryService(CreateDbContextFactory());
     }
 
-    private async Task SeedAsync(params AuditLog[] logs)
-    {
-        await using var context = CreateDbContext();
-        await context.AuditLogs.AddRangeAsync(logs);
-        await context.SaveChangesAsync();
-    }
-
-    private static AuditLog Log(
-        string entityName = "SubscriptionTier",
-        string entityId = "1",
-        string? userId = "user-1",
-        string? userEmail = "user1@example.com",
-        AuditAction action = AuditAction.Update,
-        DateTimeOffset? timestampUtc = null) => new()
-        {
-            EntityName = entityName,
-            EntityId = entityId,
-            UserId = userId,
-            UserEmail = userEmail,
-            Action = action,
-            TimestampUtc = timestampUtc ?? DateTimeOffset.UtcNow
-        };
+    private Task SeedAsync(params AuditLog[] logs) => AuditLogTestData.SeedAsync(CreateDbContext, logs);
 
     [Fact]
     public async Task SearchAsync_NoFilter_ReturnsAllRows()
     {
         await SeedAsync(Log(), Log(), Log());
 
-        var result = await sut.SearchAsync(new AuditLogFilterDto(null, null, null, null, null, null, null), TestContext.Current.CancellationToken);
+        var result = await sut.SearchAsync(EmptyFilter, TestContext.Current.CancellationToken);
 
         result.TotalCount.Should().Be(3);
         result.Items.Should().HaveCount(3);
@@ -57,8 +36,8 @@ public sealed class AuditLogQueryServiceTests : TestDbContext
             Log(entityName: "SubscriptionTier"),
             Log(entityName: "SubscriptionAddOn"));
 
-        var result = await sut.SearchAsync(new AuditLogFilterDto(
-            "SubscriptionTier", null, null, null, null, null, null), TestContext.Current.CancellationToken);
+        var result = await sut.SearchAsync(
+            EmptyFilter with { EntityName = "SubscriptionTier" }, TestContext.Current.CancellationToken);
 
         result.TotalCount.Should().Be(1);
         result.Items.Single().EntityName.Should().Be("SubscriptionTier");
@@ -69,8 +48,8 @@ public sealed class AuditLogQueryServiceTests : TestDbContext
     {
         await SeedAsync(Log(entityId: "abc"), Log(entityId: "def"));
 
-        var result = await sut.SearchAsync(new AuditLogFilterDto(
-            null, "abc", null, null, null, null, null), TestContext.Current.CancellationToken);
+        var result = await sut.SearchAsync(
+            EmptyFilter with { EntityId = "abc" }, TestContext.Current.CancellationToken);
 
         result.TotalCount.Should().Be(1);
         result.Items.Single().EntityId.Should().Be("abc");
@@ -81,8 +60,8 @@ public sealed class AuditLogQueryServiceTests : TestDbContext
     {
         await SeedAsync(Log(userId: "user-1"), Log(userId: "user-2"));
 
-        var result = await sut.SearchAsync(new AuditLogFilterDto(
-            null, null, "user-2", null, null, null, null), TestContext.Current.CancellationToken);
+        var result = await sut.SearchAsync(
+            EmptyFilter with { UserId = "user-2" }, TestContext.Current.CancellationToken);
 
         result.TotalCount.Should().Be(1);
         result.Items.Single().UserId.Should().Be("user-2");
@@ -95,8 +74,8 @@ public sealed class AuditLogQueryServiceTests : TestDbContext
             Log(userEmail: "alice@example.com"),
             Log(userEmail: "bob@example.com"));
 
-        var result = await sut.SearchAsync(new AuditLogFilterDto(
-            null, null, null, "bob@example.com", null, null, null), TestContext.Current.CancellationToken);
+        var result = await sut.SearchAsync(
+            EmptyFilter with { UserEmail = "bob@example.com" }, TestContext.Current.CancellationToken);
 
         result.TotalCount.Should().Be(1);
         result.Items.Single().UserEmail.Should().Be("bob@example.com");
@@ -109,8 +88,8 @@ public sealed class AuditLogQueryServiceTests : TestDbContext
             Log(action: AuditAction.Create),
             Log(action: AuditAction.Delete));
 
-        var result = await sut.SearchAsync(new AuditLogFilterDto(
-            null, null, null, null, AuditAction.Delete, null, null), TestContext.Current.CancellationToken);
+        var result = await sut.SearchAsync(
+            EmptyFilter with { Action = AuditAction.Delete }, TestContext.Current.CancellationToken);
 
         result.TotalCount.Should().Be(1);
         result.Items.Single().Action.Should().Be(AuditAction.Delete);
@@ -125,8 +104,8 @@ public sealed class AuditLogQueryServiceTests : TestDbContext
             Log(timestampUtc: now.AddDays(-1)),
             Log(timestampUtc: now.AddDays(1)));
 
-        var result = await sut.SearchAsync(new AuditLogFilterDto(
-            null, null, null, null, null, now.AddDays(-2), now.AddHours(1)), TestContext.Current.CancellationToken);
+        var result = await sut.SearchAsync(
+            EmptyFilter with { FromUtc = now.AddDays(-2), ToUtc = now.AddHours(1) }, TestContext.Current.CancellationToken);
 
         result.TotalCount.Should().Be(1);
     }
@@ -139,8 +118,9 @@ public sealed class AuditLogQueryServiceTests : TestDbContext
             Log(entityName: "SubscriptionTier", action: AuditAction.Delete, userId: "user-1"),
             Log(entityName: "SubscriptionAddOn", action: AuditAction.Update, userId: "user-1"));
 
-        var result = await sut.SearchAsync(new AuditLogFilterDto(
-            "SubscriptionTier", null, "user-1", null, AuditAction.Update, null, null), TestContext.Current.CancellationToken);
+        var result = await sut.SearchAsync(
+            EmptyFilter with { EntityName = "SubscriptionTier", UserId = "user-1", Action = AuditAction.Update },
+            TestContext.Current.CancellationToken);
 
         result.TotalCount.Should().Be(1);
     }
@@ -153,10 +133,10 @@ public sealed class AuditLogQueryServiceTests : TestDbContext
             await SeedAsync(Log(entityId: i.ToString(), timestampUtc: DateTimeOffset.UtcNow.AddMinutes(i)));
         }
 
-        var page1 = await sut.SearchAsync(new AuditLogFilterDto(
-            null, null, null, null, null, null, null, PageNumber: 1, PageSize: 2), TestContext.Current.CancellationToken);
-        var page2 = await sut.SearchAsync(new AuditLogFilterDto(
-            null, null, null, null, null, null, null, PageNumber: 2, PageSize: 2), TestContext.Current.CancellationToken);
+        var page1 = await sut.SearchAsync(
+            EmptyFilter with { PageNumber = 1, PageSize = 2 }, TestContext.Current.CancellationToken);
+        var page2 = await sut.SearchAsync(
+            EmptyFilter with { PageNumber = 2, PageSize = 2 }, TestContext.Current.CancellationToken);
 
         page1.Items.Should().HaveCount(2);
         page2.Items.Should().HaveCount(2);
@@ -173,8 +153,8 @@ public sealed class AuditLogQueryServiceTests : TestDbContext
             Log(entityId: "old", timestampUtc: now.AddMinutes(-10)),
             Log(entityId: "new", timestampUtc: now));
 
-        var result = await sut.SearchAsync(new AuditLogFilterDto(
-            null, null, null, null, null, null, null, SortDescending: true), TestContext.Current.CancellationToken);
+        var result = await sut.SearchAsync(
+            EmptyFilter with { SortDescending = true }, TestContext.Current.CancellationToken);
 
         result.Items[0].EntityId.Should().Be("new");
     }
@@ -187,8 +167,8 @@ public sealed class AuditLogQueryServiceTests : TestDbContext
             Log(entityId: "old", timestampUtc: now.AddMinutes(-10)),
             Log(entityId: "new", timestampUtc: now));
 
-        var result = await sut.SearchAsync(new AuditLogFilterDto(
-            null, null, null, null, null, null, null, SortDescending: false), TestContext.Current.CancellationToken);
+        var result = await sut.SearchAsync(
+            EmptyFilter with { SortDescending = false }, TestContext.Current.CancellationToken);
 
         result.Items[0].EntityId.Should().Be("old");
     }
@@ -198,8 +178,8 @@ public sealed class AuditLogQueryServiceTests : TestDbContext
     {
         await SeedAsync(Log(entityName: "SubscriptionTier"));
 
-        var result = await sut.SearchAsync(new AuditLogFilterDto(
-            "NonExistentEntity", null, null, null, null, null, null), TestContext.Current.CancellationToken);
+        var result = await sut.SearchAsync(
+            EmptyFilter with { EntityName = "NonExistentEntity" }, TestContext.Current.CancellationToken);
 
         result.TotalCount.Should().Be(0);
         result.Items.Should().BeEmpty();
@@ -210,8 +190,7 @@ public sealed class AuditLogQueryServiceTests : TestDbContext
     [InlineData(-1)]
     public async Task SearchAsync_PageNumberLessThanOne_ThrowsArgumentOutOfRangeException(int pageNumber)
     {
-        var act = async () => await sut.SearchAsync(new AuditLogFilterDto(
-            null, null, null, null, null, null, null, PageNumber: pageNumber));
+        var act = async () => await sut.SearchAsync(EmptyFilter with { PageNumber = pageNumber });
 
         await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
@@ -221,8 +200,7 @@ public sealed class AuditLogQueryServiceTests : TestDbContext
     [InlineData(-1)]
     public async Task SearchAsync_PageSizeLessThanOne_ThrowsArgumentOutOfRangeException(int pageSize)
     {
-        var act = async () => await sut.SearchAsync(new AuditLogFilterDto(
-            null, null, null, null, null, null, null, PageSize: pageSize));
+        var act = async () => await sut.SearchAsync(EmptyFilter with { PageSize = pageSize });
 
         await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
@@ -235,8 +213,9 @@ public sealed class AuditLogQueryServiceTests : TestDbContext
             await SeedAsync(Log(entityName: "SubscriptionTier"));
         }
 
-        var count = await sut.CountAsync(new AuditLogFilterDto(
-            "SubscriptionTier", null, null, null, null, null, null, PageNumber: 3, PageSize: 2), TestContext.Current.CancellationToken);
+        var count = await sut.CountAsync(
+            EmptyFilter with { EntityName = "SubscriptionTier", PageNumber = 3, PageSize = 2 },
+            TestContext.Current.CancellationToken);
 
         count.Should().Be(7);
     }
@@ -246,8 +225,8 @@ public sealed class AuditLogQueryServiceTests : TestDbContext
     {
         await SeedAsync(Log(entityName: "SubscriptionTier"));
 
-        var count = await sut.CountAsync(new AuditLogFilterDto(
-            "NonExistentEntity", null, null, null, null, null, null), TestContext.Current.CancellationToken);
+        var count = await sut.CountAsync(
+            EmptyFilter with { EntityName = "NonExistentEntity" }, TestContext.Current.CancellationToken);
 
         count.Should().Be(0);
     }

@@ -1,38 +1,26 @@
 ﻿namespace MyGardenPlanner2026.Tests.Unit.Services.AuditLog.ExportJobs;
 
 using FluentAssertions;
-using Microsoft.Data.Sqlite;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Infrastructure.Services.AuditLog.ExportJobs;
-using MyGardenPlanner2026.Tests.Unit;
+using NSubstitute;
 using Xunit;
 
-public sealed class AuditLogExportJobPolicyAdminServiceTests : IDisposable
+public sealed class AuditLogExportJobPolicyAdminServiceTests : TestDbContext
 {
-    private readonly SqliteConnection connection;
-    private readonly SqliteAdminDbContextFactory factory;
-    private readonly FakeSecurityPolicyChangeSignal changeSignal = new();
-    private readonly FakeSecurityAlertService alertService = new();
+    private readonly ISecurityPolicyChangeSignal changeSignal = Substitute.For<ISecurityPolicyChangeSignal>();
+    private readonly ISecurityAlertService alertService = Substitute.For<ISecurityAlertService>();
     private readonly AuditLogExportJobPolicyAdminService service;
 
     public AuditLogExportJobPolicyAdminServiceTests()
     {
-        connection = new SqliteConnection("DataSource=:memory:");
-        connection.Open();
-
-        factory = new SqliteAdminDbContextFactory(connection);
-        using var context = factory.CreateDbContext();
-        context.Database.EnsureCreated();
-
-        service = new AuditLogExportJobPolicyAdminService(factory, changeSignal, alertService);
+        service = new AuditLogExportJobPolicyAdminService(CreateAdminDbContextFactory(), changeSignal, alertService);
     }
-
-    public void Dispose() => connection.Dispose();
 
     private async Task SeedAsync(int retentionHours = 24, int maxActive = 3)
     {
-        await using var context = await factory.CreateDbContextAsync();
+        await using var context = CreateDbContext();
         await context.AuditLogExportJobPolicySettings.AddAsync(new AuditLogExportJobPolicySettings
         {
             RetentionHours = retentionHours,
@@ -79,7 +67,7 @@ public sealed class AuditLogExportJobPolicyAdminServiceTests : IDisposable
 
         await service.UpdateAsync(new AuditLogExportJobPolicyDto(72, 10), "admin-1", TestContext.Current.CancellationToken);
 
-        changeSignal.TriggeredTypes.Should().ContainSingle(t => t == typeof(AuditLogExportJobOptions));
+        changeSignal.Received(1).TriggerChange<AuditLogExportJobOptions>();
     }
 
     [Fact]
@@ -89,7 +77,8 @@ public sealed class AuditLogExportJobPolicyAdminServiceTests : IDisposable
 
         await service.UpdateAsync(new AuditLogExportJobPolicyDto(72, 10), "admin-1", TestContext.Current.CancellationToken);
 
-        alertService.PolicyChangedCalls.Should().ContainSingle(c => c.UserId == "admin-1" && c.PolicyName == "AuditLogExportJobPolicy");
+        await alertService.Received(1).AlertPolicyChangedAsync(
+            "admin-1", "AuditLogExportJobPolicy", Arg.Any<CancellationToken>());
     }
 
     [Theory]
@@ -122,29 +111,5 @@ public sealed class AuditLogExportJobPolicyAdminServiceTests : IDisposable
         var act = () => service.UpdateAsync(new AuditLogExportJobPolicyDto(24, 3), " ");
 
         await act.Should().ThrowAsync<ArgumentException>();
-    }
-
-    private sealed class FakeSecurityPolicyChangeSignal : ISecurityPolicyChangeSignal
-    {
-        public List<Type> TriggeredTypes { get; } = [];
-
-        public void TriggerChange<TOptions>() where TOptions : class => TriggeredTypes.Add(typeof(TOptions));
-    }
-
-    private sealed class FakeSecurityAlertService : ISecurityAlertService
-    {
-        public List<(string UserId, string PolicyName)> PolicyChangedCalls { get; } = [];
-
-        public Task AlertFailedReAuthAsync(string userId, string ip, CancellationToken cancellationToken = default) =>
-            Task.CompletedTask;
-
-        public Task AlertJitRequestedAsync(string requesterId, string role, CancellationToken cancellationToken = default) =>
-            Task.CompletedTask;
-
-        public Task AlertPolicyChangedAsync(string userId, string policyName, CancellationToken cancellationToken = default)
-        {
-            PolicyChangedCalls.Add((userId, policyName));
-            return Task.CompletedTask;
-        }
     }
 }

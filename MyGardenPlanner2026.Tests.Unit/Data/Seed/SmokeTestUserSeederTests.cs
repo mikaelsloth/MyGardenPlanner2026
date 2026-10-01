@@ -16,8 +16,7 @@ public class SmokeTestUserSeederTests
 
     private static UserManager<ApplicationUser> CreateUserManager(Dictionary<string, string> authenticatorKeys)
     {
-        var userManager = Substitute.For<UserManager<ApplicationUser>>(
-            Substitute.For<IUserStore<ApplicationUser>>(), null!, null!, null!, null!, null!, null!, null!, null!);
+        var userManager = IdentityTestDoubles.CreateUserManager();
 
         userManager.FindByEmailAsync(Arg.Any<string>()).Returns(Task.FromResult<ApplicationUser?>(null));
         userManager.CreateAsync(Arg.Any<ApplicationUser>(), Arg.Any<string>()).Returns(IdentityResult.Success);

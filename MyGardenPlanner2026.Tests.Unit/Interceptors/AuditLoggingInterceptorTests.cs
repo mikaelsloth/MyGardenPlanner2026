@@ -7,17 +7,12 @@ using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Layer1;
 using MyGardenPlanner2026.Infrastructure.Interceptors;
-using NSubstitute;
 using Xunit;
 
 public class AuditLoggingInterceptorTests : TestDbContext
 {
-    private static ICurrentUserAccessor FakeUser()
-    {
-        var accessor = Substitute.For<ICurrentUserAccessor>();
-        accessor.GetCurrent().Returns(new CurrentUserInfo("user-42", "mikael@example.dk", "10.0.0.5"));
-        return accessor;
-    }
+    private static ICurrentUserAccessor FakeUser() =>
+        FakeCurrentUser.Create("user-42", "mikael@example.dk", "10.0.0.5");
 
     [Fact]
     public async Task AddingProtectedEntity_WritesCreateAuditLog()

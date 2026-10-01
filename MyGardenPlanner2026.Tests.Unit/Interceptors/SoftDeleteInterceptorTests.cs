@@ -5,17 +5,12 @@ using Microsoft.EntityFrameworkCore;
 using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Infrastructure.Interceptors;
-using NSubstitute;
 using Xunit;
 
 public class SoftDeleteInterceptorTests : TestDbContext
 {
-    private static ICurrentUserAccessor FakeUser()
-    {
-        var accessor = Substitute.For<ICurrentUserAccessor>();
-        accessor.GetCurrent().Returns(new CurrentUserInfo("user-1", "admin@mygardenplanner.dk", "127.0.0.1"));
-        return accessor;
-    }
+    private static ICurrentUserAccessor FakeUser() =>
+        FakeCurrentUser.Create("user-1", "admin@mygardenplanner.dk", "127.0.0.1");
 
     [Fact]
     public async Task Remove_SoftDeletableEntity_SetsIsDeletedInsteadOfPhysicalDelete()

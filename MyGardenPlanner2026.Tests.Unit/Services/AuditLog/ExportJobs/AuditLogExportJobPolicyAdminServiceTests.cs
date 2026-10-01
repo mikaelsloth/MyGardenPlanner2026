@@ -11,7 +11,7 @@ using Xunit;
 public sealed class AuditLogExportJobPolicyAdminServiceTests : IDisposable
 {
     private readonly SqliteConnection connection;
-    private readonly ExportTestAdminDbFactory factory;
+    private readonly SqliteAdminDbContextFactory factory;
     private readonly FakeSecurityPolicyChangeSignal changeSignal = new();
     private readonly FakeSecurityAlertService alertService = new();
     private readonly AuditLogExportJobPolicyAdminService service;
@@ -21,7 +21,7 @@ public sealed class AuditLogExportJobPolicyAdminServiceTests : IDisposable
         connection = new SqliteConnection("DataSource=:memory:");
         connection.Open();
 
-        factory = new ExportTestAdminDbFactory(connection);
+        factory = new SqliteAdminDbContextFactory(connection);
         using var context = factory.CreateDbContext();
         context.Database.EnsureCreated();
 

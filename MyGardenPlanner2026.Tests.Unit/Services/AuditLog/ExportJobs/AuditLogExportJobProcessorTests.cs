@@ -20,14 +20,14 @@ public sealed class AuditLogExportJobProcessorTests : IDisposable
     private static readonly JsonSerializerOptions JsonOptions = new() { Converters = { new JsonStringEnumConverter() } };
 
     private readonly SqliteConnection connection;
-    private readonly ExportTestAdminDbFactory factory;
+    private readonly SqliteAdminDbContextFactory factory;
 
     public AuditLogExportJobProcessorTests()
     {
         connection = new SqliteConnection("DataSource=:memory:");
         connection.Open();
 
-        factory = new ExportTestAdminDbFactory(connection);
+        factory = new SqliteAdminDbContextFactory(connection);
         using var context = factory.CreateDbContext();
         context.Database.EnsureCreated();
     }

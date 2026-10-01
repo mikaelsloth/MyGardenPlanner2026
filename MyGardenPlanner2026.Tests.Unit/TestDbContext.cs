@@ -11,83 +11,53 @@ using System;
 public abstract class TestDbContext : IDisposable
 {
     private readonly SqliteConnection _connection;
-    private readonly DbContextOptions<PlannerDbContext> _contextOptions;
 
     protected TestDbContext()
     {
         _connection = new SqliteConnection("Filename=:memory:");
         _connection.Open();
 
-        _contextOptions = new DbContextOptionsBuilder<PlannerDbContext>()
-          .EnableSensitiveDataLogging()
-          .LogTo(Console.WriteLine, LogLevel.Information)
-          .UseSqlite(_connection)
-            .Options;
-
-        using var context = new PlannerDbContext(_contextOptions);
+        using var context = new PlannerDbContext(BuildOptions());
         context.Database.EnsureCreated();
     }
 
-    protected IDbContextFactory<PlannerDbContext> CreateDbContextFactory()
+    /// <summary>
+    /// Fælles options for alle kontekster i en test: samme åbne in-memory-forbindelse,
+    /// sensitive data logging og konsol-logging. Interceptors tilføjes kun, hvis angivet.
+    /// </summary>
+    private DbContextOptions<PlannerDbContext> BuildOptions(params IInterceptor[] interceptors)
     {
-        var options = new DbContextOptionsBuilder<PlannerDbContext>()
+        var builder = new DbContextOptionsBuilder<PlannerDbContext>()
             .UseSqlite(_connection)
             .EnableSensitiveDataLogging()
-            .LogTo(Console.WriteLine, LogLevel.Information)
-            .Options;
-        return new PooledDbContextFactory<PlannerDbContext>(options);
+            .LogTo(Console.WriteLine, LogLevel.Information);
+
+        if (interceptors.Length > 0)
+        {
+            builder.AddInterceptors(interceptors);
+        }
+
+        return builder.Options;
     }
 
-    protected IAdminDbContextFactory CreateAdminDbContextFactory()
-    {
-        var options = new DbContextOptionsBuilder<PlannerDbContext>()
-            .UseSqlite(_connection)
-            .EnableSensitiveDataLogging()
-            .LogTo(Console.WriteLine, LogLevel.Information)
-            .Options;
+    protected IDbContextFactory<PlannerDbContext> CreateDbContextFactory() =>
+        new PooledDbContextFactory<PlannerDbContext>(BuildOptions());
 
-        var pooled = new PooledDbContextFactory<PlannerDbContext>(options);
-        return new AdminDbContextFactory(pooled);
-    }
+    protected IAdminDbContextFactory CreateAdminDbContextFactory() =>
+        CreateAdminDbContextFactoryWithInterceptors();
 
-    protected IAdminDbContextFactory CreateAdminDbContextFactoryWithInterceptors(params IInterceptor[] interceptors)
-    {
-        var options = new DbContextOptionsBuilder<PlannerDbContext>()
-            .UseSqlite(_connection)
-            .AddInterceptors(interceptors)
-            .EnableSensitiveDataLogging()
-            .LogTo(Console.WriteLine, LogLevel.Information)
-            .Options;
+    protected IAdminDbContextFactory CreateAdminDbContextFactoryWithInterceptors(params IInterceptor[] interceptors) =>
+        new AdminDbContextFactory(new PooledDbContextFactory<PlannerDbContext>(BuildOptions(interceptors)));
 
-        var pooled = new PooledDbContextFactory<PlannerDbContext>(options);
-        return new AdminDbContextFactory(pooled);
-    }
-
-    protected PlannerDbContext CreateDbContext()
-    {
-        var options = new DbContextOptionsBuilder<PlannerDbContext>()
-            .UseSqlite(_connection)
-            .EnableSensitiveDataLogging()
-            .LogTo(Console.WriteLine, LogLevel.Information)
-            .Options;
-        return new(options);
-    }
+    protected PlannerDbContext CreateDbContext() => new(BuildOptions());
 
     /// <summary>Bruges til at teste SaveChangesInterceptors (fx SoftDeleteInterceptor) mod SQLite.</summary>
-    protected PlannerDbContext CreateDbContextWithInterceptors(params IInterceptor[] interceptors)
-    {
-        var options = new DbContextOptionsBuilder<PlannerDbContext>()
-            .UseSqlite(_connection)
-            .AddInterceptors(interceptors)
-            .EnableSensitiveDataLogging()
-            .LogTo(Console.WriteLine, LogLevel.Information)
-            .Options;
-        return new(options);
-    }
+    protected PlannerDbContext CreateDbContextWithInterceptors(params IInterceptor[] interceptors) =>
+        new(BuildOptions(interceptors));
 
     public void Dispose()
     {
-        _connection.Dispose();
+        Dispose(true);
         GC.SuppressFinalize(this);
     }
 
@@ -95,7 +65,7 @@ public abstract class TestDbContext : IDisposable
     {
         if (disposing)
         {
-            _connection?.Dispose();
+            _connection.Dispose();
         }
     }
 }

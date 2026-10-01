@@ -18,7 +18,7 @@ public sealed class AuditLogExportBackgroundServiceTests
 
         return new AuditLogExportBackgroundService(
             provider.GetRequiredService<IServiceScopeFactory>(),
-            new ExportTestOptionsMonitor<AuditLogExportJobOptions>(new AuditLogExportJobOptions()),
+            new TestOptionsMonitor<AuditLogExportJobOptions>(new AuditLogExportJobOptions()),
             NullLogger<AuditLogExportBackgroundService>.Instance);
     }
 

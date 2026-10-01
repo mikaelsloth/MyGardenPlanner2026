@@ -40,7 +40,7 @@ public sealed class AuditLogExportJobProcessorTests : IDisposable
             factory,
             query ?? new FakeQueryService(5),
             export,
-            new ExportTestOptionsMonitor<AuditLogExportJobOptions>(options ?? new AuditLogExportJobOptions()),
+            new TestOptionsMonitor<AuditLogExportJobOptions>(options ?? new AuditLogExportJobOptions()),
             new TestTimeProvider(Now),
             NullLogger<AuditLogExportJobProcessor>.Instance);
 

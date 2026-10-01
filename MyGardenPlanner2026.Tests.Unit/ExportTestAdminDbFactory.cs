@@ -3,18 +3,7 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Infrastructure.Data;
-
-internal sealed class ExportTestOptionsMonitor<T>(T value) : IOptionsMonitor<T>
-    where T : class
-{
-    public T CurrentValue => value;
-
-    public T Get(string? name) => value;
-
-    public IDisposable? OnChange(Action<T, string?> listener) => null;
-}
 
 internal sealed class ExportTestAdminDbFactory(SqliteConnection connection) : IAdminDbContextFactory
 {

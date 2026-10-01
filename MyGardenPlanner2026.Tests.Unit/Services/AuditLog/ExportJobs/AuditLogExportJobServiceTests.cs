@@ -38,7 +38,7 @@ public sealed class AuditLogExportJobServiceTests : IDisposable
         service = new AuditLogExportJobService(
             factory,
             new TestTimeProvider(Now),
-            new ExportTestOptionsMonitor<AuditLogExportJobOptions>(new AuditLogExportJobOptions()),
+            new TestOptionsMonitor<AuditLogExportJobOptions>(new AuditLogExportJobOptions()),
             NullLogger<AuditLogExportJobService>.Instance);
     }
 
@@ -240,7 +240,7 @@ public sealed class AuditLogExportJobServiceTests : IDisposable
         var limitedService = new AuditLogExportJobService(
             factory,
             new TestTimeProvider(Now),
-            new ExportTestOptionsMonitor<AuditLogExportJobOptions>(new AuditLogExportJobOptions { MaxActiveJobsPerUser = 1 }),
+            new TestOptionsMonitor<AuditLogExportJobOptions>(new AuditLogExportJobOptions { MaxActiveJobsPerUser = 1 }),
             NullLogger<AuditLogExportJobService>.Instance);
 
         await limitedService.EnqueueAsync("user-1", Filter(), AuditLogExportFormat.Csv, TestContext.Current.CancellationToken);

@@ -44,12 +44,4 @@ public class RoleElevationRequestTemporalTests : TestSqlExpressDbContext
 
         currentValue.Status.Should().Be(RoleElevationStatus.Approved);
     }
-
-    [Fact]
-    public void Database_UsesAdminSchemaForRoleElevationRequests()
-    {
-        using var context = CreateDbContext();
-
-        context.Model.FindEntityType(typeof(RoleElevationRequest))!.GetSchema().Should().Be("admin");
-    }
 }

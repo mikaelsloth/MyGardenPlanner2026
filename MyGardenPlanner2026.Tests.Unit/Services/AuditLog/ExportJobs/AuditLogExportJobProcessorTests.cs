@@ -41,7 +41,7 @@ public sealed class AuditLogExportJobProcessorTests : IDisposable
             query ?? new FakeQueryService(5),
             export,
             new ExportTestOptionsMonitor<AuditLogExportJobOptions>(options ?? new AuditLogExportJobOptions()),
-            new ExportTestTimeProvider(Now),
+            new TestTimeProvider(Now),
             NullLogger<AuditLogExportJobProcessor>.Instance);
 
     private static string FilterJson() =>

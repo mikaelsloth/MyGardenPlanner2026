@@ -1,7 +1,6 @@
 ﻿namespace MyGardenPlanner2026.Tests.Unit.Services.AuditLog.ExportJobs;
 
 using FluentAssertions;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using MyGardenPlanner2026.Core.Contracts.Admin;
@@ -13,41 +12,31 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Xunit;
 
-public sealed class AuditLogExportJobServiceTests : IDisposable
+public sealed class AuditLogExportJobServiceTests : TestDbContext
 {
     private const int DefaultMaxActive = 3;
     private static readonly DateTimeOffset Now = new(2026, 9, 28, 12, 0, 0, TimeSpan.Zero);
     private static readonly JsonSerializerOptions Options = new() { Converters = { new JsonStringEnumConverter() } };
-    private readonly SqliteConnection connection;
-    private readonly SqliteAdminDbContextFactory factory;
     private readonly AuditLogExportJobService service;
 
     public AuditLogExportJobServiceTests()
     {
-        connection = new SqliteConnection("DataSource=:memory:");
-        connection.Open();
-
-        factory = new SqliteAdminDbContextFactory(connection);
-        using (var context = factory.CreateDbContext())
-        {
-            context.Database.EnsureCreated();
-        }
-
-        service = new AuditLogExportJobService(
-            factory,
-            new TestTimeProvider(Now),
-            new TestOptionsMonitor<AuditLogExportJobOptions>(new AuditLogExportJobOptions()),
-            NullLogger<AuditLogExportJobService>.Instance);
+        service = CreateService();
     }
 
-    public void Dispose() => connection.Dispose();
+    private AuditLogExportJobService CreateService(AuditLogExportJobOptions? options = null) =>
+        new(
+            CreateAdminDbContextFactory(),
+            new TestTimeProvider(Now),
+            new TestOptionsMonitor<AuditLogExportJobOptions>(options ?? new AuditLogExportJobOptions()),
+            NullLogger<AuditLogExportJobService>.Instance);
 
     private static AuditLogFilterDto Filter(string? entityName = null) =>
         new(entityName, null, null, null, null, null, null);
 
     private async Task SeedAsync(params AuditLogExportJob[] jobs)
     {
-        await using var context = await factory.CreateDbContextAsync();
+        await using var context = CreateDbContext();
         await context.AuditLogExportJobs.AddRangeAsync(jobs);
         await context.SaveChangesAsync();
     }
@@ -78,7 +67,7 @@ public sealed class AuditLogExportJobServiceTests : IDisposable
         dto.RequestedByUserId.Should().Be("user-1");
         dto.CreatedAtUtc.Should().Be(Now);
 
-        await using var context = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        await using var context = CreateDbContext();
         var row = await context.AuditLogExportJobs.SingleAsync(TestContext.Current.CancellationToken);
         row.Id.Should().Be(dto.Id);
         row.FileContent.Should().BeNull();
@@ -221,11 +210,7 @@ public sealed class AuditLogExportJobServiceTests : IDisposable
     [Fact]
     public async Task EnqueueAsync_ConfiguredLimitOfOne_BlocksSecondActiveJob()
     {
-        var limitedService = new AuditLogExportJobService(
-            factory,
-            new TestTimeProvider(Now),
-            new TestOptionsMonitor<AuditLogExportJobOptions>(new AuditLogExportJobOptions { MaxActiveJobsPerUser = 1 }),
-            NullLogger<AuditLogExportJobService>.Instance);
+        var limitedService = CreateService(new AuditLogExportJobOptions { MaxActiveJobsPerUser = 1 });
 
         await limitedService.EnqueueAsync("user-1", Filter(), AuditLogExportFormat.Csv, TestContext.Current.CancellationToken);
         var act = () => limitedService.EnqueueAsync("user-1", Filter(), AuditLogExportFormat.Csv);
@@ -249,7 +234,7 @@ public sealed class AuditLogExportJobServiceTests : IDisposable
         file.ContentType.Should().Be("text/csv");
         file.Content.Should().Equal(1, 2, 3);
 
-        await using var context = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        await using var context = CreateDbContext();
         var row = await context.AuditLogExportJobs.SingleAsync(j => j.Id == job.Id, cancellationToken: TestContext.Current.CancellationToken);
         row.NotificationSeenAtUtc.Should().Be(Now);
     }
@@ -266,7 +251,7 @@ public sealed class AuditLogExportJobServiceTests : IDisposable
 
         await service.GetDownloadableFileAsync(job.Id, "user-1", TestContext.Current.CancellationToken);
 
-        await using var context = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        await using var context = CreateDbContext();
         (await context.AuditLogExportJobs.SingleAsync(j => j.Id == job.Id, cancellationToken: TestContext.Current.CancellationToken)).NotificationSeenAtUtc.Should().Be(seenAt);
     }
 
@@ -350,7 +335,7 @@ public sealed class AuditLogExportJobServiceTests : IDisposable
         var result = await service.MarkNotificationSeenAsync(job.Id, "user-1", TestContext.Current.CancellationToken);
 
         result.Should().BeTrue();
-        await using var context = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        await using var context = CreateDbContext();
         (await context.AuditLogExportJobs.SingleAsync(j => j.Id == job.Id, cancellationToken: TestContext.Current.CancellationToken)).NotificationSeenAtUtc.Should().Be(Now);
     }
 
@@ -364,7 +349,7 @@ public sealed class AuditLogExportJobServiceTests : IDisposable
         var result = await service.MarkNotificationSeenAsync(job.Id, "user-1", TestContext.Current.CancellationToken);
 
         result.Should().BeTrue();
-        await using var context = await factory.CreateDbContextAsync(TestContext.Current.CancellationToken);
+        await using var context = CreateDbContext();
         (await context.AuditLogExportJobs.SingleAsync(j => j.Id == job.Id, cancellationToken: TestContext.Current.CancellationToken)).NotificationSeenAtUtc.Should().Be(seenAt);
     }
 

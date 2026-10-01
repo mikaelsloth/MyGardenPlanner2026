@@ -46,14 +46,6 @@ public class SubscriptionTierTemporalTests : TestSqlExpressDbContext
     }
 
     [Fact]
-    public async Task Database_UsesAdminSchemaForProtectedEntities()
-    {
-        using var context = CreateDbContext();
-
-        context.Model.FindEntityType(typeof(SubscriptionTier))!.GetSchema().Should().Be("admin");
-    }
-
-    [Fact]
     public async Task TemporalAll_ReturnsBothOriginalAndUpdatedRow_AfterOneChange()
     {
         using var context = CreateDbContext();

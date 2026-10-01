@@ -20,14 +20,14 @@ public sealed class AuditLogExportJobProcessorTests : IDisposable
     private static readonly JsonSerializerOptions JsonOptions = new() { Converters = { new JsonStringEnumConverter() } };
 
     private readonly SqliteConnection connection;
-    private readonly ExportTestAdminDbFactory factory;
+    private readonly SqliteAdminDbContextFactory factory;
 
     public AuditLogExportJobProcessorTests()
     {
         connection = new SqliteConnection("DataSource=:memory:");
         connection.Open();
 
-        factory = new ExportTestAdminDbFactory(connection);
+        factory = new SqliteAdminDbContextFactory(connection);
         using var context = factory.CreateDbContext();
         context.Database.EnsureCreated();
     }
@@ -40,7 +40,7 @@ public sealed class AuditLogExportJobProcessorTests : IDisposable
             factory,
             query ?? new FakeQueryService(5),
             export,
-            new ExportTestOptionsMonitor<AuditLogExportJobOptions>(options ?? new AuditLogExportJobOptions()),
+            new TestOptionsMonitor<AuditLogExportJobOptions>(options ?? new AuditLogExportJobOptions()),
             new TestTimeProvider(Now),
             NullLogger<AuditLogExportJobProcessor>.Instance);
 

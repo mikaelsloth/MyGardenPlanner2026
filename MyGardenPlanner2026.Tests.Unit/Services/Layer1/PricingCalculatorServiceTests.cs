@@ -4,29 +4,18 @@ using FluentAssertions;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Layer1;
-using MyGardenPlanner2026.Infrastructure.Data.Seed;
 using MyGardenPlanner2026.Infrastructure.Services.Layer1;
 using Xunit;
 
-public class PricingCalculatorServiceTests : TestDbContext
+public class PricingCalculatorServiceTests : CatalogTestDbContext
 {
-    private async Task SeedAllAsync()
-    {
-        var tierSeeder = new SubscriptionTierSeeder(CreateAdminDbContextFactory(), new DefaultSubscriptionTierCatalog());
-        await tierSeeder.SeedAsync(TestContext.Current.CancellationToken);
-
-        var volumeSeeder = new GardenVolumeDiscountSeeder(CreateAdminDbContextFactory(), new DefaultGardenVolumeDiscountCatalog());
-        await volumeSeeder.SeedAsync(TestContext.Current.CancellationToken);
-
-        var addOnSeeder = new SubscriptionAddOnSeeder(CreateAdminDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
-        await addOnSeeder.SeedAsync(TestContext.Current.CancellationToken);
-    }
+    private PricingCalculatorService CreateService() => new(CreateDbContextFactory());
 
     [Fact]
     public async Task CalculateAsync_OneGardenAdministratorLag1_ReturnsExactPrismatrixPrice()
     {
-        await SeedAllAsync();
-        var service = new PricingCalculatorService(CreateDbContextFactory());
+        await SeedAllCatalogsAsync();
+        var service = CreateService();
 
         var request = new PricingCalculationRequestDto(
             GardenAccessLevel.HaveArkitekt,
@@ -48,8 +37,8 @@ public class PricingCalculatorServiceTests : TestDbContext
     [Fact]
     public async Task CalculateAsync_SixActiveGardensEditor_Uses80PercentTier()
     {
-        await SeedAllAsync();
-        var service = new PricingCalculatorService(CreateDbContextFactory());
+        await SeedAllCatalogsAsync();
+        var service = CreateService();
 
         var request = new PricingCalculationRequestDto(
             GardenAccessLevel.BedDesigner,
@@ -69,8 +58,8 @@ public class PricingCalculatorServiceTests : TestDbContext
     [Fact]
     public async Task CalculateAsync_ArchivedGardens_WeightedDifferentlyForAdministratorVsOtherCategories()
     {
-        await SeedAllAsync();
-        var service = new PricingCalculatorService(CreateDbContextFactory());
+        await SeedAllCatalogsAsync();
+        var service = CreateService();
 
         var adminRequest = new PricingCalculationRequestDto(
             GardenAccessLevel.Planlaegger,
@@ -95,12 +84,12 @@ public class PricingCalculatorServiceTests : TestDbContext
     [Fact]
     public async Task CalculateAsync_WithAddOns_IncludesAddOnsInTotal()
     {
-        await SeedAllAsync();
+        await SeedAllCatalogsAsync();
 
         using var seededContext = CreateDbContext();
         var bedforslagAddOn = seededContext.SubscriptionAddOns.Single(a => a.Type == AddOnType.BedforslagNiveau2);
 
-        var service = new PricingCalculatorService(CreateDbContextFactory());
+        var service = CreateService();
 
         var request = new PricingCalculationRequestDto(
             GardenAccessLevel.HaveArkitekt,
@@ -119,12 +108,12 @@ public class PricingCalculatorServiceTests : TestDbContext
     [Fact]
     public async Task CalculateAsync_PerpetualBillingCycle_UsesPerpetualBasePriceAndAddOnPrices()
     {
-        await SeedAllAsync();
+        await SeedAllCatalogsAsync();
 
         using var seededContext = CreateDbContext();
         var bedforslagAddOn = seededContext.SubscriptionAddOns.Single(a => a.Type == AddOnType.BedforslagNiveau2);
 
-        var service = new PricingCalculatorService(CreateDbContextFactory());
+        var service = CreateService();
 
         var request = new PricingCalculationRequestDto(
             GardenAccessLevel.HaveArkitekt,
@@ -145,8 +134,8 @@ public class PricingCalculatorServiceTests : TestDbContext
     [Fact]
     public async Task CalculateAsync_PerpetualBillingCycle_AppliesSameVolumeDiscountTrapAsAnnual()
     {
-        await SeedAllAsync();
-        var service = new PricingCalculatorService(CreateDbContextFactory());
+        await SeedAllCatalogsAsync();
+        var service = CreateService();
 
         var request = new PricingCalculationRequestDto(
             GardenAccessLevel.BedDesigner,

@@ -3,23 +3,18 @@
 using FluentAssertions;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Layer1;
-using MyGardenPlanner2026.Infrastructure.Data.Seed;
 using MyGardenPlanner2026.Infrastructure.Services.Layer1;
 using Xunit;
 
-public class SubscriptionPricingServiceTests : TestDbContext
+public class SubscriptionPricingServiceTests : CatalogTestDbContext
 {
-    private async Task SeedAsync()
-    {
-        var seeder = new SubscriptionTierSeeder(CreateAdminDbContextFactory(), new DefaultSubscriptionTierCatalog());
-        await seeder.SeedAsync(TestContext.Current.CancellationToken);
-    }
+    private SubscriptionPricingService CreateService() => new(CreateDbContextFactory());
 
     [Fact]
     public async Task GetFeaturedTiersAsync_ReturnsOneTierPerLevel_OrderedByLevel()
     {
-        await SeedAsync();
-        var service = new SubscriptionPricingService(CreateDbContextFactory());
+        await SeedSubscriptionTiersAsync();
+        var service = CreateService();
 
         var result = await service.GetFeaturedTiersAsync(BillingCycle.Annual, TestContext.Current.CancellationToken);
 
@@ -31,8 +26,8 @@ public class SubscriptionPricingServiceTests : TestDbContext
     [Fact]
     public async Task GetFeaturedTiersAsync_ReturnsEditorCategory_ForEachLevel()
     {
-        await SeedAsync();
-        var service = new SubscriptionPricingService(CreateDbContextFactory());
+        await SeedSubscriptionTiersAsync();
+        var service = CreateService();
 
         var result = await service.GetFeaturedTiersAsync(BillingCycle.Annual, TestContext.Current.CancellationToken);
 
@@ -42,8 +37,8 @@ public class SubscriptionPricingServiceTests : TestDbContext
     [Fact]
     public async Task GetFeaturedTiersAsync_UsesRequestedBillingCyclePrice()
     {
-        await SeedAsync();
-        var service = new SubscriptionPricingService(CreateDbContextFactory());
+        await SeedSubscriptionTiersAsync();
+        var service = CreateService();
 
         var result = await service.GetFeaturedTiersAsync(BillingCycle.Monthly, TestContext.Current.CancellationToken);
 
@@ -55,8 +50,8 @@ public class SubscriptionPricingServiceTests : TestDbContext
     [Fact]
     public async Task GetAllTiersAsync_Returns12Tiers()
     {
-        await SeedAsync();
-        var service = new SubscriptionPricingService(CreateDbContextFactory());
+        await SeedSubscriptionTiersAsync();
+        var service = CreateService();
 
         var result = await service.GetAllTiersAsync(BillingCycle.Annual, TestContext.Current.CancellationToken);
 

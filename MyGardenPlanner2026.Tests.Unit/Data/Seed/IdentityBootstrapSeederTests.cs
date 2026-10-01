@@ -13,13 +13,11 @@ using Xunit;
 public class IdentityBootstrapSeederTests
 {
     private static UserManager<ApplicationUser> CreateUserManager() =>
-        Substitute.For<UserManager<ApplicationUser>>(
-            Substitute.For<IUserStore<ApplicationUser>>(), null, null, null, null, null, null, null, null);
+        IdentityTestDoubles.CreateUserManager();
 
     private static RoleManager<IdentityRole> CreateRoleManager()
     {
-        var roleManager = Substitute.For<RoleManager<IdentityRole>>(
-            Substitute.For<IRoleStore<IdentityRole>>(), null, null, null, null);
+        var roleManager = IdentityTestDoubles.CreateRoleManager();
 
         // Standardadfærd for alle roller, medmindre en test eksplicit overstyrer for en
         // specifik rolle: rollen "findes allerede" (ingen CreateAsync-kald), og hvis en

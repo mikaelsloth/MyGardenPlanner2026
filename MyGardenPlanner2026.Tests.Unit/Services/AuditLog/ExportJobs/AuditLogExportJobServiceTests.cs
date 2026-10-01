@@ -32,7 +32,7 @@ public sealed class AuditLogExportJobServiceTests : TestDbContext
             NullLogger<AuditLogExportJobService>.Instance);
 
     private static AuditLogFilterDto Filter(string? entityName = null) =>
-        new(entityName, null, null, null, null, null, null);
+        AuditLogTestData.EmptyFilter with { EntityName = entityName };
 
     private async Task SeedAsync(params AuditLogExportJob[] jobs)
     {

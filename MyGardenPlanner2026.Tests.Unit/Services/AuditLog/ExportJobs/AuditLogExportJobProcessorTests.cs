@@ -29,7 +29,7 @@ public sealed class AuditLogExportJobProcessorTests : TestDbContext
             NullLogger<AuditLogExportJobProcessor>.Instance);
 
     private static string FilterJson() =>
-        JsonSerializer.Serialize(new AuditLogFilterDto(null, null, null, null, null, null, null), JsonOptions);
+        JsonSerializer.Serialize(AuditLogTestData.EmptyFilter, JsonOptions);
 
     private static AuditLogExportJob PendingJob(
         AuditLogExportFormat format = AuditLogExportFormat.Csv,

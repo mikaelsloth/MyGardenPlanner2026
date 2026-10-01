@@ -3,12 +3,10 @@
 using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
-using MyGardenPlanner2026.Infrastructure.Data;
 using MyGardenPlanner2026.Infrastructure.Services;
 using MyGardenPlanner2026.Infrastructure.Services.AuditLog.ExportJobs;
 using System.Text.Json;
@@ -21,7 +19,7 @@ public sealed class AuditLogExportJobServiceTests : IDisposable
     private static readonly DateTimeOffset Now = new(2026, 9, 28, 12, 0, 0, TimeSpan.Zero);
     private static readonly JsonSerializerOptions Options = new() { Converters = { new JsonStringEnumConverter() } };
     private readonly SqliteConnection connection;
-    private readonly SqliteAdminFactory factory;
+    private readonly SqliteAdminDbContextFactory factory;
     private readonly AuditLogExportJobService service;
 
     public AuditLogExportJobServiceTests()
@@ -29,7 +27,7 @@ public sealed class AuditLogExportJobServiceTests : IDisposable
         connection = new SqliteConnection("DataSource=:memory:");
         connection.Open();
 
-        factory = new SqliteAdminFactory(connection);
+        factory = new SqliteAdminDbContextFactory(connection);
         using (var context = factory.CreateDbContext())
         {
             context.Database.EnsureCreated();
@@ -218,20 +216,6 @@ public sealed class AuditLogExportJobServiceTests : IDisposable
         var act = () => service.CountUnseenCompletedAsync(" ");
 
         await act.Should().ThrowAsync<ArgumentException>();
-    }
-
-    private sealed class SqliteAdminFactory(SqliteConnection connection) : IAdminDbContextFactory
-    {
-        private readonly DbContextOptions<PlannerDbContext> options =
-            new DbContextOptionsBuilder<PlannerDbContext>()
-                .UseSqlite(connection)
-                .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
-                .Options;
-
-        public PlannerDbContext CreateDbContext() => new(options);
-
-        public Task<PlannerDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) =>
-            Task.FromResult(CreateDbContext());
     }
 
     [Fact]

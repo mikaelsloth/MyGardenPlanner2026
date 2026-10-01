@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using MyGardenPlanner2026.Infrastructure.Data;
 
-internal sealed class ExportTestAdminDbFactory(SqliteConnection connection) : IAdminDbContextFactory
+internal sealed class SqliteAdminDbContextFactory(SqliteConnection connection) : IAdminDbContextFactory, IAsyncDisposable
 {
     private readonly DbContextOptions<PlannerDbContext> options =
         new DbContextOptionsBuilder<PlannerDbContext>()
@@ -17,4 +17,6 @@ internal sealed class ExportTestAdminDbFactory(SqliteConnection connection) : IA
 
     public Task<PlannerDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(CreateDbContext());
+
+    public ValueTask DisposeAsync() => connection.DisposeAsync();
 }

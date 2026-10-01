@@ -1,23 +1,18 @@
 ﻿namespace MyGardenPlanner2026.Tests.Unit.Services.Layer1;
 
 using FluentAssertions;
-using MyGardenPlanner2026.Infrastructure.Data.Seed;
 using MyGardenPlanner2026.Infrastructure.Services.Layer1;
 using Xunit;
 
-public class SubscriptionAddOnServiceTests : TestDbContext
+public class SubscriptionAddOnServiceTests : CatalogTestDbContext
 {
-    private async Task SeedAsync()
-    {
-        var seeder = new SubscriptionAddOnSeeder(CreateAdminDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
-        await seeder.SeedAsync(TestContext.Current.CancellationToken);
-    }
+    private SubscriptionAddOnService CreateService() => new(CreateDbContextFactory());
 
     [Fact]
     public async Task GetAllAddOnsAsync_ReturnsFiveAddOns_WithNonZeroDistinctIds()
     {
-        await SeedAsync();
-        var service = new SubscriptionAddOnService(CreateDbContextFactory());
+        await SeedSubscriptionAddOnsAsync();
+        var service = CreateService();
 
         var result = await service.GetAllAddOnsAsync(TestContext.Current.CancellationToken);
 
@@ -29,8 +24,8 @@ public class SubscriptionAddOnServiceTests : TestDbContext
     [Fact]
     public async Task GetAllAddOnsAsync_OrdersByDisplayOrder()
     {
-        await SeedAsync();
-        var service = new SubscriptionAddOnService(CreateDbContextFactory());
+        await SeedSubscriptionAddOnsAsync();
+        var service = CreateService();
 
         var result = await service.GetAllAddOnsAsync(TestContext.Current.CancellationToken);
 

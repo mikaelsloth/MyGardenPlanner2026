@@ -93,4 +93,34 @@ public sealed class OnboardingTestDbContextTests : OnboardingTestDbContext
 
         (await sut.HasAnyGardenAccessAsync("user-1", TestContext.Current.CancellationToken)).Should().BeFalse();
     }
+
+    [Fact]
+    public async Task SeedInvitationAsync_PersistsInvitationWithGivenFlags()
+    {
+        var garden = await SeedGardenAsync();
+
+        var invitation = await SeedInvitationAsync(garden.Id, isFreeSlot: true, isRevoked: true);
+
+        await using var context = CreateDbContext();
+        var saved = await context.GardenInvitations.SingleAsync(i => i.Id == invitation.Id, TestContext.Current.CancellationToken);
+
+        saved.GardenId.Should().Be(garden.Id);
+        saved.IsFreeSlot.Should().BeTrue();
+        saved.IsRevoked.Should().BeTrue();
+        saved.IsAccepted.Should().BeFalse();
+        saved.ExpiresUtc.Should().Be(FixedNow.AddDays(7));
+    }
+
+    [Fact]
+    public async Task CreateOnboardingService_WithoutTimeProvider_UsesFixedNow()
+    {
+        var sut = CreateOnboardingService();
+
+        var result = await sut.CreateSandboxGardenAsync("user-1", TestContext.Current.CancellationToken);
+
+        await using var context = CreateDbContext();
+        var entitlement = await context.UserEntitlements.SingleAsync(e => e.Id == result.EntitlementId, TestContext.Current.CancellationToken);
+
+        entitlement.ValidToUtc.Should().Be(FixedNow.AddDays(30));
+    }
 }

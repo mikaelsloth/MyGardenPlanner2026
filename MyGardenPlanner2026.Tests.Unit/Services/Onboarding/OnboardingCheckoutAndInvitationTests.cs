@@ -2,37 +2,56 @@
 
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging.Abstractions;
 using MyGardenPlanner2026.Core.Contracts.Onboarding;
 using MyGardenPlanner2026.Core.Entities.Common;
-using MyGardenPlanner2026.Core.Entities.Gardens;
 using MyGardenPlanner2026.Core.Entities.Layer1;
-using MyGardenPlanner2026.Infrastructure.Data;
 using MyGardenPlanner2026.Infrastructure.Services.Onboarding;
 using Xunit;
 
 /// <summary>
-/// Dækker de 4 metoder tilføjet i Prompt 3 (CheckoutDraft + AcceptInvitationAsync).
-/// Egen fil for ikke at kollidere med den eksisterende, lokalt rettede
-/// OnboardingServiceTests.cs.
+/// Dækker CheckoutDraft-metoderne og AcceptInvitationAsync. Egen fil for ikke at kollidere
+/// med OnboardingServiceTests.cs.
 /// </summary>
-public sealed class OnboardingCheckoutAndInvitationTests : TestDbContext
+public sealed class OnboardingCheckoutAndInvitationTests : OnboardingTestDbContext
 {
-    private static readonly DateTimeOffset FixedNow = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+    private static SaveCheckoutDraftRequestDto DraftRequest(
+        string? description = null,
+        GardenAccessLevel layer = GardenAccessLevel.BedDesigner,
+        AccessCategory category = AccessCategory.Editor,
+        BillingCycle billingCycle = BillingCycle.Annual) =>
+        new(null, "Min have", description, layer, category, billingCycle, new Dictionary<Guid, int>());
 
-    private static OnboardingService CreateSut(IDbContextFactory<PlannerDbContext> testContext, TestTimeProvider timeProvider) =>
-        new(testContext, new InvitationTokenService(), timeProvider, NullLogger<OnboardingService>.Instance);
+    private static AcceptInvitationRequestDto AcceptRequest(
+        string rawToken,
+        GardenAccessLevel layer = GardenAccessLevel.Planlaegger,
+        AccessCategory category = AccessCategory.Viewer,
+        BillingCycle? upgradeBillingCycle = null) =>
+        new(rawToken, "invited-user", layer, category,
+            UpgradeBillingCycle: upgradeBillingCycle, AddOnQuantities: new Dictionary<Guid, int>());
+
+    private async Task<(Guid GardenId, string RawToken)> CreateInvitationAsync(
+        OnboardingService sut,
+        GardenAccessLevel targetLayer, AccessCategory targetCategory,
+        GardenAccessLevel maxLayer, AccessCategory maxCategory, bool allowSelfUpgrade = false,
+        GardenAccessLevel ownerLayer = GardenAccessLevel.HaveArkitekt,
+        AccessCategory ownerCategory = AccessCategory.Administrator)
+    {
+        var garden = await SeedGardenAsync();
+        await SeedMembershipAsync(garden.Id, "owner", ownerLayer, ownerCategory, isOwner: true);
+
+        var request = InvitationRequest(
+            garden.Id, "owner", targetLayer, targetCategory, maxLayer, maxCategory, allowSelfUpgrade);
+        var created = await sut.CreateInvitationAsync(request, TestContext.Current.CancellationToken);
+
+        return (garden.Id, created.RawToken);
+    }
 
     [Fact]
     public async Task SaveCheckoutDraftAsync_ThenGetCheckoutDraftAsync_ReturnsMatchingValues()
     {
-        var sut = CreateSut(CreateDbContextFactory(), new TestTimeProvider(FixedNow));
+        var sut = CreateOnboardingService();
 
-        var request = new SaveCheckoutDraftRequestDto(
-            null, "Min have", "Beskrivelse", GardenAccessLevel.BedDesigner, AccessCategory.Editor,
-            BillingCycle.Annual, new Dictionary<Guid, int>());
-
-        var draftId = await sut.SaveCheckoutDraftAsync(request, TestContext.Current.CancellationToken);
+        var draftId = await sut.SaveCheckoutDraftAsync(DraftRequest("Beskrivelse"), TestContext.Current.CancellationToken);
         var draft = await sut.GetCheckoutDraftAsync(draftId, TestContext.Current.CancellationToken);
 
         draft.Should().NotBeNull();
@@ -44,7 +63,7 @@ public sealed class OnboardingCheckoutAndInvitationTests : TestDbContext
     [Fact]
     public async Task GetCheckoutDraftAsync_UnknownId_ReturnsNull()
     {
-        var sut = CreateSut(CreateDbContextFactory(), new TestTimeProvider(FixedNow));
+        var sut = CreateOnboardingService();
 
         var draft = await sut.GetCheckoutDraftAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
 
@@ -55,11 +74,9 @@ public sealed class OnboardingCheckoutAndInvitationTests : TestDbContext
     public async Task GetCheckoutDraftAsync_ExpiredDraft_ReturnsNull()
     {
         var timeProvider = new TestTimeProvider(FixedNow);
-        var sut = CreateSut(CreateDbContextFactory(), timeProvider);
-
-        var request = new SaveCheckoutDraftRequestDto(
-            null, "Min have", null, GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
-            BillingCycle.Monthly, new Dictionary<Guid, int>());
+        var sut = CreateOnboardingService(timeProvider);
+        var request = DraftRequest(
+            layer: GardenAccessLevel.Planlaegger, category: AccessCategory.Viewer, billingCycle: BillingCycle.Monthly);
         var draftId = await sut.SaveCheckoutDraftAsync(request, TestContext.Current.CancellationToken);
 
         timeProvider.Advance(TimeSpan.FromHours(1));
@@ -72,12 +89,8 @@ public sealed class OnboardingCheckoutAndInvitationTests : TestDbContext
     [Fact]
     public async Task ProvisionPaidGardenFromDraftAsync_ValidDraft_CreatesGardenMembershipAndEntitlement_AndDeletesDraft()
     {
-        var sut = CreateSut(CreateDbContextFactory(), new TestTimeProvider(FixedNow));
-
-        var request = new SaveCheckoutDraftRequestDto(
-            null, "Min have", null, GardenAccessLevel.BedDesigner, AccessCategory.Editor,
-            BillingCycle.Annual, new Dictionary<Guid, int>());
-        var draftId = await sut.SaveCheckoutDraftAsync(request, TestContext.Current.CancellationToken);
+        var sut = CreateOnboardingService();
+        var draftId = await sut.SaveCheckoutDraftAsync(DraftRequest(), TestContext.Current.CancellationToken);
 
         var result = await sut.ProvisionPaidGardenFromDraftAsync(draftId, "user-1", TestContext.Current.CancellationToken);
 
@@ -91,7 +104,7 @@ public sealed class OnboardingCheckoutAndInvitationTests : TestDbContext
     [Fact]
     public async Task ProvisionPaidGardenFromDraftAsync_UnknownDraft_ThrowsInvalidOperationException()
     {
-        var sut = CreateSut(CreateDbContextFactory(), new TestTimeProvider(FixedNow));
+        var sut = CreateOnboardingService();
 
         var act = () => sut.ProvisionPaidGardenFromDraftAsync(Guid.NewGuid(), "user-1");
 
@@ -102,12 +115,8 @@ public sealed class OnboardingCheckoutAndInvitationTests : TestDbContext
     public async Task ProvisionPaidGardenFromDraftAsync_ExpiredDraft_ThrowsInvalidOperationException_AndDeletesDraft()
     {
         var timeProvider = new TestTimeProvider(FixedNow);
-        var sut = CreateSut(CreateDbContextFactory(), timeProvider);
-
-        var request = new SaveCheckoutDraftRequestDto(
-            null, "Min have", null, GardenAccessLevel.BedDesigner, AccessCategory.Editor,
-            BillingCycle.Annual, new Dictionary<Guid, int>());
-        var draftId = await sut.SaveCheckoutDraftAsync(request, TestContext.Current.CancellationToken);
+        var sut = CreateOnboardingService(timeProvider);
+        var draftId = await sut.SaveCheckoutDraftAsync(DraftRequest(), TestContext.Current.CancellationToken);
 
         timeProvider.Advance(TimeSpan.FromHours(1));
 
@@ -119,49 +128,15 @@ public sealed class OnboardingCheckoutAndInvitationTests : TestDbContext
         (await context.CheckoutDrafts.AnyAsync(d => d.Id == draftId, TestContext.Current.CancellationToken)).Should().BeFalse();
     }
 
-    private static async Task<(Guid GardenId, string RawToken)> CreateInvitationAsync(
-        IDbContextFactory<PlannerDbContext> testContext, OnboardingService sut,
-        GardenAccessLevel targetLayer, AccessCategory targetCategory,
-        GardenAccessLevel maxLayer, AccessCategory maxCategory, bool allowSelfUpgrade = false,
-        GardenAccessLevel ownerLayer = GardenAccessLevel.HaveArkitekt,
-        AccessCategory ownerCategory = AccessCategory.Administrator)
-    {
-        var garden = new Garden { Name = "Testhave" };
-        var owner = new GardenMembership
-        {
-            GardenId = garden.Id,
-            UserId = "owner",
-            IsOwner = true,
-            Layer = ownerLayer,
-            Category = ownerCategory
-        };
-        await using var context = await testContext.CreateDbContextAsync();
-        await context.Gardens.AddAsync(garden);
-        await context.GardenMemberships.AddAsync(owner);
-        await context.SaveChangesAsync();
-
-        var request = new CreateInvitationRequestDto(
-            garden.Id, "owner", "invited@example.com", targetLayer, targetCategory,
-            maxLayer, maxCategory, AllowSelfUpgrade: allowSelfUpgrade, UseFreeSlot: false, ValidFor: TimeSpan.FromDays(7));
-        var created = await sut.CreateInvitationAsync(request);
-
-        return (garden.Id, created.RawToken);
-    }
-
     [Fact]
     public async Task AcceptInvitationAsync_NoUpgrade_CreatesMembershipOnly_AndMarksAccepted()
     {
-        var sut = CreateSut(CreateDbContextFactory(), new TestTimeProvider(FixedNow));
-
+        var sut = CreateOnboardingService();
         var (gardenId, rawToken) = await CreateInvitationAsync(
-            CreateDbContextFactory(), sut, GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
+            sut, GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
             GardenAccessLevel.Planlaegger, AccessCategory.Viewer);
 
-        var request = new AcceptInvitationRequestDto(
-            rawToken, "invited-user", GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
-            UpgradeBillingCycle: null, AddOnQuantities: new Dictionary<Guid, int>());
-
-        var result = await sut.AcceptInvitationAsync(request, TestContext.Current.CancellationToken);
+        var result = await sut.AcceptInvitationAsync(AcceptRequest(rawToken), TestContext.Current.CancellationToken);
 
         result.GardenId.Should().Be(gardenId);
         result.EntitlementId.Should().BeNull();
@@ -175,16 +150,12 @@ public sealed class OnboardingCheckoutAndInvitationTests : TestDbContext
     [Fact]
     public async Task AcceptInvitationAsync_WithUpgrade_CreatesMembershipAndEntitlementAtGrantedLevel()
     {
-
-        var sut = CreateSut(CreateDbContextFactory(), new TestTimeProvider(FixedNow));
-
+        var sut = CreateOnboardingService();
         var (_, rawToken) = await CreateInvitationAsync(
-            CreateDbContextFactory(), sut, GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
+            sut, GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
             GardenAccessLevel.BedDesigner, AccessCategory.Editor, allowSelfUpgrade: true);
-
-        var request = new AcceptInvitationRequestDto(
-            rawToken, "invited-user", GardenAccessLevel.BedDesigner, AccessCategory.Editor,
-            UpgradeBillingCycle: BillingCycle.Annual, AddOnQuantities: new Dictionary<Guid, int>());
+        var request = AcceptRequest(
+            rawToken, GardenAccessLevel.BedDesigner, AccessCategory.Editor, BillingCycle.Annual);
 
         var result = await sut.AcceptInvitationAsync(request, TestContext.Current.CancellationToken);
 
@@ -203,8 +174,7 @@ public sealed class OnboardingCheckoutAndInvitationTests : TestDbContext
     [Fact]
     public async Task AcceptInvitationAsync_GrantedLayerBetterThanMaxAllowed_ThrowsInvalidOperationException()
     {
-        var testContext = CreateDbContextFactory();
-        var sut = CreateSut(testContext, new TestTimeProvider(FixedNow));
+        var sut = CreateOnboardingService();
 
         // Ejeren har IKKE de bedst mulige rettigheder (BedDesigner/Editor, ikke
         // HaveArkitekt/Administrator) — så invitationens reelle loft (sat til ejerens
@@ -212,13 +182,11 @@ public sealed class OnboardingCheckoutAndInvitationTests : TestDbContext
         // bliver netop BedDesigner/Editor, og et forsøg på at acceptere med bedre
         // rettigheder end det skal afvises.
         var (_, rawToken) = await CreateInvitationAsync(
-            testContext, sut, GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
-           GardenAccessLevel.BedDesigner, AccessCategory.Editor, allowSelfUpgrade: true,
-           ownerLayer: GardenAccessLevel.BedDesigner, ownerCategory: AccessCategory.Editor);
-
-        var request = new AcceptInvitationRequestDto(
-            rawToken, "invited-user", GardenAccessLevel.HaveArkitekt, AccessCategory.Administrator,
-            UpgradeBillingCycle: BillingCycle.Annual, AddOnQuantities: new Dictionary<Guid, int>());
+            sut, GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
+            GardenAccessLevel.BedDesigner, AccessCategory.Editor, allowSelfUpgrade: true,
+            ownerLayer: GardenAccessLevel.BedDesigner, ownerCategory: AccessCategory.Editor);
+        var request = AcceptRequest(
+            rawToken, GardenAccessLevel.HaveArkitekt, AccessCategory.Administrator, BillingCycle.Annual);
 
         var act = () => sut.AcceptInvitationAsync(request);
 
@@ -228,16 +196,11 @@ public sealed class OnboardingCheckoutAndInvitationTests : TestDbContext
     [Fact]
     public async Task AcceptInvitationAsync_AlreadyAccepted_ThrowsInvalidOperationException()
     {
-
-        var sut = CreateSut(CreateDbContextFactory(), new TestTimeProvider(FixedNow));
-
+        var sut = CreateOnboardingService();
         var (_, rawToken) = await CreateInvitationAsync(
-            CreateDbContextFactory(), sut, GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
+            sut, GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
             GardenAccessLevel.Planlaegger, AccessCategory.Viewer);
-
-        var request = new AcceptInvitationRequestDto(
-            rawToken, "invited-user", GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
-            UpgradeBillingCycle: null, AddOnQuantities: new Dictionary<Guid, int>());
+        var request = AcceptRequest(rawToken);
         await sut.AcceptInvitationAsync(request, TestContext.Current.CancellationToken);
 
         var act = () => sut.AcceptInvitationAsync(request with { UserId = "another-user" });
@@ -248,26 +211,20 @@ public sealed class OnboardingCheckoutAndInvitationTests : TestDbContext
     [Fact]
     public async Task AcceptInvitationAsync_RevokedInvitation_ThrowsInvalidOperationException()
     {
-
-        var sut = CreateSut(CreateDbContextFactory(), new TestTimeProvider(FixedNow));
-
+        var sut = CreateOnboardingService();
         var (_, rawToken) = await CreateInvitationAsync(
-            CreateDbContextFactory(), sut, GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
+            sut, GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
             GardenAccessLevel.Planlaegger, AccessCategory.Viewer);
 
-        var tokenService = new InvitationTokenService();
-        using var context = CreateDbContext();
+        var tokenHash = new InvitationTokenService().HashToken(rawToken);
+        using (var context = CreateDbContext())
         {
-            var invitation = await context.GardenInvitations.SingleAsync(i => i.TokenHash == tokenService.HashToken(rawToken), TestContext.Current.CancellationToken);
+            var invitation = await context.GardenInvitations.SingleAsync(i => i.TokenHash == tokenHash, TestContext.Current.CancellationToken);
             invitation.IsRevoked = true;
             await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
-        var request = new AcceptInvitationRequestDto(
-            rawToken, "invited-user", GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
-            UpgradeBillingCycle: null, AddOnQuantities: new Dictionary<Guid, int>());
-
-        var act = () => sut.AcceptInvitationAsync(request);
+        var act = () => sut.AcceptInvitationAsync(AcceptRequest(rawToken));
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
@@ -275,21 +232,15 @@ public sealed class OnboardingCheckoutAndInvitationTests : TestDbContext
     [Fact]
     public async Task AcceptInvitationAsync_ExpiredInvitation_ThrowsInvalidOperationException()
     {
-
         var timeProvider = new TestTimeProvider(FixedNow);
-        var sut = CreateSut(CreateDbContextFactory(), timeProvider);
-
+        var sut = CreateOnboardingService(timeProvider);
         var (_, rawToken) = await CreateInvitationAsync(
-            CreateDbContextFactory(), sut, GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
+            sut, GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
             GardenAccessLevel.Planlaegger, AccessCategory.Viewer);
 
         timeProvider.Advance(TimeSpan.FromDays(8));
 
-        var request = new AcceptInvitationRequestDto(
-            rawToken, "invited-user", GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
-            UpgradeBillingCycle: null, AddOnQuantities: new Dictionary<Guid, int>());
-
-        var act = () => sut.AcceptInvitationAsync(request);
+        var act = () => sut.AcceptInvitationAsync(AcceptRequest(rawToken));
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
@@ -297,31 +248,14 @@ public sealed class OnboardingCheckoutAndInvitationTests : TestDbContext
     [Fact]
     public async Task AcceptInvitationAsync_UserAlreadyMemberOfGarden_ThrowsInvalidOperationException()
     {
-
-        var sut = CreateSut(CreateDbContextFactory(), new TestTimeProvider(FixedNow));
-
+        var sut = CreateOnboardingService();
         var (gardenId, rawToken) = await CreateInvitationAsync(
-            CreateDbContextFactory(), sut, GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
+            sut, GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
             GardenAccessLevel.Planlaegger, AccessCategory.Viewer);
+        await SeedMembershipAsync(
+            gardenId, "invited-user", GardenAccessLevel.Planlaegger, AccessCategory.Viewer);
 
-        using var context = CreateDbContext();
-        {
-            await context.GardenMemberships.AddAsync(new GardenMembership
-            {
-                GardenId = gardenId,
-                UserId = "invited-user",
-                IsOwner = false,
-                Layer = GardenAccessLevel.Planlaegger,
-                Category = AccessCategory.Viewer
-            }, TestContext.Current.CancellationToken);
-            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
-        }
-
-        var request = new AcceptInvitationRequestDto(
-            rawToken, "invited-user", GardenAccessLevel.Planlaegger, AccessCategory.Viewer,
-            UpgradeBillingCycle: null, AddOnQuantities: new Dictionary<Guid, int>());
-
-        var act = () => sut.AcceptInvitationAsync(request);
+        var act = () => sut.AcceptInvitationAsync(AcceptRequest(rawToken));
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }

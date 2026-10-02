@@ -62,15 +62,7 @@ public class AuditLoggingInterceptorTests : TestDbContext
         using var context = CreateDbContextWithInterceptors(
             new SoftDeleteInterceptor(user), new AuditLoggingInterceptor(user));
 
-        var addOn = new SubscriptionAddOn
-        {
-            Type = AddOnType.ArtefaktpakkeA,
-            Name = "A",
-            UnitDescription = "Enhed",
-            AnnualPrice = 48m,
-            MonthlyPrice = 4m,
-            PerpetualPrice = 120m
-        };
+        var addOn = TestEntities.AddOn();
         await context.SubscriptionAddOns.AddAsync(addOn, TestContext.Current.CancellationToken);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
@@ -93,15 +85,7 @@ public class AuditLoggingInterceptorTests : TestDbContext
         using var context = CreateDbContextWithInterceptors(
             new SoftDeleteInterceptor(user), new AuditLoggingInterceptor(user));
 
-        var addOn = new SubscriptionAddOn
-        {
-            Type = AddOnType.ArtefaktpakkeB,
-            Name = "B",
-            UnitDescription = "Enhed",
-            AnnualPrice = 24m,
-            MonthlyPrice = 2m,
-            PerpetualPrice = 60m
-        };
+        var addOn = TestEntities.AddOn(AddOnType.ArtefaktpakkeB, annualPrice: 24m, monthlyPrice: 2m, perpetualPrice: 60m);
         await context.SubscriptionAddOns.AddAsync(addOn, TestContext.Current.CancellationToken);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 

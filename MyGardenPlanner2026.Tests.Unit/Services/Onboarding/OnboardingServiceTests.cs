@@ -70,15 +70,7 @@ public sealed class OnboardingServiceTests : TestDbContext
     [Fact]
     public async Task ProvisionPaidGardenAsync_WithAddOnQuantities_IncrementsCorrectQuotaFields()
     {
-        var addOn = new SubscriptionAddOn
-        {
-            Type = AddOnType.ArtefaktpakkeA,
-            Name = "Artefaktpakke A",
-            UnitDescription = "test",
-            AnnualPrice = 1,
-            MonthlyPrice = 1,
-            PerpetualPrice = 1
-        };
+        var addOn = TestEntities.AddOn(annualPrice: 1m, monthlyPrice: 1m, perpetualPrice: 1m);
         await using (var context = CreateDbContext())
         {
             await context.SubscriptionAddOns.AddAsync(addOn, TestContext.Current.CancellationToken);

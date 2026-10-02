@@ -17,15 +17,7 @@ public class SoftDeleteInterceptorTests : TestDbContext
     {
         using var context = CreateDbContextWithInterceptors(new SoftDeleteInterceptor(FakeUser()));
 
-        var addOn = new Core.Entities.Layer1.SubscriptionAddOn
-        {
-            Type = AddOnType.ArtefaktpakkeA,
-            Name = "Test",
-            UnitDescription = "Enhed",
-            AnnualPrice = 1m,
-            MonthlyPrice = 1m,
-            PerpetualPrice = 1m
-        };
+        var addOn = TestEntities.AddOn();
         await context.SubscriptionAddOns.AddAsync(addOn, TestContext.Current.CancellationToken);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
@@ -47,15 +39,7 @@ public class SoftDeleteInterceptorTests : TestDbContext
     {
         using var context = CreateDbContextWithInterceptors(new SoftDeleteInterceptor(FakeUser()));
 
-        var addOn = new Core.Entities.Layer1.SubscriptionAddOn
-        {
-            Type = AddOnType.ArtefaktpakkeB,
-            Name = "Test2",
-            UnitDescription = "Enhed",
-            AnnualPrice = 1m,
-            MonthlyPrice = 1m,
-            PerpetualPrice = 1m
-        };
+        var addOn = TestEntities.AddOn(AddOnType.ArtefaktpakkeB);
         await context.SubscriptionAddOns.AddAsync(addOn, TestContext.Current.CancellationToken);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 

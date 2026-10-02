@@ -2,17 +2,14 @@
 
 using FluentAssertions;
 using MyGardenPlanner2026.Core.Entities.Common;
-using MyGardenPlanner2026.Core.Entities.Gardens;
-using MyGardenPlanner2026.Infrastructure.Services.Onboarding;
 using Xunit;
 
-public sealed class GardenAccessQueryServiceOwnedGardenCountsTests : TestDbContext
+public sealed class GardenAccessQueryServiceOwnedGardenCountsTests : OnboardingTestDbContext
 {
     [Fact]
     public async Task GetOwnedGardenCountsAsync_NoOwnedGardens_ReturnsZeroZero()
     {
-        var testContext = CreateDbContextFactory();
-        var sut = new GardenAccessQueryService(testContext, new TestTimeProvider(DateTimeOffset.Now));
+        var sut = CreateAccessQueryService();
 
         var result = await sut.GetOwnedGardenCountsAsync("user-1", TestContext.Current.CancellationToken);
 
@@ -23,19 +20,13 @@ public sealed class GardenAccessQueryServiceOwnedGardenCountsTests : TestDbConte
     [Fact]
     public async Task GetOwnedGardenCountsAsync_MixedActiveAndArchived_CountsCorrectly()
     {
-        var activeGarden = new Garden { Name = "Aktiv have", Archived = false };
-        var archivedGarden = new Garden { Name = "Arkiveret have", Archived = true };
-
-        using var context = CreateDbContext();
-        {
-            await context.Gardens.AddRangeAsync(activeGarden, archivedGarden);
-            await context.GardenMemberships.AddRangeAsync(
-                new GardenMembership { GardenId = activeGarden.Id, UserId = "user-1", IsOwner = true, Layer = GardenAccessLevel.BedDesigner, Category = AccessCategory.Editor },
-                new GardenMembership { GardenId = archivedGarden.Id, UserId = "user-1", IsOwner = true, Layer = GardenAccessLevel.BedDesigner, Category = AccessCategory.Editor });
-            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
-        }
-
-        var sut = new GardenAccessQueryService(CreateDbContextFactory(), new TestTimeProvider(DateTimeOffset.Now));
+        var activeGarden = await SeedGardenAsync("Aktiv have");
+        var archivedGarden = await SeedGardenAsync("Arkiveret have", archived: true);
+        await SeedMembershipAsync(
+            activeGarden.Id, "user-1", GardenAccessLevel.BedDesigner, AccessCategory.Editor, isOwner: true);
+        await SeedMembershipAsync(
+            archivedGarden.Id, "user-1", GardenAccessLevel.BedDesigner, AccessCategory.Editor, isOwner: true);
+        var sut = CreateAccessQueryService();
 
         var result = await sut.GetOwnedGardenCountsAsync("user-1", TestContext.Current.CancellationToken);
 
@@ -46,23 +37,9 @@ public sealed class GardenAccessQueryServiceOwnedGardenCountsTests : TestDbConte
     [Fact]
     public async Task GetOwnedGardenCountsAsync_ExcludesNonOwnerMemberships()
     {
-        var garden = new Garden { Name = "Testhave" };
-
-        using var context = CreateDbContext();
-        {
-            await context.Gardens.AddAsync(garden, TestContext.Current.CancellationToken);
-            await context.GardenMemberships.AddAsync(new GardenMembership
-            {
-                GardenId = garden.Id,
-                UserId = "user-1",
-                IsOwner = false,
-                Layer = GardenAccessLevel.Planlaegger,
-                Category = AccessCategory.Viewer
-            }, TestContext.Current.CancellationToken);
-            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
-        }
-
-        var sut = new GardenAccessQueryService(CreateDbContextFactory(), new TestTimeProvider(DateTimeOffset.Now));
+        var garden = await SeedGardenAsync();
+        await SeedMembershipAsync(garden.Id, "user-1", GardenAccessLevel.Planlaegger, AccessCategory.Viewer);
+        var sut = CreateAccessQueryService();
 
         var result = await sut.GetOwnedGardenCountsAsync("user-1", TestContext.Current.CancellationToken);
 

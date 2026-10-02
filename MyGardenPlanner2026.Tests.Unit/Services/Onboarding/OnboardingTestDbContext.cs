@@ -1,5 +1,7 @@
 ﻿namespace MyGardenPlanner2026.Tests.Unit.Services.Onboarding;
 
+using Microsoft.Extensions.Logging.Abstractions;
+using MyGardenPlanner2026.Core.Contracts.Onboarding;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Gardens;
 using MyGardenPlanner2026.Core.Entities.Layer1;
@@ -16,6 +18,20 @@ public abstract class OnboardingTestDbContext : TestDbContext
 
     protected GardenAccessQueryService CreateAccessQueryService(TimeProvider? timeProvider = null) =>
         new(CreateDbContextFactory(), timeProvider ?? new TestTimeProvider(FixedNow));
+
+    protected OnboardingService CreateOnboardingService(TimeProvider? timeProvider = null) =>
+    new(CreateDbContextFactory(), new InvitationTokenService(),
+        timeProvider ?? new TestTimeProvider(FixedNow), NullLogger<OnboardingService>.Instance);
+
+    /// <summary>Invitationsanmodning hvor loftet (max) som standard er lig målet (target).</summary>
+    protected static CreateInvitationRequestDto InvitationRequest(
+        Guid gardenId, string requesterUserId,
+        GardenAccessLevel targetLayer, AccessCategory targetCategory,
+        GardenAccessLevel? maxAllowedLayer = null, AccessCategory? maxAllowedCategory = null,
+        bool allowSelfUpgrade = false, bool useFreeSlot = false) =>
+        new(gardenId, requesterUserId, "invited@example.com", targetLayer, targetCategory,
+            maxAllowedLayer ?? targetLayer, maxAllowedCategory ?? targetCategory,
+            AllowSelfUpgrade: allowSelfUpgrade, UseFreeSlot: useFreeSlot, ValidFor: TimeSpan.FromDays(7));
 
     protected async Task<Garden> SeedGardenAsync(string name = "Testhave", bool archived = false)
     {
@@ -67,5 +83,29 @@ public abstract class OnboardingTestDbContext : TestDbContext
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         return entitlement;
+    }
+
+    protected async Task<GardenInvitation> SeedInvitationAsync(
+    Guid gardenId, string invitedByUserId = "owner", string email = "invited@example.com",
+    string tokenHash = "hash", bool isFreeSlot = false, bool isRevoked = false,
+    bool isAccepted = false, DateTimeOffset? expiresUtc = null)
+    {
+        var invitation = new GardenInvitation
+        {
+            GardenId = gardenId,
+            InvitedByUserId = invitedByUserId,
+            Email = email,
+            TokenHash = tokenHash,
+            IsFreeSlot = isFreeSlot,
+            IsRevoked = isRevoked,
+            IsAccepted = isAccepted,
+            ExpiresUtc = expiresUtc ?? FixedNow.AddDays(7)
+        };
+
+        await using var context = CreateDbContext();
+        await context.GardenInvitations.AddAsync(invitation, TestContext.Current.CancellationToken);
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        return invitation;
     }
 }

@@ -42,8 +42,8 @@ public class SubscriptionTierPersistenceTests : TestDbContext
     {
         using var context = CreateDbContext();
         await context.AddRangeAsync(
-            new SubscriptionTier { Level = GardenAccessLevel.HaveArkitekt, AccessCategory = AccessCategory.Viewer, Name = "A", AnnualPrice = 42m, MonthlyPrice = 3.5m, PerpetualPrice = 105m },
-            new SubscriptionTier { Level = GardenAccessLevel.HaveArkitekt, AccessCategory = AccessCategory.Viewer, Name = "B", AnnualPrice = 42m, MonthlyPrice = 3.5m, PerpetualPrice = 105m });
+            TestEntities.Tier(GardenAccessLevel.HaveArkitekt, AccessCategory.Viewer, "A"),
+            TestEntities.Tier(GardenAccessLevel.HaveArkitekt, AccessCategory.Viewer, "B"));
 
         var act = async () => await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 

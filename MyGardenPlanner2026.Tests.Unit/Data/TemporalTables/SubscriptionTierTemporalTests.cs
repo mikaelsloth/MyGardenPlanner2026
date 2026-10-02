@@ -2,8 +2,6 @@
 
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using MyGardenPlanner2026.Core.Entities.Common;
-using MyGardenPlanner2026.Core.Entities.Layer1;
 using Xunit;
 
 [Trait("Category", "SqlServerIntegration")]
@@ -14,16 +12,7 @@ public class SubscriptionTierTemporalTests : TestSqlExpressDbContext
     {
         using var context = CreateDbContext();
 
-        var tier = new SubscriptionTier
-        {
-            Level = GardenAccessLevel.HaveArkitekt,
-            AccessCategory = AccessCategory.Viewer,
-            Name = "Temporal Test Tier",
-            Description = "Test",
-            AnnualPrice = 100m,
-            MonthlyPrice = 10m,
-            PerpetualPrice = 250m
-        };
+        var tier = TestEntities.Tier(name: "Temporal Test Tier");
         context.Add(tier);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
@@ -50,15 +39,7 @@ public class SubscriptionTierTemporalTests : TestSqlExpressDbContext
     {
         using var context = CreateDbContext();
 
-        var addOn = new SubscriptionAddOn
-        {
-            Type = AddOnType.ArtefaktpakkeA,
-            Name = "Temporal AddOn Test",
-            UnitDescription = "Enhed",
-            AnnualPrice = 48m,
-            MonthlyPrice = 4m,
-            PerpetualPrice = 120m
-        };
+        var addOn = TestEntities.AddOn(name: "Temporal AddOn Test");
         context.Add(addOn);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 

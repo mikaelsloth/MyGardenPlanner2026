@@ -2,53 +2,25 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Domain.Admin;
-using MyGardenPlanner2026.Configuration.Extensions;
 using MyGardenPlanner2026.Core.Contracts.Admin;
-using MyGardenPlanner2026.Core.Contracts.Common;
-using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Tests.UI;
 using NSubstitute;
-using System.Security.Claims;
 using Xunit;
 
 public class ReAuthFailureTrackerEditorTests : BunitContext
 {
-    private static Task<AuthenticationState> CreateAuthStateAsync()
-    {
-        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "user-1")], authenticationType: "Test");
-        return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(identity)));
-    }
-
-    private IReAuthFailureTrackerPolicyAdminService RegisterFakes(bool reAuthSucceeds)
+    private IReAuthFailureTrackerPolicyAdminService RegisterFakes(bool reAuthSucceeds, bool rateLimitAllowed = true)
     {
         var adminService = Substitute.For<IReAuthFailureTrackerPolicyAdminService>();
         adminService.GetAsync(Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new ReAuthFailureTrackerPolicyDto(5, 2)));
         Services.AddSingleton(adminService);
 
-        var authorizationService = Substitute.For<IAuthorizationService>();
-        authorizationService.AuthorizeAsync(
-                Arg.Any<ClaimsPrincipal>(), Arg.Any<object>(), Arg.Is(AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy))
-            .Returns(Task.FromResult(reAuthSucceeds ? AuthorizationResult.Success() : AuthorizationResult.Failed()));
-        Services.AddSingleton(authorizationService);
-
-        var userManager = IdentityTestDoubles.CreateUserManager();
-        userManager.GetUserAsync(Arg.Any<ClaimsPrincipal>()).Returns(Task.FromResult<ApplicationUser?>(null));
-        Services.AddSingleton(userManager);
-
-        Services.AddSingleton(Substitute.For<IReAuthenticationService>());
-        Services.AddSingleton(Substitute.For<IReAuthFailureTracker>());
-        Services.AddSingleton(Substitute.For<ICurrentUserAccessor>());
-
-        var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
-        rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
-        Services.AddSingleton(rateLimiter);
+        this.AddAdminSecurityServices(reAuthSucceeds, rateLimitAllowed);
         Services.AddSingleton(Substitute.For<ILogger<ReAuthFailureTrackerEditor>>());
 
         return adminService;
@@ -58,8 +30,7 @@ public class ReAuthFailureTrackerEditorTests : BunitContext
     public void ReAuthFailureTrackerEditor_RendersSeededValues()
     {
         RegisterFakes(reAuthSucceeds: true);
-
-        var cut = Render<ReAuthFailureTrackerEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<ReAuthFailureTrackerEditor>(p => p.AddCascadingValue(TestAuthHelper.CreateAuthStateAsync()));
 
         cut.Find("#failtrack-threshold").GetAttribute("value").Should().Be("5");
         cut.Find("#failtrack-windowdays").GetAttribute("value").Should().Be("2");
@@ -69,8 +40,8 @@ public class ReAuthFailureTrackerEditorTests : BunitContext
     public void ReAuthValid_ClickingGem_CallsUpdateAsyncWithEditedValues_WithoutOpeningModal()
     {
         var service = RegisterFakes(reAuthSucceeds: true);
+        var cut = Render<ReAuthFailureTrackerEditor>(p => p.AddCascadingValue(TestAuthHelper.CreateAuthStateAsync()));
 
-        var cut = Render<ReAuthFailureTrackerEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
         cut.Find("#failtrack-threshold").Change("10");
         cut.Find("button.btn-primary").Click();
 
@@ -86,10 +57,9 @@ public class ReAuthFailureTrackerEditorTests : BunitContext
     {
         RegisterFakes(reAuthSucceeds: true);
         string? receivedMessage = null;
-
         var cut = Render<ReAuthFailureTrackerEditor>(p => p
             .Add(x => x.OnStatusMessage, EventCallback.Factory.Create<string>(this, m => receivedMessage = m))
-            .AddCascadingValue(CreateAuthStateAsync()));
+            .AddCascadingValue(TestAuthHelper.CreateAuthStateAsync()));
 
         cut.Find("button.btn-primary").Click();
 
@@ -101,8 +71,8 @@ public class ReAuthFailureTrackerEditorTests : BunitContext
     public void ReAuthExpired_ClickingGem_OpensStepUpModal_WithoutSaving()
     {
         var service = RegisterFakes(reAuthSucceeds: false);
+        var cut = Render<ReAuthFailureTrackerEditor>(p => p.AddCascadingValue(TestAuthHelper.CreateAuthStateAsync()));
 
-        var cut = Render<ReAuthFailureTrackerEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
         cut.FindAll(".confirm-dialog").Should().HaveCount(1);
@@ -113,8 +83,8 @@ public class ReAuthFailureTrackerEditorTests : BunitContext
     public void ReAuthExpired_CancellingStepUpModal_ClosesModal_WithoutSaving()
     {
         var service = RegisterFakes(reAuthSucceeds: false);
+        var cut = Render<ReAuthFailureTrackerEditor>(p => p.AddCascadingValue(TestAuthHelper.CreateAuthStateAsync()));
 
-        var cut = Render<ReAuthFailureTrackerEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
         cut.Find(".confirm-dialog button.btn-secondary").Click();
 
@@ -125,12 +95,9 @@ public class ReAuthFailureTrackerEditorTests : BunitContext
     [Fact]
     public void RateLimited_ClickingGem_DoesNotCallUpdateAsync_AndShowsErrorMessage()
     {
-        var service = RegisterFakes(reAuthSucceeds: true);
-        var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
-        rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(false));
-        Services.AddSingleton(rateLimiter);
+        var service = RegisterFakes(reAuthSucceeds: true, rateLimitAllowed: false);
+        var cut = Render<ReAuthFailureTrackerEditor>(p => p.AddCascadingValue(TestAuthHelper.CreateAuthStateAsync()));
 
-        var cut = Render<ReAuthFailureTrackerEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
         _ = service.DidNotReceive().UpdateAsync(Arg.Any<ReAuthFailureTrackerPolicyDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>());

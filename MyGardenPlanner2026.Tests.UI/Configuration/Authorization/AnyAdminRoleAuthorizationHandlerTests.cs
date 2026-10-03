@@ -5,29 +5,11 @@ using Microsoft.AspNetCore.Authorization;
 using MyGardenPlanner2026.Configuration.Authorization;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using NSubstitute;
-using System.Security.Claims;
 using Xunit;
 
 public class AnyAdminRoleAuthorizationHandlerTests
 {
     private static readonly string[] AdminRoles = ["SystemAdmin", "DataAdmin", "PolicyAdmin", "AuditViewer"];
-
-    private static ClaimsPrincipal CreatePrincipal(string? userId, params string[] roles)
-    {
-        var claims = new List<Claim>();
-        if (userId is not null)
-        {
-            claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
-        }
-
-        foreach (var role in roles)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, role));
-        }
-
-        var identity = new ClaimsIdentity(claims, authenticationType: "Test");
-        return new ClaimsPrincipal(identity);
-    }
 
     [Theory]
     [InlineData("SystemAdmin")]
@@ -39,7 +21,7 @@ public class AnyAdminRoleAuthorizationHandlerTests
         var jitService = Substitute.For<IJitElevationService>();
         var handler = new AnyAdminRoleAuthorizationHandler(jitService);
         var context = new AuthorizationHandlerContext(
-            [new AnyAdminRoleRequirement(AdminRoles)], CreatePrincipal("user-1", role), resource: null);
+            [new AnyAdminRoleRequirement(AdminRoles)], TestAuthHelper.CreatePrincipal("user-1", role), resource: null);
 
         await handler.HandleAsync(context);
 
@@ -57,7 +39,7 @@ public class AnyAdminRoleAuthorizationHandlerTests
 
         var handler = new AnyAdminRoleAuthorizationHandler(jitService);
         var context = new AuthorizationHandlerContext(
-            [new AnyAdminRoleRequirement(AdminRoles)], CreatePrincipal("user-1"), resource: null);
+            [new AnyAdminRoleRequirement(AdminRoles)], TestAuthHelper.CreatePrincipal("user-1"), resource: null);
 
         await handler.HandleAsync(context);
 
@@ -73,7 +55,7 @@ public class AnyAdminRoleAuthorizationHandlerTests
 
         var handler = new AnyAdminRoleAuthorizationHandler(jitService);
         var context = new AuthorizationHandlerContext(
-            [new AnyAdminRoleRequirement(AdminRoles)], CreatePrincipal("user-1"), resource: null);
+            [new AnyAdminRoleRequirement(AdminRoles)], TestAuthHelper.CreatePrincipal("user-1"), resource: null);
 
         await handler.HandleAsync(context);
 
@@ -86,7 +68,7 @@ public class AnyAdminRoleAuthorizationHandlerTests
         var jitService = Substitute.For<IJitElevationService>();
         var handler = new AnyAdminRoleAuthorizationHandler(jitService);
         var context = new AuthorizationHandlerContext(
-            [new AnyAdminRoleRequirement(AdminRoles)], CreatePrincipal(userId: null), resource: null);
+            [new AnyAdminRoleRequirement(AdminRoles)], TestAuthHelper.CreatePrincipal(userId: null), resource: null);
 
         await handler.HandleAsync(context);
 
@@ -105,7 +87,7 @@ public class AnyAdminRoleAuthorizationHandlerTests
 
         var handler = new AnyAdminRoleAuthorizationHandler(jitService);
         var context = new AuthorizationHandlerContext(
-            [new AnyAdminRoleRequirement(AdminRoles)], CreatePrincipal("user-1"), resource: null);
+            [new AnyAdminRoleRequirement(AdminRoles)], TestAuthHelper.CreatePrincipal("user-1"), resource: null);
 
         await handler.HandleAsync(context);
 

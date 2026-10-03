@@ -23,8 +23,7 @@ public sealed class GardenMemberAuthorizationHandlerTests
     public async Task HandleRequirementAsync_UserHasMembership_Succeeds()
     {
         var gardenId = Guid.NewGuid();
-        var user = new ClaimsPrincipal(new ClaimsIdentity(
-            [new Claim(ClaimTypes.NameIdentifier, "user-1")], "TestAuth"));
+        var user = TestAuthHelper.CreatePrincipal("user-1");
 
         queryService.GetMembershipAsync(gardenId, "user-1", Arg.Any<CancellationToken>())
             .Returns(new GardenMembershipDto(Guid.NewGuid(), gardenId, "user-1", true,
@@ -41,8 +40,7 @@ public sealed class GardenMemberAuthorizationHandlerTests
     public async Task HandleRequirementAsync_UserHasNoMembership_DoesNotSucceed()
     {
         var gardenId = Guid.NewGuid();
-        var user = new ClaimsPrincipal(new ClaimsIdentity(
-            [new Claim(ClaimTypes.NameIdentifier, "user-1")], "TestAuth"));
+        var user = TestAuthHelper.CreatePrincipal("user-1");
 
         queryService.GetMembershipAsync(gardenId, "user-1", Arg.Any<CancellationToken>())
             .Returns((GardenMembershipDto?)null);

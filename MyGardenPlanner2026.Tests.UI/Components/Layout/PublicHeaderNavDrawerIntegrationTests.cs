@@ -11,9 +11,7 @@ public class PublicHeaderNavDrawerIntegrationTests : BunitContext
     [Fact]
     public void PublicHeader_InitialRender_NavDrawerIsClosed()
     {
-        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
-        module.SetupVoid("activate", _ => true).SetVoidResult();
-        module.SetupVoid("deactivate").SetVoidResult();
+        this.SetupNavDrawerModule();
         var cut = Render<PublicHeader>();
 
         cut.Find(".nav-drawer").ClassList.Should().NotContain("open");
@@ -23,9 +21,7 @@ public class PublicHeaderNavDrawerIntegrationTests : BunitContext
     [Fact]
     public void PublicHeader_ClickingHamburgerButton_OpensNavDrawer()
     {
-        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
-        module.SetupVoid("activate", _ => true).SetVoidResult();
-        module.SetupVoid("deactivate").SetVoidResult();
+        this.SetupNavDrawerModule();
         var cut = Render<PublicHeader>();
 
         cut.Find("button[aria-label='Åbn menu']").Click();
@@ -37,9 +33,7 @@ public class PublicHeaderNavDrawerIntegrationTests : BunitContext
     [Fact]
     public void PublicHeader_ClickingHamburgerTwice_ClosesNavDrawerAgain()
     {
-        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
-        module.SetupVoid("activate", _ => true).SetVoidResult();
-        module.SetupVoid("deactivate").SetVoidResult();
+        this.SetupNavDrawerModule();
         var cut = Render<PublicHeader>();
         var button = cut.Find("button[aria-label='Åbn menu']");
 
@@ -52,9 +46,7 @@ public class PublicHeaderNavDrawerIntegrationTests : BunitContext
     [Fact]
     public void PublicHeader_ClickingBackdropAfterOpening_ClosesNavDrawer()
     {
-        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
-        module.SetupVoid("activate", _ => true).SetVoidResult();
-        module.SetupVoid("deactivate").SetVoidResult();
+        this.SetupNavDrawerModule();
         var cut = Render<PublicHeader>();
         cut.Find("button[aria-label='Åbn menu']").Click();
 
@@ -66,9 +58,7 @@ public class PublicHeaderNavDrawerIntegrationTests : BunitContext
     [Fact]
     public void PublicHeader_PressingEscapeAfterOpening_ClosesNavDrawer()
     {
-        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
-        module.SetupVoid("activate", _ => true).SetVoidResult();
-        module.SetupVoid("deactivate").SetVoidResult();
+        this.SetupNavDrawerModule();
         var cut = Render<PublicHeader>();
         cut.Find("button[aria-label='Åbn menu']").Click();
 
@@ -80,9 +70,7 @@ public class PublicHeaderNavDrawerIntegrationTests : BunitContext
     [Fact]
     public void PublicHeader_ClickingHamburgerButton_TogglesAriaExpanded()
     {
-        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
-        module.SetupVoid("activate", _ => true).SetVoidResult();
-        module.SetupVoid("deactivate").SetVoidResult();
+        this.SetupNavDrawerModule();
         var cut = Render<PublicHeader>();
         var button = cut.Find("button[aria-label='Åbn menu']");
 

@@ -4,7 +4,6 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Domain.Admin;
@@ -54,13 +53,9 @@ public class AuditLogExportPanelTests : BunitContext
 
     private IRenderedComponent<AuditLogExportPanel> RenderPanel(EventCallback? onJobEnqueued = null)
     {
-        var principal = new ClaimsPrincipal(new ClaimsIdentity(
-            [new Claim(ClaimTypes.NameIdentifier, "user-1")], "TestAuth"));
-        var authState = Task.FromResult(new AuthenticationState(principal));
-
         return Render<AuditLogExportPanel>(p =>
         {
-            p.AddCascadingValue(authState);
+            p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync());
             p.Add(x => x.CurrentFilter, EmptyFilter());
             if (onJobEnqueued is { } callback)
             {

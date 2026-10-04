@@ -3,7 +3,6 @@
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Domain.Admin;
@@ -21,12 +20,6 @@ public class VolumeDiscountEditorTests : BunitContext
 {
     private static readonly Guid Tier1Id = Guid.Parse("33333333-3333-3333-3333-333333333333");
     private static readonly GardenVolumeDiscountTierDto Tier1 = new(Tier1Id, 1, 1, 1.00m);
-
-    private static Task<AuthenticationState> CreateAuthStateAsync()
-    {
-        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "user-1")], authenticationType: "Test");
-        return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(identity)));
-    }
 
     private IGardenVolumeDiscountAdminService RegisterFake(bool reAuthSucceeds = true)
     {
@@ -62,7 +55,7 @@ public class VolumeDiscountEditorTests : BunitContext
     {
         RegisterFake();
 
-        var cut = Render<VolumeDiscountEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<VolumeDiscountEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.FindAll("tbody tr").Should().HaveCount(1);
         cut.Find("#new-min").Should().NotBeNull();
@@ -72,7 +65,7 @@ public class VolumeDiscountEditorTests : BunitContext
     public void ReAuthValid_AddingNewTier_CallsSaveAsyncWithNullId()
     {
         var service = RegisterFake(reAuthSucceeds: true);
-        var cut = Render<VolumeDiscountEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<VolumeDiscountEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.Find("#new-min").Change("11");
         cut.Find("#new-mult").Change("0.70");
@@ -88,7 +81,7 @@ public class VolumeDiscountEditorTests : BunitContext
     public void ReAuthValid_ClickingSlet_CallsDeleteAsync()
     {
         var service = RegisterFake(reAuthSucceeds: true);
-        var cut = Render<VolumeDiscountEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<VolumeDiscountEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.Find("button.btn-danger.btn-sm").Click();
 
@@ -99,7 +92,7 @@ public class VolumeDiscountEditorTests : BunitContext
     public void ReAuthValid_ConfirmingReset_CallsResetToDefaultAsync()
     {
         var service = RegisterFake(reAuthSucceeds: true);
-        var cut = Render<VolumeDiscountEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<VolumeDiscountEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.Find(".danger-zone button.btn-danger").Click();
         cut.Find(".inline-confirm button.btn-danger").Click();
@@ -111,7 +104,7 @@ public class VolumeDiscountEditorTests : BunitContext
     public void ReAuthExpired_AddingNewTier_OpensStepUpModal_WithoutSaving()
     {
         var service = RegisterFake(reAuthSucceeds: false);
-        var cut = Render<VolumeDiscountEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<VolumeDiscountEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.Find("#new-min").Change("11");
         cut.Find("#new-mult").Change("0.70");
@@ -125,7 +118,7 @@ public class VolumeDiscountEditorTests : BunitContext
     public void ReAuthExpired_ClickingSlet_OpensStepUpModal_WithoutDeleting()
     {
         var service = RegisterFake(reAuthSucceeds: false);
-        var cut = Render<VolumeDiscountEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<VolumeDiscountEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.Find("button.btn-danger.btn-sm").Click();
 
@@ -137,7 +130,7 @@ public class VolumeDiscountEditorTests : BunitContext
     public void ReAuthExpired_ConfirmingReset_OpensStepUpModal_WithoutResetting()
     {
         var service = RegisterFake(reAuthSucceeds: false);
-        var cut = Render<VolumeDiscountEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<VolumeDiscountEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.Find(".danger-zone button.btn-danger").Click();
         cut.Find(".inline-confirm button.btn-danger").Click();
@@ -150,7 +143,7 @@ public class VolumeDiscountEditorTests : BunitContext
     public void ReAuthExpired_CancellingStepUpModal_ClosesModal_WithoutSaving()
     {
         var service = RegisterFake(reAuthSucceeds: false);
-        var cut = Render<VolumeDiscountEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<VolumeDiscountEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.Find("#add-tier").Click();
         cut.Find(".confirm-dialog button.btn-secondary").Click();
@@ -167,7 +160,7 @@ public class VolumeDiscountEditorTests : BunitContext
         rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(false));
         Services.AddSingleton(rateLimiter); // overskriver den permitterende fake fra RegisterFakes
 
-        var cut = Render<VolumeDiscountEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<VolumeDiscountEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
         _ = service.DidNotReceive().SaveAsync(Arg.Any<GardenVolumeDiscountTierUpsertDto>(), Arg.Any<CancellationToken>());

@@ -3,7 +3,6 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Components.Authorization;
 using MyGardenPlanner2026.Components;
-using System.Security.Claims;
 using Xunit;
 
 public class RoutesAuthorizationBranchTests
@@ -11,8 +10,7 @@ public class RoutesAuthorizationBranchTests
     [Fact]
     public void IsAuthenticated_AuthenticatedUser_ReturnsTrue()
     {
-        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "user-1")], authenticationType: "Test");
-        var state = new AuthenticationState(new ClaimsPrincipal(identity));
+        var state = new AuthenticationState(TestPrincipals.Create());
 
         Routes.IsAuthenticated(state).Should().BeTrue();
     }
@@ -20,7 +18,7 @@ public class RoutesAuthorizationBranchTests
     [Fact]
     public void IsAuthenticated_UnauthenticatedUser_ReturnsFalse()
     {
-        var state = new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity()));
+        var state = new AuthenticationState(TestPrincipals.Anonymous());
 
         Routes.IsAuthenticated(state).Should().BeFalse();
     }

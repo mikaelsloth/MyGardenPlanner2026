@@ -4,7 +4,6 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Domain.Admin;
@@ -26,12 +25,6 @@ public class BasePriceMatrixEditorTests : BunitContext
     private static SubscriptionTierAdminDto CreateDto(Guid id) => new(
         id, GardenAccessLevel.HaveArkitekt, AccessCategory.Administrator, "Have Arkitekt · Administrator",
         AnnualPrice: 336m, MonthlyPrice: 28m, PerpetualPrice: 840m);
-
-    private static Task<AuthenticationState> CreateAuthStateAsync()
-    {
-        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "user-1")], authenticationType: "Test");
-        return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(identity)));
-    }
 
     private ISubscriptionTierAdminService RegisterFakes(bool reAuthSucceeds)
     {
@@ -67,7 +60,7 @@ public class BasePriceMatrixEditorTests : BunitContext
     {
         RegisterFakes(reAuthSucceeds: true);
 
-        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.FindAll("tbody tr").Should().HaveCount(1);
     }
@@ -77,7 +70,7 @@ public class BasePriceMatrixEditorTests : BunitContext
     {
         var service = RegisterFakes(reAuthSucceeds: true);
 
-        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find($"#annual-{TierId}").Change("350");
         cut.Find("button.btn-primary").Click();
 
@@ -95,7 +88,7 @@ public class BasePriceMatrixEditorTests : BunitContext
 
         var cut = Render<BasePriceMatrixEditor>(p => p
             .Add(x => x.OnStatusMessage, EventCallback.Factory.Create<string>(this, m => receivedMessage = m))
-            .AddCascadingValue(CreateAuthStateAsync()));
+            .AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.Find("button.btn-primary").Click();
 
@@ -108,7 +101,7 @@ public class BasePriceMatrixEditorTests : BunitContext
     {
         var service = RegisterFakes(reAuthSucceeds: false);
 
-        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
         cut.FindAll(".confirm-dialog").Should().HaveCount(1);
@@ -120,7 +113,7 @@ public class BasePriceMatrixEditorTests : BunitContext
     {
         var service = RegisterFakes(reAuthSucceeds: false);
 
-        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
         cut.Find(".confirm-dialog button.btn-secondary").Click();
@@ -137,7 +130,7 @@ public class BasePriceMatrixEditorTests : BunitContext
         rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(false));
         Services.AddSingleton(rateLimiter); // overskriver den permitterende fake fra RegisterFakes
 
-        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
         _ = service.DidNotReceive().UpdateTierAsync(Arg.Any<SubscriptionTierUpdateDto>(), Arg.Any<CancellationToken>());

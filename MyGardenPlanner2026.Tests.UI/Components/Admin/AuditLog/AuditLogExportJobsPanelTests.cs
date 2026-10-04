@@ -2,13 +2,11 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Domain.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using NSubstitute;
-using System.Security.Claims;
 using Xunit;
 
 public class AuditLogExportJobsPanelTests : BunitContext
@@ -30,14 +28,8 @@ public class AuditLogExportJobsPanelTests : BunitContext
             new DateTimeOffset(2026, 9, 28, 10, 0, 0, TimeSpan.Zero), null, null,
             expiresAt, rowCount, "audit-log-export.csv", errorMessage, seenAt);
 
-    private IRenderedComponent<AuditLogExportJobsPanel> RenderPanel()
-    {
-        var principal = new ClaimsPrincipal(new ClaimsIdentity(
-            [new Claim(ClaimTypes.NameIdentifier, "user-1")], "TestAuth"));
-        var authState = Task.FromResult(new AuthenticationState(principal));
-
-        return Render<AuditLogExportJobsPanel>(p => p.AddCascadingValue(authState));
-    }
+    private IRenderedComponent<AuditLogExportJobsPanel> RenderPanel() =>
+        Render<AuditLogExportJobsPanel>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
     [Fact]
     public void NoJobs_ShowsEmptyMessage()

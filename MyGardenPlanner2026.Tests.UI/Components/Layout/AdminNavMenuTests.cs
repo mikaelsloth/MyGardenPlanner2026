@@ -3,7 +3,6 @@
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Layout;
 using MyGardenPlanner2026.Configuration.Extensions;
@@ -40,16 +39,8 @@ public class AdminNavMenuTests : BunitContext
         }
     }
 
-    private IRenderedComponent<AdminNavMenu> RenderWithAuthState(ClaimsPrincipal user)
-    {
-        var authState = Task.FromResult(new AuthenticationState(user));
-
-        return Render<AdminNavMenu>(parameters => parameters
-            .AddCascadingValue(authState));
-    }
-
-    private static ClaimsPrincipal AuthenticatedUser() =>
-        new(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "user-1")], "TestAuth"));
+    private IRenderedComponent<AdminNavMenu> RenderWithAuthState() =>
+        Render<AdminNavMenu>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
     [Fact]
     public void AllPoliciesSucceed_RendersAllFourNavLinks()
@@ -60,7 +51,7 @@ public class AdminNavMenuTests : BunitContext
             AuthorizationServicesExtensions.RequireAnyAdminRolePolicy,
             AuthorizationServicesExtensions.RequireAuditViewerPolicy);
 
-        var cut = RenderWithAuthState(AuthenticatedUser());
+        var cut = RenderWithAuthState();
 
         cut.FindAll("a.nav-link-item").Should().HaveCount(4);
     }
@@ -70,7 +61,7 @@ public class AdminNavMenuTests : BunitContext
     {
         SetSucceedingPolicies(AuthorizationServicesExtensions.RequireAuditViewerPolicy);
 
-        var cut = RenderWithAuthState(AuthenticatedUser());
+        var cut = RenderWithAuthState();
 
         var link = cut.FindAll("a.nav-link-item").Should().ContainSingle().Subject;
         link.TextContent.Trim().Should().Be("AuditLog");
@@ -80,7 +71,7 @@ public class AdminNavMenuTests : BunitContext
     [Fact]
     public void NoPoliciesSucceed_RendersNoLinks()
     {
-        var cut = RenderWithAuthState(AuthenticatedUser());
+        var cut = RenderWithAuthState();
 
         cut.FindAll("a.nav-link-item").Should().BeEmpty();
     }
@@ -103,7 +94,7 @@ public class AdminNavMenuTests : BunitContext
         // AnyAdminRoleAuthorizationHandler og duplikeres bevidst ikke her.
         SetSucceedingPolicies(AuthorizationServicesExtensions.RequireAnyAdminRolePolicy);
 
-        var cut = RenderWithAuthState(AuthenticatedUser());
+        var cut = RenderWithAuthState();
 
         var link = cut.FindAll("a.nav-link-item").Should().ContainSingle().Subject;
         link.GetAttribute("href").Should().Be("admin/jit-requests");
@@ -116,7 +107,7 @@ public class AdminNavMenuTests : BunitContext
         exportJobService.CountUnseenCompletedAsync("user-1", Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(3));
 
-        var cut = RenderWithAuthState(AuthenticatedUser());
+        var cut = RenderWithAuthState();
 
         cut.Find("a.nav-link-item .nav-badge").TextContent.Trim().Should().Be("3");
     }
@@ -126,7 +117,7 @@ public class AdminNavMenuTests : BunitContext
     {
         SetSucceedingPolicies(AuthorizationServicesExtensions.RequireAuditViewerPolicy);
 
-        var cut = RenderWithAuthState(AuthenticatedUser());
+        var cut = RenderWithAuthState();
 
         cut.FindAll(".nav-badge").Should().BeEmpty();
     }
@@ -134,7 +125,7 @@ public class AdminNavMenuTests : BunitContext
     [Fact]
     public void AuditViewerPolicyFails_DoesNotCallCountUnseenCompletedAsync()
     {
-        RenderWithAuthState(AuthenticatedUser());
+        RenderWithAuthState();
 
         _ = exportJobService.DidNotReceive().CountUnseenCompletedAsync(
             Arg.Any<string>(), Arg.Any<CancellationToken>());

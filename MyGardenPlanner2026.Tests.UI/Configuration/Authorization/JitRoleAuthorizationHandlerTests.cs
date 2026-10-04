@@ -5,29 +5,11 @@ using Microsoft.AspNetCore.Authorization;
 using MyGardenPlanner2026.Configuration.Authorization;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using NSubstitute;
-using System.Security.Claims;
 using Xunit;
 
 public class JitRoleAuthorizationHandlerTests
 {
     private const string RequiredRole = "SystemAdmin";
-
-    private static ClaimsPrincipal CreatePrincipal(string? userId, bool inRole)
-    {
-        var claims = new List<Claim>();
-        if (userId is not null)
-        {
-            claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
-        }
-
-        if (inRole)
-        {
-            claims.Add(new Claim(ClaimTypes.Role, RequiredRole));
-        }
-
-        var identity = new ClaimsIdentity(claims, authenticationType: "Test");
-        return new ClaimsPrincipal(identity);
-    }
 
     [Fact]
     public async Task HandleRequirementAsync_UserInRole_Succeeds()
@@ -35,7 +17,7 @@ public class JitRoleAuthorizationHandlerTests
         var jitService = Substitute.For<IJitElevationService>();
         var handler = new JitRoleAuthorizationHandler(jitService);
         var context = new AuthorizationHandlerContext(
-            [new JitRoleRequirement(RequiredRole)], CreatePrincipal("user-1", inRole: true), resource: null);
+            [new JitRoleRequirement(RequiredRole)], TestPrincipals.Create("user-1", RequiredRole), resource: null);
 
         await handler.HandleAsync(context);
 
@@ -53,7 +35,7 @@ public class JitRoleAuthorizationHandlerTests
 
         var handler = new JitRoleAuthorizationHandler(jitService);
         var context = new AuthorizationHandlerContext(
-            [new JitRoleRequirement(RequiredRole)], CreatePrincipal("user-1", inRole: false), resource: null);
+            [new JitRoleRequirement(RequiredRole)], TestPrincipals.Create("user-1"), resource: null);
 
         await handler.HandleAsync(context);
 
@@ -69,7 +51,7 @@ public class JitRoleAuthorizationHandlerTests
 
         var handler = new JitRoleAuthorizationHandler(jitService);
         var context = new AuthorizationHandlerContext(
-            [new JitRoleRequirement(RequiredRole)], CreatePrincipal("user-1", inRole: false), resource: null);
+            [new JitRoleRequirement(RequiredRole)], TestPrincipals.Create("user-1"), resource: null);
 
         await handler.HandleAsync(context);
 
@@ -82,7 +64,7 @@ public class JitRoleAuthorizationHandlerTests
         var jitService = Substitute.For<IJitElevationService>();
         var handler = new JitRoleAuthorizationHandler(jitService);
         var context = new AuthorizationHandlerContext(
-            [new JitRoleRequirement(RequiredRole)], CreatePrincipal(userId: null, inRole: false), resource: null);
+            [new JitRoleRequirement(RequiredRole)], TestPrincipals.Create(userId: null), resource: null);
 
         await handler.HandleAsync(context);
 

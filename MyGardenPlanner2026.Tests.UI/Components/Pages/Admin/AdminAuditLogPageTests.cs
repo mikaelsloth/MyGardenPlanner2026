@@ -3,7 +3,6 @@
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Pages.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
@@ -58,14 +57,8 @@ public class AdminAuditLogPageTests : BunitContext
         JSInterop.Mode = JSRuntimeMode.Loose;
     }
 
-    private IRenderedComponent<AdminAuditLogPage> RenderPage()
-    {
-        var principal = new ClaimsPrincipal(new ClaimsIdentity(
-            [new Claim(ClaimTypes.NameIdentifier, "user-1")], "TestAuth"));
-        var authState = Task.FromResult(new AuthenticationState(principal));
-
-        return Render<AdminAuditLogPage>(p => p.AddCascadingValue(authState));
-    }
+    private IRenderedComponent<AdminAuditLogPage> RenderPage() =>
+        Render<AdminAuditLogPage>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
     [Fact]
     public void OnInitialized_LoadsEntityNameOptions_AndPassesToFilterBar()

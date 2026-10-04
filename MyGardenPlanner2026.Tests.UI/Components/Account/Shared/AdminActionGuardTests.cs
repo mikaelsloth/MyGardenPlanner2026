@@ -1,13 +1,21 @@
 ﻿namespace MyGardenPlanner2026.Tests.UI.Components.Account.Shared;
 
 using FluentAssertions;
+using Microsoft.AspNetCore.Components.Authorization;
 using MyGardenPlanner2026.Components.Account.Shared;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using NSubstitute;
+using System.Security.Claims;
 using Xunit;
 
 public class AdminActionGuardTests
 {
+    private static Task<AuthenticationState> CreateAuthStateAsync(string userId = "user-1")
+    {
+        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, userId)], authenticationType: "Test");
+        return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(identity)));
+    }
+
     [Fact]
     public async Task RunAsync_PermitAcquired_ExecutesActionImmediately_AndDoesNotSetRateLimited()
     {
@@ -16,7 +24,7 @@ public class AdminActionGuardTests
         var guard = new AdminActionGuard(rateLimiter);
         var executed = false;
 
-        await guard.RunAsync(TestAuthHelper.CreateAuthStateAsync(), () => { executed = true; return Task.CompletedTask; });
+        await guard.RunAsync(CreateAuthStateAsync(), () => { executed = true; return Task.CompletedTask; });
 
         executed.Should().BeTrue();
         guard.IsRateLimited.Should().BeFalse();
@@ -30,7 +38,7 @@ public class AdminActionGuardTests
         var guard = new AdminActionGuard(rateLimiter);
         var executed = false;
 
-        await guard.RunAsync(TestAuthHelper.CreateAuthStateAsync(), () => { executed = true; return Task.CompletedTask; });
+        await guard.RunAsync(CreateAuthStateAsync(), () => { executed = true; return Task.CompletedTask; });
 
         executed.Should().BeFalse();
         guard.IsRateLimited.Should().BeTrue();
@@ -57,7 +65,7 @@ public class AdminActionGuardTests
         rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
         var guard = new AdminActionGuard(rateLimiter);
 
-        await guard.RunAsync(TestAuthHelper.CreateAuthStateAsync("user-42"), () => Task.CompletedTask);
+        await guard.RunAsync(CreateAuthStateAsync("user-42"), () => Task.CompletedTask);
 
         await rateLimiter.Received(1).TryAcquireAsync("user-42", Arg.Any<CancellationToken>());
     }
@@ -70,10 +78,10 @@ public class AdminActionGuardTests
             .Returns(Task.FromResult(false), Task.FromResult(true));
         var guard = new AdminActionGuard(rateLimiter);
 
-        await guard.RunAsync(TestAuthHelper.CreateAuthStateAsync(), () => Task.CompletedTask);
+        await guard.RunAsync(CreateAuthStateAsync(), () => Task.CompletedTask);
         guard.IsRateLimited.Should().BeTrue();
 
-        await guard.RunAsync(TestAuthHelper.CreateAuthStateAsync(), () => Task.CompletedTask);
+        await guard.RunAsync(CreateAuthStateAsync(), () => Task.CompletedTask);
         guard.IsRateLimited.Should().BeFalse();
     }
 }

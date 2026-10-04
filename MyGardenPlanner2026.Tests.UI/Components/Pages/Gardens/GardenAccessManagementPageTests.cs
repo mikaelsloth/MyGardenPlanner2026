@@ -9,7 +9,6 @@ using MyGardenPlanner2026.Configuration.Extensions;
 using MyGardenPlanner2026.Core.Contracts.Onboarding;
 using MyGardenPlanner2026.Core.Entities.Common;
 using NSubstitute;
-using System.Security.Claims;
 using Xunit;
 
 public sealed class GardenAccessManagementPageTests : BunitContext
@@ -23,9 +22,7 @@ public sealed class GardenAccessManagementPageTests : BunitContext
         Services.AddSingleton(queryService);
         Services.AddSingleton(onboardingService);
 
-        authContext = AddAuthorization();
-        authContext.SetAuthorized("user-1");
-        authContext.SetClaims(new Claim(ClaimTypes.NameIdentifier, "user-1"));
+        authContext = this.AuthorizeAs("user-1");
     }
 
     private void SetAuthorizationResult(bool succeeded)

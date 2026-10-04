@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Layout;
 using MyGardenPlanner2026.Core.Contracts.Onboarding;
 using NSubstitute;
-using System.Security.Claims;
 using Xunit;
 
 public sealed class AppShellTests : BunitContext
@@ -18,9 +17,7 @@ public sealed class AppShellTests : BunitContext
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddSingleton(queryService);
 
-        var authContext = AddAuthorization();
-        authContext.SetAuthorized("user1@example.com");
-        authContext.SetClaims(new Claim(ClaimTypes.NameIdentifier, "user-1"));
+        this.AuthorizeAs("user-1", "user1@example.com");
 
         queryService.HasAnyGardenAccessAsync("user-1", Arg.Any<CancellationToken>()).Returns(true);
     }

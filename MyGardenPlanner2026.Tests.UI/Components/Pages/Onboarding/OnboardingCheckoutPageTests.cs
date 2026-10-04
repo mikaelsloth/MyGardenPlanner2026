@@ -10,7 +10,6 @@ using MyGardenPlanner2026.Core.Contracts.Onboarding;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Layer1;
 using NSubstitute;
-using System.Security.Claims;
 using Xunit;
 
 public sealed class OnboardingCheckoutPageTests : BunitContext
@@ -27,15 +26,6 @@ public sealed class OnboardingCheckoutPageTests : BunitContext
         Services.AddSingleton(queryService);
         Services.AddSingleton(calculatorService);
         Services.AddSingleton(addOnService);
-    }
-
-    /// <summary>SetAuthorized(userId) alene sætter kun ClaimTypes.Name — CurrentUserIdResolver
-    /// slår op på ClaimTypes.NameIdentifier, som skal sættes eksplicit.</summary>
-    private void AuthorizeAs(string userId)
-    {
-        var authContext = AddAuthorization();
-        authContext.SetAuthorized(userId);
-        authContext.SetClaims(new Claim(ClaimTypes.NameIdentifier, userId));
     }
 
     private static PricingCalculationResultDto CreateResult(decimal total = 100m) =>
@@ -103,7 +93,7 @@ public sealed class OnboardingCheckoutPageTests : BunitContext
     [Fact]
     public async Task Authenticated_ClickingContinue_MovesDirectlyToPaymentStep_UsingRealGardenCounts()
     {
-        AuthorizeAs("user-1");
+        this.AuthorizeAs("user-1");
         queryService.GetOwnedGardenCountsAsync("user-1", Arg.Any<CancellationToken>())
             .Returns(new OwnedGardenCountsDto(2, 1));
         calculatorService.CalculateAsync(Arg.Any<PricingCalculationRequestDto>(), Arg.Any<CancellationToken>())
@@ -143,7 +133,7 @@ public sealed class OnboardingCheckoutPageTests : BunitContext
     [Fact]
     public void DraftQueryParam_UnknownDraft_ShowsExpiredEmptyState()
     {
-        AuthorizeAs("user-1");
+        this.AuthorizeAs("user-1");
         queryService.GetOwnedGardenCountsAsync("user-1", Arg.Any<CancellationToken>())
             .Returns(new OwnedGardenCountsDto(0, 0));
         onboardingService.GetCheckoutDraftAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>())
@@ -169,7 +159,7 @@ public sealed class OnboardingCheckoutPageTests : BunitContext
     [Fact]
     public void DraftQueryParam_ValidDraft_LoadsIntoPaymentStep()
     {
-        AuthorizeAs("user-1");
+        this.AuthorizeAs("user-1");
         var draft = CreateDraft(Guid.NewGuid());
 
         onboardingService.GetCheckoutDraftAsync(draft.Id, Arg.Any<CancellationToken>()).Returns(draft);
@@ -187,7 +177,7 @@ public sealed class OnboardingCheckoutPageTests : BunitContext
     [Fact]
     public async Task PaymentStep_ConfirmingPayment_AuthenticatedFreshFlow_CallsProvisionPaidGardenAsync_AndNavigates()
     {
-        AuthorizeAs("user-1");
+        this.AuthorizeAs("user-1");
         queryService.GetOwnedGardenCountsAsync("user-1", Arg.Any<CancellationToken>())
             .Returns(new OwnedGardenCountsDto(0, 0));
         calculatorService.CalculateAsync(Arg.Any<PricingCalculationRequestDto>(), Arg.Any<CancellationToken>())
@@ -212,7 +202,7 @@ public sealed class OnboardingCheckoutPageTests : BunitContext
     [Fact]
     public async Task PaymentStep_ResumedFromDraft_ConfirmingPayment_CallsProvisionPaidGardenFromDraftAsync()
     {
-        AuthorizeAs("user-1");
+        this.AuthorizeAs("user-1");
         var draft = CreateDraft(Guid.NewGuid());
 
         onboardingService.GetCheckoutDraftAsync(draft.Id, Arg.Any<CancellationToken>()).Returns(draft);

@@ -4,7 +4,6 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Domain.Admin;
@@ -19,12 +18,6 @@ using Xunit;
 
 public class ReAuthenticationPolicyEditorTests : BunitContext
 {
-    private static Task<AuthenticationState> CreateAuthStateAsync()
-    {
-        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "user-1")], authenticationType: "Test");
-        return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(identity)));
-    }
-
     private IReAuthenticationPolicyAdminService RegisterFakes(bool reAuthSucceeds)
     {
         var adminService = Substitute.For<IReAuthenticationPolicyAdminService>();
@@ -59,7 +52,7 @@ public class ReAuthenticationPolicyEditorTests : BunitContext
     {
         RegisterFakes(reAuthSucceeds: true);
 
-        var cut = Render<ReAuthenticationPolicyEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<ReAuthenticationPolicyEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.Find("#reauth-maxage").GetAttribute("value").Should().Be("15");
     }
@@ -69,7 +62,7 @@ public class ReAuthenticationPolicyEditorTests : BunitContext
     {
         var service = RegisterFakes(reAuthSucceeds: true);
 
-        var cut = Render<ReAuthenticationPolicyEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<ReAuthenticationPolicyEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find("#reauth-maxage").Change("30");
         cut.Find("button.btn-primary").Click();
 
@@ -88,7 +81,7 @@ public class ReAuthenticationPolicyEditorTests : BunitContext
 
         var cut = Render<ReAuthenticationPolicyEditor>(p => p
             .Add(x => x.OnStatusMessage, EventCallback.Factory.Create<string>(this, m => receivedMessage = m))
-            .AddCascadingValue(CreateAuthStateAsync()));
+            .AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.Find("button.btn-primary").Click();
 
@@ -101,7 +94,7 @@ public class ReAuthenticationPolicyEditorTests : BunitContext
     {
         var service = RegisterFakes(reAuthSucceeds: false);
 
-        var cut = Render<ReAuthenticationPolicyEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<ReAuthenticationPolicyEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
         cut.FindAll(".confirm-dialog").Should().HaveCount(1);
@@ -113,7 +106,7 @@ public class ReAuthenticationPolicyEditorTests : BunitContext
     {
         var service = RegisterFakes(reAuthSucceeds: false);
 
-        var cut = Render<ReAuthenticationPolicyEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<ReAuthenticationPolicyEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
         cut.Find(".confirm-dialog button.btn-secondary").Click();
 
@@ -129,7 +122,7 @@ public class ReAuthenticationPolicyEditorTests : BunitContext
         rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(false));
         Services.AddSingleton(rateLimiter);
 
-        var cut = Render<ReAuthenticationPolicyEditor>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<ReAuthenticationPolicyEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
         _ = service.DidNotReceive().UpdateAsync(Arg.Any<ReAuthenticationPolicyDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>());

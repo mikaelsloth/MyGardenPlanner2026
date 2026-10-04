@@ -3,7 +3,6 @@
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Pages.Admin;
 using MyGardenPlanner2026.Configuration.Extensions;
@@ -17,12 +16,6 @@ using Xunit;
 
 public class AdminJitRequestsPageTests : BunitContext
 {
-    private static Task<AuthenticationState> CreateAuthStateAsync(string userId = "user-1")
-    {
-        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, userId)], authenticationType: "Test");
-        return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(identity)));
-    }
-
     private void RegisterFakes()
     {
         var jitService = Substitute.For<IJitElevationService>();
@@ -56,7 +49,7 @@ public class AdminJitRequestsPageTests : BunitContext
     {
         RegisterFakes();
 
-        var cut = Render<AdminJitRequestsPage>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<AdminJitRequestsPage>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.FindAll(".context-tab").Should().HaveCount(2);
     }
@@ -66,7 +59,7 @@ public class AdminJitRequestsPageTests : BunitContext
     {
         RegisterFakes();
 
-        var cut = Render<AdminJitRequestsPage>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<AdminJitRequestsPage>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.FindAll("#jit-request-role").Should().HaveCount(1);
     }
@@ -75,7 +68,7 @@ public class AdminJitRequestsPageTests : BunitContext
     public void AdminJitRequestsPage_ClickingApproveTab_RendersApprovalQueue()
     {
         RegisterFakes();
-        var cut = Render<AdminJitRequestsPage>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<AdminJitRequestsPage>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.FindAll(".context-tab")[1].Click();
 

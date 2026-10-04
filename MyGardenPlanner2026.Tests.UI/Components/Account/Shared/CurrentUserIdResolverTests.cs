@@ -3,7 +3,6 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Components.Authorization;
 using MyGardenPlanner2026.Components.Account.Shared;
-using System.Security.Claims;
 using Xunit;
 
 public class CurrentUserIdResolverTests
@@ -19,8 +18,7 @@ public class CurrentUserIdResolverTests
     [Fact]
     public async Task ResolveAsync_AuthenticatedUser_ReturnsNameIdentifierClaim()
     {
-        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "user-42")], authenticationType: "Test");
-        var authStateTask = Task.FromResult(new AuthenticationState(new ClaimsPrincipal(identity)));
+        var authStateTask = TestPrincipals.CreateAuthStateAsync("user-42");
 
         var result = await CurrentUserIdResolver.ResolveAsync(authStateTask);
 
@@ -30,7 +28,7 @@ public class CurrentUserIdResolverTests
     [Fact]
     public async Task ResolveAsync_UnauthenticatedUser_ReturnsNull()
     {
-        var authStateTask = Task.FromResult(new AuthenticationState(new ClaimsPrincipal(new ClaimsIdentity())));
+        var authStateTask = Task.FromResult(new AuthenticationState(TestPrincipals.Anonymous()));
 
         var result = await CurrentUserIdResolver.ResolveAsync(authStateTask);
 

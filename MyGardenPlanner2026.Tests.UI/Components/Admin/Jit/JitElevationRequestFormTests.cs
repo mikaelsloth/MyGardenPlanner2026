@@ -2,24 +2,16 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Domain.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using NSubstitute;
-using System.Security.Claims;
 using Xunit;
 
 public class JitElevationRequestFormTests : BunitContext
 {
-    private static Task<AuthenticationState> CreateAuthStateAsync(string userId = "user-1")
-    {
-        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, userId)], authenticationType: "Test");
-        return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(identity)));
-    }
-
     private static RoleElevationRequestDto CreateDto(RoleElevationStatus status, string roleName = "SystemAdmin") => new(
         Id: Guid.NewGuid(),
         RequesterUserId: "user-1",
@@ -53,7 +45,7 @@ public class JitElevationRequestFormTests : BunitContext
     {
         RegisterFakes();
 
-        var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.FindAll("#jit-request-role option").Should().HaveCount(4);
     }
@@ -69,7 +61,7 @@ public class JitElevationRequestFormTests : BunitContext
             CreateDto(RoleElevationStatus.Expired)
         ]);
 
-        var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.FindAll("tbody tr").Should().HaveCount(2);
         cut.Markup.Should().Contain("Afventer");
@@ -88,7 +80,7 @@ public class JitElevationRequestFormTests : BunitContext
             CreateDto(RoleElevationStatus.Expired)
         ]);
 
-        var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find("#jit-request-show-history").Change(true);
 
         cut.FindAll("tbody tr").Should().HaveCount(3);
@@ -101,7 +93,7 @@ public class JitElevationRequestFormTests : BunitContext
     {
         var service = RegisterFakes();
 
-        var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find("#jit-request-minutes").Change("45");
         cut.Find("#jit-request-reason").Change("Skal rette en fejl.");
         cut.Find("button.btn-primary").Click();
@@ -118,7 +110,7 @@ public class JitElevationRequestFormTests : BunitContext
             .Returns<RoleElevationRequestDto>(_ => throw new ArgumentOutOfRangeException(
                 "minutes", "RequestedMinutes skal være mellem 30 og 90."));
 
-        var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
         cut.Markup.Should().Contain("RequestedMinutes skal være mellem 30 og 90.");
@@ -129,7 +121,7 @@ public class JitElevationRequestFormTests : BunitContext
     {
         var service = RegisterFakes(rateLimiterPermits: false);
 
-        var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
         _ = service.DidNotReceive().RequestElevationAsync(

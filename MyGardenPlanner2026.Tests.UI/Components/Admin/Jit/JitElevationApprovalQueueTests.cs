@@ -4,7 +4,6 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Domain.Admin;
@@ -33,12 +32,6 @@ public class JitElevationApprovalQueueTests : BunitContext
         ValidFromUtc: null,
         ValidToUtc: null,
         CreatedAtUtc: DateTimeOffset.UtcNow);
-
-    private static Task<AuthenticationState> CreateAuthStateAsync(string userId = "approver-1")
-    {
-        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, userId)], authenticationType: "Test");
-        return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(identity)));
-    }
 
     private IJitElevationService RegisterFakes(
         bool reAuthSucceeds = true, bool rateLimiterPermits = true, IReadOnlyList<RoleElevationRequestDto>? pendingRequests = null)
@@ -82,7 +75,7 @@ public class JitElevationApprovalQueueTests : BunitContext
     {
         RegisterFakes();
 
-        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync("approver-1")));
 
         cut.FindAll("tbody tr").Should().HaveCount(1);
         cut.Markup.Should().Contain("requester-1");
@@ -94,7 +87,7 @@ public class JitElevationApprovalQueueTests : BunitContext
     {
         RegisterFakes(pendingRequests: []);
 
-        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync("approver-1")));
 
         cut.Markup.Should().Contain("Ingen ventende anmodninger");
     }
@@ -104,7 +97,7 @@ public class JitElevationApprovalQueueTests : BunitContext
     {
         var service = RegisterFakes(reAuthSucceeds: true);
 
-        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync("approver-1")));
         cut.Find("button.btn-primary").Click();
 
         _ = service.Received().ApproveElevationAsync("approver-1", Request1Id, Arg.Any<CancellationToken>());
@@ -119,7 +112,7 @@ public class JitElevationApprovalQueueTests : BunitContext
 
         var cut = Render<JitElevationApprovalQueue>(p => p
             .Add(x => x.OnStatusMessage, EventCallback.Factory.Create<string>(this, m => receivedMessage = m))
-            .AddCascadingValue(CreateAuthStateAsync()));
+            .AddCascadingValue(TestPrincipals.CreateAuthStateAsync("approver-1")));
 
         cut.Find("button.btn-primary").Click();
 
@@ -132,7 +125,7 @@ public class JitElevationApprovalQueueTests : BunitContext
     {
         var service = RegisterFakes(reAuthSucceeds: true);
 
-        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync("approver-1")));
         cut.Find("button.btn-danger").Click();
 
         _ = service.Received().RejectElevationAsync("approver-1", Request1Id, Arg.Any<CancellationToken>());
@@ -144,7 +137,7 @@ public class JitElevationApprovalQueueTests : BunitContext
     {
         var service = RegisterFakes(reAuthSucceeds: false);
 
-        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync("approver-1")));
         cut.Find("button.btn-primary").Click();
 
         cut.FindAll(".confirm-dialog").Should().HaveCount(1);
@@ -156,7 +149,7 @@ public class JitElevationApprovalQueueTests : BunitContext
     {
         var service = RegisterFakes(reAuthSucceeds: false);
 
-        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync("approver-1")));
         cut.Find("button.btn-danger").Click();
 
         cut.FindAll(".confirm-dialog").Should().HaveCount(1);
@@ -168,7 +161,7 @@ public class JitElevationApprovalQueueTests : BunitContext
     {
         var service = RegisterFakes(reAuthSucceeds: false);
 
-        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync("approver-1")));
         cut.Find("button.btn-primary").Click();
         cut.Find(".confirm-dialog button.btn-secondary").Click();
 
@@ -181,7 +174,7 @@ public class JitElevationApprovalQueueTests : BunitContext
     {
         var service = RegisterFakes(reAuthSucceeds: true, rateLimiterPermits: false);
 
-        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync("approver-1")));
         cut.Find("button.btn-primary").Click();
 
         _ = service.DidNotReceive().ApproveElevationAsync(Arg.Any<string>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
@@ -196,7 +189,7 @@ public class JitElevationApprovalQueueTests : BunitContext
             .Returns<RoleElevationRequestDto>(_ => throw new InvalidOperationException(
                 "Anmodningen kan ikke godkendes af ansøgeren selv (dual-custody / peer approval)."));
 
-        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync("approver-1")));
         cut.Find("button.btn-primary").Click();
 
         cut.Markup.Should().Contain("dual-custody");

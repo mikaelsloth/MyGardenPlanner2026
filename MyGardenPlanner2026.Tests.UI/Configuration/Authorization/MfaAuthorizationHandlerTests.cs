@@ -15,12 +15,6 @@ public class MfaAuthorizationHandlerTests
         Substitute.For<UserManager<ApplicationUser>>(
             Substitute.For<IUserStore<ApplicationUser>>(), null, null, null, null, null, null, null, null);
 
-    private static ClaimsPrincipal CreatePrincipal(string userId)
-    {
-        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, userId)], authenticationType: "Test");
-        return new ClaimsPrincipal(identity);
-    }
-
     [Fact]
     public async Task HandleRequirementAsync_UserHasTwoFactorEnabled_Succeeds()
     {
@@ -30,7 +24,7 @@ public class MfaAuthorizationHandlerTests
         userManager.GetTwoFactorEnabledAsync(user).Returns(Task.FromResult(true));
 
         var handler = new MfaAuthorizationHandler(userManager);
-        var context = new AuthorizationHandlerContext([new MfaRequirement()], CreatePrincipal("user-1"), resource: null);
+        var context = new AuthorizationHandlerContext([new MfaRequirement()], TestPrincipals.Create("user-1"), resource: null);
 
         await handler.HandleAsync(context);
 
@@ -46,7 +40,7 @@ public class MfaAuthorizationHandlerTests
         userManager.GetTwoFactorEnabledAsync(user).Returns(Task.FromResult(false));
 
         var handler = new MfaAuthorizationHandler(userManager);
-        var context = new AuthorizationHandlerContext([new MfaRequirement()], CreatePrincipal("user-1"), resource: null);
+        var context = new AuthorizationHandlerContext([new MfaRequirement()], TestPrincipals.Create("user-1"), resource: null);
 
         await handler.HandleAsync(context);
 
@@ -60,7 +54,7 @@ public class MfaAuthorizationHandlerTests
         userManager.GetUserAsync(Arg.Any<ClaimsPrincipal>()).Returns(Task.FromResult<ApplicationUser?>(null));
 
         var handler = new MfaAuthorizationHandler(userManager);
-        var context = new AuthorizationHandlerContext([new MfaRequirement()], CreatePrincipal("user-1"), resource: null);
+        var context = new AuthorizationHandlerContext([new MfaRequirement()], TestPrincipals.Create("user-1"), resource: null);
 
         await handler.HandleAsync(context);
 

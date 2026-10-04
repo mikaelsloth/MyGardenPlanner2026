@@ -3,7 +3,6 @@
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Pages.Admin;
 using MyGardenPlanner2026.Configuration.Extensions;
@@ -17,12 +16,6 @@ using Xunit;
 
 public class AdminSecurityPolicyPageTests : BunitContext
 {
-    private static Task<AuthenticationState> CreateAuthStateAsync()
-    {
-        var identity = new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "user-1")], authenticationType: "Test");
-        return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(identity)));
-    }
-
     private void RegisterFakes()
     {
         var jitService = Substitute.For<IJitElevationPolicyAdminService>();
@@ -73,7 +66,7 @@ public class AdminSecurityPolicyPageTests : BunitContext
     {
         RegisterFakes();
 
-        var cut = Render<AdminSecurityPolicyPage>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<AdminSecurityPolicyPage>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.FindAll(".context-tab").Should().HaveCount(6);
     }
@@ -83,7 +76,7 @@ public class AdminSecurityPolicyPageTests : BunitContext
     {
         RegisterFakes();
 
-        var cut = Render<AdminSecurityPolicyPage>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<AdminSecurityPolicyPage>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.FindAll("#jit-min").Should().HaveCount(1);
     }
@@ -92,7 +85,7 @@ public class AdminSecurityPolicyPageTests : BunitContext
     public void AdminSecurityPolicyPage_ClickingLoginRateLimitTab_RendersLoginRateLimitEditor()
     {
         RegisterFakes();
-        var cut = Render<AdminSecurityPolicyPage>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<AdminSecurityPolicyPage>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.FindAll(".context-tab")[4].Click();
 
@@ -103,7 +96,7 @@ public class AdminSecurityPolicyPageTests : BunitContext
     public void AdminSecurityPolicyPage_ClickingAuditLogExportJobTab_RendersAuditLogExportJobPolicyEditor()
     {
         RegisterFakes();
-        var cut = Render<AdminSecurityPolicyPage>(p => p.AddCascadingValue(CreateAuthStateAsync()));
+        var cut = Render<AdminSecurityPolicyPage>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
         cut.FindAll(".context-tab")[5].Click();
 

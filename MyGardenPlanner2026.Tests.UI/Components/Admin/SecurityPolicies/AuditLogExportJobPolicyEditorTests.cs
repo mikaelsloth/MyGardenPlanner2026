@@ -4,7 +4,6 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Domain.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
@@ -37,14 +36,8 @@ public class AuditLogExportJobPolicyEditorTests : BunitContext
         rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
     }
 
-    private IRenderedComponent<AuditLogExportJobPolicyEditor> RenderEditor()
-    {
-        var principal = new ClaimsPrincipal(new ClaimsIdentity(
-            [new Claim(ClaimTypes.NameIdentifier, "user-1")], "TestAuth"));
-        var authState = Task.FromResult(new AuthenticationState(principal));
-
-        return Render<AuditLogExportJobPolicyEditor>(p => p.AddCascadingValue(authState));
-    }
+    private IRenderedComponent<AuditLogExportJobPolicyEditor> RenderEditor() =>
+        Render<AuditLogExportJobPolicyEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
     [Fact]
     public void AuditLogExportJobPolicyEditor_RendersSeededValues()
@@ -78,8 +71,7 @@ public class AuditLogExportJobPolicyEditorTests : BunitContext
         string? statusMessage = null;
 
         var cut = Render<AuditLogExportJobPolicyEditor>(p => p
-            .AddCascadingValue(Task.FromResult(new AuthenticationState(
-                new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "user-1")], "TestAuth")))))
+            .AddCascadingValue(TestPrincipals.CreateAuthStateAsync())
             .Add(x => x.OnStatusMessage, EventCallback.Factory.Create<string>(this, m => statusMessage = m)));
 
         await cut.Find("button.btn-primary").ClickAsync();

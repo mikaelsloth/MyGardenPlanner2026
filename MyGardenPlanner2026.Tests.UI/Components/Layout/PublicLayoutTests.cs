@@ -11,9 +11,7 @@ public class PublicLayoutTests : BunitContext
     public void PublicHeader_RendersBrandAndNavigationButtons()
     {
         // Act
-        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
-        module.SetupVoid("activate", _ => true).SetVoidResult();
-        module.SetupVoid("deactivate").SetVoidResult();
+        this.SetupNavDrawerModule();
         var cut = Render<PublicHeader>();
 
         // Assert
@@ -51,9 +49,7 @@ public class PublicLayoutTests : BunitContext
     public void PublicLayout_RendersSkipLinkHeaderMainAndFooter()
     {
         // Act
-        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
-        module.SetupVoid("activate", _ => true);
-        module.SetupVoid("deactivate");
+        this.SetupNavDrawerModule();
 
         var cut = Render<PublicLayout>();
 

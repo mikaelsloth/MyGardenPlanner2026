@@ -10,9 +10,7 @@ public class NavDrawerFocusTrapTests : BunitContext
     [Fact]
     public void NavDrawer_OnFirstRender_ImportsFocusTrapModule()
     {
-        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
-        module.SetupVoid("activate", _ => true).SetVoidResult();
-        module.SetupVoid("deactivate").SetVoidResult();
+        this.SetupNavDrawerModule();
 
         Render<NavDrawer>(p => p.Add(x => x.IsOpen, false));
 
@@ -22,9 +20,7 @@ public class NavDrawerFocusTrapTests : BunitContext
     [Fact]
     public void NavDrawer_WhenOpening_InvokesActivateWithDrawerElement()
     {
-        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
-        module.SetupVoid("activate", _ => true).SetVoidResult();
-        module.SetupVoid("deactivate").SetVoidResult();
+        var module = this.SetupNavDrawerModule();
 
         var cut = Render<NavDrawer>(p => p.Add(x => x.IsOpen, false));
 
@@ -36,9 +32,7 @@ public class NavDrawerFocusTrapTests : BunitContext
     [Fact]
     public void NavDrawer_WhenClosing_InvokesDeactivate()
     {
-        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
-        module.SetupVoid("activate", _ => true).SetVoidResult();
-        module.SetupVoid("deactivate").SetVoidResult();
+        var module = this.SetupNavDrawerModule();
 
         var cut = Render<NavDrawer>(p => p.Add(x => x.IsOpen, true));
         cut.WaitForAssertion(() => module.VerifyInvoke("activate"));
@@ -51,9 +45,7 @@ public class NavDrawerFocusTrapTests : BunitContext
     [Fact]
     public void NavDrawer_ReopeningAfterClose_InvokesActivateTwice()
     {
-        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
-        module.SetupVoid("activate", _ => true).SetVoidResult();
-        module.SetupVoid("deactivate").SetVoidResult();
+        var module = this.SetupNavDrawerModule();
 
         var cut = Render<NavDrawer>(p => p.Add(x => x.IsOpen, false));
 
@@ -71,9 +63,7 @@ public class NavDrawerFocusTrapTests : BunitContext
     [Fact]
     public async Task NavDrawer_DisposedWhileOpen_InvokesDeactivateDuringCleanup()
     {
-        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
-        module.SetupVoid("activate", _ => true).SetVoidResult();
-        module.SetupVoid("deactivate").SetVoidResult();
+        var module = this.SetupNavDrawerModule();
 
         var cut = Render<NavDrawer>(p => p.Add(x => x.IsOpen, true));
         await cut.WaitForAssertionAsync(() => module.VerifyInvoke("activate"));

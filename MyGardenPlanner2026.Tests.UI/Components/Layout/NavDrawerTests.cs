@@ -12,10 +12,7 @@ public class NavDrawerTests : BunitContext
     [Fact]
     public void NavDrawer_WhenOpen_RendersOpenClassAndBackdrop()
     {
-        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
-        module.SetupVoid("activate", _ => true).SetVoidResult();
-        module.SetupVoid("deactivate").SetVoidResult();
-        var cut = Render<NavDrawer>(p => p.Add(x => x.IsOpen, true));
+        this.SetupNavDrawerModule(); var cut = Render<NavDrawer>(p => p.Add(x => x.IsOpen, true));
 
         cut.Find(".nav-drawer").ClassList.Should().Contain("open");
         cut.FindAll(".drawer-backdrop").Should().HaveCount(1);
@@ -24,9 +21,7 @@ public class NavDrawerTests : BunitContext
     [Fact]
     public void NavDrawer_WhenClosed_DoesNotRenderOpenClassOrBackdrop()
     {
-        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
-        module.SetupVoid("activate", _ => true).SetVoidResult();
-        module.SetupVoid("deactivate").SetVoidResult();
+        this.SetupNavDrawerModule();
         var cut = Render<NavDrawer>(p => p.Add(x => x.IsOpen, false));
 
         cut.Find(".nav-drawer").ClassList.Should().NotContain("open");
@@ -36,9 +31,7 @@ public class NavDrawerTests : BunitContext
     [Fact]
     public void NavDrawer_RendersAllFourMenuLinks()
     {
-        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
-        module.SetupVoid("activate", _ => true).SetVoidResult();
-        module.SetupVoid("deactivate").SetVoidResult();
+        this.SetupNavDrawerModule();
         var cut = Render<NavDrawer>(p => p.Add(x => x.IsOpen, true));
 
         cut.Find("a[href='/']").TextContent.Should().Contain("Forside");
@@ -51,9 +44,7 @@ public class NavDrawerTests : BunitContext
     public void NavDrawer_ClickingForsideLink_InvokesOnCloseOnce()
     {
         var closeCount = 0;
-        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
-        module.SetupVoid("activate", _ => true).SetVoidResult();
-        module.SetupVoid("deactivate").SetVoidResult();
+        this.SetupNavDrawerModule();
         var cut = Render<NavDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => closeCount++)));
@@ -67,9 +58,7 @@ public class NavDrawerTests : BunitContext
     public void NavDrawer_ClickingBackdrop_InvokesOnCloseOnce()
     {
         var closeCount = 0;
-        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
-        module.SetupVoid("activate", _ => true).SetVoidResult();
-        module.SetupVoid("deactivate").SetVoidResult();
+        this.SetupNavDrawerModule();
         var cut = Render<NavDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => closeCount++)));
@@ -83,9 +72,7 @@ public class NavDrawerTests : BunitContext
     public void NavDrawer_PressingEscape_InvokesOnCloseOnce()
     {
         var closeCount = 0;
-        var module = JSInterop.SetupModule("./Components/Layout/NavDrawer.razor.js");
-        module.SetupVoid("activate", _ => true).SetVoidResult();
-        module.SetupVoid("deactivate").SetVoidResult();
+        this.SetupNavDrawerModule();
         var cut = Render<NavDrawer>(p => p
             .Add(x => x.IsOpen, true)
             .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => closeCount++)));

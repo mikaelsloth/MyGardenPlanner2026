@@ -7,10 +7,14 @@ using MyGardenPlanner2026.Configuration.Authorization;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Infrastructure.Services.ReAuthentication;
 using NSubstitute;
+using System.Security.Claims;
 using Xunit;
 
 public class RequireRecentAuthenticationHandlerTests
 {
+    private static ClaimsPrincipal CreatePrincipal() =>
+        new(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "user-1")], authenticationType: "Test"));
+
     private static RequireRecentAuthenticationHandler CreateHandler(
         IReAuthenticationService reAuthenticationService, int maxAgeMinutes = 15)
     {
@@ -27,7 +31,7 @@ public class RequireRecentAuthenticationHandlerTests
 
         var handler = CreateHandler(reAuthenticationService);
         var context = new AuthorizationHandlerContext(
-            [new RequireRecentAuthenticationRequirement()], TestAuthHelper.CreatePrincipal(), resource: null);
+            [new RequireRecentAuthenticationRequirement()], CreatePrincipal(), resource: null);
 
         await handler.HandleAsync(context);
 
@@ -42,7 +46,7 @@ public class RequireRecentAuthenticationHandlerTests
 
         var handler = CreateHandler(reAuthenticationService);
         var context = new AuthorizationHandlerContext(
-            [new RequireRecentAuthenticationRequirement()], TestAuthHelper.CreatePrincipal(), resource: null);
+            [new RequireRecentAuthenticationRequirement()], CreatePrincipal(), resource: null);
 
         await handler.HandleAsync(context);
 
@@ -57,7 +61,7 @@ public class RequireRecentAuthenticationHandlerTests
 
         var handler = CreateHandler(reAuthenticationService, maxAgeMinutes: 5);
         var context = new AuthorizationHandlerContext(
-            [new RequireRecentAuthenticationRequirement()], TestAuthHelper.CreatePrincipal(), resource: null);
+            [new RequireRecentAuthenticationRequirement()], CreatePrincipal(), resource: null);
 
         await handler.HandleAsync(context);
 

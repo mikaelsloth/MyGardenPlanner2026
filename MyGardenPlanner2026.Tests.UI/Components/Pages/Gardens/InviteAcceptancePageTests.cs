@@ -11,7 +11,6 @@ using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Layer1;
 using NSubstitute;
 using NSubstitute.ExceptionExtensions;
-using System.Security.Claims;
 using Xunit;
 
 public sealed class InviteAcceptancePageTests : BunitContext
@@ -28,13 +27,6 @@ public sealed class InviteAcceptancePageTests : BunitContext
         Services.AddSingleton(queryService);
         Services.AddSingleton(calculatorService);
         Services.AddSingleton(addOnService);
-    }
-
-    private void AuthorizeAs(string userId)
-    {
-        var authContext = AddAuthorization();
-        authContext.SetAuthorized(userId);
-        authContext.SetClaims(new Claim(ClaimTypes.NameIdentifier, userId));
     }
 
     private static GardenInvitationDto CreateInvitationDto(
@@ -135,7 +127,7 @@ public sealed class InviteAcceptancePageTests : BunitContext
     [Fact]
     public async Task Authenticated_ClickingBaselineAccept_CallsAcceptInvitationAsync_WithTargetLevelAndNullUpgrade_AndNavigates()
     {
-        AuthorizeAs("user-1");
+        this.AuthorizeAs("user-1");
         var gardenId = Guid.NewGuid();
         var invitation = CreateInvitationDto(gardenId, allowSelfUpgrade: false,
             targetLayer: GardenAccessLevel.Planlaegger, targetCategory: AccessCategory.Viewer);
@@ -207,7 +199,7 @@ public sealed class InviteAcceptancePageTests : BunitContext
     [Fact]
     public void AllowSelfUpgrade_Authenticated_ConfiguringUpgrade_MovesToPaymentStep()
     {
-        AuthorizeAs("user-1");
+        this.AuthorizeAs("user-1");
         var gardenId = Guid.NewGuid();
         var invitation = CreateInvitationDto(gardenId, allowSelfUpgrade: true,
             targetLayer: GardenAccessLevel.Planlaegger, maxLayer: GardenAccessLevel.BedDesigner);
@@ -228,7 +220,7 @@ public sealed class InviteAcceptancePageTests : BunitContext
     [Fact]
     public async Task PaymentStep_ConfirmingPayment_CallsAcceptInvitationAsync_WithUpgradeSelection_AndNavigates()
     {
-        AuthorizeAs("user-1");
+        this.AuthorizeAs("user-1");
         var gardenId = Guid.NewGuid();
         var invitation = CreateInvitationDto(gardenId, allowSelfUpgrade: true,
             targetLayer: GardenAccessLevel.Planlaegger, maxLayer: GardenAccessLevel.BedDesigner);
@@ -256,7 +248,7 @@ public sealed class InviteAcceptancePageTests : BunitContext
     [Fact]
     public void AcceptInvitationAsync_Throws_ShowsErrorMessage_WithoutNavigating()
     {
-        AuthorizeAs("user-1");
+        this.AuthorizeAs("user-1");
         var gardenId = Guid.NewGuid();
         var invitation = CreateInvitationDto(gardenId, allowSelfUpgrade: false);
 

@@ -7,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Pages;
 using MyGardenPlanner2026.Core.Contracts.Onboarding;
 using NSubstitute;
-using System.Security.Claims;
 using Xunit;
 
 public sealed class OnboardingWelcomePageTests : BunitContext
@@ -16,17 +15,10 @@ public sealed class OnboardingWelcomePageTests : BunitContext
 
     public OnboardingWelcomePageTests() => Services.AddSingleton(onboardingService);
 
-    private void AuthorizeAs(string userId)
-    {
-        var authContext = AddAuthorization();
-        authContext.SetAuthorized(userId);
-        authContext.SetClaims(new Claim(ClaimTypes.NameIdentifier, userId));
-    }
-
     [Fact]
     public void RendersBothOptionCards()
     {
-        AuthorizeAs("user-1");
+        this.AuthorizeAs("user-1");
 
         var cut = Render<OnboardingWelcomePage>();
 
@@ -37,7 +29,7 @@ public sealed class OnboardingWelcomePageTests : BunitContext
     [Fact]
     public async Task ClickingCreateSandbox_CallsCreateSandboxGardenAsync_AndNavigatesToDemoDashboard()
     {
-        AuthorizeAs("user-1");
+        this.AuthorizeAs("user-1");
         onboardingService.CreateSandboxGardenAsync("user-1", Arg.Any<CancellationToken>())
             .Returns(new SandboxGardenResultDto(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid()));
 
@@ -51,7 +43,7 @@ public sealed class OnboardingWelcomePageTests : BunitContext
     [Fact]
     public async Task ClickingChooseSubscription_NavigatesToCheckout_WithoutCreatingSandbox()
     {
-        AuthorizeAs("user-1");
+        this.AuthorizeAs("user-1");
 
         var cut = Render<OnboardingWelcomePage>();
         await cut.Find(".btn-secondary").ClickAsync();

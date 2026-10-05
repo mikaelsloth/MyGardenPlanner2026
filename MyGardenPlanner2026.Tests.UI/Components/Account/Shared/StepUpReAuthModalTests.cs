@@ -37,7 +37,7 @@ public class StepUpReAuthModalTests : BunitContext
             .Add(x => x.IsOpen, false)
             .AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
-        cut.FindAll(".confirm-dialog").Should().BeEmpty();
+        cut.ShouldNotShowStepUpModal();
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public class StepUpReAuthModalTests : BunitContext
             .Add(x => x.IsOpen, true)
             .AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
-        cut.FindAll(".confirm-dialog").Should().HaveCount(1);
+        cut.ShouldShowStepUpModal();
         cut.FindAll("#step-up-totp").Should().BeEmpty();
     }
 

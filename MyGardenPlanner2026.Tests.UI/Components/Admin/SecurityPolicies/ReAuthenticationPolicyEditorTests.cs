@@ -2,47 +2,24 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Domain.Admin;
-using MyGardenPlanner2026.Configuration.Extensions;
 using MyGardenPlanner2026.Core.Contracts.Admin;
-using MyGardenPlanner2026.Core.Contracts.Common;
-using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Tests.UI;
 using NSubstitute;
-using System.Security.Claims;
 using Xunit;
 
 public class ReAuthenticationPolicyEditorTests : BunitContext
 {
-    private IReAuthenticationPolicyAdminService RegisterFakes(bool reAuthSucceeds)
+    private IReAuthenticationPolicyAdminService RegisterFakes(bool reAuthSucceeds, bool rateLimiterPermits = true)
     {
         var adminService = Substitute.For<IReAuthenticationPolicyAdminService>();
         adminService.GetAsync(Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new ReAuthenticationPolicyDto(15)));
         Services.AddSingleton(adminService);
 
-        var authorizationService = Substitute.For<IAuthorizationService>();
-        authorizationService.AuthorizeAsync(
-                Arg.Any<ClaimsPrincipal>(), Arg.Any<object>(), Arg.Is(AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy))
-            .Returns(Task.FromResult(reAuthSucceeds ? AuthorizationResult.Success() : AuthorizationResult.Failed()));
-        Services.AddSingleton(authorizationService);
-
-        var userManager = IdentityTestDoubles.CreateUserManager();
-        userManager.GetUserAsync(Arg.Any<ClaimsPrincipal>()).Returns(Task.FromResult<ApplicationUser?>(null));
-        Services.AddSingleton(userManager);
-
-        Services.AddSingleton(Substitute.For<IReAuthenticationService>());
-        Services.AddSingleton(Substitute.For<IReAuthFailureTracker>());
-        Services.AddSingleton(Substitute.For<ICurrentUserAccessor>());
-
-        var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
-        rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
-        Services.AddSingleton(rateLimiter);
-        Services.AddSingleton(Substitute.For<ILogger<ReAuthenticationPolicyEditor>>());
+        this.RegisterAdminStepUpFakes<ReAuthenticationPolicyEditorTests>(reAuthSucceeds, rateLimiterPermits);
 
         return adminService;
     }
@@ -70,7 +47,7 @@ public class ReAuthenticationPolicyEditorTests : BunitContext
             Arg.Is<ReAuthenticationPolicyDto>(d => d.MaxAgeMinutes == 30),
             "user-1",
             Arg.Any<CancellationToken>());
-        cut.FindAll(".confirm-dialog").Should().BeEmpty();
+        cut.ShouldNotShowStepUpModal();
     }
 
     [Fact]
@@ -97,7 +74,7 @@ public class ReAuthenticationPolicyEditorTests : BunitContext
         var cut = Render<ReAuthenticationPolicyEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
-        cut.FindAll(".confirm-dialog").Should().HaveCount(1);
+        cut.ShouldShowStepUpModal();
         _ = service.DidNotReceive().UpdateAsync(Arg.Any<ReAuthenticationPolicyDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
@@ -110,22 +87,19 @@ public class ReAuthenticationPolicyEditorTests : BunitContext
         cut.Find("button.btn-primary").Click();
         cut.Find(".confirm-dialog button.btn-secondary").Click();
 
-        cut.FindAll(".confirm-dialog").Should().BeEmpty();
+        cut.ShouldNotShowStepUpModal();
         _ = service.DidNotReceive().UpdateAsync(Arg.Any<ReAuthenticationPolicyDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public void RateLimited_ClickingGem_DoesNotCallUpdateAsync_AndShowsErrorMessage()
     {
-        var service = RegisterFakes(reAuthSucceeds: true);
-        var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
-        rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(false));
-        Services.AddSingleton(rateLimiter);
+        var service = RegisterFakes(reAuthSucceeds: true, rateLimiterPermits: false);
 
         var cut = Render<ReAuthenticationPolicyEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
         _ = service.DidNotReceive().UpdateAsync(Arg.Any<ReAuthenticationPolicyDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
-        cut.Markup.Should().Contain("For mange handlinger");
+        cut.ShouldShowRateLimitMessage();
     }
 }

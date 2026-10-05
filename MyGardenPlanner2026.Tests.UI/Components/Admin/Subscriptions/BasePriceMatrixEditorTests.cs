@@ -2,20 +2,14 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Domain.Admin;
-using MyGardenPlanner2026.Configuration.Extensions;
 using MyGardenPlanner2026.Core.Contracts.Admin;
-using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
-using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Tests.UI;
 using NSubstitute;
-using System.Security.Claims;
 using Xunit;
 
 public class BasePriceMatrixEditorTests : BunitContext
@@ -26,31 +20,14 @@ public class BasePriceMatrixEditorTests : BunitContext
         id, GardenAccessLevel.HaveArkitekt, AccessCategory.Administrator, "Have Arkitekt · Administrator",
         AnnualPrice: 336m, MonthlyPrice: 28m, PerpetualPrice: 840m);
 
-    private ISubscriptionTierAdminService RegisterFakes(bool reAuthSucceeds)
+    private ISubscriptionTierAdminService RegisterFakes(bool reAuthSucceeds, bool rateLimiterPermits = true)
     {
         var adminService = Substitute.For<ISubscriptionTierAdminService>();
         adminService.GetAllTiersAsync(Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<SubscriptionTierAdminDto>>([CreateDto(TierId)]));
         Services.AddSingleton(adminService);
 
-        var authorizationService = Substitute.For<IAuthorizationService>();
-        authorizationService.AuthorizeAsync(
-        Arg.Any<ClaimsPrincipal>(), Arg.Any<object>(), Arg.Is(AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy))
-            .Returns(Task.FromResult(reAuthSucceeds ? AuthorizationResult.Success() : AuthorizationResult.Failed()));
-        Services.AddSingleton(authorizationService);
-
-        var userManager = IdentityTestDoubles.CreateUserManager();
-        userManager.GetUserAsync(Arg.Any<ClaimsPrincipal>()).Returns(Task.FromResult<ApplicationUser?>(null));
-        Services.AddSingleton(userManager);
-
-        Services.AddSingleton(Substitute.For<IReAuthenticationService>());
-        Services.AddSingleton(Substitute.For<IReAuthFailureTracker>());
-        Services.AddSingleton(Substitute.For<ICurrentUserAccessor>());
-
-        var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
-        rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
-        Services.AddSingleton(rateLimiter);
-        Services.AddSingleton(Substitute.For<ILogger<BasePriceMatrixEditor>>());
+        this.RegisterAdminStepUpFakes<BasePriceMatrixEditorTests>(reAuthSucceeds, rateLimiterPermits);
 
         return adminService;
     }
@@ -77,7 +54,7 @@ public class BasePriceMatrixEditorTests : BunitContext
         _ = service.Received().UpdateTierAsync(
             Arg.Is<SubscriptionTierUpdateDto>(u => u.Id == TierId && u.AnnualPrice == 350m),
             Arg.Any<CancellationToken>());
-        cut.FindAll(".confirm-dialog").Should().BeEmpty();
+        cut.ShouldNotShowStepUpModal();
     }
 
     [Fact]
@@ -104,7 +81,7 @@ public class BasePriceMatrixEditorTests : BunitContext
         var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
-        cut.FindAll(".confirm-dialog").Should().HaveCount(1);
+        cut.ShouldShowStepUpModal();
         _ = service.DidNotReceive().UpdateTierAsync(Arg.Any<SubscriptionTierUpdateDto>(), Arg.Any<CancellationToken>());
     }
 
@@ -118,22 +95,19 @@ public class BasePriceMatrixEditorTests : BunitContext
 
         cut.Find(".confirm-dialog button.btn-secondary").Click();
 
-        cut.FindAll(".confirm-dialog").Should().BeEmpty();
+        cut.ShouldNotShowStepUpModal();
         _ = service.DidNotReceive().UpdateTierAsync(Arg.Any<SubscriptionTierUpdateDto>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public void RateLimited_ClickingGem_DoesNotCallUpdateTierAsync_AndShowsErrorMessage()
     {
-        var service = RegisterFakes(reAuthSucceeds: true);
-        var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
-        rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(false));
-        Services.AddSingleton(rateLimiter); // overskriver den permitterende fake fra RegisterFakes
+        var service = RegisterFakes(reAuthSucceeds: true, rateLimiterPermits: false);
 
         var cut = Render<BasePriceMatrixEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
         _ = service.DidNotReceive().UpdateTierAsync(Arg.Any<SubscriptionTierUpdateDto>(), Arg.Any<CancellationToken>());
-        cut.Markup.Should().Contain("For mange handlinger");
+        cut.ShouldShowRateLimitMessage();
     }
 }

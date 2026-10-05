@@ -105,7 +105,7 @@ public sealed class GardenInvitationListTests : BunitContext
         cut.Find(".btn-danger").Click();
         cut.Find(".confirm-dialog-actions .btn-secondary").Click();
 
-        cut.FindAll(".confirm-dialog").Should().BeEmpty();
+        cut.ShouldNotShowStepUpModal();
         invoked.Should().BeFalse();
     }
 }

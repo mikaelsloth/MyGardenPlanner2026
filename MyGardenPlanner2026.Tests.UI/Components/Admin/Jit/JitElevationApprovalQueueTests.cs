@@ -2,19 +2,13 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Domain.Admin;
-using MyGardenPlanner2026.Configuration.Extensions;
 using MyGardenPlanner2026.Core.Contracts.Admin;
-using MyGardenPlanner2026.Core.Contracts.Common;
-using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Tests.UI;
 using NSubstitute;
-using System.Security.Claims;
 using Xunit;
 
 public class JitElevationApprovalQueueTests : BunitContext
@@ -38,7 +32,7 @@ public class JitElevationApprovalQueueTests : BunitContext
     {
         var service = Substitute.For<IJitElevationService>();
         service.GetPendingRequestsForApprovalAsync("approver-1", Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(pendingRequests ?? (IReadOnlyList<RoleElevationRequestDto>)[Request1]));
+            .Returns(Task.FromResult(pendingRequests ?? [Request1]));
 
         // NSubstitute returnerer null for uopstillede metoder der returnerer Task<T> (reference type),
         // hvilket giver NullReferenceException ved await. Stub derfor altid et default-svar.
@@ -48,24 +42,7 @@ public class JitElevationApprovalQueueTests : BunitContext
             .Returns(Task.FromResult(Request1 with { Status = RoleElevationStatus.Rejected, ApproverUserId = "approver-1" }));
 
         Services.AddSingleton(service);
-        var authorizationService = Substitute.For<IAuthorizationService>();
-        authorizationService.AuthorizeAsync(
-                Arg.Any<ClaimsPrincipal>(), Arg.Any<object>(), Arg.Is(AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy))
-            .Returns(Task.FromResult(reAuthSucceeds ? AuthorizationResult.Success() : AuthorizationResult.Failed()));
-        Services.AddSingleton(authorizationService);
-
-        var userManager = IdentityTestDoubles.CreateUserManager();
-        userManager.GetUserAsync(Arg.Any<ClaimsPrincipal>()).Returns(Task.FromResult<ApplicationUser?>(null));
-        Services.AddSingleton(userManager);
-
-        Services.AddSingleton(Substitute.For<IReAuthenticationService>());
-        Services.AddSingleton(Substitute.For<IReAuthFailureTracker>());
-        Services.AddSingleton(Substitute.For<ICurrentUserAccessor>());
-
-        var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
-        rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(rateLimiterPermits));
-        Services.AddSingleton(rateLimiter);
-        Services.AddSingleton(Substitute.For<ILogger<JitElevationApprovalQueue>>());
+        this.RegisterAdminStepUpFakes<IJitElevationService>(reAuthSucceeds, rateLimiterPermits);
 
         return service;
     }
@@ -101,7 +78,7 @@ public class JitElevationApprovalQueueTests : BunitContext
         cut.Find("button.btn-primary").Click();
 
         _ = service.Received().ApproveElevationAsync("approver-1", Request1Id, Arg.Any<CancellationToken>());
-        cut.FindAll(".confirm-dialog").Should().BeEmpty();
+        cut.ShouldNotShowStepUpModal();
     }
 
     [Fact]
@@ -129,7 +106,7 @@ public class JitElevationApprovalQueueTests : BunitContext
         cut.Find("button.btn-danger").Click();
 
         _ = service.Received().RejectElevationAsync("approver-1", Request1Id, Arg.Any<CancellationToken>());
-        cut.FindAll(".confirm-dialog").Should().BeEmpty();
+        cut.ShouldNotShowStepUpModal();
     }
 
     [Fact]
@@ -140,7 +117,7 @@ public class JitElevationApprovalQueueTests : BunitContext
         var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync("approver-1")));
         cut.Find("button.btn-primary").Click();
 
-        cut.FindAll(".confirm-dialog").Should().HaveCount(1);
+        cut.ShouldShowStepUpModal();
         _ = service.DidNotReceive().ApproveElevationAsync(Arg.Any<string>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
@@ -152,7 +129,7 @@ public class JitElevationApprovalQueueTests : BunitContext
         var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync("approver-1")));
         cut.Find("button.btn-danger").Click();
 
-        cut.FindAll(".confirm-dialog").Should().HaveCount(1);
+        cut.ShouldShowStepUpModal();
         _ = service.DidNotReceive().RejectElevationAsync(Arg.Any<string>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
@@ -165,7 +142,7 @@ public class JitElevationApprovalQueueTests : BunitContext
         cut.Find("button.btn-primary").Click();
         cut.Find(".confirm-dialog button.btn-secondary").Click();
 
-        cut.FindAll(".confirm-dialog").Should().BeEmpty();
+        cut.ShouldNotShowStepUpModal();
         _ = service.DidNotReceive().ApproveElevationAsync(Arg.Any<string>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
@@ -178,7 +155,7 @@ public class JitElevationApprovalQueueTests : BunitContext
         cut.Find("button.btn-primary").Click();
 
         _ = service.DidNotReceive().ApproveElevationAsync(Arg.Any<string>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
-        cut.Markup.Should().Contain("For mange handlinger");
+        cut.ShouldShowRateLimitMessage();
     }
 
     [Fact]

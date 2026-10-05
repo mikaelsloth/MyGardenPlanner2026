@@ -2,19 +2,13 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Domain.Admin;
-using MyGardenPlanner2026.Configuration.Extensions;
 using MyGardenPlanner2026.Core.Contracts.Admin;
-using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
-using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Tests.UI;
 using NSubstitute;
-using System.Security.Claims;
 using Xunit;
 
 public class AddOnEditorTests : BunitContext
@@ -24,31 +18,14 @@ public class AddOnEditorTests : BunitContext
     private static readonly SubscriptionAddOnDto AddOn1 = new(
         AddOn1Id, AddOnType.BedforslagNiveau2, "Bedforslag (Niveau 2)", "Pakke med 2 bedforslag", 180m, 15m, 450m);
 
-    private ISubscriptionAddOnAdminService RegisterFake(bool reAuthSucceeds = true)
+    private ISubscriptionAddOnAdminService RegisterFake(bool reAuthSucceeds = true, bool rateLimiterPermits = true)
     {
         var service = Substitute.For<ISubscriptionAddOnAdminService>();
         service.GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<SubscriptionAddOnDto>>([AddOn1]));
         Services.AddSingleton(service);
 
-        var authorizationService = Substitute.For<IAuthorizationService>();
-        authorizationService.AuthorizeAsync(
-                Arg.Any<ClaimsPrincipal>(), Arg.Any<object>(), Arg.Is(AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy))
-            .Returns(Task.FromResult(reAuthSucceeds ? AuthorizationResult.Success() : AuthorizationResult.Failed()));
-        Services.AddSingleton(authorizationService);
-
-        var userManager = IdentityTestDoubles.CreateUserManager();
-        userManager.GetUserAsync(Arg.Any<ClaimsPrincipal>()).Returns(Task.FromResult<ApplicationUser?>(null));
-        Services.AddSingleton(userManager);
-
-        Services.AddSingleton(Substitute.For<IReAuthenticationService>());
-        Services.AddSingleton(Substitute.For<IReAuthFailureTracker>());
-        Services.AddSingleton(Substitute.For<ICurrentUserAccessor>());
-
-        var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
-        rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
-        Services.AddSingleton(rateLimiter);
-        Services.AddSingleton(Substitute.For<ILogger<AddOnEditor>>());
+        this.RegisterAdminStepUpFakes<AddOnEditorTests>(reAuthSucceeds, rateLimiterPermits);
 
         return service;
     }
@@ -77,7 +54,7 @@ public class AddOnEditorTests : BunitContext
             Arg.Is<SubscriptionAddOnUpsertDto>(d =>
                 d.Id == AddOn1Id && d.Type == AddOnType.BedforslagNiveau2 && d.Name == "Bedforslag (Niveau 2) - opdateret"),
             Arg.Any<CancellationToken>());
-        cut.FindAll(".confirm-dialog").Should().BeEmpty();
+        cut.ShouldNotShowStepUpModal();
     }
 
     [Fact]
@@ -102,7 +79,7 @@ public class AddOnEditorTests : BunitContext
 
         cut.Find("button.btn-primary.btn-sm").Click();
 
-        cut.FindAll(".confirm-dialog").Should().HaveCount(1);
+        cut.ShouldShowStepUpModal();
         _ = service.DidNotReceive().SaveAsync(Arg.Any<SubscriptionAddOnUpsertDto>(), Arg.Any<CancellationToken>());
     }
 
@@ -115,7 +92,7 @@ public class AddOnEditorTests : BunitContext
         cut.Find("#new-name").Change("Artefaktpakke C");
         cut.Find("button.btn-primary:not(.btn-sm)").Click();
 
-        cut.FindAll(".confirm-dialog").Should().HaveCount(1);
+        cut.ShouldShowStepUpModal();
         _ = service.DidNotReceive().SaveAsync(Arg.Any<SubscriptionAddOnUpsertDto>(), Arg.Any<CancellationToken>());
     }
 
@@ -127,7 +104,7 @@ public class AddOnEditorTests : BunitContext
 
         cut.Find("button.btn-danger.btn-sm").Click();
 
-        cut.FindAll(".confirm-dialog").Should().HaveCount(1);
+        cut.ShouldShowStepUpModal();
         _ = service.DidNotReceive().DeleteAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
@@ -140,7 +117,7 @@ public class AddOnEditorTests : BunitContext
         cut.Find(".danger-zone button.btn-danger").Click();
         cut.Find(".inline-confirm button.btn-danger").Click();
 
-        cut.FindAll(".confirm-dialog").Should().HaveCount(1);
+        cut.ShouldShowStepUpModal();
         _ = service.DidNotReceive().ResetToDefaultAsync(Arg.Any<CancellationToken>());
     }
 
@@ -153,22 +130,19 @@ public class AddOnEditorTests : BunitContext
         cut.Find("button.btn-danger.btn-sm").Click();
         cut.Find(".confirm-dialog button.btn-secondary").Click();
 
-        cut.FindAll(".confirm-dialog").Should().BeEmpty();
+        cut.ShouldNotShowStepUpModal();
         _ = service.DidNotReceive().DeleteAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public void RateLimited_ClickingGem_DoesNotCallUpdateTierAsync_AndShowsErrorMessage()
+    public void RateLimited_ClickingGem_DoesNotCallSaveAsync_AndShowsErrorMessage()
     {
-        var service = RegisterFake(reAuthSucceeds: true);
-        var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
-        rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(false));
-        Services.AddSingleton(rateLimiter); // overskriver den permitterende fake fra RegisterFakes
+        var service = RegisterFake(reAuthSucceeds: true, rateLimiterPermits: false);
 
         var cut = Render<AddOnEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
         _ = service.DidNotReceive().SaveAsync(Arg.Any<SubscriptionAddOnUpsertDto>(), Arg.Any<CancellationToken>());
-        cut.Markup.Should().Contain("For mange handlinger");
+        cut.ShouldShowRateLimitMessage();
     }
 }

@@ -2,18 +2,12 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Domain.Admin;
-using MyGardenPlanner2026.Configuration.Extensions;
 using MyGardenPlanner2026.Core.Contracts.Admin;
-using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
-using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Tests.UI;
 using NSubstitute;
-using System.Security.Claims;
 using Xunit;
 
 public class VolumeDiscountEditorTests : BunitContext
@@ -21,31 +15,14 @@ public class VolumeDiscountEditorTests : BunitContext
     private static readonly Guid Tier1Id = Guid.Parse("33333333-3333-3333-3333-333333333333");
     private static readonly GardenVolumeDiscountTierDto Tier1 = new(Tier1Id, 1, 1, 1.00m);
 
-    private IGardenVolumeDiscountAdminService RegisterFake(bool reAuthSucceeds = true)
+    private IGardenVolumeDiscountAdminService RegisterFake(bool reAuthSucceeds = true, bool rateLimiterPermits = true)
     {
         var service = Substitute.For<IGardenVolumeDiscountAdminService>();
         service.GetAllAsync(Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<GardenVolumeDiscountTierDto>>([Tier1]));
         Services.AddSingleton(service);
 
-        var authorizationService = Substitute.For<IAuthorizationService>();
-        authorizationService.AuthorizeAsync(
-                Arg.Any<ClaimsPrincipal>(), Arg.Any<object>(), Arg.Is(AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy))
-            .Returns(Task.FromResult(reAuthSucceeds ? AuthorizationResult.Success() : AuthorizationResult.Failed()));
-        Services.AddSingleton(authorizationService);
-
-        var userManager = IdentityTestDoubles.CreateUserManager();
-        userManager.GetUserAsync(Arg.Any<ClaimsPrincipal>()).Returns(Task.FromResult<ApplicationUser?>(null));
-        Services.AddSingleton(userManager);
-
-        Services.AddSingleton(Substitute.For<IReAuthenticationService>());
-        Services.AddSingleton(Substitute.For<IReAuthFailureTracker>());
-        Services.AddSingleton(Substitute.For<ICurrentUserAccessor>());
-
-        var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
-        rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
-        Services.AddSingleton(rateLimiter);
-        Services.AddSingleton(Substitute.For<ILogger<VolumeDiscountEditor>>());
+        this.RegisterAdminStepUpFakes<VolumeDiscountEditorTests>(reAuthSucceeds, rateLimiterPermits);
 
         return service;
     }
@@ -74,7 +51,7 @@ public class VolumeDiscountEditorTests : BunitContext
         _ = service.Received().SaveAsync(
             Arg.Is<GardenVolumeDiscountTierUpsertDto>(d => d.Id == null && d.MinGardens == 11 && d.PriceMultiplier == 0.70m),
             Arg.Any<CancellationToken>());
-        cut.FindAll(".confirm-dialog").Should().BeEmpty();
+        cut.ShouldNotShowStepUpModal();
     }
 
     [Fact]
@@ -110,7 +87,7 @@ public class VolumeDiscountEditorTests : BunitContext
         cut.Find("#new-mult").Change("0.70");
         cut.Find("#add-tier").Click();
 
-        cut.FindAll(".confirm-dialog").Should().HaveCount(1);
+        cut.ShouldShowStepUpModal();
         _ = service.DidNotReceive().SaveAsync(Arg.Any<GardenVolumeDiscountTierUpsertDto>(), Arg.Any<CancellationToken>());
     }
 
@@ -122,7 +99,7 @@ public class VolumeDiscountEditorTests : BunitContext
 
         cut.Find("button.btn-danger.btn-sm").Click();
 
-        cut.FindAll(".confirm-dialog").Should().HaveCount(1);
+        cut.ShouldShowStepUpModal();
         _ = service.DidNotReceive().DeleteAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
@@ -135,7 +112,7 @@ public class VolumeDiscountEditorTests : BunitContext
         cut.Find(".danger-zone button.btn-danger").Click();
         cut.Find(".inline-confirm button.btn-danger").Click();
 
-        cut.FindAll(".confirm-dialog").Should().HaveCount(1);
+        cut.ShouldShowStepUpModal();
         _ = service.DidNotReceive().ResetToDefaultAsync(Arg.Any<CancellationToken>());
     }
 
@@ -148,22 +125,19 @@ public class VolumeDiscountEditorTests : BunitContext
         cut.Find("#add-tier").Click();
         cut.Find(".confirm-dialog button.btn-secondary").Click();
 
-        cut.FindAll(".confirm-dialog").Should().BeEmpty();
+        cut.ShouldNotShowStepUpModal();
         _ = service.DidNotReceive().SaveAsync(Arg.Any<GardenVolumeDiscountTierUpsertDto>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public void RateLimited_ClickingGem_DoesNotCallUpdateTierAsync_AndShowsErrorMessage()
+    public void RateLimited_ClickingGem_DoesNotCallSaveAsync_AndShowsErrorMessage()
     {
-        var service = RegisterFake(reAuthSucceeds: true);
-        var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
-        rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(false));
-        Services.AddSingleton(rateLimiter); // overskriver den permitterende fake fra RegisterFakes
+        var service = RegisterFake(reAuthSucceeds: true, rateLimiterPermits: false);
 
         var cut = Render<VolumeDiscountEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
         _ = service.DidNotReceive().SaveAsync(Arg.Any<GardenVolumeDiscountTierUpsertDto>(), Arg.Any<CancellationToken>());
-        cut.Markup.Should().Contain("For mange handlinger");
+        cut.ShouldShowRateLimitMessage();
     }
 }

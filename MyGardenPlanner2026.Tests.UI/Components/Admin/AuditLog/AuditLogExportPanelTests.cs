@@ -21,8 +21,6 @@ public class AuditLogExportPanelTests : BunitContext
     private readonly IAdminActionRateLimiter rateLimiter;
     private readonly IAuditLogExportJobService exportJobService = Substitute.For<IAuditLogExportJobService>();
 
-    private static AuditLogFilterDto EmptyFilter() => new(null, null, null, null, null, null, null);
-
     public AuditLogExportPanelTests()
     {
         Services.AddSingleton(queryService);
@@ -45,7 +43,7 @@ public class AuditLogExportPanelTests : BunitContext
         return Render<AuditLogExportPanel>(p =>
         {
             p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync());
-            p.Add(x => x.CurrentFilter, EmptyFilter());
+            p.Add(x => x.CurrentFilter, AuditLogTestData.EmptyFilter());
             if (onJobEnqueued is { } callback)
             {
                 p.Add(x => x.OnJobEnqueued, callback);
@@ -160,15 +158,11 @@ public class AuditLogExportPanelTests : BunitContext
         JSInterop.Invocations.Should().NotContain(i => i.InvocationMethodName == "open");
     }
 
-    private static AuditLogExportJobDto PendingJobDto() => new(
-    Guid.NewGuid(), "user-1", AuditLogExportFormat.Csv, AuditLogExportJobStatus.Pending,
-    DateTimeOffset.UtcNow, null, null, null, null, null, null, null);
-
     [Fact]
     public async Task ReAuthValid_ClickingSendTilBaggrundseksport_CallsEnqueueAsync_AndShowsSuccessMessage()
     {
         exportJobService.EnqueueAsync("user-1", Arg.Any<AuditLogFilterDto>(), AuditLogExportFormat.Csv, Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(PendingJobDto()));
+            .Returns(Task.FromResult(AuditLogTestData.ExportJob(AuditLogExportJobStatus.Pending, rowCount: null, fileName: null)));
 
         var cut = RenderPanel();
 
@@ -225,7 +219,7 @@ public class AuditLogExportPanelTests : BunitContext
     public async Task ClickingSendTilBaggrundseksport_Success_InvokesOnJobEnqueued()
     {
         exportJobService.EnqueueAsync(Arg.Any<string>(), Arg.Any<AuditLogFilterDto>(), Arg.Any<AuditLogExportFormat>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(PendingJobDto()));
+            .Returns(Task.FromResult(AuditLogTestData.ExportJob(AuditLogExportJobStatus.Pending, rowCount: null, fileName: null)));
         var invoked = false;
 
         var cut = RenderPanel(EventCallback.Factory.Create(this, () => invoked = true));

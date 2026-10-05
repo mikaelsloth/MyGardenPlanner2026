@@ -5,7 +5,6 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Pages.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
-using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Tests.UI;
 using NSubstitute;
 using Xunit;
@@ -16,10 +15,6 @@ public class AdminAuditLogPageTests : BunitContext
     private readonly IAuditLogViewerPreferenceService preferenceService = Substitute.For<IAuditLogViewerPreferenceService>();
     private readonly IAuditLogExportTokenService tokenService = Substitute.For<IAuditLogExportTokenService>();
     private readonly IAuditLogExportJobService exportJobService = Substitute.For<IAuditLogExportJobService>();
-
-    private static AuditLogEntryDto Entry(long id = 1) => new(
-        id, "user-1", "user1@example.com", "127.0.0.1", AuditAction.Update,
-        "SubscriptionTier", "abc", null, null, new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero));
 
     public AdminAuditLogPageTests()
     {
@@ -73,7 +68,7 @@ public class AdminAuditLogPageTests : BunitContext
     [Fact]
     public async Task OnInitialized_AppliesSavedLastFilter_ToInitialSearch()
     {
-        var savedFilter = new AuditLogFilterDto("SubscriptionTier", null, null, null, null, null, null);
+        var savedFilter = AuditLogTestData.EmptyFilter() with { EntityName = "SubscriptionTier" };
         preferenceService.GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new AuditLogViewerPreferenceDto(25, savedFilter)));
         queryService.SearchAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>())
@@ -91,7 +86,7 @@ public class AdminAuditLogPageTests : BunitContext
         queryService.SearchAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>())
             .Returns(
                 Task.FromResult(new AuditLogQueryResultDto([], 0, 1, 25)),
-                Task.FromResult(new AuditLogQueryResultDto([Entry()], 1, 1, 25)));
+                Task.FromResult(new AuditLogQueryResultDto([AuditLogTestData.Entry()], 1, 1, 25)));
 
         var cut = RenderPage();
 
@@ -106,7 +101,7 @@ public class AdminAuditLogPageTests : BunitContext
     public async Task ClickingNaesteSide_RequestsNextPage_WithSameFilterCriteria()
     {
         queryService.SearchAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(new AuditLogQueryResultDto([Entry()], 100, 1, 25)));
+            .Returns(Task.FromResult(new AuditLogQueryResultDto([AuditLogTestData.Entry()], 100, 1, 25)));
 
         var cut = RenderPage();
         await cut.FindAll(".audit-log-pagination button")[1].ClickAsync();
@@ -118,7 +113,7 @@ public class AdminAuditLogPageTests : BunitContext
     [Fact]
     public void ClickingDetaljer_OpensModalWithSelectedEntry()
     {
-        var entry = Entry(9);
+        var entry = AuditLogTestData.Entry(9);
         queryService.SearchAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new AuditLogQueryResultDto([entry], 1, 1, 25)));
 
@@ -131,7 +126,7 @@ public class AdminAuditLogPageTests : BunitContext
     [Fact]
     public void ClosingModal_HidesDetailModal()
     {
-        var entry = Entry(9);
+        var entry = AuditLogTestData.Entry(9);
         queryService.SearchAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new AuditLogQueryResultDto([entry], 1, 1, 25)));
 

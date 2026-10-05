@@ -2,7 +2,6 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Account.Pages;
@@ -22,7 +21,7 @@ public class ResetPasswordTests : BunitContext
         Services.AddSingleton(userManager);
         var navMan = this.UseIdentityRedirectManager();
 
-        Render<ResetPassword>(parameters => parameters.AddCascadingValue(new DefaultHttpContext())); ;
+        this.RenderWithHttpContext<ResetPassword>();
 
         navMan.Uri.Should().Contain("Account/InvalidPasswordReset");
     }
@@ -40,7 +39,7 @@ public class ResetPasswordTests : BunitContext
         var navMan = this.UseIdentityRedirectManager();
         navMan.NavigateTo($"/Account/ResetPassword?code={EncodedCode}");
 
-        var cut = Render<ResetPassword>(parameters => parameters.AddCascadingValue(new DefaultHttpContext())); ;
+        var cut = this.RenderWithHttpContext<ResetPassword>();
         cut.Find("#Input\\.Email").Change("test@example.dk");
         cut.Find("#Input\\.Password").Change("NytKodeord123!");
         cut.Find("#Input\\.ConfirmPassword").Change("NytKodeord123!");

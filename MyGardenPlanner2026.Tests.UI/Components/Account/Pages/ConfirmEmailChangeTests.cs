@@ -3,7 +3,6 @@
 using Bunit;
 using Bunit.TestDoubles;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Account.Pages;
@@ -33,7 +32,7 @@ public class ConfirmEmailChangeTests : BunitContext
         var navMan = Services.GetRequiredService<BunitNavigationManager>();
         navMan.NavigateTo($"/Account/ConfirmEmailChange?UserId=user-1&Email=ny@example.dk&Code={EncodedCode}");
 
-        var cut = Render<ConfirmEmailChange>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        var cut = this.RenderWithHttpContext<ConfirmEmailChange>();
 
         cut.Markup.Should().Contain("Tak, fordi du bekræftede skiftet af din e-mail.");
     }
@@ -46,7 +45,7 @@ public class ConfirmEmailChangeTests : BunitContext
         Services.AddSingleton(IdentityTestDoubles.CreateSignInManager(userManager));
         var navMan = this.UseIdentityRedirectManager();
 
-        var cut = Render<ConfirmEmailChange>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        this.RenderWithHttpContext<ConfirmEmailChange>();
 
         navMan.Uri.Should().Contain("Account/Login");
     }

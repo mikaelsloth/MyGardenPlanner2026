@@ -2,7 +2,6 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Account.Pages;
@@ -32,7 +31,7 @@ public class LoginWith2faTests : BunitContext
         var navMan = this.UseIdentityRedirectManager();
 
         navMan.NavigateTo("/Account/LoginWith2fa?ReturnUrl=%2Fpricing&RememberMe=false");
-        var cut = Render<LoginWith2fa>(parameters => parameters.AddCascadingValue(new DefaultHttpContext())); ;
+        var cut = this.RenderWithHttpContext<LoginWith2fa>();
         cut.Find("#Input\\.TwoFactorCode").Change("123456");
         cut.Find("form").Submit();
 
@@ -47,7 +46,7 @@ public class LoginWith2faTests : BunitContext
             .Returns(Task.FromResult(SignInResult.Failed));
         this.UseIdentityRedirectManager();
 
-        var cut = Render<LoginWith2fa>(parameters => parameters.AddCascadingValue(new DefaultHttpContext())); ;
+        var cut = this.RenderWithHttpContext<LoginWith2fa>();
         cut.Find("#Input\\.TwoFactorCode").Change("000000");
         cut.Find("form").Submit();
 
@@ -62,7 +61,7 @@ public class LoginWith2faTests : BunitContext
             .Returns(Task.FromResult(SignInResult.Success));
         this.UseIdentityRedirectManager();
 
-        var cut = Render<LoginWith2fa>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        var cut = this.RenderWithHttpContext<LoginWith2fa>();
         cut.Find("#Input\\.TwoFactorCode").Change("123456");
         cut.Find("form").Submit();
 
@@ -78,7 +77,7 @@ public class LoginWith2faTests : BunitContext
         this.UseIdentityRedirectManager();
         var tracker = Services.GetRequiredService<IReAuthFailureTracker>();
 
-        var cut = Render<LoginWith2fa>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        var cut = this.RenderWithHttpContext<LoginWith2fa>();
         await cut.Find("#Input\\.TwoFactorCode").ChangeAsync("123456");
         await cut.Find("form").SubmitAsync();
 
@@ -94,7 +93,7 @@ public class LoginWith2faTests : BunitContext
         this.UseIdentityRedirectManager();
         var tracker = Services.GetRequiredService<IReAuthFailureTracker>();
 
-        var cut = Render<LoginWith2fa>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        var cut = this.RenderWithHttpContext<LoginWith2fa>();
         await cut.Find("#Input\\.TwoFactorCode").ChangeAsync("000000");
         await cut.Find("form").SubmitAsync();
 

@@ -11,9 +11,7 @@ public class ErrorPageTests : BunitContext
     [Fact]
     public void Error_WithTraceIdentifier_ShowsRequestId()
     {
-        var httpContext = new DefaultHttpContext { TraceIdentifier = "trace-123" };
-        var cut = Render<Error>(parameters => parameters
-            .AddCascadingValue(httpContext));
+        var cut = this.RenderWithHttpContext<Error>(new DefaultHttpContext { TraceIdentifier = "trace-123" });
 
         cut.Markup.Should().Contain("trace-123");
         cut.Markup.Should().Contain("Forespørgsels-ID");
@@ -22,9 +20,7 @@ public class ErrorPageTests : BunitContext
     [Fact]
     public void Error_RendersDanishHeadingAndDangerEmptyStateVariant()
     {
-        var httpContext = new DefaultHttpContext();
-        var cut = Render<Error>(parameters => parameters
-            .AddCascadingValue(httpContext));
+        var cut = this.RenderWithHttpContext<Error>();
 
         cut.Find("h1").TextContent.Should().Be("Der opstod en fejl");
         cut.Find(".empty-state").ClassList.Should().Contain("empty-error");
@@ -33,9 +29,7 @@ public class ErrorPageTests : BunitContext
     [Fact]
     public void Error_RendersDevelopmentModeWarningNote()
     {
-        var httpContext = new DefaultHttpContext();
-        var cut = Render<Error>(parameters => parameters
-            .AddCascadingValue(httpContext));
+        var cut = this.RenderWithHttpContext<Error>();
 
         cut.Find(".status-warning").Should().NotBeNull();
         cut.Markup.Should().Contain("Udviklingstilstand");

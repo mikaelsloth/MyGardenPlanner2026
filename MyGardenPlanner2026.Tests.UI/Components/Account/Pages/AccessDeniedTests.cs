@@ -2,7 +2,6 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Account.Pages;
 using MyGardenPlanner2026.Core.Entities;
@@ -23,7 +22,7 @@ public class AccessDeniedTests : BunitContext
         Services.AddSingleton(userManager);
         var navMan = this.UseIdentityRedirectManager();
 
-        var cut = Render<AccessDenied>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        var cut = this.RenderWithHttpContext<AccessDenied>();
 
         cut.Find("h1").TextContent.Should().Be("Adgang nægtet");
         cut.Markup.Should().Contain("ikke adgang til denne ressource");
@@ -40,7 +39,7 @@ public class AccessDeniedTests : BunitContext
         Services.AddSingleton(userManager);
         var navMan = this.UseIdentityRedirectManager();
 
-        Render<AccessDenied>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        this.RenderWithHttpContext<AccessDenied>();
 
         navMan.Uri.Should().Contain("Account/Manage/EnableAuthenticator");
     }
@@ -53,7 +52,7 @@ public class AccessDeniedTests : BunitContext
         Services.AddSingleton(userManager);
         var navMan = this.UseIdentityRedirectManager();
 
-        var cut = Render<AccessDenied>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        var cut = this.RenderWithHttpContext<AccessDenied>();
 
         cut.Markup.Should().Contain("ikke adgang til denne ressource");
         navMan.Uri.Should().NotContain("EnableAuthenticator");

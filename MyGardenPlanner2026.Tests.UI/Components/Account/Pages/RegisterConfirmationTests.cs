@@ -28,7 +28,7 @@ public class RegisterConfirmationTests : BunitContext
         var navMan = Services.GetRequiredService<BunitNavigationManager>();
         navMan.NavigateTo("/Account/RegisterConfirmation?Email=ny@example.dk");
 
-        var cut = Render<RegisterConfirmation>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        var cut = this.RenderWithHttpContext<RegisterConfirmation>();
 
         cut.Markup.Should().Contain("Tjek venligst din e-mail for at bekræfte din konto.");
     }
@@ -47,7 +47,7 @@ public class RegisterConfirmationTests : BunitContext
         navMan.NavigateTo("/Account/RegisterConfirmation?Email=ukendt@example.dk");
 
         var httpContext = new DefaultHttpContext();
-        var cut = Render<RegisterConfirmation>(parameters => parameters.AddCascadingValue(httpContext));
+        var cut = this.RenderWithHttpContext<RegisterConfirmation>(httpContext);
 
         httpContext.Response.StatusCode.Should().Be(StatusCodes.Status404NotFound);
         cut.Markup.Should().Contain("Error: Kunne ikke finde bruger for den angivne e-mail.");

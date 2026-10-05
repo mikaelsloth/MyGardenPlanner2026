@@ -30,7 +30,7 @@ public class ConfirmEmailTests : BunitContext
         navMan.NavigateTo($"/Account/ConfirmEmail?UserId=user-1&Code={EncodedCode}");
 
         var httpContext = new DefaultHttpContext();
-        var cut = Render<ConfirmEmail>(parameters => parameters.AddCascadingValue(httpContext));
+        var cut = this.RenderWithHttpContext<ConfirmEmail>(httpContext);
 
         cut.Markup.Should().Contain("Tak, fordi du bekræftede din e-mail.");
     }
@@ -47,7 +47,7 @@ public class ConfirmEmailTests : BunitContext
         navMan.NavigateTo($"/Account/ConfirmEmail?UserId=missing-user&Code={EncodedCode}");
 
         var httpContext = new DefaultHttpContext();
-        var cut = Render<ConfirmEmail>(parameters => parameters.AddCascadingValue(httpContext));
+        var cut = this.RenderWithHttpContext<ConfirmEmail>(httpContext);
 
         httpContext.Response.StatusCode.Should().Be(StatusCodes.Status404NotFound);
         cut.Markup.Should().Contain("Error: Kunne ikke finde bruger med ID missing-user.");

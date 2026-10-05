@@ -2,7 +2,6 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Account.Pages;
@@ -31,7 +30,7 @@ public class LoginWithRecoveryCodeTests : BunitContext
         var navMan = this.UseIdentityRedirectManager();
 
         navMan.NavigateTo("/Account/LoginWithRecoveryCode?ReturnUrl=%2Fpricing");
-        var cut = Render<LoginWithRecoveryCode>(parameters => parameters.AddCascadingValue(new DefaultHttpContext())); ;
+        var cut = this.RenderWithHttpContext<LoginWithRecoveryCode>();
         cut.Find("#Input\\.RecoveryCode").Change("ABCD1234");
         cut.Find("form").Submit();
 
@@ -45,7 +44,7 @@ public class LoginWithRecoveryCodeTests : BunitContext
         signInManager.TwoFactorRecoveryCodeSignInAsync(Arg.Any<string>()).Returns(Task.FromResult(SignInResult.Failed));
         this.UseIdentityRedirectManager();
 
-        var cut = Render<LoginWithRecoveryCode>(parameters => parameters.AddCascadingValue(new DefaultHttpContext())); ;
+        var cut = this.RenderWithHttpContext<LoginWithRecoveryCode>();
         cut.Find("#Input\\.RecoveryCode").Change("FORKERT");
         cut.Find("form").Submit();
 
@@ -60,7 +59,7 @@ public class LoginWithRecoveryCodeTests : BunitContext
         this.UseIdentityRedirectManager();
         var tracker = Services.GetRequiredService<IReAuthFailureTracker>();
 
-        var cut = Render<LoginWithRecoveryCode>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        var cut = this.RenderWithHttpContext<LoginWithRecoveryCode>();
         await cut.Find("#Input\\.RecoveryCode").ChangeAsync("FORKERT");
         await cut.Find("form").SubmitAsync();
 
@@ -74,7 +73,7 @@ public class LoginWithRecoveryCodeTests : BunitContext
         signInManager.TwoFactorRecoveryCodeSignInAsync("ABCD1234").Returns(Task.FromResult(SignInResult.Success));
         this.UseIdentityRedirectManager();
 
-        var cut = Render<LoginWithRecoveryCode>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        var cut = this.RenderWithHttpContext<LoginWithRecoveryCode>();
         cut.Find("#Input\\.RecoveryCode").Change("ABCD1234");
         cut.Find("form").Submit();
 

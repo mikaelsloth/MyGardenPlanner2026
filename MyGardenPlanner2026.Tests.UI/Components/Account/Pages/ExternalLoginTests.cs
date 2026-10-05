@@ -2,7 +2,6 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Account.Pages;
@@ -30,7 +29,7 @@ public class ExternalLoginTests : BunitContext
         var navMan = this.UseIdentityRedirectManager();
 
         navMan.NavigateTo("/Account/ExternalLogin?RemoteError=access_denied");
-        Render<ExternalLogin>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        this.RenderWithHttpContext<ExternalLogin>();
 
         navMan.Uri.Should().Contain("Account/Login");
         _ = signInManager.DidNotReceive().GetExternalLoginInfoAsync();
@@ -43,7 +42,7 @@ public class ExternalLoginTests : BunitContext
         signInManager.GetExternalLoginInfoAsync().Returns(Task.FromResult<Microsoft.AspNetCore.Identity.ExternalLoginInfo?>(null));
         var navMan = this.UseIdentityRedirectManager();
 
-        Render<ExternalLogin>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        this.RenderWithHttpContext<ExternalLogin>();
 
         navMan.Uri.Should().Contain("Account/Login");
     }

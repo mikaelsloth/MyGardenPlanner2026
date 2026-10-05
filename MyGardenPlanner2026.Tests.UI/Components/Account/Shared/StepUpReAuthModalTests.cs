@@ -5,10 +5,8 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Account.Shared;
 using MyGardenPlanner2026.Core.Contracts.Admin;
-using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Tests.UI;
 using NSubstitute;
@@ -24,16 +22,8 @@ public class StepUpReAuthModalTests : BunitContext
         userManager.GetUserAsync(Arg.Any<ClaimsPrincipal>()).Returns(Task.FromResult<ApplicationUser?>(user));
         userManager.GetTwoFactorEnabledAsync(user).Returns(Task.FromResult(twoFactorEnabled));
 
-        var reAuthenticationService = Substitute.For<IReAuthenticationService>();
-
         Services.AddSingleton(userManager);
-        Services.AddSingleton(reAuthenticationService);
-        Services.AddSingleton(Substitute.For<IReAuthFailureTracker>());
-        Services.AddSingleton(Substitute.For<ILogger<StepUpReAuthModal>>());
-
-        var currentUserAccessor = Substitute.For<ICurrentUserAccessor>();
-        currentUserAccessor.GetCurrent().Returns(new CurrentUserInfo(null, null, "127.0.0.1"));
-        Services.AddSingleton(currentUserAccessor);
+        var reAuthenticationService = this.RegisterReAuthFakes<StepUpReAuthModal>();
 
         return (userManager, reAuthenticationService, user);
     }

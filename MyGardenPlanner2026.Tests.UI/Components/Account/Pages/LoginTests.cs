@@ -4,10 +4,8 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Account.Pages;
 using MyGardenPlanner2026.Core.Contracts.Admin;
-using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Tests.UI;
 using NSubstitute;
@@ -17,19 +15,8 @@ public class LoginTests : BunitContext
 {
     private (UserManager<ApplicationUser> UserManager, SignInManager<ApplicationUser> SignInManager, IReAuthenticationService ReAuthenticationService) RegisterFakes()
     {
-        var userManager = IdentityTestDoubles.CreateUserManager();
-        var signInManager = IdentityTestDoubles.CreateSignInManager(userManager);
-        var reAuthenticationService = Substitute.For<IReAuthenticationService>();
-
-        Services.AddSingleton(userManager);
-        Services.AddSingleton(signInManager);
-        Services.AddSingleton(reAuthenticationService);
-        Services.AddSingleton(Substitute.For<ILogger<Login>>());
-        Services.AddSingleton(Substitute.For<IReAuthFailureTracker>());
-
-        var currentUserAccessor = Substitute.For<ICurrentUserAccessor>();
-        currentUserAccessor.GetCurrent().Returns(new CurrentUserInfo(null, null, "127.0.0.1"));
-        Services.AddSingleton(currentUserAccessor);
+        var (userManager, signInManager) = this.RegisterIdentityFakes();
+        var reAuthenticationService = this.RegisterReAuthFakes<Login>();
 
         return (userManager, signInManager, reAuthenticationService);
     }

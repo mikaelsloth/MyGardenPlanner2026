@@ -7,7 +7,10 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Account;
+using MyGardenPlanner2026.Core.Contracts.Admin;
+using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Entities;
 using NSubstitute;
 
@@ -28,6 +31,58 @@ public static class IdentityTestDoubles
             Substitute.For<IHttpContextAccessor>(),
             Substitute.For<IUserClaimsPrincipalFactory<ApplicationUser>>(),
             null, null, null, null);
+
+    /// <summary>
+    /// Opretter og registrerer UserManager og SignInManager (substitutter) i bUnit's Services.
+    /// </summary>
+    public static (UserManager<ApplicationUser> UserManager, SignInManager<ApplicationUser> SignInManager)
+        RegisterIdentityFakes(this BunitContext context)
+    {
+        var userManager = CreateUserManager();
+        var signInManager = CreateSignInManager(userManager);
+
+        context.Services.AddSingleton(userManager);
+        context.Services.AddSingleton(signInManager);
+
+        return (userManager, signInManager);
+    }
+
+    /// <summary>
+    /// Registrerer de fakes, som re-auth-flowet i login- og step-up-komponenter kræver:
+    /// IReAuthenticationService, IReAuthFailureTracker, ICurrentUserAccessor (127.0.0.1) og ILogger&lt;T&gt;.
+    /// </summary>
+    /// <typeparam name="TComponent">Komponenten, hvis logger-kategori registreres.</typeparam>
+    /// <returns>IReAuthenticationService-fakeen, så tests kan verificere kald.</returns>
+    public static IReAuthenticationService RegisterReAuthFakes<TComponent>(this BunitContext context)
+    {
+        var reAuthenticationService = Substitute.For<IReAuthenticationService>();
+
+        var currentUserAccessor = Substitute.For<ICurrentUserAccessor>();
+        currentUserAccessor.GetCurrent().Returns(new CurrentUserInfo(null, null, "127.0.0.1"));
+
+        context.Services.AddSingleton(reAuthenticationService);
+        context.Services.AddSingleton(Substitute.For<IReAuthFailureTracker>());
+        context.Services.AddSingleton(currentUserAccessor);
+        context.Services.AddSingleton(Substitute.For<ILogger<TComponent>>());
+
+        return reAuthenticationService;
+    }
+
+    /// <summary>
+    /// Opsætter en bruger, der afventer tofaktor-login: SignInManager.GetTwoFactorAuthenticationUserAsync
+    /// returnerer brugeren, og UserManager.GetUserIdAsync returnerer <paramref name="userId"/>.
+    /// </summary>
+    public static ApplicationUser SetupTwoFactorLoginUser(
+        UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager,
+        string userId = "user-1")
+    {
+        var user = new ApplicationUser { Id = userId };
+        userManager.GetUserIdAsync(user).Returns(Task.FromResult(userId));
+        signInManager.GetTwoFactorAuthenticationUserAsync().Returns(Task.FromResult<ApplicationUser?>(user));
+
+        return user;
+    }
 
     /// <summary>
     /// HttpContext med en substitueret IAuthenticationService i RequestServices.

@@ -19,7 +19,7 @@ public class LoginRateLimitEditorTests : BunitContext
             .Returns(Task.FromResult(new LoginRateLimitPolicyDto(5, 60)));
         Services.AddSingleton(adminService);
 
-        this.RegisterAdminStepUpFakes<LoginRateLimitEditorTests>(reAuthSucceeds, rateLimiterPermits);
+        this.RegisterAdminStepUpFakes<LoginRateLimitEditor>(reAuthSucceeds, rateLimiterPermits);
 
         return adminService;
     }

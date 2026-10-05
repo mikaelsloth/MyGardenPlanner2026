@@ -19,7 +19,7 @@ public class ReAuthFailureTrackerEditorTests : BunitContext
             .Returns(Task.FromResult(new ReAuthFailureTrackerPolicyDto(5, 2)));
         Services.AddSingleton(adminService);
 
-        this.RegisterAdminStepUpFakes<ReAuthFailureTrackerEditorTests>(reAuthSucceeds, rateLimiterPermits);
+        this.RegisterAdminStepUpFakes<ReAuthFailureTrackerEditor>(reAuthSucceeds, rateLimiterPermits);
 
         return adminService;
     }

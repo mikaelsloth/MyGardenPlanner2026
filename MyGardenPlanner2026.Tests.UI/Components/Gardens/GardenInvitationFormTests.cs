@@ -19,7 +19,7 @@ public sealed class GardenInvitationFormTests : BunitContext
     private static GardenMembershipDto CreateRequester(
         GardenAccessLevel layer = GardenAccessLevel.BedDesigner,
         AccessCategory category = AccessCategory.Editor) =>
-        new(Guid.NewGuid(), Guid.NewGuid(), "owner", true, layer, category, DateTimeOffset.UtcNow);
+        GardenTestData.Membership(userId: "owner", level: layer, category: category);
 
     [Fact]
     public void LayerDropdown_OnlyShowsOptionsAtOrBelowRequesterLevel()

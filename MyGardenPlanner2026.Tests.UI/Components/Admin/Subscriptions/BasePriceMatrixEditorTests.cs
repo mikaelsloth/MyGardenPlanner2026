@@ -5,7 +5,6 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Domain.Admin;
-using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Tests.UI;
@@ -27,7 +26,7 @@ public class BasePriceMatrixEditorTests : BunitContext
             .Returns(Task.FromResult<IReadOnlyList<SubscriptionTierAdminDto>>([CreateDto(TierId)]));
         Services.AddSingleton(adminService);
 
-        this.RegisterAdminStepUpFakes<BasePriceMatrixEditorTests>(reAuthSucceeds, rateLimiterPermits);
+        this.RegisterAdminStepUpFakes<BasePriceMatrixEditor>(reAuthSucceeds, rateLimiterPermits);
 
         return adminService;
     }

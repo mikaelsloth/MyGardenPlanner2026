@@ -33,9 +33,10 @@ public sealed class InviteAcceptancePageTests : BunitContext
         Guid gardenId, bool allowSelfUpgrade = false,
         GardenAccessLevel targetLayer = GardenAccessLevel.Planlaegger, AccessCategory targetCategory = AccessCategory.Viewer,
         GardenAccessLevel maxLayer = GardenAccessLevel.Planlaegger, AccessCategory maxCategory = AccessCategory.Viewer) =>
-        new(Guid.NewGuid(), gardenId, "owner", "invited@example.com", targetLayer, targetCategory,
-            false, allowSelfUpgrade, DateTimeOffset.UtcNow.AddDays(7), false, false, DateTimeOffset.UtcNow,
-            maxLayer, maxCategory);
+        GardenTestData.Invitation(
+            gardenId: gardenId, allowSelfUpgrade: allowSelfUpgrade,
+            targetLayer: targetLayer, targetCategory: targetCategory,
+            maxLayer: maxLayer, maxCategory: maxCategory);
 
     private static PricingCalculationResultDto CreateResult(decimal total = 150m) =>
         new(100m, 1m, 1.0m, 100m, [], 50m, total);
@@ -78,7 +79,7 @@ public sealed class InviteAcceptancePageTests : BunitContext
         onboardingService.ValidateInvitationTokenAsync("good-token", Arg.Any<CancellationToken>())
             .Returns(new InvitationValidationResultDto(true, invitation, null));
         queryService.GetGardenSummaryAsync(gardenId, Arg.Any<CancellationToken>())
-            .Returns(new GardenSummaryDto(gardenId, "Testhave", false));
+            .Returns(GardenTestData.Summary(gardenId));
 
         var cut = RenderWithToken("good-token");
 
@@ -97,7 +98,7 @@ public sealed class InviteAcceptancePageTests : BunitContext
         onboardingService.ValidateInvitationTokenAsync("good-token", Arg.Any<CancellationToken>())
             .Returns(new InvitationValidationResultDto(true, invitation, null));
         queryService.GetGardenSummaryAsync(gardenId, Arg.Any<CancellationToken>())
-            .Returns(new GardenSummaryDto(gardenId, "Testhave", false));
+            .Returns(GardenTestData.Summary(gardenId));
 
         var cut = RenderWithToken("good-token");
 
@@ -116,7 +117,7 @@ public sealed class InviteAcceptancePageTests : BunitContext
         onboardingService.ValidateInvitationTokenAsync("good-token", Arg.Any<CancellationToken>())
             .Returns(new InvitationValidationResultDto(true, invitation, null));
         queryService.GetGardenSummaryAsync(gardenId, Arg.Any<CancellationToken>())
-            .Returns(new GardenSummaryDto(gardenId, "Testhave", false));
+            .Returns(GardenTestData.Summary(gardenId));
 
         var cut = RenderWithToken("good-token");
 
@@ -135,7 +136,7 @@ public sealed class InviteAcceptancePageTests : BunitContext
         onboardingService.ValidateInvitationTokenAsync("good-token", Arg.Any<CancellationToken>())
             .Returns(new InvitationValidationResultDto(true, invitation, null));
         queryService.GetGardenSummaryAsync(gardenId, Arg.Any<CancellationToken>())
-            .Returns(new GardenSummaryDto(gardenId, "Testhave", false));
+            .Returns(GardenTestData.Summary(gardenId));
         onboardingService.AcceptInvitationAsync(Arg.Any<AcceptInvitationRequestDto>(), Arg.Any<CancellationToken>())
             .Returns(new AcceptInvitationResultDto(gardenId, Guid.NewGuid(), null));
 
@@ -162,7 +163,7 @@ public sealed class InviteAcceptancePageTests : BunitContext
         onboardingService.ValidateInvitationTokenAsync("good-token", Arg.Any<CancellationToken>())
             .Returns(new InvitationValidationResultDto(true, invitation, null));
         queryService.GetGardenSummaryAsync(gardenId, Arg.Any<CancellationToken>())
-            .Returns(new GardenSummaryDto(gardenId, "Testhave", false));
+            .Returns(GardenTestData.Summary(gardenId));
 
         var cut = RenderWithToken("good-token");
         await cut.Find(".form-actions .btn-primary").ClickAsync();
@@ -181,7 +182,7 @@ public sealed class InviteAcceptancePageTests : BunitContext
         onboardingService.ValidateInvitationTokenAsync("good-token", Arg.Any<CancellationToken>())
             .Returns(new InvitationValidationResultDto(true, invitation, null));
         queryService.GetGardenSummaryAsync(gardenId, Arg.Any<CancellationToken>())
-            .Returns(new GardenSummaryDto(gardenId, "Testhave", false));
+            .Returns(GardenTestData.Summary(gardenId));
 
         var cut = RenderWithToken("good-token");
         cut.Find(".form-actions .btn-primary").Click();
@@ -207,7 +208,7 @@ public sealed class InviteAcceptancePageTests : BunitContext
         onboardingService.ValidateInvitationTokenAsync("good-token", Arg.Any<CancellationToken>())
             .Returns(new InvitationValidationResultDto(true, invitation, null));
         queryService.GetGardenSummaryAsync(gardenId, Arg.Any<CancellationToken>())
-            .Returns(new GardenSummaryDto(gardenId, "Testhave", false));
+            .Returns(GardenTestData.Summary(gardenId));
         calculatorService.CalculateAsync(Arg.Any<PricingCalculationRequestDto>(), Arg.Any<CancellationToken>())
             .Returns(CreateResult());
 
@@ -228,7 +229,7 @@ public sealed class InviteAcceptancePageTests : BunitContext
         onboardingService.ValidateInvitationTokenAsync("good-token", Arg.Any<CancellationToken>())
             .Returns(new InvitationValidationResultDto(true, invitation, null));
         queryService.GetGardenSummaryAsync(gardenId, Arg.Any<CancellationToken>())
-            .Returns(new GardenSummaryDto(gardenId, "Testhave", false));
+            .Returns(GardenTestData.Summary(gardenId));
         calculatorService.CalculateAsync(Arg.Any<PricingCalculationRequestDto>(), Arg.Any<CancellationToken>())
             .Returns(CreateResult());
         onboardingService.AcceptInvitationAsync(Arg.Any<AcceptInvitationRequestDto>(), Arg.Any<CancellationToken>())
@@ -255,7 +256,7 @@ public sealed class InviteAcceptancePageTests : BunitContext
         onboardingService.ValidateInvitationTokenAsync("good-token", Arg.Any<CancellationToken>())
             .Returns(new InvitationValidationResultDto(true, invitation, null));
         queryService.GetGardenSummaryAsync(gardenId, Arg.Any<CancellationToken>())
-            .Returns(new GardenSummaryDto(gardenId, "Testhave", false));
+            .Returns(GardenTestData.Summary(gardenId));
         onboardingService.AcceptInvitationAsync(Arg.Any<AcceptInvitationRequestDto>(), Arg.Any<CancellationToken>())
             .ThrowsAsync(new InvalidOperationException("Du er allerede medlem af denne have."));
 

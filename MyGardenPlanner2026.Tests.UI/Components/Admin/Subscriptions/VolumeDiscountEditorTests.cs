@@ -4,7 +4,6 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Domain.Admin;
-using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
 using MyGardenPlanner2026.Tests.UI;
 using NSubstitute;
@@ -22,7 +21,7 @@ public class VolumeDiscountEditorTests : BunitContext
             .Returns(Task.FromResult<IReadOnlyList<GardenVolumeDiscountTierDto>>([Tier1]));
         Services.AddSingleton(service);
 
-        this.RegisterAdminStepUpFakes<VolumeDiscountEditorTests>(reAuthSucceeds, rateLimiterPermits);
+        this.RegisterAdminStepUpFakes<VolumeDiscountEditor>(reAuthSucceeds, rateLimiterPermits);
 
         return service;
     }

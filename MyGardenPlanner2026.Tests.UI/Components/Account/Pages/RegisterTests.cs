@@ -2,7 +2,6 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -38,7 +37,7 @@ public class RegisterTests : BunitContext
         Services.AddSingleton(Substitute.For<ILogger<Register>>());
         var navMan = this.UseIdentityRedirectManager();
 
-        var cut = Render<Register>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        var cut = this.RenderWithHttpContext<Register>();
         await cut.Find("#Input\\.Email").ChangeAsync("ny-bruger@example.dk");
         await cut.Find("#Input\\.Password").ChangeAsync("P@ssw0rd123!");
         await cut.Find("#Input\\.ConfirmPassword").ChangeAsync("P@ssw0rd123!");
@@ -67,7 +66,7 @@ public class RegisterTests : BunitContext
         Services.AddSingleton(Substitute.For<ILogger<Register>>());
         this.UseIdentityRedirectManager();
 
-        var cut = Render<Register>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        var cut = this.RenderWithHttpContext<Register>();
         cut.Find("#Input\\.Email").Change("ny-bruger@example.dk");
         cut.Find("#Input\\.Password").Change("svagkode123");
         cut.Find("#Input\\.ConfirmPassword").Change("svagkode123");

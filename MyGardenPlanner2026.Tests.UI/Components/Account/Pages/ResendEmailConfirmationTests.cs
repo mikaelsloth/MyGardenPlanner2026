@@ -2,7 +2,6 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Account.Pages;
@@ -24,7 +23,7 @@ public class ResendEmailConfirmationTests : BunitContext
         Services.AddSingleton(emailSender);
         this.UseIdentityRedirectManager();
 
-        var cut = Render<ResendEmailConfirmation>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        var cut = this.RenderWithHttpContext<ResendEmailConfirmation>();
         await cut.Find("#Input\\.Email").ChangeAsync("ukendt@example.dk");
         await cut.Find("form").SubmitAsync();
 
@@ -47,7 +46,7 @@ public class ResendEmailConfirmationTests : BunitContext
         Services.AddSingleton(emailSender);
         this.UseIdentityRedirectManager();
 
-        var cut = Render<ResendEmailConfirmation>(parameters => parameters.AddCascadingValue(new DefaultHttpContext()));
+        var cut = this.RenderWithHttpContext<ResendEmailConfirmation>();
         await cut.Find("#Input\\.Email").ChangeAsync("kendt@example.dk");
         await cut.Find("form").SubmitAsync();
 

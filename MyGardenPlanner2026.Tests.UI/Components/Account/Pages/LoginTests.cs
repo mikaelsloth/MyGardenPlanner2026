@@ -32,7 +32,7 @@ public class LoginTests : BunitContext
         var httpContext = IdentityTestDoubles.CreateHttpContextWithAuthService();
         navMan.NavigateTo("/Account/Login?ReturnUrl=%2Fpricing");
 
-        var cut = Render<Login>(parameters => parameters.AddCascadingValue(httpContext));
+        var cut = this.RenderWithHttpContext<Login>(httpContext);
         cut.Find("#Input\\.Email").Change("test@example.dk");
         cut.Find("#Input\\.Password").Change("Password123!");
         cut.Find("form").Submit();
@@ -49,7 +49,7 @@ public class LoginTests : BunitContext
         this.UseIdentityRedirectManager();
 
         var httpContext = IdentityTestDoubles.CreateHttpContextWithAuthService();
-        var cut = Render<Login>(parameters => parameters.AddCascadingValue(httpContext));
+        var cut = this.RenderWithHttpContext<Login>(httpContext);
         cut.Find("#Input\\.Email").Change("test@example.dk");
         cut.Find("#Input\\.Password").Change("forkert-adgangskode");
         cut.Find("form").Submit();
@@ -64,7 +64,7 @@ public class LoginTests : BunitContext
         this.UseIdentityRedirectManager();
 
         var httpContext = IdentityTestDoubles.CreateHttpContextWithAuthService();
-        var cut = Render<Login>(parameters => parameters.AddCascadingValue(httpContext));
+        var cut = this.RenderWithHttpContext<Login>(httpContext);
 
         cut.Find("h1").TextContent.Should().Be("Log ind");
     }
@@ -78,7 +78,7 @@ public class LoginTests : BunitContext
         this.UseIdentityRedirectManager();
 
         var httpContext = IdentityTestDoubles.CreateHttpContextWithAuthService();
-        var cut = Render<Login>(parameters => parameters.AddCascadingValue(httpContext));
+        var cut = this.RenderWithHttpContext<Login>(httpContext);
         cut.Find("#Input\\.Email").Change("test@example.dk");
         cut.Find("#Input\\.Password").Change("Password123!");
         cut.Find("form").Submit();
@@ -98,7 +98,7 @@ public class LoginTests : BunitContext
         var tracker = Services.GetRequiredService<IReAuthFailureTracker>();
 
         var httpContext = IdentityTestDoubles.CreateHttpContextWithAuthService();
-        var cut = Render<Login>(parameters => parameters.AddCascadingValue(httpContext));
+        var cut = this.RenderWithHttpContext<Login>(httpContext);
         await cut.Find("#Input\\.Email").ChangeAsync("test@example.dk");
         await cut.Find("#Input\\.Password").ChangeAsync("Password123!");
         await cut.Find("form").SubmitAsync();
@@ -118,7 +118,7 @@ public class LoginTests : BunitContext
         var tracker = Services.GetRequiredService<IReAuthFailureTracker>();
 
         var httpContext = IdentityTestDoubles.CreateHttpContextWithAuthService();
-        var cut = Render<Login>(parameters => parameters.AddCascadingValue(httpContext));
+        var cut = this.RenderWithHttpContext<Login>(httpContext);
         await cut.Find("#Input\\.Email").ChangeAsync("test@example.dk");
         await cut.Find("#Input\\.Password").ChangeAsync("forkert-adgangskode");
         await cut.Find("form").SubmitAsync();

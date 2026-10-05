@@ -2,7 +2,6 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Http;
 using MyGardenPlanner2026.Components.Account.Pages;
 using MyGardenPlanner2026.Components.Account.Shared;
 using Xunit;
@@ -30,9 +29,7 @@ public class StaticAccountPagesTests : BunitContext
     [Fact]
     public void InvalidUser_RendersAuthPageShellAndStatusMessageComponent()
     {
-        var httpContext = new DefaultHttpContext();
-        var cut = Render<InvalidUser>(parameters => parameters
-            .AddCascadingValue(httpContext));
+        var cut = this.RenderWithHttpContext<InvalidUser>();
 
         cut.Find("h1").TextContent.Should().Be("Ugyldig bruger");
         cut.FindComponent<StatusMessage>().Should().NotBeNull();

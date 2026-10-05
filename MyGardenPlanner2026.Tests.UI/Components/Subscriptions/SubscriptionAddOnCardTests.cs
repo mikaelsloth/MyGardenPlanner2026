@@ -3,8 +3,6 @@
 using Bunit;
 using FluentAssertions;
 using MyGardenPlanner2026.Components.Domain.Subscriptions;
-using MyGardenPlanner2026.Core.Contracts.Layer1;
-using MyGardenPlanner2026.Core.Entities.Common;
 using Xunit;
 
 public class SubscriptionAddOnCardTests : BunitContext
@@ -12,9 +10,7 @@ public class SubscriptionAddOnCardTests : BunitContext
     [Fact]
     public void SubscriptionAddOnCard_RendersNameUnitAndAllThreePrices()
     {
-        var dto = new SubscriptionAddOnDto(
-            Guid.NewGuid(), AddOnType.BedforslagNiveau2, "Bedforslag (Niveau 2)", "Pakke med 2 bedforslag",
-            AnnualPrice: 180m, MonthlyPrice: 15m, PerpetualPrice: 450m);
+        var dto = SubscriptionTestData.BedforslagAddOn();
 
         var cut = Render<SubscriptionAddOnCard>(p => p.Add(x => x.AddOn, dto));
 

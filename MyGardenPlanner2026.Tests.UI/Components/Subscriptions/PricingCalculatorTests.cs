@@ -5,7 +5,6 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Domain.Subscriptions;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
-using MyGardenPlanner2026.Core.Entities.Common;
 using NSubstitute;
 using Xunit;
 
@@ -14,23 +13,9 @@ public class PricingCalculatorTests : BunitContext
     private static readonly Guid BedforslagAddOnId = Guid.Parse("11111111-1111-1111-1111-111111111111");
     private static readonly Guid ArtefaktpakkeAAddOnId = Guid.Parse("22222222-2222-2222-2222-222222222222");
 
-    private static readonly SubscriptionAddOnDto BedforslagAddOn = new(
-        Id: BedforslagAddOnId,
-        Type: AddOnType.BedforslagNiveau2,
-        Name: "Bedforslag (Niveau 2)",
-        UnitDescription: "Pakke med 2 bedforslag",
-        AnnualPrice: 180m,
-        MonthlyPrice: 15m,
-        PerpetualPrice: 450m);
+    private static readonly SubscriptionAddOnDto BedforslagAddOn = SubscriptionTestData.BedforslagAddOn(BedforslagAddOnId);
 
-    private static readonly SubscriptionAddOnDto ArtefaktpakkeAAddOn = new(
-        Id: ArtefaktpakkeAAddOnId,
-        Type: AddOnType.ArtefaktpakkeA,
-        Name: "Artefaktpakke A",
-        UnitDescription: "+25 Planter / Materialer / Opgavelister",
-        AnnualPrice: 48m,
-        MonthlyPrice: 4m,
-        PerpetualPrice: 120m);
+    private static readonly SubscriptionAddOnDto ArtefaktpakkeAAddOn = SubscriptionTestData.ArtefaktpakkeAAddOn(ArtefaktpakkeAAddOnId);
 
     private IPricingCalculatorService RegisterFakes(PricingCalculationResultDto? resultToReturn = null)
     {
@@ -41,14 +26,8 @@ public class PricingCalculatorTests : BunitContext
 
         var calculatorService = Substitute.For<IPricingCalculatorService>();
         calculatorService.CalculateAsync(Arg.Any<PricingCalculationRequestDto>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(resultToReturn ?? new PricingCalculationResultDto(
-                BasePricePerGarden: 336m,
-                WeightedGardenCount: 1m,
-                DiscountMultiplier: 1.00m,
-                GardenSubtotal: 336m,
-                AddOnLineItems: [],
-                AddOnsTotal: 0m,
-                Total: 336m)));
+            .Returns(Task.FromResult(
+                resultToReturn ?? SubscriptionTestData.PricingResult(total: 336m, basePricePerGarden: 336m)));
 
         Services.AddSingleton(addOnService);
         Services.AddSingleton(calculatorService);

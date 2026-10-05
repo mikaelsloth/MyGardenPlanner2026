@@ -28,9 +28,6 @@ public sealed class OnboardingCheckoutPageTests : BunitContext
         Services.AddSingleton(addOnService);
     }
 
-    private static PricingCalculationResultDto CreateResult(decimal total = 100m) =>
-        new(100m, 1m, 1.0m, 100m, [], 0m, total);
-
     private static CheckoutDraftDto CreateDraft(Guid id, string? userId = null) => new(
         id, userId, "Min gemte have", null, GardenAccessLevel.BedDesigner, AccessCategory.Editor,
         BillingCycle.Annual, new Dictionary<Guid, int>(), DateTimeOffset.UtcNow.AddMinutes(10));
@@ -65,7 +62,7 @@ public sealed class OnboardingCheckoutPageTests : BunitContext
     {
         AddAuthorization().SetNotAuthorized();
         calculatorService.CalculateAsync(Arg.Any<PricingCalculationRequestDto>(), Arg.Any<CancellationToken>())
-            .Returns(CreateResult());
+            .Returns(SubscriptionTestData.PricingResult());
 
         var cut = Render<OnboardingCheckoutPage>();
         cut.Find("#garden-name").Change("Min have");
@@ -79,7 +76,7 @@ public sealed class OnboardingCheckoutPageTests : BunitContext
     {
         AddAuthorization().SetNotAuthorized();
         calculatorService.CalculateAsync(Arg.Any<PricingCalculationRequestDto>(), Arg.Any<CancellationToken>())
-            .Returns(CreateResult());
+            .Returns(SubscriptionTestData.PricingResult());
 
         var cut = Render<OnboardingCheckoutPage>();
         await cut.Find("#garden-name").ChangeAsync("Min have");
@@ -97,7 +94,7 @@ public sealed class OnboardingCheckoutPageTests : BunitContext
         queryService.GetOwnedGardenCountsAsync("user-1", Arg.Any<CancellationToken>())
             .Returns(new OwnedGardenCountsDto(2, 1));
         calculatorService.CalculateAsync(Arg.Any<PricingCalculationRequestDto>(), Arg.Any<CancellationToken>())
-            .Returns(CreateResult(250m));
+            .Returns(SubscriptionTestData.PricingResult(250m));
 
         var cut = Render<OnboardingCheckoutPage>();
         await cut.Find("#garden-name").ChangeAsync("Min have");
@@ -114,7 +111,7 @@ public sealed class OnboardingCheckoutPageTests : BunitContext
     {
         AddAuthorization().SetNotAuthorized();
         calculatorService.CalculateAsync(Arg.Any<PricingCalculationRequestDto>(), Arg.Any<CancellationToken>())
-            .Returns(CreateResult());
+            .Returns(SubscriptionTestData.PricingResult());
         onboardingService.SaveCheckoutDraftAsync(Arg.Any<SaveCheckoutDraftRequestDto>(), Arg.Any<CancellationToken>())
             .Returns(Guid.NewGuid());
 
@@ -166,7 +163,7 @@ public sealed class OnboardingCheckoutPageTests : BunitContext
         queryService.GetOwnedGardenCountsAsync("user-1", Arg.Any<CancellationToken>())
             .Returns(new OwnedGardenCountsDto(0, 0));
         calculatorService.CalculateAsync(Arg.Any<PricingCalculationRequestDto>(), Arg.Any<CancellationToken>())
-            .Returns(CreateResult());
+            .Returns(SubscriptionTestData.PricingResult());
 
         var cut = RenderWithDraft(draft.Id);
 
@@ -181,7 +178,7 @@ public sealed class OnboardingCheckoutPageTests : BunitContext
         queryService.GetOwnedGardenCountsAsync("user-1", Arg.Any<CancellationToken>())
             .Returns(new OwnedGardenCountsDto(0, 0));
         calculatorService.CalculateAsync(Arg.Any<PricingCalculationRequestDto>(), Arg.Any<CancellationToken>())
-            .Returns(CreateResult());
+            .Returns(SubscriptionTestData.PricingResult());
 
         var gardenId = Guid.NewGuid();
         onboardingService.ProvisionPaidGardenAsync(Arg.Any<PaidGardenProvisionRequestDto>(), Arg.Any<CancellationToken>())
@@ -209,7 +206,7 @@ public sealed class OnboardingCheckoutPageTests : BunitContext
         queryService.GetOwnedGardenCountsAsync("user-1", Arg.Any<CancellationToken>())
             .Returns(new OwnedGardenCountsDto(0, 0));
         calculatorService.CalculateAsync(Arg.Any<PricingCalculationRequestDto>(), Arg.Any<CancellationToken>())
-            .Returns(CreateResult());
+            .Returns(SubscriptionTestData.PricingResult());
 
         var gardenId = Guid.NewGuid();
         onboardingService.ProvisionPaidGardenFromDraftAsync(draft.Id, "user-1", Arg.Any<CancellationToken>())

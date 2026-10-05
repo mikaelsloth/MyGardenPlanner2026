@@ -5,17 +5,22 @@ using FluentAssertions;
 using MyGardenPlanner2026.Components.Domain.Subscriptions;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
 using MyGardenPlanner2026.Core.Entities.Common;
-using MyGardenPlanner2026.Core.Entities.Layer1;
 using Xunit;
 
 public class PricingFeatureMatrixTests : BunitContext
 {
     private static List<SubscriptionTierDto> CreateTiers() =>
     [
-        new(Guid.NewGuid(), GardenAccessLevel.BedDesigner, AccessCategory.Editor, "Bed Designer · Editor", "Beskrivelse", 120m, BillingCycle.Annual, false,
-            ["2 bedforslag pr. have"], new Dictionary<string, string> { ["Bedforslag"] = "2", ["Bede pr. forslag"] = "25" }),
-        new(Guid.NewGuid(), GardenAccessLevel.Planlaegger, AccessCategory.Editor, "Planlægger · Editor", "Beskrivelse", 96m, BillingCycle.Annual, false,
-            ["50 planlagte bede pr. have"], new Dictionary<string, string> { ["Planlagte bede"] = "50" })
+        SubscriptionTestData.Tier(GardenAccessLevel.BedDesigner, price: 120m, name: "Bed Designer · Editor") with
+        {
+            IncludedFeatures = ["2 bedforslag pr. have"],
+            FeatureLimits = new Dictionary<string, string> { ["Bedforslag"] = "2", ["Bede pr. forslag"] = "25" }
+        },
+        SubscriptionTestData.Tier(GardenAccessLevel.Planlaegger, price: 96m, name: "Planlægger · Editor") with
+        {
+            IncludedFeatures = ["50 planlagte bede pr. have"],
+            FeatureLimits = new Dictionary<string, string> { ["Planlagte bede"] = "50" }
+        }
     ];
 
     [Fact]

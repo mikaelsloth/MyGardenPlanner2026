@@ -12,17 +12,8 @@ using Xunit;
 
 public class PricingMatrixTableTests : BunitContext
 {
-    private static SubscriptionTierDto CreateDto(GardenAccessLevel level, AccessCategory category, decimal price) => new(
-        Id: Guid.NewGuid(),
-        Level: level,
-        AccessCategory: category,
-        Name: $"{level} · {category}",
-        Description: "Beskrivelse",
-        Price: price,
-        BillingCycle: BillingCycle.Annual,
-        IsFeatured: category == AccessCategory.Editor,
-        IncludedFeatures: [],
-        FeatureLimits: new Dictionary<string, string>());
+    private static SubscriptionTierDto CreateDto(GardenAccessLevel level, AccessCategory category, decimal price) =>
+        SubscriptionTestData.Tier(level, category, price, isFeatured: category == AccessCategory.Editor);
 
     private ISubscriptionPricingService RegisterFakeService()
     {

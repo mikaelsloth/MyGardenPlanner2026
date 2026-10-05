@@ -27,9 +27,6 @@ public sealed class PricingCalculatorExtensionsTests : BunitContext
         Services.AddSingleton(calculatorService);
     }
 
-    private static PricingCalculationResultDto CreateResult() =>
-        new(100m, 1m, 1.0m, 100m, [], 0m, 100m);
-
     [Fact]
     public void FixedActiveGardens_Null_StillRendersManualInput()
     {
@@ -72,7 +69,7 @@ public sealed class PricingCalculatorExtensionsTests : BunitContext
     public async Task InitialLevel_UsedAsDefaultSelection_WhenContinueClickedWithoutChangingDropdown()
     {
         calculatorService.CalculateAsync(Arg.Any<PricingCalculationRequestDto>(), Arg.Any<CancellationToken>())
-            .Returns(CreateResult());
+            .Returns(SubscriptionTestData.PricingResult());
 
         var cut = Render<PricingCalculator>(p => p
             .Add(c => c.ContinueButtonLabel, "Fortsæt")
@@ -105,7 +102,7 @@ public sealed class PricingCalculatorExtensionsTests : BunitContext
     public void ClickingContinue_CalculationSucceeds_InvokesOnContinueWithSelection()
     {
         calculatorService.CalculateAsync(Arg.Any<PricingCalculationRequestDto>(), Arg.Any<CancellationToken>())
-            .Returns(CreateResult());
+            .Returns(SubscriptionTestData.PricingResult());
 
         PricingSelectionDto? invoked = null;
         var cut = Render<PricingCalculator>(p => p
@@ -139,7 +136,7 @@ public sealed class PricingCalculatorExtensionsTests : BunitContext
     public async Task ClickingContinue_UsesFixedGardenCounts_InCalculationRequest()
     {
         calculatorService.CalculateAsync(Arg.Any<PricingCalculationRequestDto>(), Arg.Any<CancellationToken>())
-            .Returns(CreateResult());
+            .Returns(SubscriptionTestData.PricingResult());
 
         var cut = Render<PricingCalculator>(p => p
             .Add(c => c.ContinueButtonLabel, "Fortsæt")

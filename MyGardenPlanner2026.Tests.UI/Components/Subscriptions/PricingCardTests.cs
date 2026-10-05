@@ -5,25 +5,21 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using MyGardenPlanner2026.Components.Domain.Subscriptions;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
-using MyGardenPlanner2026.Core.Entities.Common;
-using MyGardenPlanner2026.Core.Entities.Layer1;
 using Xunit;
 
 public class PricingCardTests : BunitContext
 {
     private static readonly Guid TierId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
-    private static SubscriptionTierDto CreateDto(bool isFeatured = false) => new(
-        Id: TierId,
-        Level: GardenAccessLevel.BedDesigner,
-        AccessCategory: AccessCategory.Editor,
-        Name: "Bed Designer · Editor",
-        Description: "Opret bedforslag i en eksisterende have.",
-        Price: 120m,
-        BillingCycle: BillingCycle.Annual,
-        IsFeatured: isFeatured,
-        IncludedFeatures: ["2 bedforslag pr. have"],
-        FeatureLimits: new Dictionary<string, string> { ["Bedforslag"] = "2" });
+    private static SubscriptionTierDto CreateDto(bool isFeatured = false) =>
+        SubscriptionTestData.Tier(
+            price: 120m, isFeatured: isFeatured, name: "Bed Designer · Editor",
+            description: "Opret bedforslag i en eksisterende have.", id: TierId)
+        with
+        {
+            IncludedFeatures = ["2 bedforslag pr. have"],
+            FeatureLimits = new Dictionary<string, string> { ["Bedforslag"] = "2" }
+        };
 
     [Fact]
     public void PricingCard_RendersNameDescriptionAndDanishFormattedPrice()

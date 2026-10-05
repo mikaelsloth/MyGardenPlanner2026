@@ -32,13 +32,11 @@ public sealed class OnboardingCheckoutPagePrefillTests : BunitContext
         AddAuthorization().SetNotAuthorized();
     }
 
-    private static PricingCalculationResultDto CreateResult() => new(100m, 1m, 1.0m, 100m, [], 0m, 100m);
-
     [Fact]
     public async Task LevelAndCategoryQueryParams_PrefillPricingCalculator_WithoutTouchingDropdowns()
     {
         calculatorService.CalculateAsync(Arg.Any<PricingCalculationRequestDto>(), Arg.Any<CancellationToken>())
-            .Returns(CreateResult());
+            .Returns(SubscriptionTestData.PricingResult());
 
         Services.GetRequiredService<NavigationManager>()
             .NavigateTo("/onboarding/checkout?level=BedDesigner&category=Editor");
@@ -57,7 +55,7 @@ public sealed class OnboardingCheckoutPagePrefillTests : BunitContext
     public async Task InvalidLevelQueryParam_FallsBackToDefaultSelection_WithoutThrowing()
     {
         calculatorService.CalculateAsync(Arg.Any<PricingCalculationRequestDto>(), Arg.Any<CancellationToken>())
-            .Returns(CreateResult());
+            .Returns(SubscriptionTestData.PricingResult());
 
         Services.GetRequiredService<NavigationManager>()
             .NavigateTo("/onboarding/checkout?level=NotARealLevel");

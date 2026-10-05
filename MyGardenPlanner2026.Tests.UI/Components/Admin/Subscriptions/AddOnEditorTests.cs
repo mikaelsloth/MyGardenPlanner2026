@@ -4,7 +4,6 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Domain.Admin;
-using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Tests.UI;
@@ -25,7 +24,7 @@ public class AddOnEditorTests : BunitContext
             .Returns(Task.FromResult<IReadOnlyList<SubscriptionAddOnDto>>([AddOn1]));
         Services.AddSingleton(service);
 
-        this.RegisterAdminStepUpFakes<AddOnEditorTests>(reAuthSucceeds, rateLimiterPermits);
+        this.RegisterAdminStepUpFakes<AddOnEditor>(reAuthSucceeds, rateLimiterPermits);
 
         return service;
     }

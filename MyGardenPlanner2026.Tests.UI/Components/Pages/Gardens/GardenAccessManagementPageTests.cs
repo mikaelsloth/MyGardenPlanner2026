@@ -33,6 +33,19 @@ public sealed class GardenAccessManagementPageTests : BunitContext
         }
     }
 
+    /// <summary>
+    /// Opsætter "user-1" som ejer (Have Arkitekt / Administrator) af haven, inkl. fri-invitationskvote.
+    /// </summary>
+    private void ArrangeOwnerOfGarden(Guid gardenId)
+    {
+        queryService.GetGardenSummaryAsync(gardenId, Arg.Any<CancellationToken>())
+            .Returns(GardenTestData.Summary(gardenId));
+        queryService.GetMembershipAsync(gardenId, "user-1", Arg.Any<CancellationToken>())
+            .Returns(GardenTestData.Membership(gardenId));
+        onboardingService.GetFreeInvitationQuotaAsync(gardenId, "user-1", Arg.Any<CancellationToken>())
+            .Returns(new FreeInvitationQuotaDto(1, 0, 1));
+    }
+
     [Fact]
     public void NotAMember_ShowsRestrictedEmptyState()
     {
@@ -49,17 +62,10 @@ public sealed class GardenAccessManagementPageTests : BunitContext
         SetAuthorizationResult(true);
         var gardenId = Guid.NewGuid();
 
-        queryService.GetGardenSummaryAsync(gardenId, Arg.Any<CancellationToken>())
-            .Returns(new GardenSummaryDto(gardenId, "Testhave", false));
-        queryService.GetMembershipAsync(gardenId, "user-1", Arg.Any<CancellationToken>())
-            .Returns(new GardenMembershipDto(Guid.NewGuid(), gardenId, "user-1", true,
-                GardenAccessLevel.HaveArkitekt, AccessCategory.Administrator, DateTimeOffset.UtcNow));
+        ArrangeOwnerOfGarden(gardenId);
         queryService.GetMembersAsync(gardenId, Arg.Any<CancellationToken>())
-            .Returns([new GardenMembershipDto(Guid.NewGuid(), gardenId, "user-1", true,
-                GardenAccessLevel.HaveArkitekt, AccessCategory.Administrator, DateTimeOffset.UtcNow)]);
+            .Returns([GardenTestData.Membership(gardenId)]);
         queryService.GetInvitationsAsync(gardenId, Arg.Any<CancellationToken>()).Returns([]);
-        onboardingService.GetFreeInvitationQuotaAsync(gardenId, "user-1", Arg.Any<CancellationToken>())
-            .Returns(new FreeInvitationQuotaDto(1, 0, 1));
 
         var cut = Render<GardenAccessManagementPage>(p => p.Add(x => x.GardenId, gardenId));
 
@@ -73,19 +79,12 @@ public sealed class GardenAccessManagementPageTests : BunitContext
         var gardenId = Guid.NewGuid();
         var invitationId = Guid.NewGuid();
 
-        queryService.GetGardenSummaryAsync(gardenId, Arg.Any<CancellationToken>())
-            .Returns(new GardenSummaryDto(gardenId, "Testhave", false));
-        queryService.GetMembershipAsync(gardenId, "user-1", Arg.Any<CancellationToken>())
-            .Returns(new GardenMembershipDto(Guid.NewGuid(), gardenId, "user-1", true,
-                GardenAccessLevel.HaveArkitekt, AccessCategory.Administrator, DateTimeOffset.UtcNow));
+        ArrangeOwnerOfGarden(gardenId);
         queryService.GetMembersAsync(gardenId, Arg.Any<CancellationToken>()).Returns([]);
         queryService.GetInvitationsAsync(gardenId, Arg.Any<CancellationToken>())
-            .Returns([new GardenInvitationDto(invitationId, gardenId, "user-1", "invited@example.com",
-                GardenAccessLevel.HaveArkitekt, AccessCategory.Administrator, false, false,
-                DateTimeOffset.UtcNow.AddDays(7), false, false, DateTimeOffset.UtcNow,
-                GardenAccessLevel.HaveArkitekt, AccessCategory.Administrator)]);
-        onboardingService.GetFreeInvitationQuotaAsync(gardenId, "user-1", Arg.Any<CancellationToken>())
-    .Returns(new FreeInvitationQuotaDto(1, 0, 1));
+            .Returns([GardenTestData.Invitation(
+                invitationId, gardenId, "user-1",
+                targetLayer: GardenAccessLevel.HaveArkitekt, targetCategory: AccessCategory.Administrator)]);
 
         var cut = Render<GardenAccessManagementPage>(p => p.Add(x => x.GardenId, gardenId));
 
@@ -102,15 +101,9 @@ public sealed class GardenAccessManagementPageTests : BunitContext
         var gardenId = Guid.NewGuid();
         var rawToken = "raw-token-value";
 
-        queryService.GetGardenSummaryAsync(gardenId, Arg.Any<CancellationToken>())
-            .Returns(new GardenSummaryDto(gardenId, "Testhave", false));
-        queryService.GetMembershipAsync(gardenId, "user-1", Arg.Any<CancellationToken>())
-            .Returns(new GardenMembershipDto(Guid.NewGuid(), gardenId, "user-1", true,
-                GardenAccessLevel.HaveArkitekt, AccessCategory.Administrator, DateTimeOffset.UtcNow));
+        ArrangeOwnerOfGarden(gardenId);
         queryService.GetMembersAsync(gardenId, Arg.Any<CancellationToken>()).Returns([]);
         queryService.GetInvitationsAsync(gardenId, Arg.Any<CancellationToken>()).Returns([]);
-        onboardingService.GetFreeInvitationQuotaAsync(gardenId, "user-1", Arg.Any<CancellationToken>())
-            .Returns(new FreeInvitationQuotaDto(1, 0, 1));
         onboardingService.CreateInvitationAsync(Arg.Any<CreateInvitationRequestDto>(), Arg.Any<CancellationToken>())
             .Returns(new CreateInvitationResultDto(Guid.NewGuid(), rawToken, DateTimeOffset.UtcNow.AddDays(7), false));
 

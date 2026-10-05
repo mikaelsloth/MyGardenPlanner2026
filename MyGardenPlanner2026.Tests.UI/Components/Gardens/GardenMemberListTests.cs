@@ -14,8 +14,10 @@ public sealed class GardenMemberListTests : BunitContext
     {
         var members = new List<GardenMembershipDto>
         {
-            new(Guid.NewGuid(), Guid.NewGuid(), "owner-user", true, GardenAccessLevel.HaveArkitekt, AccessCategory.Administrator, DateTimeOffset.UtcNow),
-            new(Guid.NewGuid(), Guid.NewGuid(), "editor-user", false, GardenAccessLevel.BedDesigner, AccessCategory.Editor, DateTimeOffset.UtcNow)
+            GardenTestData.Membership(userId: "owner-user"),
+            GardenTestData.Membership(
+                userId: "editor-user", isOwner: false,
+                level: GardenAccessLevel.BedDesigner, category: AccessCategory.Editor)
         };
 
         var cut = Render<GardenMemberList>(p => p.Add(l => l.Members, members));

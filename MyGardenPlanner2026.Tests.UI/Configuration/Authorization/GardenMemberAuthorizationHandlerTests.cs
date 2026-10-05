@@ -26,8 +26,7 @@ public sealed class GardenMemberAuthorizationHandlerTests
         var user = TestPrincipals.Create();
 
         queryService.GetMembershipAsync(gardenId, "user-1", Arg.Any<CancellationToken>())
-            .Returns(new GardenMembershipDto(Guid.NewGuid(), gardenId, "user-1", true,
-                GardenAccessLevel.BedDesigner, AccessCategory.Editor, DateTimeOffset.UtcNow));
+            .Returns(GardenTestData.Membership(gardenId, level: GardenAccessLevel.BedDesigner, category: AccessCategory.Editor));
 
         var context = CreateContext(new GardenMemberRequirement(), user, gardenId);
 

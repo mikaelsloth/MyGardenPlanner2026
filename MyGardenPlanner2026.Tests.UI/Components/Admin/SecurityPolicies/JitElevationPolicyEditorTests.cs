@@ -19,7 +19,7 @@ public class JitElevationPolicyEditorTests : BunitContext
             .Returns(Task.FromResult(new JitElevationPolicyDto(30, 90, 5)));
         Services.AddSingleton(adminService);
 
-        this.RegisterAdminStepUpFakes<JitElevationPolicyEditorTests>(reAuthSucceeds, rateLimiterPermits);
+        this.RegisterAdminStepUpFakes<JitElevationPolicyEditor>(reAuthSucceeds, rateLimiterPermits);
 
         return adminService;
     }

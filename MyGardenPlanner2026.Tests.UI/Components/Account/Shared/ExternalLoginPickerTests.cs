@@ -3,7 +3,6 @@
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Account.Shared;
@@ -15,14 +14,7 @@ public class ExternalLoginPickerTests : BunitContext
 {
     private static SignInManager<ApplicationUser> CreateSignInManager(IEnumerable<AuthenticationScheme> schemes)
     {
-        var userManager = Substitute.For<UserManager<ApplicationUser>>(
-            Substitute.For<IUserStore<ApplicationUser>>(), null, null, null, null, null, null, null, null);
-        var contextAccessor = Substitute.For<IHttpContextAccessor>();
-        var claimsFactory = Substitute.For<IUserClaimsPrincipalFactory<ApplicationUser>>();
-
-        var signInManager = Substitute.For<SignInManager<ApplicationUser>>(
-            userManager, contextAccessor, claimsFactory, null, null, null, null);
-
+        var signInManager = IdentityTestDoubles.CreateSignInManager(IdentityTestDoubles.CreateUserManager());
         signInManager.GetExternalAuthenticationSchemesAsync().Returns(Task.FromResult(schemes));
 
         return signInManager;

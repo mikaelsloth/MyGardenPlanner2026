@@ -15,11 +15,7 @@ public class ExternalLoginTests : BunitContext
 {
     private (Microsoft.AspNetCore.Identity.UserManager<ApplicationUser> UserManager, Microsoft.AspNetCore.Identity.SignInManager<ApplicationUser> SignInManager) RegisterFakes()
     {
-        var userManager = IdentityTestDoubles.CreateUserManager();
-        var signInManager = IdentityTestDoubles.CreateSignInManager(userManager);
-
-        Services.AddSingleton(userManager);
-        Services.AddSingleton(signInManager);
+        var (userManager, signInManager) = this.RegisterIdentityFakes();
         Services.AddSingleton(Substitute.For<Microsoft.AspNetCore.Identity.IUserStore<ApplicationUser>>());
         Services.AddSingleton(Substitute.For<Microsoft.AspNetCore.Identity.IEmailSender<ApplicationUser>>());
         Services.AddSingleton(Substitute.For<ILogger<ExternalLogin>>());

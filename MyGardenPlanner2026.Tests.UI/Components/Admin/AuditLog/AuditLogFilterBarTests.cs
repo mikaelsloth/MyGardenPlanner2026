@@ -9,13 +9,11 @@ using Xunit;
 
 public class AuditLogFilterBarTests : BunitContext
 {
-    private static AuditLogFilterDto EmptyFilter() => new(null, null, null, null, null, null, null);
-
     [Fact]
     public void AuditLogFilterBar_RendersOneOptionPerEntityNamePlusAlle()
     {
         var cut = Render<AuditLogFilterBar>(p => p
-            .Add(x => x.InitialFilter, EmptyFilter())
+            .Add(x => x.InitialFilter, AuditLogTestData.EmptyFilter())
             .Add(x => x.EntityNameOptions, ["SubscriptionTier", "SubscriptionAddOn"]));
 
         cut.FindAll("#audit-filter-entity option").Should().HaveCount(3);
@@ -26,7 +24,7 @@ public class AuditLogFilterBarTests : BunitContext
     [Fact]
     public void AuditLogFilterBar_InitialFilter_PrefillsEntityIdField()
     {
-        var filter = EmptyFilter() with { EntityId = "abc-123" };
+        var filter = AuditLogTestData.EmptyFilter() with { EntityId = "abc-123" };
 
         var cut = Render<AuditLogFilterBar>(p => p
             .Add(x => x.InitialFilter, filter)
@@ -41,7 +39,7 @@ public class AuditLogFilterBarTests : BunitContext
         AuditLogFilterDto? emitted = null;
 
         var cut = Render<AuditLogFilterBar>(p => p
-            .Add(x => x.InitialFilter, EmptyFilter())
+            .Add(x => x.InitialFilter, AuditLogTestData.EmptyFilter())
             .Add(x => x.EntityNameOptions, [])
             .Add(x => x.OnSearch, filter => emitted = filter));
 
@@ -62,7 +60,7 @@ public class AuditLogFilterBarTests : BunitContext
         AuditLogFilterDto? emitted = null;
 
         var cut = Render<AuditLogFilterBar>(p => p
-            .Add(x => x.InitialFilter, EmptyFilter())
+            .Add(x => x.InitialFilter, AuditLogTestData.EmptyFilter())
             .Add(x => x.EntityNameOptions, [])
             .Add(x => x.OnSearch, filter => emitted = filter));
 
@@ -80,7 +78,7 @@ public class AuditLogFilterBarTests : BunitContext
         AuditLogFilterDto? emitted = null;
 
         var cut = Render<AuditLogFilterBar>(p => p
-            .Add(x => x.InitialFilter, EmptyFilter())
+            .Add(x => x.InitialFilter, AuditLogTestData.EmptyFilter())
             .Add(x => x.EntityNameOptions, [])
             .Add(x => x.OnSearch, filter => emitted = filter));
 
@@ -98,7 +96,7 @@ public class AuditLogFilterBarTests : BunitContext
         AuditLogFilterDto? emitted = null;
 
         var cut = Render<AuditLogFilterBar>(p => p
-            .Add(x => x.InitialFilter, EmptyFilter() with { PageNumber = 4 })
+            .Add(x => x.InitialFilter, AuditLogTestData.EmptyFilter() with { PageNumber = 4 })
             .Add(x => x.EntityNameOptions, [])
             .Add(x => x.OnSearch, filter => emitted = filter));
 

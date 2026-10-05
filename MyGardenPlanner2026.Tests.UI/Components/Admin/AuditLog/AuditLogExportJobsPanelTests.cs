@@ -18,16 +18,6 @@ public class AuditLogExportJobsPanelTests : BunitContext
         Services.AddSingleton(jobService);
     }
 
-    private static AuditLogExportJobDto Job(
-        AuditLogExportJobStatus status = AuditLogExportJobStatus.Completed,
-        DateTimeOffset? expiresAt = null,
-        DateTimeOffset? seenAt = null,
-        int? rowCount = 12,
-        string? errorMessage = null) => new(
-            Guid.NewGuid(), "user-1", AuditLogExportFormat.Csv, status,
-            new DateTimeOffset(2026, 9, 28, 10, 0, 0, TimeSpan.Zero), null, null,
-            expiresAt, rowCount, "audit-log-export.csv", errorMessage, seenAt);
-
     private IRenderedComponent<AuditLogExportJobsPanel> RenderPanel() =>
         Render<AuditLogExportJobsPanel>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
 
@@ -46,7 +36,7 @@ public class AuditLogExportJobsPanelTests : BunitContext
     public void JobsPresent_RendersOneRowPerJob()
     {
         jobService.GetJobsForUserAsync("user-1", Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<IReadOnlyList<AuditLogExportJobDto>>([Job(), Job(AuditLogExportJobStatus.Pending)]));
+            .Returns(Task.FromResult<IReadOnlyList<AuditLogExportJobDto>>([AuditLogTestData.ExportJob(), AuditLogTestData.ExportJob(AuditLogExportJobStatus.Pending)]));
 
         var cut = RenderPanel();
 
@@ -56,7 +46,7 @@ public class AuditLogExportJobsPanelTests : BunitContext
     [Fact]
     public void CompletedNonExpiredJob_ShowsDownloadLink()
     {
-        var job = Job(expiresAt: DateTimeOffset.UtcNow.AddHours(1));
+        var job = AuditLogTestData.ExportJob(expiresAt: DateTimeOffset.UtcNow.AddHours(1));
         jobService.GetJobsForUserAsync("user-1", Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<AuditLogExportJobDto>>([job]));
 
@@ -68,7 +58,7 @@ public class AuditLogExportJobsPanelTests : BunitContext
     [Fact]
     public void CompletedExpiredJob_ShowsUdloebetInsteadOfDownloadLink()
     {
-        var job = Job(expiresAt: DateTimeOffset.UtcNow.AddHours(-1));
+        var job = AuditLogTestData.ExportJob(expiresAt: DateTimeOffset.UtcNow.AddHours(-1));
         jobService.GetJobsForUserAsync("user-1", Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<AuditLogExportJobDto>>([job]));
 
@@ -81,7 +71,7 @@ public class AuditLogExportJobsPanelTests : BunitContext
     [Fact]
     public void FailedJob_ShowsErrorMessage_WithoutDownloadLink()
     {
-        var job = Job(AuditLogExportJobStatus.Failed, rowCount: null, errorMessage: "Noget gik galt.");
+        var job = AuditLogTestData.ExportJob(AuditLogExportJobStatus.Failed, rowCount: null, errorMessage: "Noget gik galt.");
         jobService.GetJobsForUserAsync("user-1", Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<AuditLogExportJobDto>>([job]));
 
@@ -94,7 +84,7 @@ public class AuditLogExportJobsPanelTests : BunitContext
     [Fact]
     public void CompletedUnseenJob_ShowsClearNotificationButton()
     {
-        var job = Job(seenAt: null);
+        var job = AuditLogTestData.ExportJob(seenAt: null);
         jobService.GetJobsForUserAsync("user-1", Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<AuditLogExportJobDto>>([job]));
 
@@ -106,7 +96,7 @@ public class AuditLogExportJobsPanelTests : BunitContext
     [Fact]
     public void CompletedSeenJob_DoesNotShowClearNotificationButton()
     {
-        var job = Job(seenAt: DateTimeOffset.UtcNow);
+        var job = AuditLogTestData.ExportJob(seenAt: DateTimeOffset.UtcNow);
         jobService.GetJobsForUserAsync("user-1", Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<AuditLogExportJobDto>>([job]));
 
@@ -118,7 +108,7 @@ public class AuditLogExportJobsPanelTests : BunitContext
     [Fact]
     public async Task ClickingRydNotifikation_CallsMarkNotificationSeenAsync_AndReloads()
     {
-        var job = Job(seenAt: null);
+        var job = AuditLogTestData.ExportJob(seenAt: null);
         jobService.GetJobsForUserAsync("user-1", Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<AuditLogExportJobDto>>([job]));
 

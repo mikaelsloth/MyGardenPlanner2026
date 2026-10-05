@@ -4,15 +4,12 @@ using Bunit;
 using FluentAssertions;
 using MyGardenPlanner2026.Components.Domain.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
-using MyGardenPlanner2026.Core.Entities.Common;
 using Xunit;
 
 public class AuditLogDetailModalTests : BunitContext
 {
-    private static AuditLogEntryDto Entry(string? oldValues = "{\"Name\":\"Old\"}", string? newValues = "{\"Name\":\"New\"}") => new(
-        1, "user-1", "user1@example.com", "127.0.0.1", AuditAction.Update,
-        "SubscriptionTier", "abc-123", oldValues, newValues,
-        new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero));
+    private static AuditLogEntryDto Entry(string? oldValues = "{\"Name\":\"Old\"}", string? newValues = "{\"Name\":\"New\"}") =>
+        AuditLogTestData.Entry(entityId: "abc-123", oldValues: oldValues, newValues: newValues);
 
     [Fact]
     public void IsOpenFalse_RendersNothing()

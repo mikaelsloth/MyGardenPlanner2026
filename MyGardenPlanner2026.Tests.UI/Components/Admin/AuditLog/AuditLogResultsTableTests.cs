@@ -9,10 +9,8 @@ using Xunit;
 
 public class AuditLogResultsTableTests : BunitContext
 {
-    private static AuditLogEntryDto Entry(long id = 1, AuditAction action = AuditAction.Update) => new(
-        id, "user-1", "user1@example.com", "127.0.0.1", action,
-        "SubscriptionTier", "abc", "{\"Name\":\"Old\"}", "{\"Name\":\"New\"}",
-        new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero));
+    private static AuditLogEntryDto Entry(long id = 1, AuditAction action = AuditAction.Update) =>
+        AuditLogTestData.Entry(id, action, oldValues: "{\"Name\":\"Old\"}", newValues: "{\"Name\":\"New\"}");
 
     [Fact]
     public void NullResult_RendersSkeletonCard()

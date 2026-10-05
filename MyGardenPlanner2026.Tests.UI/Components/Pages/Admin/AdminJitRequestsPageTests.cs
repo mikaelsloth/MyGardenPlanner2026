@@ -2,16 +2,11 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Pages.Admin;
-using MyGardenPlanner2026.Configuration.Extensions;
 using MyGardenPlanner2026.Core.Contracts.Admin;
-using MyGardenPlanner2026.Core.Contracts.Common;
-using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Tests.UI;
 using NSubstitute;
-using System.Security.Claims;
 using Xunit;
 
 public class AdminJitRequestsPageTests : BunitContext
@@ -25,23 +20,7 @@ public class AdminJitRequestsPageTests : BunitContext
             .Returns(Task.FromResult<IReadOnlyList<RoleElevationRequestDto>>([]));
         Services.AddSingleton(jitService);
 
-        var authorizationService = Substitute.For<IAuthorizationService>();
-        authorizationService.AuthorizeAsync(
-                Arg.Any<ClaimsPrincipal>(), Arg.Any<object>(), Arg.Is(AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy))
-            .Returns(Task.FromResult(AuthorizationResult.Success()));
-        Services.AddSingleton(authorizationService);
-
-        var userManager = IdentityTestDoubles.CreateUserManager();
-        userManager.GetUserAsync(Arg.Any<ClaimsPrincipal>()).Returns(Task.FromResult<ApplicationUser?>(null));
-        Services.AddSingleton(userManager);
-
-        Services.AddSingleton(Substitute.For<IReAuthenticationService>());
-        Services.AddSingleton(Substitute.For<IReAuthFailureTracker>());
-        Services.AddSingleton(Substitute.For<ICurrentUserAccessor>());
-
-        var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
-        rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
-        Services.AddSingleton(rateLimiter);
+        this.RegisterAdminStepUpFakes<AdminJitRequestsPage>();
     }
 
     [Fact]

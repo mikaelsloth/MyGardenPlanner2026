@@ -5,10 +5,8 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Domain.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
-using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Tests.UI;
 using NSubstitute;
@@ -19,11 +17,8 @@ public class AuditLogExportPanelTests : BunitContext
 {
     private readonly IAuditLogQueryService queryService = Substitute.For<IAuditLogQueryService>();
     private readonly IAuditLogExportTokenService tokenService = Substitute.For<IAuditLogExportTokenService>();
-    private readonly IAuthorizationService authorizationService = Substitute.For<IAuthorizationService>();
-    private readonly IAdminActionRateLimiter rateLimiter = Substitute.For<IAdminActionRateLimiter>();
-    private readonly IReAuthenticationService reAuthenticationService = Substitute.For<IReAuthenticationService>();
-    private readonly IReAuthFailureTracker reAuthFailureTracker = Substitute.For<IReAuthFailureTracker>();
-    private readonly ICurrentUserAccessor currentUserAccessor = Substitute.For<ICurrentUserAccessor>();
+    private readonly IAuthorizationService authorizationService;
+    private readonly IAdminActionRateLimiter rateLimiter;
     private readonly IAuditLogExportJobService exportJobService = Substitute.For<IAuditLogExportJobService>();
 
     private static AuditLogFilterDto EmptyFilter() => new(null, null, null, null, null, null, null);
@@ -32,19 +27,13 @@ public class AuditLogExportPanelTests : BunitContext
     {
         Services.AddSingleton(queryService);
         Services.AddSingleton(tokenService);
-        Services.AddSingleton(authorizationService);
-        Services.AddSingleton(rateLimiter);
-        Services.AddSingleton(IdentityTestDoubles.CreateUserManager());
-        Services.AddSingleton(reAuthenticationService);
-        Services.AddSingleton(reAuthFailureTracker);
-        Services.AddSingleton(currentUserAccessor);
-        Services.AddSingleton(Substitute.For<ILogger<AuditLogExportPanel>>());
         Services.AddSingleton(exportJobService);
 
+        var fakes = this.RegisterAdminStepUpFakes<AuditLogExportPanel>();
+        authorizationService = fakes.AuthorizationService;
+        rateLimiter = fakes.RateLimiter;
+
         // Standard: reauth gyldig, permit ledig, 0 rækker at eksportere.
-        rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
-        authorizationService.AuthorizeAsync(Arg.Any<ClaimsPrincipal>(), Arg.Any<object?>(), Arg.Any<string>())
-            .Returns(Task.FromResult(AuthorizationResult.Success()));
         queryService.CountAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(0));
         tokenService.IssueToken(Arg.Any<string>()).Returns("test-token");
 
@@ -98,7 +87,7 @@ public class AuditLogExportPanelTests : BunitContext
 
         cut.Find("button.btn-primary").Click();
 
-        cut.Find(".confirm-dialog-backdrop").Should().NotBeNull();
+        cut.ShouldShowStepUpModal();
         JSInterop.Invocations.Should().NotContain(i => i.InvocationMethodName == "open");
     }
 
@@ -200,7 +189,7 @@ public class AuditLogExportPanelTests : BunitContext
 
         await cut.Find("button.btn-secondary").ClickAsync();
 
-        cut.Find(".confirm-dialog-backdrop").Should().NotBeNull();
+        cut.ShouldShowStepUpModal();
         await exportJobService.DidNotReceive().EnqueueAsync(
             Arg.Any<string>(), Arg.Any<AuditLogFilterDto>(), Arg.Any<AuditLogExportFormat>(), Arg.Any<CancellationToken>());
     }

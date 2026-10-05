@@ -3,7 +3,6 @@
 using Bunit;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Components.Domain.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
@@ -29,13 +28,10 @@ public class JitElevationRequestFormTests : BunitContext
     {
         var service = Substitute.For<IJitElevationService>();
         service.GetRequestsForUserAsync("user-1", Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(initialRequests ?? (IReadOnlyList<RoleElevationRequestDto>)[]));
+            .Returns(Task.FromResult(initialRequests ?? []));
         Services.AddSingleton(service);
 
-        var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
-        rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(rateLimiterPermits));
-        Services.AddSingleton(rateLimiter);
-        Services.AddSingleton(Substitute.For<ILogger<JitElevationRequestForm>>());
+        this.RegisterAdminStepUpFakes<JitElevationRequestForm>(rateLimiterPermits: rateLimiterPermits);
 
         return service;
     }
@@ -126,6 +122,6 @@ public class JitElevationRequestFormTests : BunitContext
 
         _ = service.DidNotReceive().RequestElevationAsync(
             Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
-        cut.Markup.Should().Contain("For mange handlinger");
+        cut.ShouldShowRateLimitMessage();
     }
 }

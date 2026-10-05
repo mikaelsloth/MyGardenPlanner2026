@@ -2,15 +2,12 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Pages.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
-using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Tests.UI;
 using NSubstitute;
-using System.Security.Claims;
 using Xunit;
 
 public class AdminAuditLogPageTests : BunitContext
@@ -18,11 +15,6 @@ public class AdminAuditLogPageTests : BunitContext
     private readonly IAuditLogQueryService queryService = Substitute.For<IAuditLogQueryService>();
     private readonly IAuditLogViewerPreferenceService preferenceService = Substitute.For<IAuditLogViewerPreferenceService>();
     private readonly IAuditLogExportTokenService tokenService = Substitute.For<IAuditLogExportTokenService>();
-    private readonly IAuthorizationService authorizationService = Substitute.For<IAuthorizationService>();
-    private readonly IAdminActionRateLimiter rateLimiter = Substitute.For<IAdminActionRateLimiter>();
-    private readonly IReAuthenticationService reAuthenticationService = Substitute.For<IReAuthenticationService>();
-    private readonly IReAuthFailureTracker reAuthFailureTracker = Substitute.For<IReAuthFailureTracker>();
-    private readonly ICurrentUserAccessor currentUserAccessor = Substitute.For<ICurrentUserAccessor>();
     private readonly IAuditLogExportJobService exportJobService = Substitute.For<IAuditLogExportJobService>();
 
     private static AuditLogEntryDto Entry(long id = 1) => new(
@@ -34,13 +26,9 @@ public class AdminAuditLogPageTests : BunitContext
         Services.AddSingleton(queryService);
         Services.AddSingleton(preferenceService);
         Services.AddSingleton(tokenService);
-        Services.AddSingleton(authorizationService);
-        Services.AddSingleton(rateLimiter);
-        Services.AddSingleton(IdentityTestDoubles.CreateUserManager());
-        Services.AddSingleton(reAuthenticationService);
-        Services.AddSingleton(reAuthFailureTracker);
-        Services.AddSingleton(currentUserAccessor);
         Services.AddSingleton(exportJobService);
+        this.RegisterAdminStepUpFakes<AdminAuditLogPage>();
+
         exportJobService.GetJobsForUserAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<AuditLogExportJobDto>>([]));
 
@@ -49,10 +37,6 @@ public class AdminAuditLogPageTests : BunitContext
 
         preferenceService.GetAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(new AuditLogViewerPreferenceDto(25, null)));
-
-        authorizationService.AuthorizeAsync(Arg.Any<ClaimsPrincipal>(), Arg.Any<object?>(), Arg.Any<string>())
-            .Returns(Task.FromResult(AuthorizationResult.Success()));
-        rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
 
         JSInterop.Mode = JSRuntimeMode.Loose;
     }

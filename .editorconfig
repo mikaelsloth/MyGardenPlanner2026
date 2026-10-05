@@ -20,6 +20,7 @@ dotnet_diagnostic.VSTHRD111.severity = none
 # Planlagt teknisk gæld
 dotnet_diagnostic.CA1848.severity = suggestion
 dotnet_diagnostic.CA1873.severity = suggestion
+dotnet_diagnostic.IDE0004.severity = suggestion
 
 # Kategorier som stadig skal bryde builds når
 # TreatWarningsAsErrors=true

@@ -34,7 +34,7 @@ public sealed class PricingPageTests : BunitContext
     public void ClickingContinueOnCalculator_NavigatesToOnboardingCheckout_WithLevelCategoryAndCycle()
     {
         calculatorService.CalculateAsync(Arg.Any<PricingCalculationRequestDto>(), Arg.Any<CancellationToken>())
-            .Returns(new PricingCalculationResultDto(100m, 1m, 1.0m, 100m, [], 0m, 100m));
+            .Returns(SubscriptionTestData.PricingResult());
 
         var cut = Render<PricingPage>();
         cut.Find(".btn-accent").Click();

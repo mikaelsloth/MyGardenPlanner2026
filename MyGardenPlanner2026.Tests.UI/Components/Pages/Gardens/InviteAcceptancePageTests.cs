@@ -39,7 +39,7 @@ public sealed class InviteAcceptancePageTests : BunitContext
             maxLayer: maxLayer, maxCategory: maxCategory);
 
     private static PricingCalculationResultDto CreateResult(decimal total = 150m) =>
-        new(100m, 1m, 1.0m, 100m, [], 50m, total);
+        SubscriptionTestData.PricingResult(total, addOnsTotal: 50m);
 
     private IRenderedComponent<InviteAcceptancePage> RenderWithToken(string token)
     {

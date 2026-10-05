@@ -15,17 +15,8 @@ using Xunit;
 
 public class LandingPageTests : BunitContext
 {
-    private static SubscriptionTierDto CreateDto(GardenAccessLevel level) => new(
-        Id: Guid.NewGuid(),
-        Level: level,
-        AccessCategory: AccessCategory.Editor,
-        Name: $"{level} · Editor",
-        Description: "Beskrivelse",
-        Price: 100m,
-        BillingCycle: BillingCycle.Annual,
-        IsFeatured: true,
-        IncludedFeatures: ["Feature"],
-        FeatureLimits: new Dictionary<string, string>());
+    private static SubscriptionTierDto CreateDto(GardenAccessLevel level) =>
+        SubscriptionTestData.Tier(level, isFeatured: true) with { IncludedFeatures = ["Feature"] };
 
     private void RegisterFakePricingService()
     {

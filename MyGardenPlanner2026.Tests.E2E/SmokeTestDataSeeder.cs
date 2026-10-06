@@ -22,21 +22,7 @@ public static class SmokeTestDataSeeder
     public static async Task<IReadOnlyDictionary<string, SmokeTestUser>> SeedAsync(string connectionString)
     {
         await using var provider = BuildServiceProvider(connectionString);
-        using var scope = provider.CreateScope(); var services = new ServiceCollection();
-
-        //services.AddDbContext<PlannerDbContext>(options =>
-        //    options.UseSqlServer(connectionString)
-        //           .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
-
-        //services.AddDataProtection();
-
-        //services.AddIdentityCore<ApplicationUser>()
-        //    .AddRoles<IdentityRole>()
-        //    .AddEntityFrameworkStores<PlannerDbContext>()
-        //    .AddDefaultTokenProviders();
-
-        //await using var provider = services.BuildServiceProvider();
-        //using var scope = provider.CreateScope();
+        using var scope = provider.CreateScope();
 
         var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();

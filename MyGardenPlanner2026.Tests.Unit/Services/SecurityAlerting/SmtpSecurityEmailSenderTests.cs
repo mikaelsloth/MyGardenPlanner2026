@@ -3,7 +3,6 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using MyGardenPlanner2026.Infrastructure.Services;
 using MyGardenPlanner2026.Infrastructure.Services.SecurityAlerting;
 using NSubstitute;
 using Xunit;

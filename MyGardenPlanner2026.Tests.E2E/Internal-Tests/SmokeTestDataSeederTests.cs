@@ -1,12 +1,10 @@
-﻿namespace MyGardenPlanner2026.Tests.E2E.Seeding;
+﻿namespace MyGardenPlanner2026.Tests.E2E.Internal_Tests;
 
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Infrastructure.Data;
-using MyGardenPlanner2026.Tests.E2E;
-using Xunit;
 
 /// <summary>
 /// Verificerer SmokeTestDataSeeder isoleret mod sin egen engangs-database — uden

@@ -2,8 +2,6 @@
 
 using FluentAssertions;
 using Microsoft.Playwright;
-using MyGardenPlanner2026.Tests.E2E;
-using Xunit;
 
 [Collection(PlaywrightAppCollection.Name)]
 public sealed class PersonaAccessTests(PlaywrightAppFixture fixture)

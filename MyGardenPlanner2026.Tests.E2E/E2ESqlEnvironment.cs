@@ -23,27 +23,30 @@ public static class E2ESqlEnvironment
     public static string ResolveDatabaseName() =>
         IsCi ? CiDatabaseName : $"MyGardenPlanner2026_E2E_{Guid.NewGuid():N}";
 
-    public static string MasterConnectionString() =>
-        IsCi
-            ? $"Server={SqlServerHost()};Database=master;User Id=sa;Password={SaPassword()};TrustServerCertificate=True"
-            : $@"Server={LocalSqlExpressServer};Database=master;Trusted_Connection=True;TrustServerCertificate=True";
+    public static string MasterConnectionString() => MigrationConnectionString("master");
 
     public static string MigrationConnectionString(string databaseName) =>
         IsCi
-            ? $"Server={SqlServerHost()};Database={databaseName};User Id=sa;Password={SaPassword()};TrustServerCertificate=True"
-            : $@"Server={LocalSqlExpressServer};Database={databaseName};Trusted_Connection=True;TrustServerCertificate=True";
+            ? SqlAuthConnectionString(databaseName, "sa", SaPassword())
+            : TrustedConnectionString(databaseName);
 
     /// <summary>Til appens ConnectionStrings:SqlExpressConnection (mgp_app_user i CI, samme forbindelse som migrations lokalt).</summary>
     public static string AppConnectionString(string databaseName) =>
         IsCi
-            ? $"Server={SqlServerHost()};Database={databaseName};User Id=mgp_app_user;Password={AppUserPassword()};TrustServerCertificate=True"
+            ? SqlAuthConnectionString(databaseName, "mgp_app_user", AppUserPassword())
             : MigrationConnectionString(databaseName);
 
     /// <summary>Til appens ConnectionStrings:AdminSqlExpressConnection (mgp_admin_user i CI, samme forbindelse som migrations lokalt).</summary>
     public static string AdminConnectionString(string databaseName) =>
         IsCi
-            ? $"Server={SqlServerHost()};Database={databaseName};User Id=mgp_admin_user;Password={AdminUserPassword()};TrustServerCertificate=True"
+            ? SqlAuthConnectionString(databaseName, "mgp_admin_user", AdminUserPassword())
             : MigrationConnectionString(databaseName);
+
+    private static string SqlAuthConnectionString(string databaseName, string userId, string password) =>
+        $"Server={SqlServerHost()};Database={databaseName};User Id={userId};Password={password};TrustServerCertificate=True";
+
+    private static string TrustedConnectionString(string databaseName) =>
+        $"Server={LocalSqlExpressServer};Database={databaseName};Trusted_Connection=True;TrustServerCertificate=True";
 
     public static string SqlServerHost() => RequireEnv("E2E_SQL_SERVER");
     public static string SaPassword() => RequireEnv("E2E_SQL_SA_PASSWORD");

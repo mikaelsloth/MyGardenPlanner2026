@@ -31,14 +31,10 @@ public static partial class CiSqlProvisioner
 
     private static async Task CreateDatabaseAsync(string databaseName)
     {
+        await E2ETestDatabase.DropIfExistsAsync(databaseName);
+
         await using var connection = new SqlConnection(E2ESqlEnvironment.MasterConnectionString());
         await connection.OpenAsync();
-
-        await using var dropCommand = new SqlCommand(
-            $"IF DB_ID('{databaseName}') IS NOT NULL BEGIN " +
-            $"ALTER DATABASE [{databaseName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; " +
-            $"DROP DATABASE [{databaseName}]; END", connection);
-        await dropCommand.ExecuteNonQueryAsync();
 
         await using var createCommand = new SqlCommand($"CREATE DATABASE [{databaseName}]", connection);
         await createCommand.ExecuteNonQueryAsync();

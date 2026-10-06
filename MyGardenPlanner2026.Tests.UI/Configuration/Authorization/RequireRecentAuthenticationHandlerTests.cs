@@ -1,7 +1,6 @@
 ﻿namespace MyGardenPlanner2026.Tests.UI.Configuration.Authorization;
 
 using FluentAssertions;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Configuration.Authorization;
 using MyGardenPlanner2026.Core.Contracts.Admin;
@@ -26,12 +25,10 @@ public class RequireRecentAuthenticationHandlerTests
         reAuthenticationService.IsReAuthValid(TimeSpan.FromMinutes(15)).Returns(true);
 
         var handler = CreateHandler(reAuthenticationService);
-        var context = new AuthorizationHandlerContext(
-            [new RequireRecentAuthenticationRequirement()], TestPrincipals.Create(), resource: null);
 
-        await handler.HandleAsync(context);
+        var succeeded = await handler.EvaluateAsync(new RequireRecentAuthenticationRequirement(), TestPrincipals.Create());
 
-        context.HasSucceeded.Should().BeTrue();
+        succeeded.Should().BeTrue();
     }
 
     [Fact]
@@ -41,12 +38,10 @@ public class RequireRecentAuthenticationHandlerTests
         reAuthenticationService.IsReAuthValid(TimeSpan.FromMinutes(15)).Returns(false);
 
         var handler = CreateHandler(reAuthenticationService);
-        var context = new AuthorizationHandlerContext(
-            [new RequireRecentAuthenticationRequirement()], TestPrincipals.Create(), resource: null);
 
-        await handler.HandleAsync(context);
+        var succeeded = await handler.EvaluateAsync(new RequireRecentAuthenticationRequirement(), TestPrincipals.Create());
 
-        context.HasSucceeded.Should().BeFalse();
+        succeeded.Should().BeFalse();
     }
 
     [Fact]
@@ -56,12 +51,10 @@ public class RequireRecentAuthenticationHandlerTests
         reAuthenticationService.IsReAuthValid(TimeSpan.FromMinutes(5)).Returns(true);
 
         var handler = CreateHandler(reAuthenticationService, maxAgeMinutes: 5);
-        var context = new AuthorizationHandlerContext(
-            [new RequireRecentAuthenticationRequirement()], TestPrincipals.Create(), resource: null);
 
-        await handler.HandleAsync(context);
+        var succeeded = await handler.EvaluateAsync(new RequireRecentAuthenticationRequirement(), TestPrincipals.Create());
 
-        context.HasSucceeded.Should().BeTrue();
+        succeeded.Should().BeTrue();
         reAuthenticationService.Received(1).IsReAuthValid(TimeSpan.FromMinutes(5));
     }
 }

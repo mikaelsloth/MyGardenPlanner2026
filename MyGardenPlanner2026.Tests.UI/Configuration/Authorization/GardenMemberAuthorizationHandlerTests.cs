@@ -1,12 +1,10 @@
 ﻿namespace MyGardenPlanner2026.Tests.UI.Configuration.Authorization;
 
 using FluentAssertions;
-using Microsoft.AspNetCore.Authorization;
 using MyGardenPlanner2026.Configuration.Authorization;
 using MyGardenPlanner2026.Core.Contracts.Onboarding;
 using MyGardenPlanner2026.Core.Entities.Common;
 using NSubstitute;
-using System.Security.Claims;
 using Xunit;
 
 public sealed class GardenMemberAuthorizationHandlerTests
@@ -14,10 +12,6 @@ public sealed class GardenMemberAuthorizationHandlerTests
     private readonly IGardenAccessQueryService queryService = Substitute.For<IGardenAccessQueryService>();
 
     private GardenMemberAuthorizationHandler CreateSut() => new(queryService);
-
-    private static AuthorizationHandlerContext CreateContext(
-        IAuthorizationRequirement requirement, ClaimsPrincipal user, Guid resource) =>
-        new([requirement], user, resource);
 
     [Fact]
     public async Task HandleRequirementAsync_UserHasMembership_Succeeds()
@@ -28,11 +22,9 @@ public sealed class GardenMemberAuthorizationHandlerTests
         queryService.GetMembershipAsync(gardenId, "user-1", Arg.Any<CancellationToken>())
             .Returns(GardenTestData.Membership(gardenId, level: GardenAccessLevel.BedDesigner, category: AccessCategory.Editor));
 
-        var context = CreateContext(new GardenMemberRequirement(), user, gardenId);
+        var succeeded = await CreateSut().EvaluateAsync(new GardenMemberRequirement(), user, gardenId);
 
-        await CreateSut().HandleAsync(context);
-
-        context.HasSucceeded.Should().BeTrue();
+        succeeded.Should().BeTrue();
     }
 
     [Fact]
@@ -44,11 +36,9 @@ public sealed class GardenMemberAuthorizationHandlerTests
         queryService.GetMembershipAsync(gardenId, "user-1", Arg.Any<CancellationToken>())
             .Returns((GardenMembershipDto?)null);
 
-        var context = CreateContext(new GardenMemberRequirement(), user, gardenId);
+        var succeeded = await CreateSut().EvaluateAsync(new GardenMemberRequirement(), user, gardenId);
 
-        await CreateSut().HandleAsync(context);
-
-        context.HasSucceeded.Should().BeFalse();
+        succeeded.Should().BeFalse();
     }
 
     [Fact]
@@ -57,11 +47,9 @@ public sealed class GardenMemberAuthorizationHandlerTests
         var gardenId = Guid.NewGuid();
         var user = TestPrincipals.Anonymous();
 
-        var context = CreateContext(new GardenMemberRequirement(), user, gardenId);
+        var succeeded = await CreateSut().EvaluateAsync(new GardenMemberRequirement(), user, gardenId);
 
-        await CreateSut().HandleAsync(context);
-
-        context.HasSucceeded.Should().BeFalse();
+        succeeded.Should().BeFalse();
         await queryService.DidNotReceive().GetMembershipAsync(Arg.Any<Guid>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 }

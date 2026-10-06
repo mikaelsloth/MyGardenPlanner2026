@@ -1,7 +1,6 @@
 ﻿namespace MyGardenPlanner2026.Tests.UI.Configuration.Authorization;
 
 using FluentAssertions;
-using Microsoft.AspNetCore.Authorization;
 using MyGardenPlanner2026.Configuration.Authorization;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using NSubstitute;
@@ -10,6 +9,8 @@ using Xunit;
 public class AnyAdminRoleAuthorizationHandlerTests
 {
     private static readonly string[] AdminRoles = ["SystemAdmin", "DataAdmin", "PolicyAdmin", "AuditViewer"];
+
+    private static AnyAdminRoleRequirement CreateRequirement() => new(AdminRoles);
 
     [Theory]
     [InlineData("SystemAdmin")]
@@ -20,12 +21,10 @@ public class AnyAdminRoleAuthorizationHandlerTests
     {
         var jitService = Substitute.For<IJitElevationService>();
         var handler = new AnyAdminRoleAuthorizationHandler(jitService);
-        var context = new AuthorizationHandlerContext(
-            [new AnyAdminRoleRequirement(AdminRoles)], TestPrincipals.Create("user-1", role), resource: null);
 
-        await handler.HandleAsync(context);
+        var succeeded = await handler.EvaluateAsync(CreateRequirement(), TestPrincipals.Create("user-1", role));
 
-        context.HasSucceeded.Should().BeTrue();
+        succeeded.Should().BeTrue();
         await jitService.DidNotReceive().HasActiveElevationAsync(
             Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
@@ -38,12 +37,10 @@ public class AnyAdminRoleAuthorizationHandlerTests
             .Returns(Task.FromResult(true));
 
         var handler = new AnyAdminRoleAuthorizationHandler(jitService);
-        var context = new AuthorizationHandlerContext(
-            [new AnyAdminRoleRequirement(AdminRoles)], TestPrincipals.Create("user-1"), resource: null);
 
-        await handler.HandleAsync(context);
+        var succeeded = await handler.EvaluateAsync(CreateRequirement(), TestPrincipals.Create("user-1"));
 
-        context.HasSucceeded.Should().BeTrue();
+        succeeded.Should().BeTrue();
     }
 
     [Fact]
@@ -54,12 +51,10 @@ public class AnyAdminRoleAuthorizationHandlerTests
             .Returns(Task.FromResult(false));
 
         var handler = new AnyAdminRoleAuthorizationHandler(jitService);
-        var context = new AuthorizationHandlerContext(
-            [new AnyAdminRoleRequirement(AdminRoles)], TestPrincipals.Create("user-1"), resource: null);
 
-        await handler.HandleAsync(context);
+        var succeeded = await handler.EvaluateAsync(CreateRequirement(), TestPrincipals.Create("user-1"));
 
-        context.HasSucceeded.Should().BeFalse();
+        succeeded.Should().BeFalse();
     }
 
     [Fact]
@@ -67,12 +62,10 @@ public class AnyAdminRoleAuthorizationHandlerTests
     {
         var jitService = Substitute.For<IJitElevationService>();
         var handler = new AnyAdminRoleAuthorizationHandler(jitService);
-        var context = new AuthorizationHandlerContext(
-            [new AnyAdminRoleRequirement(AdminRoles)], TestPrincipals.Create(userId: null), resource: null);
 
-        await handler.HandleAsync(context);
+        var succeeded = await handler.EvaluateAsync(CreateRequirement(), TestPrincipals.Create(userId: null));
 
-        context.HasSucceeded.Should().BeFalse();
+        succeeded.Should().BeFalse();
         await jitService.DidNotReceive().HasActiveElevationAsync(
             Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
@@ -86,12 +79,10 @@ public class AnyAdminRoleAuthorizationHandlerTests
         jitService.HasActiveElevationAsync("user-1", "PolicyAdmin", Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
 
         var handler = new AnyAdminRoleAuthorizationHandler(jitService);
-        var context = new AuthorizationHandlerContext(
-            [new AnyAdminRoleRequirement(AdminRoles)], TestPrincipals.Create("user-1"), resource: null);
 
-        await handler.HandleAsync(context);
+        var succeeded = await handler.EvaluateAsync(CreateRequirement(), TestPrincipals.Create("user-1"));
 
-        context.HasSucceeded.Should().BeTrue();
+        succeeded.Should().BeTrue();
         await jitService.DidNotReceive().HasActiveElevationAsync("user-1", "AuditViewer", Arg.Any<CancellationToken>());
     }
 }

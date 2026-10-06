@@ -56,23 +56,15 @@ public static class SmokeTestDataSeeder
             EmailConfirmed = true,
         };
 
-        var createResult = await userManager.CreateAsync(user, SharedPassword);
-        if (!createResult.Succeeded)
-        {
-            throw new InvalidOperationException(
-                $"Kunne ikke oprette smoke-test-bruger '{email}': " +
-                string.Join(", ", createResult.Errors.Select(e => e.Description)));
-        }
+        EnsureSucceeded(
+            await userManager.CreateAsync(user, SharedPassword),
+            $"Kunne ikke oprette smoke-test-bruger '{email}'");
 
         if (role is not null)
         {
-            var addToRoleResult = await userManager.AddToRoleAsync(user, role);
-            if (!addToRoleResult.Succeeded)
-            {
-                throw new InvalidOperationException(
-                    $"Kunne ikke tildele rollen '{role}' til '{email}': " +
-                    string.Join(", ", addToRoleResult.Errors.Select(e => e.Description)));
-            }
+            EnsureSucceeded(
+                await userManager.AddToRoleAsync(user, role),
+                $"Kunne ikke tildele rollen '{role}' til '{email}'");
         }
 
         string? authenticatorKey = null;
@@ -81,16 +73,21 @@ public static class SmokeTestDataSeeder
             await userManager.ResetAuthenticatorKeyAsync(user);
             authenticatorKey = await userManager.GetAuthenticatorKeyAsync(user);
 
-            var setTwoFactorResult = await userManager.SetTwoFactorEnabledAsync(user, true);
-            if (!setTwoFactorResult.Succeeded)
-            {
-                throw new InvalidOperationException(
-                    $"Kunne ikke aktivere 2FA for '{email}': " +
-                    string.Join(", ", setTwoFactorResult.Errors.Select(e => e.Description)));
-            }
+            EnsureSucceeded(
+                await userManager.SetTwoFactorEnabledAsync(user, true),
+                $"Kunne ikke aktivere 2FA for '{email}'");
         }
 
         return new SmokeTestUser(email, SharedPassword, role, twoFactorEnabled, authenticatorKey);
+    }
+
+    internal static void EnsureSucceeded(IdentityResult result, string context)
+    {
+        if (!result.Succeeded)
+        {
+            throw new InvalidOperationException(
+                $"{context}: " + string.Join(", ", result.Errors.Select(e => e.Description)));
+        }
     }
 
     /// <summary>

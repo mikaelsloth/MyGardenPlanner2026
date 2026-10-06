@@ -2,8 +2,6 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Pages;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
 using MyGardenPlanner2026.Core.Contracts.Onboarding;
@@ -13,22 +11,8 @@ using NSubstitute;
 using NSubstitute.ExceptionExtensions;
 using Xunit;
 
-public sealed class InviteAcceptancePageTests : BunitContext
+public sealed class InviteAcceptancePageTests : OnboardingPricingTestContext
 {
-    private readonly IOnboardingService onboardingService = Substitute.For<IOnboardingService>();
-    private readonly IGardenAccessQueryService queryService = Substitute.For<IGardenAccessQueryService>();
-    private readonly IPricingCalculatorService calculatorService = Substitute.For<IPricingCalculatorService>();
-    private readonly ISubscriptionAddOnService addOnService = Substitute.For<ISubscriptionAddOnService>();
-
-    public InviteAcceptancePageTests()
-    {
-        addOnService.GetAllAddOnsAsync(Arg.Any<CancellationToken>()).Returns([]);
-        Services.AddSingleton(onboardingService);
-        Services.AddSingleton(queryService);
-        Services.AddSingleton(calculatorService);
-        Services.AddSingleton(addOnService);
-    }
-
     private static GardenInvitationDto CreateInvitationDto(
         Guid gardenId, bool allowSelfUpgrade = false,
         GardenAccessLevel targetLayer = GardenAccessLevel.Planlaegger, AccessCategory targetCategory = AccessCategory.Viewer,
@@ -41,11 +25,8 @@ public sealed class InviteAcceptancePageTests : BunitContext
     private static PricingCalculationResultDto CreateResult(decimal total = 150m) =>
         SubscriptionTestData.PricingResult(total, addOnsTotal: 50m);
 
-    private IRenderedComponent<InviteAcceptancePage> RenderWithToken(string token)
-    {
-        Services.GetRequiredService<NavigationManager>().NavigateTo($"/invite?token={token}");
-        return Render<InviteAcceptancePage>();
-    }
+    private IRenderedComponent<InviteAcceptancePage> RenderWithToken(string token) =>
+        this.RenderAt<InviteAcceptancePage>($"/invite?token={token}");
 
     [Fact]
     public void NoToken_ShowsInvalidEmptyState()
@@ -150,7 +131,7 @@ public sealed class InviteAcceptancePageTests : BunitContext
                 r.UpgradeBillingCycle == null),
             Arg.Any<CancellationToken>());
 
-        Services.GetRequiredService<NavigationManager>().Uri.Should().Contain($"/gardens/{gardenId}/access");
+        this.ShouldHaveNavigatedTo($"/gardens/{gardenId}/access");
     }
 
     [Fact]
@@ -188,7 +169,7 @@ public sealed class InviteAcceptancePageTests : BunitContext
         cut.Find(".form-actions .btn-primary").Click();
         cut.Find(".btn-row .btn-primary").Click();
 
-        var uri = Services.GetRequiredService<NavigationManager>().Uri;
+        var uri = this.CurrentUri();
         uri.Should().Contain("/Account/Register");
         var containsToken =
             uri.Contains("token%3Dgood-token") ||
@@ -243,7 +224,7 @@ public sealed class InviteAcceptancePageTests : BunitContext
             Arg.Is<AcceptInvitationRequestDto>(r => r.UserId == "user-1" && r.UpgradeBillingCycle == BillingCycle.Annual),
             Arg.Any<CancellationToken>());
 
-        Services.GetRequiredService<NavigationManager>().Uri.Should().Contain($"/gardens/{gardenId}/access");
+        this.ShouldHaveNavigatedTo($"/gardens/{gardenId}/access");
     }
 
     [Fact]
@@ -261,10 +242,10 @@ public sealed class InviteAcceptancePageTests : BunitContext
             .ThrowsAsync(new InvalidOperationException("Du er allerede medlem af denne have."));
 
         var cut = RenderWithToken("good-token");
-        var originalUri = Services.GetRequiredService<NavigationManager>().Uri;
+        var originalUri = this.CurrentUri();
         cut.Find(".form-actions .btn-primary").Click();
 
         cut.Markup.Should().Contain("Du er allerede medlem af denne have.");
-        Services.GetRequiredService<NavigationManager>().Uri.Should().Be(originalUri);
+        this.CurrentUri().Should().Be(originalUri);
     }
 }

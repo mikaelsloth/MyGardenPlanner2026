@@ -2,7 +2,6 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Layout;
 using MyGardenPlanner2026.Core.Contracts.Onboarding;
@@ -35,19 +34,19 @@ public sealed class OnboardingGateTests : BunitContext
         var cut = Render<OnboardingGate>(p => p.AddChildContent("<p class=\"gated-content\">Indhold</p>"));
 
         cut.FindAll(".gated-content").Should().BeEmpty();
-        Services.GetRequiredService<NavigationManager>().Uri.Should().Contain("/onboarding/welcome");
+        this.ShouldHaveNavigatedTo("/onboarding/welcome");
     }
 
     [Fact]
     public async Task NotAuthenticated_DoesNotRenderChildContent_AndDoesNotNavigate()
     {
         AddAuthorization().SetNotAuthorized();
-        var originalUri = Services.GetRequiredService<NavigationManager>().Uri;
+        var originalUri = this.CurrentUri();
 
         var cut = Render<OnboardingGate>(p => p.AddChildContent("<p class=\"gated-content\">Indhold</p>"));
 
         cut.FindAll(".gated-content").Should().BeEmpty();
-        Services.GetRequiredService<NavigationManager>().Uri.Should().Be(originalUri);
+        this.CurrentUri().Should().Be(originalUri);
         await queryService.DidNotReceive().HasAnyGardenAccessAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 }

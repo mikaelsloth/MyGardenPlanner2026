@@ -2,7 +2,6 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Pages;
 using MyGardenPlanner2026.Core.Contracts.Onboarding;
@@ -37,7 +36,7 @@ public sealed class OnboardingWelcomePageTests : BunitContext
         await cut.Find(".btn-primary").ClickAsync();
 
         await onboardingService.Received(1).CreateSandboxGardenAsync("user-1", Arg.Any<CancellationToken>());
-        Services.GetRequiredService<NavigationManager>().Uri.Should().Contain("/demo-dashboard");
+        this.ShouldHaveNavigatedTo("/demo-dashboard");
     }
 
     [Fact]
@@ -49,6 +48,6 @@ public sealed class OnboardingWelcomePageTests : BunitContext
         await cut.Find(".btn-secondary").ClickAsync();
 
         await onboardingService.DidNotReceive().CreateSandboxGardenAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
-        Services.GetRequiredService<NavigationManager>().Uri.Should().Contain("/onboarding/checkout");
+        this.ShouldHaveNavigatedTo("/onboarding/checkout");
     }
 }

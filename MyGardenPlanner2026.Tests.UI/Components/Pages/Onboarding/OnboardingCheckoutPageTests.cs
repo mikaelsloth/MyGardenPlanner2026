@@ -2,8 +2,6 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Pages;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
 using MyGardenPlanner2026.Core.Contracts.Onboarding;
@@ -12,36 +10,14 @@ using MyGardenPlanner2026.Core.Entities.Layer1;
 using NSubstitute;
 using Xunit;
 
-public sealed class OnboardingCheckoutPageTests : BunitContext
+public sealed class OnboardingCheckoutPageTests : OnboardingPricingTestContext
 {
-    private readonly IOnboardingService onboardingService = Substitute.For<IOnboardingService>();
-    private readonly IGardenAccessQueryService queryService = Substitute.For<IGardenAccessQueryService>();
-    private readonly IPricingCalculatorService calculatorService = Substitute.For<IPricingCalculatorService>();
-    private readonly ISubscriptionAddOnService addOnService = Substitute.For<ISubscriptionAddOnService>();
-
-    public OnboardingCheckoutPageTests()
-    {
-        addOnService.GetAllAddOnsAsync(Arg.Any<CancellationToken>()).Returns([]);
-        Services.AddSingleton(onboardingService);
-        Services.AddSingleton(queryService);
-        Services.AddSingleton(calculatorService);
-        Services.AddSingleton(addOnService);
-    }
-
     private static CheckoutDraftDto CreateDraft(Guid id, string? userId = null) => new(
         id, userId, "Min gemte have", null, GardenAccessLevel.BedDesigner, AccessCategory.Editor,
         BillingCycle.Annual, new Dictionary<Guid, int>(), DateTimeOffset.UtcNow.AddMinutes(10));
 
-    /// <summary>
-    /// [SupplyParameterFromQuery]-parametre kan ikke sættes via ComponentParameter.Add i
-    /// bUnit — de skal bindes via NavigationManager (bUnits fake), ved at navigere til
-    /// URL'en med querystring FØR komponenten renderes.
-    /// </summary>
-    private IRenderedComponent<OnboardingCheckoutPage> RenderWithDraft(Guid draftId)
-    {
-        Services.GetRequiredService<NavigationManager>().NavigateTo($"/onboarding/checkout?draft={draftId}");
-        return Render<OnboardingCheckoutPage>();
-    }
+    private IRenderedComponent<OnboardingCheckoutPage> RenderWithDraft(Guid draftId) =>
+        this.RenderAt<OnboardingCheckoutPage>($"/onboarding/checkout?draft={draftId}");
 
     [Fact]
     public void PricingCalculator_HiddenUntilGardenNameEntered()
@@ -124,7 +100,7 @@ public sealed class OnboardingCheckoutPageTests : BunitContext
             Arg.Is<SaveCheckoutDraftRequestDto>(r => r.UserId == null && r.GardenName == "Min have"),
             Arg.Any<CancellationToken>());
 
-        Services.GetRequiredService<NavigationManager>().Uri.Should().Contain("/Account/Register");
+        this.ShouldHaveNavigatedTo("/Account/Register");
     }
 
     [Fact]
@@ -150,7 +126,7 @@ public sealed class OnboardingCheckoutPageTests : BunitContext
 
         RenderWithDraft(draft.Id);
 
-        Services.GetRequiredService<NavigationManager>().Uri.Should().Contain("/Account/Login");
+        this.ShouldHaveNavigatedTo("/Account/Login");
     }
 
     [Fact]
@@ -193,7 +169,7 @@ public sealed class OnboardingCheckoutPageTests : BunitContext
             Arg.Is<PaidGardenProvisionRequestDto>(r => r.UserId == "user-1" && r.GardenName == "Min have"),
             Arg.Any<CancellationToken>());
 
-        Services.GetRequiredService<NavigationManager>().Uri.Should().Contain($"/gardens/{gardenId}/access");
+        this.ShouldHaveNavigatedTo($"/gardens/{gardenId}/access");
     }
 
     [Fact]

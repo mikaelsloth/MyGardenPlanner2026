@@ -6,85 +6,37 @@ using Microsoft.Playwright;
 [Collection(PlaywrightAppCollection.Name)]
 public sealed class PersonaAccessTests(PlaywrightAppFixture fixture)
 {
-    [Fact]
-    public async Task Admin_LoginMedToFactor_TilgaarAbonnementssiden()
+    [Theory]
+    [InlineData(SmokeTestPersonas.Admin, E2ERoutes.AdminSubscriptions, "Administrer abonnementer")]
+    [InlineData(SmokeTestPersonas.DataAdmin, E2ERoutes.AdminJitRequests, "JIT-adgang")]
+    [InlineData(SmokeTestPersonas.PolicyAdmin, E2ERoutes.AdminSecurityPolicies, "Sikkerhedspolicies")]
+    [InlineData(SmokeTestPersonas.Auditor, E2ERoutes.AdminAuditLog, "AuditLog")]
+    public async Task AdminPersona_LoginMedToFactor_TilgaarSinAdminside(
+        string persona, string path, string expectedHeading)
     {
-        var page = await fixture.NewPageAsync();
-        await page.GotoAsync($"{fixture.RootUri}/admin/subscriptions");
+        var page = await fixture.LoginAndGotoAsync(persona, path);
 
-        await LoginFlow.LoginAsync(page, fixture.SmokeTestUsers["Admin"]);
-
-        await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Administrer abonnementer" }))
+        await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Name = expectedHeading }))
             .ToBeVisibleAsync();
     }
 
-    [Fact]
-    public async Task DataAdmin_LoginMedToFactor_TilgaarJitAdgangssiden()
+    [Theory]
+    [InlineData(SmokeTestPersonas.NoMfa, E2ERoutes.AdminSubscriptions)]
+    [InlineData(SmokeTestPersonas.Plain, E2ERoutes.AdminJitRequests)]
+    public async Task PersonaUdenToFactor_ForsoegerAdgang_RedirectesTilEnableAuthenticator(
+        string persona, string path)
     {
-        var page = await fixture.NewPageAsync();
-        await page.GotoAsync($"{fixture.RootUri}/admin/jit-requests");
+        var page = await fixture.LoginAndGotoAsync(persona, path);
 
-        await LoginFlow.LoginAsync(page, fixture.SmokeTestUsers["DataAdmin"]);
-
-        await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Name = "JIT-adgang" }))
-            .ToBeVisibleAsync();
-    }
-
-    [Fact]
-    public async Task PolicyAdmin_LoginMedToFactor_TilgaarSikkerhedspolicySiden()
-    {
-        var page = await fixture.NewPageAsync();
-        await page.GotoAsync($"{fixture.RootUri}/admin/security-policies");
-
-        await LoginFlow.LoginAsync(page, fixture.SmokeTestUsers["PolicyAdmin"]);
-
-        await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Sikkerhedspolicies" }))
-            .ToBeVisibleAsync();
-    }
-
-    [Fact]
-    public async Task Auditor_LoginMedToFactor_TilgaarAuditLogSiden()
-    {
-        var page = await fixture.NewPageAsync();
-        await page.GotoAsync($"{fixture.RootUri}/admin/audit-log");
-
-        await LoginFlow.LoginAsync(page, fixture.SmokeTestUsers["Auditor"]);
-
-        await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Name = "AuditLog" }))
-            .ToBeVisibleAsync();
-    }
-
-    [Fact]
-    public async Task NoMfa_ForsoegerAdgangUdenToFactor_RedirectesTilEnableAuthenticator()
-    {
-        var page = await fixture.NewPageAsync();
-        await page.GotoAsync($"{fixture.RootUri}/admin/subscriptions");
-
-        await LoginFlow.LoginAsync(page, fixture.SmokeTestUsers["NoMfa"]);
-
-        page.Url.Should().EndWith("/Account/Manage/EnableAuthenticator");
-    }
-
-    [Fact]
-    public async Task Plain_UdenRolle_RedirectesTilEnableAuthenticator()
-    {
-        var page = await fixture.NewPageAsync();
-        await page.GotoAsync($"{fixture.RootUri}/admin/jit-requests");
-
-        await LoginFlow.LoginAsync(page, fixture.SmokeTestUsers["Plain"]);
-
-        page.Url.Should().EndWith("/Account/Manage/EnableAuthenticator");
+        page.Url.Should().EndWith(E2ERoutes.EnableAuthenticator);
     }
 
     [Fact]
     public async Task Requester_UdenAdminRolle_KanIkkeTilgaaJitAdgangssiden()
     {
-        var page = await fixture.NewPageAsync();
-        await page.GotoAsync($"{fixture.RootUri}/admin/jit-requests");
+        var page = await fixture.LoginAndGotoAsync(SmokeTestPersonas.Requester, E2ERoutes.AdminJitRequests);
 
-        await LoginFlow.LoginAsync(page, fixture.SmokeTestUsers["Requester"]);
-
-        page.Url.Should().Contain("/Account/AccessDenied");
+        page.Url.Should().Contain(E2ERoutes.AccessDenied);
         await Assertions.Expect(page.GetByText("Du har ikke adgang til denne ressource."))
             .ToBeVisibleAsync();
     }

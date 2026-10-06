@@ -1,7 +1,6 @@
 ﻿namespace MyGardenPlanner2026.Tests.UI.Configuration.Authorization;
 
 using FluentAssertions;
-using Microsoft.AspNetCore.Authorization;
 using MyGardenPlanner2026.Configuration.Authorization;
 using MyGardenPlanner2026.Core.Entities;
 using NSubstitute;
@@ -19,11 +18,10 @@ public class MfaAuthorizationHandlerTests
         userManager.GetTwoFactorEnabledAsync(user).Returns(Task.FromResult(true));
 
         var handler = new MfaAuthorizationHandler(userManager);
-        var context = new AuthorizationHandlerContext([new MfaRequirement()], TestPrincipals.Create("user-1"), resource: null);
 
-        await handler.HandleAsync(context);
+        var succeeded = await handler.EvaluateAsync(new MfaRequirement(), TestPrincipals.Create("user-1"));
 
-        context.HasSucceeded.Should().BeTrue();
+        succeeded.Should().BeTrue();
     }
 
     [Fact]
@@ -35,11 +33,10 @@ public class MfaAuthorizationHandlerTests
         userManager.GetTwoFactorEnabledAsync(user).Returns(Task.FromResult(false));
 
         var handler = new MfaAuthorizationHandler(userManager);
-        var context = new AuthorizationHandlerContext([new MfaRequirement()], TestPrincipals.Create("user-1"), resource: null);
 
-        await handler.HandleAsync(context);
+        var succeeded = await handler.EvaluateAsync(new MfaRequirement(), TestPrincipals.Create("user-1"));
 
-        context.HasSucceeded.Should().BeFalse();
+        succeeded.Should().BeFalse();
     }
 
     [Fact]
@@ -49,11 +46,10 @@ public class MfaAuthorizationHandlerTests
         userManager.GetUserAsync(Arg.Any<ClaimsPrincipal>()).Returns(Task.FromResult<ApplicationUser?>(null));
 
         var handler = new MfaAuthorizationHandler(userManager);
-        var context = new AuthorizationHandlerContext([new MfaRequirement()], TestPrincipals.Create("user-1"), resource: null);
 
-        await handler.HandleAsync(context);
+        var succeeded = await handler.EvaluateAsync(new MfaRequirement(), TestPrincipals.Create("user-1"));
 
-        context.HasSucceeded.Should().BeFalse();
+        succeeded.Should().BeFalse();
         await userManager.DidNotReceive().GetTwoFactorEnabledAsync(Arg.Any<ApplicationUser>());
     }
 }

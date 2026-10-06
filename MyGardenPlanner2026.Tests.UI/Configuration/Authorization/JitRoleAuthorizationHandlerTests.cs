@@ -1,7 +1,6 @@
 ﻿namespace MyGardenPlanner2026.Tests.UI.Configuration.Authorization;
 
 using FluentAssertions;
-using Microsoft.AspNetCore.Authorization;
 using MyGardenPlanner2026.Configuration.Authorization;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using NSubstitute;
@@ -11,17 +10,17 @@ public class JitRoleAuthorizationHandlerTests
 {
     private const string RequiredRole = "SystemAdmin";
 
+    private static JitRoleRequirement CreateRequirement() => new(RequiredRole);
+
     [Fact]
     public async Task HandleRequirementAsync_UserInRole_Succeeds()
     {
         var jitService = Substitute.For<IJitElevationService>();
         var handler = new JitRoleAuthorizationHandler(jitService);
-        var context = new AuthorizationHandlerContext(
-            [new JitRoleRequirement(RequiredRole)], TestPrincipals.Create("user-1", RequiredRole), resource: null);
 
-        await handler.HandleAsync(context);
+        var succeeded = await handler.EvaluateAsync(CreateRequirement(), TestPrincipals.Create("user-1", RequiredRole));
 
-        context.HasSucceeded.Should().BeTrue();
+        succeeded.Should().BeTrue();
         await jitService.DidNotReceive().HasActiveElevationAsync(
             Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
@@ -34,12 +33,10 @@ public class JitRoleAuthorizationHandlerTests
             .Returns(Task.FromResult(true));
 
         var handler = new JitRoleAuthorizationHandler(jitService);
-        var context = new AuthorizationHandlerContext(
-            [new JitRoleRequirement(RequiredRole)], TestPrincipals.Create("user-1"), resource: null);
 
-        await handler.HandleAsync(context);
+        var succeeded = await handler.EvaluateAsync(CreateRequirement(), TestPrincipals.Create("user-1"));
 
-        context.HasSucceeded.Should().BeTrue();
+        succeeded.Should().BeTrue();
     }
 
     [Fact]
@@ -50,12 +47,10 @@ public class JitRoleAuthorizationHandlerTests
             .Returns(Task.FromResult(false));
 
         var handler = new JitRoleAuthorizationHandler(jitService);
-        var context = new AuthorizationHandlerContext(
-            [new JitRoleRequirement(RequiredRole)], TestPrincipals.Create("user-1"), resource: null);
 
-        await handler.HandleAsync(context);
+        var succeeded = await handler.EvaluateAsync(CreateRequirement(), TestPrincipals.Create("user-1"));
 
-        context.HasSucceeded.Should().BeFalse();
+        succeeded.Should().BeFalse();
     }
 
     [Fact]
@@ -63,12 +58,10 @@ public class JitRoleAuthorizationHandlerTests
     {
         var jitService = Substitute.For<IJitElevationService>();
         var handler = new JitRoleAuthorizationHandler(jitService);
-        var context = new AuthorizationHandlerContext(
-            [new JitRoleRequirement(RequiredRole)], TestPrincipals.Create(userId: null), resource: null);
 
-        await handler.HandleAsync(context);
+        var succeeded = await handler.EvaluateAsync(CreateRequirement(), TestPrincipals.Create(userId: null));
 
-        context.HasSucceeded.Should().BeFalse();
+        succeeded.Should().BeFalse();
         await jitService.DidNotReceive().HasActiveElevationAsync(
             Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }

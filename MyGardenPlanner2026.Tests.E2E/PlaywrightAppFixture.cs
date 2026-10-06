@@ -7,7 +7,6 @@ using MyGardenPlanner2026.Infrastructure.Data;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
-using Xunit;
 
 /// <summary>
 /// Starter appen som en RIGTIG separat proces (dotnet MyGardenPlanner2026.dll) på en

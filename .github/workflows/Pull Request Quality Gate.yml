@@ -17,20 +17,29 @@ jobs:
   build-test:
     runs-on: ubuntu-latest
 
-    # Ephemer, engangsbrugs-container — samme mønster som E2E Tests.yml.
+    # Adgangskode hentes fra GitHub Secrets (Actions + Dependabot).
     env:
-      MGP_TEST_SQLSERVER_CONNECTION: Server=localhost,1433;User Id=sa;Password=CiUnitTest!Passw0rd;TrustServerCertificate=True
+      MGP_TEST_SQLSERVER_CONNECTION: Server=localhost,1433;User Id=sa;Password=${{ secrets.MGP_TEST_SQL_SA_PASSWORD }};TrustServerCertificate=True
 
     services:
       mssql:
         image: mcr.microsoft.com/mssql/server:2022-latest
         env:
           ACCEPT_EULA: Y
-          MSSQL_SA_PASSWORD: CiUnitTest!Passw0rd
+          MSSQL_SA_PASSWORD: ${{ secrets.MGP_TEST_SQL_SA_PASSWORD }}
         ports:
           - 1433:1433
           
     steps:
+      - name: Verify required secrets
+        env:
+          SA_PASSWORD: ${{ secrets.MGP_TEST_SQL_SA_PASSWORD }}
+        run: |
+          if [ -z "$SA_PASSWORD" ]; then
+            echo "::error::Secret 'MGP_TEST_SQL_SA_PASSWORD' mangler (Settings → Secrets and variables → Actions / Dependabot)."
+            exit 1
+          fi
+
       - uses: actions/checkout@v7
 
       - name: Setup .NET

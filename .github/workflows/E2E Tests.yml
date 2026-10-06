@@ -21,23 +21,32 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
 
-    # Ephemer, engangsbrugs-container — adgangskoderne lever kun i denne jobkørsel.
+    # Adgangskoder hentes fra GitHub Secrets (Actions + Dependabot). E2E_SQL_SERVER er ikke en hemmelighed.
     env:
       E2E_SQL_SERVER: localhost,1433
-      E2E_SQL_SA_PASSWORD: E2eTest!Passw0rd
-      E2E_SQL_APP_USER_PASSWORD: E2eApp!Passw0rd
-      E2E_SQL_ADMIN_USER_PASSWORD: E2eAdmin!Passw0rd
+      E2E_SQL_SA_PASSWORD: ${{ secrets.E2E_SQL_SA_PASSWORD }}
+      E2E_SQL_APP_USER_PASSWORD: ${{ secrets.E2E_SQL_APP_USER_PASSWORD }}
+      E2E_SQL_ADMIN_USER_PASSWORD: ${{ secrets.E2E_SQL_ADMIN_USER_PASSWORD }}
 
     services:
       mssql:
         image: mcr.microsoft.com/mssql/server:2022-latest
         env:
           ACCEPT_EULA: Y
-          MSSQL_SA_PASSWORD: E2eTest!Passw0rd
+          MSSQL_SA_PASSWORD: ${{ secrets.E2E_SQL_SA_PASSWORD }}
         ports:
           - 1433:1433
 
     steps:
+      - name: Verify required secrets
+        run: |
+          for v in E2E_SQL_SA_PASSWORD E2E_SQL_APP_USER_PASSWORD E2E_SQL_ADMIN_USER_PASSWORD; do
+            if [ -z "${!v}" ]; then
+              echo "::error::Secret '$v' mangler (Settings → Secrets and variables → Actions)."
+              exit 1
+            fi
+          done
+
       - uses: actions/checkout@v7
 
       - name: Setup .NET

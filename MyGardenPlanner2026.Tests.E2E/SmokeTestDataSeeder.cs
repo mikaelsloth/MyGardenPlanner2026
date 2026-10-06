@@ -1,8 +1,6 @@
 ﻿namespace MyGardenPlanner2026.Tests.E2E;
 
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Core.Entities.Common;
@@ -118,8 +116,7 @@ public static class SmokeTestDataSeeder
         var services = new ServiceCollection();
 
         services.AddDbContext<PlannerDbContext>(options =>
-            options.UseSqlServer(connectionString)
-                   .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning)));
+            E2ETestDatabase.ConfigureContextOptions(options, connectionString));
 
         services.AddDataProtection();
 

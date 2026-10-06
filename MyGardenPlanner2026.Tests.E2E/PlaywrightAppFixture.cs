@@ -1,9 +1,6 @@
 ﻿namespace MyGardenPlanner2026.Tests.E2E;
 
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Playwright;
-using MyGardenPlanner2026.Infrastructure.Data;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -18,7 +15,7 @@ using System.Net.Sockets;
 /// </summary>
 public sealed class PlaywrightAppFixture : IAsyncLifetime
 {
-    private string _databaseName = default!;
+    private E2ETestDatabase _database = default!;
     private Process _appProcess = default!;
     private IPlaywright _playwright = default!;
 
@@ -28,28 +25,13 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        _databaseName = E2ESqlEnvironment.ResolveDatabaseName();
+        _database = await E2ETestDatabase.CreateAsync();
 
-        if (E2ESqlEnvironment.IsCi)
-        {
-            await CiSqlProvisioner.ProvisionDatabaseAndUsersAsync(_databaseName);
-        }
-
-        await MigrateDatabaseAsync();
-
-        if (E2ESqlEnvironment.IsCi)
-        {
-            await CiSqlProvisioner.RestrictAuditLogsAsync();
-        }
-
-        var appConnectionString = E2ESqlEnvironment.AppConnectionString(_databaseName);
-        var adminConnectionString = E2ESqlEnvironment.AdminConnectionString(_databaseName);
-
-        SmokeTestUsers = await SmokeTestDataSeeder.SeedAsync(appConnectionString);
+        SmokeTestUsers = await SmokeTestDataSeeder.SeedAsync(_database.AppConnectionString);
 
         var port = GetFreeTcpPort();
         RootUri = $"http://127.0.0.1:{port}";
-        _appProcess = StartAppProcess(port, appConnectionString, adminConnectionString);
+        _appProcess = StartAppProcess(port, _database.AppConnectionString, _database.AdminConnectionString);
 
         await WaitUntilReadyAsync(TimeSpan.FromSeconds(60));
 
@@ -81,9 +63,9 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
 
         _appProcess?.Dispose();
 
-        if (!E2ESqlEnvironment.IsCi)
+        if (_database is not null)
         {
-            await DropDatabaseAsync();
+            await _database.DisposeAsync();
         }
     }
 
@@ -172,30 +154,4 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         listener.Stop();
         return port;
     }
-
-    private async Task MigrateDatabaseAsync()
-    {
-        var options = CreateContextOptions(E2ESqlEnvironment.MigrationConnectionString(_databaseName));
-
-        await using var context = new PlannerDbContext(options);
-        await context.Database.MigrateAsync();
-    }
-
-    private async Task DropDatabaseAsync()
-    {
-        var options = CreateContextOptions(E2ESqlEnvironment.MasterConnectionString());
-
-        await using var context = new PlannerDbContext(options);
-#pragma warning disable EF1003 // Risk of vulnerability to SQL injection.
-        await context.Database.ExecuteSqlRawAsync(
-            $"ALTER DATABASE [{_databaseName}] SET SINGLE_USER WITH ROLLBACK IMMEDIATE; " +
-            $"DROP DATABASE [{_databaseName}];");
-#pragma warning restore EF1003 // Risk of vulnerability to SQL injection.
-    }
-
-    private static DbContextOptions<PlannerDbContext> CreateContextOptions(string connectionString) =>
-        new DbContextOptionsBuilder<PlannerDbContext>()
-            .UseSqlServer(connectionString)
-            .ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning))
-            .Options;
 }

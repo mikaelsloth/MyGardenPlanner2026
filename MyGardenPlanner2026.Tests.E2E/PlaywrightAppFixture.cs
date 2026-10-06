@@ -76,6 +76,15 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         return await context.NewPageAsync();
     }
 
+    /// <summary>Åbner en ny side på <paramref name="path"/> og logger ind som den angivne smoke-test-persona.</summary>
+    public async Task<IPage> LoginAndGotoAsync(string persona, string path)
+    {
+        var page = await NewPageAsync();
+        await page.GotoAsync($"{RootUri}{path}");
+        await LoginFlow.LoginAsync(page, SmokeTestUsers[persona]);
+        return page;
+    }
+
     private static Process StartAppProcess(int port, string appConnectionString, string adminConnectionString)
     {
         var dllPath = Path.Combine(AppContext.BaseDirectory, "MyGardenPlanner2026.dll");

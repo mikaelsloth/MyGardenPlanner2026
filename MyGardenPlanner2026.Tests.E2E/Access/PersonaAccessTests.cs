@@ -6,72 +6,27 @@ using Microsoft.Playwright;
 [Collection(PlaywrightAppCollection.Name)]
 public sealed class PersonaAccessTests(PlaywrightAppFixture fixture)
 {
-    [Fact]
-    public async Task Admin_LoginMedToFactor_TilgaarAbonnementssiden()
+    [Theory]
+    [InlineData("Admin", "/admin/subscriptions", "Administrer abonnementer")]
+    [InlineData("DataAdmin", "/admin/jit-requests", "JIT-adgang")]
+    [InlineData("PolicyAdmin", "/admin/security-policies", "Sikkerhedspolicies")]
+    [InlineData("Auditor", "/admin/audit-log", "AuditLog")]
+    public async Task AdminPersona_LoginMedToFactor_TilgaarSinAdminside(
+        string persona, string path, string expectedHeading)
     {
-        var page = await fixture.NewPageAsync();
-        await page.GotoAsync($"{fixture.RootUri}/admin/subscriptions");
+        var page = await fixture.LoginAndGotoAsync(persona, path);
 
-        await LoginFlow.LoginAsync(page, fixture.SmokeTestUsers["Admin"]);
-
-        await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Administrer abonnementer" }))
+        await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Name = expectedHeading }))
             .ToBeVisibleAsync();
     }
 
-    [Fact]
-    public async Task DataAdmin_LoginMedToFactor_TilgaarJitAdgangssiden()
+    [Theory]
+    [InlineData("NoMfa", "/admin/subscriptions")]
+    [InlineData("Plain", "/admin/jit-requests")]
+    public async Task PersonaUdenToFactor_ForsoegerAdgang_RedirectesTilEnableAuthenticator(
+        string persona, string path)
     {
-        var page = await fixture.NewPageAsync();
-        await page.GotoAsync($"{fixture.RootUri}/admin/jit-requests");
-
-        await LoginFlow.LoginAsync(page, fixture.SmokeTestUsers["DataAdmin"]);
-
-        await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Name = "JIT-adgang" }))
-            .ToBeVisibleAsync();
-    }
-
-    [Fact]
-    public async Task PolicyAdmin_LoginMedToFactor_TilgaarSikkerhedspolicySiden()
-    {
-        var page = await fixture.NewPageAsync();
-        await page.GotoAsync($"{fixture.RootUri}/admin/security-policies");
-
-        await LoginFlow.LoginAsync(page, fixture.SmokeTestUsers["PolicyAdmin"]);
-
-        await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Sikkerhedspolicies" }))
-            .ToBeVisibleAsync();
-    }
-
-    [Fact]
-    public async Task Auditor_LoginMedToFactor_TilgaarAuditLogSiden()
-    {
-        var page = await fixture.NewPageAsync();
-        await page.GotoAsync($"{fixture.RootUri}/admin/audit-log");
-
-        await LoginFlow.LoginAsync(page, fixture.SmokeTestUsers["Auditor"]);
-
-        await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Name = "AuditLog" }))
-            .ToBeVisibleAsync();
-    }
-
-    [Fact]
-    public async Task NoMfa_ForsoegerAdgangUdenToFactor_RedirectesTilEnableAuthenticator()
-    {
-        var page = await fixture.NewPageAsync();
-        await page.GotoAsync($"{fixture.RootUri}/admin/subscriptions");
-
-        await LoginFlow.LoginAsync(page, fixture.SmokeTestUsers["NoMfa"]);
-
-        page.Url.Should().EndWith("/Account/Manage/EnableAuthenticator");
-    }
-
-    [Fact]
-    public async Task Plain_UdenRolle_RedirectesTilEnableAuthenticator()
-    {
-        var page = await fixture.NewPageAsync();
-        await page.GotoAsync($"{fixture.RootUri}/admin/jit-requests");
-
-        await LoginFlow.LoginAsync(page, fixture.SmokeTestUsers["Plain"]);
+        var page = await fixture.LoginAndGotoAsync(persona, path);
 
         page.Url.Should().EndWith("/Account/Manage/EnableAuthenticator");
     }
@@ -79,10 +34,7 @@ public sealed class PersonaAccessTests(PlaywrightAppFixture fixture)
     [Fact]
     public async Task Requester_UdenAdminRolle_KanIkkeTilgaaJitAdgangssiden()
     {
-        var page = await fixture.NewPageAsync();
-        await page.GotoAsync($"{fixture.RootUri}/admin/jit-requests");
-
-        await LoginFlow.LoginAsync(page, fixture.SmokeTestUsers["Requester"]);
+        var page = await fixture.LoginAndGotoAsync("Requester", "/admin/jit-requests");
 
         page.Url.Should().Contain("/Account/AccessDenied");
         await Assertions.Expect(page.GetByText("Du har ikke adgang til denne ressource."))

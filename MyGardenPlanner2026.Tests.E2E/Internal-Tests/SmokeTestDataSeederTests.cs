@@ -10,8 +10,6 @@ using MyGardenPlanner2026.Core.Entities.Common;
 /// </summary>
 public sealed class SmokeTestDataSeederTests : IAsyncLifetime
 {
-    private readonly string _databaseName = default!;
-
     private E2ETestDatabase _database = default!;
 
     public async ValueTask InitializeAsync() => _database = await E2ETestDatabase.CreateAsync();
@@ -32,13 +30,13 @@ public sealed class SmokeTestDataSeederTests : IAsyncLifetime
 
         users.Should().HaveCount(7);
 
-        AssertUser(users, "Admin", "admin@test.dk", RoleNames.SystemAdmin, twoFactorEnabled: true);
-        AssertUser(users, "DataAdmin", "dataadmin@test.dk", RoleNames.DataAdmin, twoFactorEnabled: true);
-        AssertUser(users, "PolicyAdmin", "policyadmin@test.dk", RoleNames.PolicyAdmin, twoFactorEnabled: true);
-        AssertUser(users, "Auditor", "auditor@test.dk", RoleNames.AuditViewer, twoFactorEnabled: true);
-        AssertUser(users, "NoMfa", "noMfa@test.dk", RoleNames.SystemAdmin, twoFactorEnabled: false);
-        AssertUser(users, "Requester", "requester@test.dk", role: null, twoFactorEnabled: true);
-        AssertUser(users, "Plain", "plain@test.dk", role: null, twoFactorEnabled: false);
+        AssertUser(users, SmokeTestPersonas.Admin, "admin@test.dk", RoleNames.SystemAdmin, twoFactorEnabled: true);
+        AssertUser(users, SmokeTestPersonas.DataAdmin, "dataadmin@test.dk", RoleNames.DataAdmin, twoFactorEnabled: true);
+        AssertUser(users, SmokeTestPersonas.PolicyAdmin, "policyadmin@test.dk", RoleNames.PolicyAdmin, twoFactorEnabled: true);
+        AssertUser(users, SmokeTestPersonas.Auditor, "auditor@test.dk", RoleNames.AuditViewer, twoFactorEnabled: true);
+        AssertUser(users, SmokeTestPersonas.NoMfa, "noMfa@test.dk", RoleNames.SystemAdmin, twoFactorEnabled: false);
+        AssertUser(users, SmokeTestPersonas.Requester, "requester@test.dk", role: null, twoFactorEnabled: true);
+        AssertUser(users, SmokeTestPersonas.Plain, "plain@test.dk", role: null, twoFactorEnabled: false);
     }
 
     [Fact]
@@ -46,7 +44,7 @@ public sealed class SmokeTestDataSeederTests : IAsyncLifetime
     {
         var connectionString = _database.AppConnectionString;
         var users = await SmokeTestDataSeeder.SeedAsync(connectionString);
-        var admin = users["Admin"];
+        var admin = users[SmokeTestPersonas.Admin];
 
         var code = TotpHelper.GenerateCode(admin.AuthenticatorKey!);
         var isValid = await SmokeTestDataSeeder.VerifyAuthenticatorCodeAsync(connectionString, admin.Email, code);

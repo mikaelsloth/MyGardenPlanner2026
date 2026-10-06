@@ -7,10 +7,10 @@ using Microsoft.Playwright;
 public sealed class PersonaAccessTests(PlaywrightAppFixture fixture)
 {
     [Theory]
-    [InlineData("Admin", "/admin/subscriptions", "Administrer abonnementer")]
-    [InlineData("DataAdmin", "/admin/jit-requests", "JIT-adgang")]
-    [InlineData("PolicyAdmin", "/admin/security-policies", "Sikkerhedspolicies")]
-    [InlineData("Auditor", "/admin/audit-log", "AuditLog")]
+    [InlineData(SmokeTestPersonas.Admin, E2ERoutes.AdminSubscriptions, "Administrer abonnementer")]
+    [InlineData(SmokeTestPersonas.DataAdmin, E2ERoutes.AdminJitRequests, "JIT-adgang")]
+    [InlineData(SmokeTestPersonas.PolicyAdmin, E2ERoutes.AdminSecurityPolicies, "Sikkerhedspolicies")]
+    [InlineData(SmokeTestPersonas.Auditor, E2ERoutes.AdminAuditLog, "AuditLog")]
     public async Task AdminPersona_LoginMedToFactor_TilgaarSinAdminside(
         string persona, string path, string expectedHeading)
     {
@@ -21,22 +21,22 @@ public sealed class PersonaAccessTests(PlaywrightAppFixture fixture)
     }
 
     [Theory]
-    [InlineData("NoMfa", "/admin/subscriptions")]
-    [InlineData("Plain", "/admin/jit-requests")]
+    [InlineData(SmokeTestPersonas.NoMfa, E2ERoutes.AdminSubscriptions)]
+    [InlineData(SmokeTestPersonas.Plain, E2ERoutes.AdminJitRequests)]
     public async Task PersonaUdenToFactor_ForsoegerAdgang_RedirectesTilEnableAuthenticator(
         string persona, string path)
     {
         var page = await fixture.LoginAndGotoAsync(persona, path);
 
-        page.Url.Should().EndWith("/Account/Manage/EnableAuthenticator");
+        page.Url.Should().EndWith(E2ERoutes.EnableAuthenticator);
     }
 
     [Fact]
     public async Task Requester_UdenAdminRolle_KanIkkeTilgaaJitAdgangssiden()
     {
-        var page = await fixture.LoginAndGotoAsync("Requester", "/admin/jit-requests");
+        var page = await fixture.LoginAndGotoAsync(SmokeTestPersonas.Requester, E2ERoutes.AdminJitRequests);
 
-        page.Url.Should().Contain("/Account/AccessDenied");
+        page.Url.Should().Contain(E2ERoutes.AccessDenied);
         await Assertions.Expect(page.GetByText("Du har ikke adgang til denne ressource."))
             .ToBeVisibleAsync();
     }

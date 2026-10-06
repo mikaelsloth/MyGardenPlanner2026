@@ -36,13 +36,13 @@ public static class SmokeTestDataSeeder
 
         return new Dictionary<string, SmokeTestUser>
         {
-            ["Admin"] = await CreateUserAsync(userManager, "admin@test.dk", RoleNames.SystemAdmin, twoFactorEnabled: true),
-            ["DataAdmin"] = await CreateUserAsync(userManager, "dataadmin@test.dk", RoleNames.DataAdmin, twoFactorEnabled: true),
-            ["PolicyAdmin"] = await CreateUserAsync(userManager, "policyadmin@test.dk", RoleNames.PolicyAdmin, twoFactorEnabled: true),
-            ["Auditor"] = await CreateUserAsync(userManager, "auditor@test.dk", RoleNames.AuditViewer, twoFactorEnabled: true),
-            ["NoMfa"] = await CreateUserAsync(userManager, "noMfa@test.dk", RoleNames.SystemAdmin, twoFactorEnabled: false),
-            ["Requester"] = await CreateUserAsync(userManager, "requester@test.dk", role: null, twoFactorEnabled: true),
-            ["Plain"] = await CreateUserAsync(userManager, "plain@test.dk", role: null, twoFactorEnabled: false),
+            [SmokeTestPersonas.Admin] = await CreateUserAsync(userManager, "admin@test.dk", RoleNames.SystemAdmin, twoFactorEnabled: true),
+            [SmokeTestPersonas.DataAdmin] = await CreateUserAsync(userManager, "dataadmin@test.dk", RoleNames.DataAdmin, twoFactorEnabled: true),
+            [SmokeTestPersonas.PolicyAdmin] = await CreateUserAsync(userManager, "policyadmin@test.dk", RoleNames.PolicyAdmin, twoFactorEnabled: true),
+            [SmokeTestPersonas.Auditor] = await CreateUserAsync(userManager, "auditor@test.dk", RoleNames.AuditViewer, twoFactorEnabled: true),
+            [SmokeTestPersonas.NoMfa] = await CreateUserAsync(userManager, "noMfa@test.dk", RoleNames.SystemAdmin, twoFactorEnabled: false),
+            [SmokeTestPersonas.Requester] = await CreateUserAsync(userManager, "requester@test.dk", role: null, twoFactorEnabled: true),
+            [SmokeTestPersonas.Plain] = await CreateUserAsync(userManager, "plain@test.dk", role: null, twoFactorEnabled: false),
         };
     }
 

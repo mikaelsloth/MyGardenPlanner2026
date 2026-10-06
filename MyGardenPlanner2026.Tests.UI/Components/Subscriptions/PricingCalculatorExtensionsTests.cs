@@ -2,7 +2,6 @@
 
 using Bunit;
 using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Domain.Subscriptions;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
 using MyGardenPlanner2026.Core.Contracts.Onboarding;
@@ -15,18 +14,8 @@ using Xunit;
 /// Dækker udvidelserne fra Prompt 3 (Fixed*/Allowed*/Initial*/ContinueButtonLabel/OnContinue).
 /// Egen fil for ikke at kollidere med den eksisterende PricingCalculatorTests.cs.
 /// </summary>
-public sealed class PricingCalculatorExtensionsTests : BunitContext
+public sealed class PricingCalculatorExtensionsTests : PricingTestContext
 {
-    private readonly ISubscriptionAddOnService addOnService = Substitute.For<ISubscriptionAddOnService>();
-    private readonly IPricingCalculatorService calculatorService = Substitute.For<IPricingCalculatorService>();
-
-    public PricingCalculatorExtensionsTests()
-    {
-        addOnService.GetAllAddOnsAsync(Arg.Any<CancellationToken>()).Returns([]);
-        Services.AddSingleton(addOnService);
-        Services.AddSingleton(calculatorService);
-    }
-
     [Fact]
     public void FixedActiveGardens_Null_StillRendersManualInput()
     {

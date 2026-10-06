@@ -1,4 +1,4 @@
-﻿namespace MyGardenPlanner2026.Tests.E2E.Seeding;
+﻿namespace MyGardenPlanner2026.Tests.E2E.Internal_Tests;
 
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;

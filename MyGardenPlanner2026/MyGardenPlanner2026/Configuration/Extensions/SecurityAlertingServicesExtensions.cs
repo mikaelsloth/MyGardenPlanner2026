@@ -2,7 +2,6 @@
 
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using MyGardenPlanner2026.Core.Contracts.Admin;
-using MyGardenPlanner2026.Infrastructure.Services;
 using MyGardenPlanner2026.Infrastructure.Services.SecurityAlerting;
 
 public static class SecurityAlertingServicesExtensions

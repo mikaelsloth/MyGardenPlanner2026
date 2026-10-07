@@ -76,6 +76,17 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         return await context.NewPageAsync();
     }
 
+    /// <summary>Åbner en ny side med viewport fra <see cref="Screenshots.Viewports"/>.</summary>
+    public async Task<IPage> NewPageAsync(int viewportWidth)
+    {
+        var context = await Browser.NewContextAsync(new BrowserNewContextOptions
+        {
+            ViewportSize = Screenshots.Viewports.For(viewportWidth),
+        });
+        _contexts.Add(context);
+        return await context.NewPageAsync();
+    }
+
     /// <summary>Åbner en ny side på <paramref name="path"/> og logger ind som den angivne smoke-test-persona.</summary>
     public async Task<IPage> LoginAndGotoAsync(string persona, string path)
     {

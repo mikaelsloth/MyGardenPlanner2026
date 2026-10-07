@@ -42,7 +42,7 @@ public static partial class CiSqlProvisioner
 
     private static async Task RunScriptAsync(string fileName, Func<string, string> transform)
     {
-        var repoRoot = FindRepoRoot();
+        var repoRoot = RepoPaths.FindRepoRoot();
         var scriptPath = Path.Combine(repoRoot, "Documentation", "Database", fileName);
         var script = transform(await File.ReadAllTextAsync(scriptPath));
 
@@ -60,18 +60,5 @@ public static partial class CiSqlProvisioner
             await using var command = new SqlCommand(trimmed, connection);
             await command.ExecuteNonQueryAsync();
         }
-    }
-
-    private static string FindRepoRoot()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && dir.GetFiles("*.slnx").Length == 0)
-        {
-            dir = dir.Parent;
-        }
-
-        return dir?.FullName
-            ?? throw new InvalidOperationException(
-                "Kunne ikke finde repo-roden (ingen .slnx fundet opad fra testoutput-mappen).");
     }
 }

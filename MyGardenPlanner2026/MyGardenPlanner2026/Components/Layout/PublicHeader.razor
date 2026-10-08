@@ -6,7 +6,7 @@
         <!-- Logo & Brand -->
         <div class="d-flex align-items-center gap-3">
             <button type="button"
-                    class="btn d-lg-none p-2 border-0 header-touch-target"
+                    class="btn public-header-menu-toggle p-2 border-0 header-touch-target"
                     @onclick="ToggleMobileMenu"
                     aria-label="Åbn menu"
                     aria-expanded="@isMobileMenuOpen.ToString()">
@@ -21,7 +21,7 @@
         </div>
 
         <!-- Desktop Navigation Links -->
-        <div class="d-none d-lg-flex align-items-center gap-4">
+        <div class="public-header-links align-items-center gap-4">
             <NavLink class="nav-link text-body header-touch-target d-flex align-items-center" href="/" Match="NavLinkMatch.All">
                 Forside
             </NavLink>

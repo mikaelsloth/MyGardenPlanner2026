@@ -5,6 +5,25 @@
     min-height: var(--mgp-mobile-header-height);
 }
 
+/* Hamburger vs. desktop-links skifter ved 940 px (samme breakpoint som NavDrawer/AppShell). */
+.public-header-menu-toggle {
+    display: inline-flex;
+}
+
+.public-header-links {
+    display: none;
+}
+
+@media (min-width: 940px) {
+    .public-header-menu-toggle {
+        display: none;
+    }
+
+    .public-header-links {
+        display: flex;
+    }
+}
+
 .brand-text {
     color: var(--mgp-primary-dark);
     font-weight: var(--font-weight-heavy);

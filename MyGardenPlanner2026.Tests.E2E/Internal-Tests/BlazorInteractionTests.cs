@@ -46,4 +46,24 @@ public sealed class BlazorInteractionTests
         await act.Should().ThrowAsync<TimeoutException>();
         calls.Should().Be(3);
     }
+
+    [Fact]
+    public async Task WaitUntilAsync_BetingelseOppfyldtEfterNogleKald_ReturnererTrue()
+    {
+        var calls = 0;
+
+        var result = await BlazorInteraction.WaitUntilAsync(
+            () => Task.FromResult(++calls >= 3), TimeSpan.FromSeconds(2));
+
+        result.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task WaitUntilAsync_AldrigOppfyldt_ReturnererFalseEfterTimeout()
+    {
+        var result = await BlazorInteraction.WaitUntilAsync(
+            () => Task.FromResult(false), TimeSpan.FromMilliseconds(100));
+
+        result.Should().BeFalse();
+    }
 }

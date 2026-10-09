@@ -26,24 +26,18 @@
 - Skærmbillede: ja `/Account/Lockout` (375, 768, 1280)
 - Filer: Login.razor(.cs), Lockout.razor, ReAuthFailureTracker.cs, ReAuthFailureTrackerOptions.cs
 ### B3. 2FA
-- Pre-requisite: Ny bruger oprettet og bekræftet via UI (hjælper). Authenticator-nøglen læses fra siden og omsættes til kode med `TotpHelper` (ingen rigtig app, ingen QR-scanning).
+- Pre-requisite: Ny bruger oprettet og bekræftet via UI (RegisteredUserFlow). Nøglen læses fra EnableAuthenticator-siden og omsættes til kode med TotpHelper (ingen rigtig app, ingen QR-scanning).
 - Route: `/account/login` --> `/Account/Manage/TwoFactorAuthentication` --> `/Account/Manage/EnableAuthenticator` --> (log ud) --> `/account/login` --> `/Account/LoginWith2fa`
-- Bruger: ny bruger uden 2FA (fx `<guid>@test.dk`)
-- Handling:
-  1. Log ind med password (uden 2FA)
-  2. Åbn `/Account/Manage/TwoFactorAuthentication`, klik "Add authenticator app"
-  3. Læs nøglen fra `<kbd>` (fjern mellemrum, store bogstaver), generér TOTP, indtast under "Verification Code", klik "Verify"
-  4. Log ud (ryd cookies), log ind med password
-  5. Indtast TOTP på `/Account/LoginWith2fa`
-  6. Negativ: forkert kode giver fejl og bliver på siden
+- Bruger: ny bruger uden 2FA
+- Handling: se TofaktorTests (login, aktivér, log ud, log ind med forkert og korrekt kode)
 - Forventet:
-  - Efter trin 3: samme side viser "Gendannelseskoder" (10 koder) og succes-besked "Your authenticator app has been verified."
-  - Trin 4: login stopper på `/Account/LoginWith2fa` (h1 "Totrinsbekræftelse")
-  - Trin 5: login lykkes; `/Account/Manage` kan åbnes (h3 "Profile")
-  - Trin 6: "Error: Ugyldig godkendelseskode."
-- Skærmbillede: ja (375, 768, 1280): `EnableAuthenticator` (før Verify), `RecoveryCodes` (efter Verify), `LoginWith2fa`
-- Filer: Components\Account\Pages\Login.razor(.cs), Components\Account\Pages\LoginWith2fa.razor(.cs), Components\Account\Pages\Manage\TwoFactorAuthentication.razor(.cs), Components\Account\Pages\Manage\EnableAuthenticator.razor(.cs), Components\Account\Shared\ShowRecoveryCodes.razor, Components\Account\Shared\StatusMessage.razor(.cs), Components\Account\Shared\ManageLayout.razor
-- E2E-filer: LoginFlow.cs, TotpHelper.cs, SmokeTestUser.cs (genbruges via `user with { TwoFactorEnabled = true, AuthenticatorKey = key }`)
+  - 2FA-oversigt før aktivering: "Add authenticator app", ingen "Disable 2FA"
+  - Efter Verify: "Gendannelseskoder" (10 koder) og "Your authenticator app has been verified."
+  - 2FA-oversigt efter aktivering: "Disable 2FA", ingen "Add authenticator app"
+  - Login stopper på `/Account/LoginWith2fa` (h1 "Totrinsbekræftelse")
+  - Forkert kode: "Error: Ugyldig godkendelseskode."; korrekt kode logger ind
+- Skærmbillede: ja (375, 768, 1280): 2FA_EnableAuthenticator, 2FA_RecoveryCodes, 2FA_LoginWith2fa
+- Filer: Login.razor(.cs), LoginWith2fa.razor(.cs), Manage\TwoFactorAuthentication.razor(.cs), Manage\EnableAuthenticator.razor(.cs), Shared\ShowRecoveryCodes.razor(.cs), Shared\StatusMessage.razor(.cs), Shared\ManageLayout.razor
 ### B4. Recovery code
 - Pre-requisite: Ny bruger med 2FA aktiveret via UI (samme hjælper som B3). Gendannelseskoderne læses fra `code.recovery-code` på EnableAuthenticator-siden.
 - Route: `/account/login` --> `/Account/LoginWith2fa` --> `/Account/LoginWithRecoveryCode`

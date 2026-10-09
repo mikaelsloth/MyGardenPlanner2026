@@ -6,18 +6,39 @@ public static class LoginFlow
 {
     public static async Task LoginAsync(IPage page, SmokeTestUser user)
     {
-        await FillCredentialsAsync(page, user.Email, user.Password);
-
-        await ClickAndVerifyNavigationAsync(page, $"Login (credentials) for '{user.Email}'");
+        await SubmitPasswordAsync(page, user);
 
         if (user.TwoFactorEnabled)
         {
-            var code = TotpHelper.GenerateCode(user.AuthenticatorKey!);
-            await page.GetByLabel("Godkendelseskode").FillAsync(code);
-
-            await ClickAndVerifyNavigationAsync(page, $"2FA-login for '{user.Email}' med kode '{code}'");
+            await SubmitTwoFactorCodeAsync(page, user);
         }
     }
+
+    /// <summary>Trin 1: e-mail og adgangskode. Slutter, når siden har skiftet URL (fx til LoginWith2fa).</summary>
+    public static async Task SubmitPasswordAsync(IPage page, SmokeTestUser user)
+    {
+        await FillCredentialsAsync(page, user.Email, user.Password);
+
+        await ClickAndVerifyNavigationAsync(page, $"Login (credentials) for '{user.Email}'");
+    }
+
+    /// <summary>Trin 2: TOTP-kode udregnet ud fra brugerens authenticator-nøgle. Slutter, når siden har skiftet URL.</summary>
+    public static async Task SubmitTwoFactorCodeAsync(IPage page, SmokeTestUser user)
+    {
+        var code = TotpHelper.GenerateCode(user.AuthenticatorKey!);
+        await page.GetByLabel("Godkendelseskode").FillAsync(code);
+
+        await ClickAndVerifyNavigationAsync(page, $"2FA-login for '{user.Email}' med kode '{code}'");
+    }
+
+    public static async Task FillCredentialsAsync(IPage page, string email, string password)
+    {
+        await page.GetByLabel("E-mail").FillAsync(email);
+        await page.GetByLabel("Adgangskode", new() { Exact = true }).FillAsync(password);
+    }
+
+    public static ILocator LoginButton(IPage page) =>
+        page.GetByRole(AriaRole.Button, new() { Name = "Log ind", Exact = true });
 
     private static async Task ClickAndVerifyNavigationAsync(IPage page, string context)
     {
@@ -39,13 +60,4 @@ public static class LoginFlow
                 $"Fejltekst på siden: [{string.Join(" | ", errorText)}]");
         }
     }
-
-    public static async Task FillCredentialsAsync(IPage page, string email, string password)
-    {
-        await page.GetByLabel("E-mail").FillAsync(email);
-        await page.GetByLabel("Adgangskode", new() { Exact = true }).FillAsync(password);
-    }
-
-    public static ILocator LoginButton(IPage page) =>
-        page.GetByRole(AriaRole.Button, new() { Name = "Log ind", Exact = true });
 }

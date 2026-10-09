@@ -31,7 +31,8 @@ public static class BlazorInteraction
             $"{description ?? "Forventet tilstand"} blev ikke nået efter {maxAttempts} forsøg.");
     }
 
-    private static async Task<bool> WaitUntilAsync(Func<Task<bool>> condition, TimeSpan timeout)
+    /// <summary>Poller betingelsen hvert 50 ms og returnerer, om den blev opfyldt inden timeout.</summary>
+    public static async Task<bool> WaitUntilAsync(Func<Task<bool>> condition, TimeSpan timeout)
     {
         var deadline = DateTime.UtcNow + timeout;
 

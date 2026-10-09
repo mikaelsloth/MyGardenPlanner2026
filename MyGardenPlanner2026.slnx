@@ -11,6 +11,13 @@
     <File Path="Documentation/Database/ResetSmokeTestUsersInDB.sql" />
     <File Path="ResetSmokeTestUsersInDB.sql" />
   </Folder>
+  <Folder Name="/Documentation/Testing/">
+    <File Path="Documentation/Testing/E2E-PageIndex.md" />
+  </Folder>
+  <Folder Name="/Documentation/Testing/SmokeChecklists/">
+    <File Path="Documentation/Testing/SmokeChecklists/Kategori 2 - Tjekliste A - Offentlige sider.md" />
+    <File Path="Documentation/Testing/SmokeChecklists/Kategori 2 - Tjekliste B - Login sider.md" />
+  </Folder>
   <Folder Name="/Documentation/Web Design Documents/" />
   <Folder Name="/Documentation/Web Design Documents/Compendium/">
     <File Path="Documentation/Web Design Documents/Compendium/01-Farvepalette.md" />

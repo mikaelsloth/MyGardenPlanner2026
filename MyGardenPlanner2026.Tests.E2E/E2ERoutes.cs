@@ -16,4 +16,7 @@ public static class E2ERoutes
 
     public const string EnableAuthenticator = "/Account/Manage/EnableAuthenticator";
     public const string AccessDenied = "/Account/AccessDenied";
+    public const string Login = "/Account/Login";
+    public const string Register = "/Account/Register";
+    public const string RegisterConfirmation = "/Account/RegisterConfirmation";
 }

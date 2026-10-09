@@ -1,6 +1,7 @@
 ﻿namespace MyGardenPlanner2026.Tests.E2E;
 
 using Microsoft.Playwright;
+using MyGardenPlanner2026.Tests.E2E.Smtp;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -20,6 +21,9 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
     private IPlaywright _playwright = default!;
 
     public string RootUri { get; private set; } = default!;
+    public const string SecurityAlertRecipient = "sikkerhedsalarm@e2e.test";
+
+    public TestSmtpServer SmtpServer { get; private set; } = default!;
     public string AppConnectionString => _database.AppConnectionString;
     public IBrowser Browser { get; private set; } = default!;
     public IReadOnlyDictionary<string, SmokeTestUser> SmokeTestUsers { get; private set; } = default!;
@@ -30,10 +34,12 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
 
         SmokeTestUsers = await SmokeTestDataSeeder.SeedAsync(_database.AppConnectionString);
 
+        SmtpServer = TestSmtpServer.Start();
+
         var port = GetFreeTcpPort();
         RootUri = $"http://127.0.0.1:{port}";
-        _appProcess = StartAppProcess(port, _database.AppConnectionString, _database.AdminConnectionString);
-
+        _appProcess = StartAppProcess(
+            port, _database.AppConnectionString, _database.AdminConnectionString, SmtpServer.Port);
         await WaitUntilReadyAsync(TimeSpan.FromSeconds(60));
 
         _playwright = await Playwright.CreateAsync();
@@ -63,6 +69,11 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         }
 
         _appProcess?.Dispose();
+
+        if (SmtpServer is not null)
+        {
+            await SmtpServer.DisposeAsync();
+        }
 
         if (_database is not null)
         {
@@ -97,7 +108,8 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         return page;
     }
 
-    private static Process StartAppProcess(int port, string appConnectionString, string adminConnectionString)
+    private static Process StartAppProcess(
+        int port, string appConnectionString, string adminConnectionString, int smtpPort)
     {
         var dllPath = Path.Combine(AppContext.BaseDirectory, "MyGardenPlanner2026.dll");
 
@@ -127,6 +139,16 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         // tests i kollektionen. Hæves markant for E2E.
         startInfo.EnvironmentVariables["LoginRateLimit__PermitLimit"] = "1000";
         startInfo.EnvironmentVariables["LoginRateLimit__WindowSeconds"] = "60";
+
+        // Peger sikkerhedsalarmer på TestSmtpServer. Uden dette bruger appen appsettings' Smtp:Host
+        // (ikke tilgængelig i CI), og 5. forkerte login giver 500 (SmtpException). Tomme credentials
+        // neutraliserer evt. user-secrets. Overstyrer index 0 i AdminSecurityEmails.
+        startInfo.EnvironmentVariables["Smtp__Host"] = "127.0.0.1";
+        startInfo.EnvironmentVariables["Smtp__Port"] = $"{smtpPort}";
+        startInfo.EnvironmentVariables["Smtp__EnableSsl"] = "false";
+        startInfo.EnvironmentVariables["Smtp__UserName"] = "";
+        startInfo.EnvironmentVariables["Smtp__Password"] = "";
+        startInfo.EnvironmentVariables["Smtp__AdminSecurityEmails__0"] = SecurityAlertRecipient;
 
         return Process.Start(startInfo)
             ?? throw new InvalidOperationException("Kunne ikke starte MyGardenPlanner2026.dll.");

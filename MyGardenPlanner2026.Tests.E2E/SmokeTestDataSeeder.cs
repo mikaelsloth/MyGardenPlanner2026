@@ -130,6 +130,19 @@ public static class SmokeTestDataSeeder
             $"Kunne ikke låse '{email}'");
     }
 
+    /// <summary>Bruges af tests til at genkende en brugers sikkerhedsalarm (mailen indeholder Bruger-ID, ikke e-mail).</summary>
+    public static async Task<string> GetUserIdAsync(string connectionString, string email)
+    {
+        await using var provider = BuildServiceProvider(connectionString);
+        using var scope = provider.CreateScope();
+
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await userManager.FindByEmailAsync(email)
+            ?? throw new InvalidOperationException($"Bruger '{email}' findes ikke.");
+
+        return user.Id;
+    }
+
     private static ServiceProvider BuildServiceProvider(string connectionString)
     {
         var services = new ServiceCollection();

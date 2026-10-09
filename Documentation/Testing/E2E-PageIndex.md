@@ -69,6 +69,12 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 - SmokeTestDataSeeder.LockOutUserAsync(connectionString, email): låser en bruger (LockoutEnd +30 min).
 - SmokePageAssertions.ExpectPageAsync(page, title, heading): titel, præcis én h1, ingen skeletons, skjult #blazor-error-ui.
 
+- fixture.SmtpServer (TestSmtpServer): SMTP-sink i testprocessen. Messages, WaitForMessageAsync(predicate, timeout).
+- PlaywrightAppFixture.SecurityAlertRecipient: eneste modtager (Smtp__AdminSecurityEmails__0) i E2E.
+- App-processen får Smtp__Host=127.0.0.1, Smtp__Port=<sinkens port>, Smtp__EnableSsl=false, tomme Smtp__UserName/Password.
+- MimeText: dekoder RFC 2047-headere og base64/quoted-printable (bruges af TestSmtpServer).
+- SmokeTestDataSeeder.GetUserIdAsync(connectionString, email).
+
 ## 3. Læringer (undgå gentagelser)
 - Playwright-regex understøtter kun IgnoreCase og Multiline. Andre flag giver ArgumentException.
 - Interaktive Blazor Server-sider ignorerer klik og input, til kredsløbet er forbundet, og prerendering kan nulstille indtastninger. Brug ActUntilAsync, og indtast først, når siden har reageret.
@@ -79,6 +85,8 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 - Vent på skeletons: [class*='skeleton'] skal have antal 0 før skærmbillede og assertions.
 - Hver side har præcis én h1.
 - Tester er hardcodede forventede værdier. De udledes ikke af produktionskoden.
+- E2E-appen skal have Smtp__*-miljøvariabler til TestSmtpServer. Ellers bruger den appsettings' Smtp:Host, og 5. forkerte login giver 500 (SmtpException).
+- Sikkerhedsalarmen indeholder Bruger-ID (ikke e-mail) og sendes til Smtp:AdminSecurityEmails, ikke til brugeren. Genkend en brugers alarm på Bruger-ID.
 
 ## 4. Sider
 
@@ -159,6 +167,8 @@ Labels: "E-mail", "Adgangskode" (Exact = true), "Husk mig". Knap: "Log ind" (Exa
 Fejl ved forkert login: StatusMessage "Error: Invalid login attempt." (engelsk).
 Login bruger lockoutOnFailure: false. Redirect til /Account/Lockout sker kun for en allerede låst bruger.
 Forkert password kalder ReAuthFailureTracker.RecordFailureAsync. Ved præcis 5 forsøg (Threshold) sendes sikkerhedsalarm (ISecurityAlertService).
+5. forkerte forsøg (Threshold) sender alarm til Smtp:AdminSecurityEmails. Emne: "[MyGardenPlanner] Sikkerhedsalarm: Gentagne fejlede login-/re-auth-forsøg". Krop indeholder "Bruger-ID: <id>" og "IP-adresse: <ip>".
+Alarmen sendes kun ved præcis 5 (ikke ved 6+). Transportfejl (SmtpException) fanges ikke og giver 500 på login.
 Filer: Login.razor (+ .cs), ReAuthFailureTracker.cs, ReAuthFailureTrackerOptions.cs
 ```
 ```
@@ -204,3 +214,4 @@ Rabatopslaget bruger kun MinGardens.
 Register.razor.cs: valideringsbeskeder (StringLength, Compare) og Display-navne er på engelsk.
 Login.razor.cs: fejlbeskeden "Error: Invalid login attempt." er på engelsk.
 Login.razor.cs: IsLockedOut-grenen kalder ikke TrackReAuthOutcomeAsync (relevant, når lockout-featuren bygges).
+SmtpSecurityEmailSender: doc-kommentaren siger "fejler blødt", men det gælder kun manglende konfiguration. Transportfejl (SmtpException) kastes videre og vælter login-flowet ved 5. forkerte forsøg.

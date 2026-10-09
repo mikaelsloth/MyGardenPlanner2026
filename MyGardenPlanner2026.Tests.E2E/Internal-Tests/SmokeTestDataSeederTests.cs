@@ -92,4 +92,21 @@ public sealed class SmokeTestDataSeederTests : IAsyncLifetime
         user.LockoutEnabled.Should().BeTrue();
         user.LockoutEnd.Should().BeAfter(DateTimeOffset.UtcNow);
     }
+
+    [Fact]
+    public async Task GetUserIdAsync_GiverIdetPaaDenSeededBruger()
+    {
+        var connectionString = _database.AppConnectionString;
+        await SmokeTestDataSeeder.SeedAsync(connectionString);
+
+        var id = await SmokeTestDataSeeder.GetUserIdAsync(connectionString, "plain@test.dk");
+
+        await using var context = new PlannerDbContext(E2ETestDatabase.CreateContextOptions(connectionString));
+        var expected = await context.Set<ApplicationUser>()
+            .Where(u => u.Email == "plain@test.dk")
+            .Select(u => u.Id)
+            .SingleAsync(TestContext.Current.CancellationToken);
+
+        id.Should().Be(expected);
+    }
 }

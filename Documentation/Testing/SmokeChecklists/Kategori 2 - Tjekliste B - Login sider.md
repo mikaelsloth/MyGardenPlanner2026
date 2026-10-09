@@ -13,14 +13,18 @@
 - Skærmbillede: ja: `/account/register` + `/account/RegisterConfirmation` (375, 768, 939, 940, 1280)
 - Filer: Components\Pages\LandingPage.razor, Components\Account\Pages\Register.razor, Components\Account\Pages\RegisterConfirmation.razor
 ### B2. Forkert login
-- Pre-requisite: Kan der sættes en SMTP klient op i test? F.eks. smtp4dev
-- Pre-requisite: Ny bruger oprettet og bekræftet via UI (hjælper). Authenticator-nøglen læses fra siden og omsættes til kode med `TotpHelper` (ingen rigtig app, ingen QR-scanning).
-- Route: `/` --> `/account/Login` --> `/account/Lockout`
-- Bruger: ny bruger
-- Handling: Login med forkert password 5× 
-- Forventet: konto låses (`ReAuthFailureTracker`, tjek mailkø for sikkerhedsalarm hvis SMTP er sat op)
-- Skærmbillede: ja `/account/Lockout` (375, 768, 1280)
-- Filer: Components\Pages\LandingPage.razor, Components\Account\Pages\Login.razor, Components\Account\Pages\Lockout.razor, Infrastructure\Services\ReAuthentication\ReAuthFailureTracker.cs
+- Pre-requisite: Ny bruger oprettet og bekræftet via UI (RegisteredUserFlow). SMTP/smtp4dev udskudt til PR3.
+- Route: `/` --> `/account/Login`. Test b: --> `/account/Lockout`
+- Bruger: ny bruger (ikke Requester)
+- Handling:
+  a. Login med forkert password 5×, derefter login med korrekt password
+  b. Bruger låses direkte i databasen (LockoutEnd), derefter login
+- Forventet:
+  a. Hvert forsøg bliver på Login med "Error: Invalid login attempt."; det 6. forsøg med korrekt password lykkes (nuværende adfærd: ingen lockout)
+  b. Redirect til `/Account/Lockout` (titel "Konto låst – MyGardenPlanner", h1 "Konto låst")
+- Alarm (PR3): sikkerhedsalarm ved 5. forsøg, verificeres via smtp4dev
+- Skærmbillede: ja `/Account/Lockout` (375, 768, 1280)
+- Filer: Login.razor(.cs), Lockout.razor, ReAuthFailureTracker.cs, ReAuthFailureTrackerOptions.cs
 ### B3. 2FA
 - Pre-requisite: Ny bruger oprettet og bekræftet via UI (hjælper). Authenticator-nøglen læses fra siden og omsættes til kode med `TotpHelper` (ingen rigtig app, ingen QR-scanning).
 - Route: `/account/login` --> `/Account/Manage/TwoFactorAuthentication` --> `/Account/Manage/EnableAuthenticator` --> (log ud) --> `/account/login` --> `/Account/LoginWith2fa`

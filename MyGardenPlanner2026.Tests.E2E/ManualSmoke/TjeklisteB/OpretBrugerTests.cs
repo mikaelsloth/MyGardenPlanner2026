@@ -48,13 +48,13 @@ public sealed partial class OpretBrugerTests(PlaywrightAppFixture fixture)
         await PublicNavigation.ClickRegisterAsync(page);
 
         await Assertions.Expect(page).ToHaveURLAsync(RegisterUrl);
-        await ExpectPageAsync(page, "Opret bruger – MyGardenPlanner", "Opret bruger");
+        await SmokePageAssertions.ExpectPageAsync(page, "Opret bruger – MyGardenPlanner", "Opret bruger");
         await ScreenshotRecorder.CaptureAsync(page, Chapter, Checklist, TestName, "Register");
 
         await RegisteredUserFlow.RegisterAsync(page);
 
         await Assertions.Expect(page).ToHaveURLAsync(RegisterConfirmationUrl);
-        await ExpectPageAsync(page, "Bekræft registrering – MyGardenPlanner", "Bekræft registrering");
+        await SmokePageAssertions.ExpectPageAsync(page, "Bekræft registrering – MyGardenPlanner", "Bekræft registrering");
         await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = "Klik her for at bekræfte din konto" }))
             .ToBeVisibleAsync();
         await ScreenshotRecorder.CaptureAsync(page, Chapter, Checklist, TestName, "RegisterConfirmation");
@@ -73,17 +73,5 @@ public sealed partial class OpretBrugerTests(PlaywrightAppFixture fixture)
         await LoginFlow.LoginAsync(page, user);
 
         page.Url.Should().NotContainEquivalentOf(E2ERoutes.Login);
-    }
-
-    private static async Task ExpectPageAsync(IPage page, string title, string heading)
-    {
-        await Assertions.Expect(page).ToHaveTitleAsync(title);
-
-        var h1 = page.GetByRole(AriaRole.Heading, new() { Level = 1 });
-        await Assertions.Expect(h1).ToHaveCountAsync(1);
-        await Assertions.Expect(h1).ToHaveTextAsync(heading);
-
-        await Assertions.Expect(page.Locator("[class*='skeleton']")).ToHaveCountAsync(0);
-        await Assertions.Expect(page.Locator("#blazor-error-ui")).ToBeHiddenAsync();
     }
 }

@@ -75,6 +75,13 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 - MimeText: dekoder RFC 2047-headere og base64/quoted-printable (bruges af TestSmtpServer).
 - SmokeTestDataSeeder.GetUserIdAsync(connectionString, email).
 
+- Ruter: + TwoFactorAuthentication, LoginWith2fa.
+- LoginFlow: LoginAsync = SubmitPasswordAsync + (hvis 2FA) SubmitTwoFactorCodeAsync.
+- TwoFactorSetup (bruger skal være logget ind uden 2FA):
+  - ReadSharedKeyAsync(page): læser <kbd>, giver Base32 med store bogstaver
+  - VerifyAsync(page, key): indtaster TOTP, klikker "Verify", returnerer gendannelseskoderne
+  - EnableAsync(page, rootUri, user): giver TwoFactorEnrollment(User med nøgle, RecoveryCodes)
+
 ## 3. Læringer (undgå gentagelser)
 - Playwright-regex understøtter kun IgnoreCase og Multiline. Andre flag giver ArgumentException.
 - Interaktive Blazor Server-sider ignorerer klik og input, til kredsløbet er forbundet, og prerendering kan nulstille indtastninger. Brug ActUntilAsync, og indtast først, når siden har reageret.
@@ -84,9 +91,14 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 - Beløb vises med C2. Sammenlign cifrene (uden kultur, valutategn og separatorer) og divider med 100.
 - Vent på skeletons: [class*='skeleton'] skal have antal 0 før skærmbillede og assertions.
 - Hver side har præcis én h1.
+
 - Tester er hardcodede forventede værdier. De udledes ikke af produktionskoden.
 - E2E-appen skal have Smtp__*-miljøvariabler til TestSmtpServer. Ellers bruger den appsettings' Smtp:Host, og 5. forkerte login giver 500 (SmtpException).
 - Sikkerhedsalarmen indeholder Bruger-ID (ikke e-mail) og sendes til Smtp:AdminSecurityEmails, ikke til brugeren. Genkend en brugers alarm på Bruger-ID.
+
+- Manage-siderne ligger i ManageLayout (h1 "Manage your account", tekster og titler på engelsk, titler uden "– MyGardenPlanner").
+- Ingen log ud-knap i PublicLayout/ManageLayout: log ud i E2E = page.Context.ClearCookiesAsync().
+- StatusMessage: beskeder der starter med "Error" vises som danger (role=alert), ellers success (role=status). Præfikset skal forblive engelsk.
 
 ## 4. Sider
 
@@ -177,6 +189,24 @@ Titel: Konto låst – MyGardenPlanner. h1: Konto låst.
 Besked: div.status-message.status-danger[role=alert] "Denne konto er blevet låst. Prøv venligst igen senere."
 Fil: Lockout.razor
 ```
+```
+/Account/LoginWith2fa
+Titel: Totrinsbekræftelse – MyGardenPlanner. h1: Totrinsbekræftelse.
+Label: "Godkendelseskode", checkbox "Husk denne enhed", knap "Log ind" (Exact). Link "logge ind med en gendannelseskode".
+Forkert kode: "Error: Ugyldig godkendelseskode." og et fejlforsøg registreres i ReAuthFailureTracker.
+Filer: LoginWith2fa.razor (+ .cs)
+```
+```
+/Account/Manage/TwoFactorAuthentication
+Titel: Two-factor authentication (2FA). Uden 2FA: link "Add authenticator app". Med 2FA: "Disable 2FA", "Reset recovery codes" (+ advarsel ved højst 3 koder tilbage).
+Filer: TwoFactorAuthentication.razor (+ .cs)
+```
+```
+/Account/Manage/EnableAuthenticator
+Titel: Configure authenticator app. Nøglen vises i <kbd> (små bogstaver, grupper á 4). Label "Verification Code", knap "Verify".
+Fejl: "Error: Verification code is invalid." Succes (ingen koder i forvejen): ShowRecoveryCodes på samme URL med "Your authenticator app has been verified.", h3 "Gendannelseskoder" og 10 x code.recovery-code.
+Filer: EnableAuthenticator.razor (+ .cs), Shared\ShowRecoveryCodes.razor (+ .cs)
+```
 
 Admin-sider (kendt fra PersonaAccessTests, ikke gennemgået med .razor)
 | Rute	Overskrift	Persona |
@@ -203,6 +233,7 @@ Ikke indekseret endnu:
 | A3 | Mobilmenu og fokus-trap | MobilmenuTests | ingen | grøn |
 | B1 | Opret bruger | OpretBrugerTests | Oprettelse_Register_`<bredde>` (5), Oprettelse_RegisterConfirmation_`<bredde>` (5) | ikke kørt |
 | B2 | Forkert login og Lockout | ForkertLoginTests | ForkertLogin_Lockout_`<bredde>` (3) | ikke kørt |
+| B3 | 2FA | TofaktorTests | 2FA_EnableAuthenticator, 2FA_RecoveryCodes, 2FA_LoginWith2fa (`<bredde>`) (9) | ikke kørt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
 Tests ligger under ManualSmoke/TjeklisteB/.
@@ -215,3 +246,4 @@ Register.razor.cs: valideringsbeskeder (StringLength, Compare) og Display-navne 
 Login.razor.cs: fejlbeskeden "Error: Invalid login attempt." er på engelsk.
 Login.razor.cs: IsLockedOut-grenen kalder ikke TrackReAuthOutcomeAsync (relevant, når lockout-featuren bygges).
 SmtpSecurityEmailSender: doc-kommentaren siger "fejler blødt", men det gælder kun manglende konfiguration. Transportfejl (SmtpException) kastes videre og vælter login-flowet ved 5. forkerte forsøg.
+Manage-siderne (TwoFactorAuthentication, EnableAuthenticator) og StatusMessage-teksterne er på engelsk. Login-siderne er på dansk.

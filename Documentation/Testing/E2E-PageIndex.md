@@ -44,6 +44,7 @@ Indeks til manual smoke tests i MyGardenPlanner2026.Tests.E2E. Kun det, der er v
   * Login
   * Register
   * RegisterConfirmation
+  * Lockout
 
 Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 | Persona | Rolle | 2FA |
@@ -63,6 +64,10 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
   - RegisterAsync(page, email?): fra /Account/Register til RegisterConfirmation
   - ConfirmAsync(page): følger bekræftelseslinket
   - RegisterAndConfirmAsync(page, rootUri)
+- fixture.AppConnectionString: appens forbindelse til engangsdatabasen.
+- LoginFlow.FillCredentialsAsync(page, email, password), LoginFlow.LoginButton(page).
+- SmokeTestDataSeeder.LockOutUserAsync(connectionString, email): låser en bruger (LockoutEnd +30 min).
+- SmokePageAssertions.ExpectPageAsync(page, title, heading): titel, præcis én h1, ingen skeletons, skjult #blazor-error-ui.
 
 ## 3. Læringer (undgå gentagelser)
 - Playwright-regex understøtter kun IgnoreCase og Multiline. Andre flag giver ArgumentException.
@@ -148,6 +153,20 @@ Filer: ConfirmEmail.razor (+ .cs)
 PublicHeader: header.public-header har <a href="/account/login"> "Log ind" og <a href="/account/register"> "Opret bruger".
 Synlighed under 940 px er ikke verificeret (PublicHeader.razor.css ikke læst).
 ```
+```/Account/Login
+Titel: Log ind – MyGardenPlanner. h1: Log ind. Layout: PublicLayout.
+Labels: "E-mail", "Adgangskode" (Exact = true), "Husk mig". Knap: "Log ind" (Exact = true; passkey-knappen hedder "Log ind med en passkey").
+Fejl ved forkert login: StatusMessage "Error: Invalid login attempt." (engelsk).
+Login bruger lockoutOnFailure: false. Redirect til /Account/Lockout sker kun for en allerede låst bruger.
+Forkert password kalder ReAuthFailureTracker.RecordFailureAsync. Ved præcis 5 forsøg (Threshold) sendes sikkerhedsalarm (ISecurityAlertService).
+Filer: Login.razor (+ .cs), ReAuthFailureTracker.cs, ReAuthFailureTrackerOptions.cs
+```
+```
+/Account/Lockout
+Titel: Konto låst – MyGardenPlanner. h1: Konto låst.
+Besked: div.status-message.status-danger[role=alert] "Denne konto er blevet låst. Prøv venligst igen senere."
+Fil: Lockout.razor
+```
 
 Admin-sider (kendt fra PersonaAccessTests, ikke gennemgået med .razor)
 | Rute	Overskrift	Persona |
@@ -173,6 +192,7 @@ Ikke indekseret endnu:
 | A2 | Pricing-calculator vs. Prismatrix | PricingCalculatorTests | Prisberegning_PricingCalculator_`<bredde>` (3) | grøn |
 | A3 | Mobilmenu og fokus-trap | MobilmenuTests | ingen | grøn |
 | B1 | Opret bruger | OpretBrugerTests | Oprettelse_Register_`<bredde>` (5), Oprettelse_RegisterConfirmation_`<bredde>` (5) | ikke kørt |
+| B2 | Forkert login og Lockout | ForkertLoginTests | ForkertLogin_Lockout_`<bredde>` (3) | ikke kørt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
 Tests ligger under ManualSmoke/TjeklisteB/.
@@ -182,3 +202,5 @@ Lukket NavDrawer er kun skubbet ud af skærmen med transform, så linkene i den 
 aria-expanded renderes med stort begyndelsesbogstav.
 Rabatopslaget bruger kun MinGardens.
 Register.razor.cs: valideringsbeskeder (StringLength, Compare) og Display-navne er på engelsk.
+Login.razor.cs: fejlbeskeden "Error: Invalid login attempt." er på engelsk.
+Login.razor.cs: IsLockedOut-grenen kalder ikke TrackReAuthOutcomeAsync (relevant, når lockout-featuren bygges).

@@ -108,6 +108,28 @@ public static class SmokeTestDataSeeder
         return await userManager.VerifyTwoFactorTokenAsync(user, TokenOptions.DefaultAuthenticatorProvider, code);
     }
 
+    /// <summary>
+    /// Låser en eksisterende bruger direkte i databasen (LockoutEnd i fremtiden), så login
+    /// redirectes til /Account/Lockout. Appens Login bruger lockoutOnFailure: false, så
+    /// forkerte adgangskoder låser ikke selv.
+    /// </summary>
+    public static async Task LockOutUserAsync(string connectionString, string email)
+    {
+        await using var provider = BuildServiceProvider(connectionString);
+        using var scope = provider.CreateScope();
+
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var user = await userManager.FindByEmailAsync(email)
+            ?? throw new InvalidOperationException($"Bruger '{email}' findes ikke.");
+
+        EnsureSucceeded(
+            await userManager.SetLockoutEnabledAsync(user, true),
+            $"Kunne ikke aktivere lockout for '{email}'");
+        EnsureSucceeded(
+            await userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddMinutes(30)),
+            $"Kunne ikke låse '{email}'");
+    }
+
     private static ServiceProvider BuildServiceProvider(string connectionString)
     {
         var services = new ServiceCollection();

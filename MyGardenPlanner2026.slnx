@@ -11,10 +11,10 @@
     <File Path="Documentation/Database/ResetSmokeTestUsersInDB.sql" />
     <File Path="ResetSmokeTestUsersInDB.sql" />
   </Folder>
-  <Folder Name="/Documentation/Testing/">
+  <Folder Name="/Documentation/Testing/" Id="9c6cda24-1786-c9d3-6f7d-dc8ef39a7711">
     <File Path="Documentation/Testing/E2E-PageIndex.md" />
   </Folder>
-  <Folder Name="/Documentation/Testing/SmokeChecklists/">
+  <Folder Name="/Documentation/Testing/SmokeChecklists/" Id="619a6f3a-deb6-88df-1c4f-f65ef9a85819">
     <File Path="Documentation/Testing/SmokeChecklists/Kategori 2 - Tjekliste A - Offentlige sider.md" />
     <File Path="Documentation/Testing/SmokeChecklists/Kategori 2 - Tjekliste B - Login sider.md" />
   </Folder>

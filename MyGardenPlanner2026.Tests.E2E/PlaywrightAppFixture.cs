@@ -20,6 +20,7 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
     private IPlaywright _playwright = default!;
 
     public string RootUri { get; private set; } = default!;
+    public string AppConnectionString => _database.AppConnectionString;
     public IBrowser Browser { get; private set; } = default!;
     public IReadOnlyDictionary<string, SmokeTestUser> SmokeTestUsers { get; private set; } = default!;
 

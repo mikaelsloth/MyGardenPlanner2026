@@ -1,7 +1,10 @@
 ﻿namespace MyGardenPlanner2026.Tests.E2E.Internal_Tests;
 
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Core.Entities.Common;
+using MyGardenPlanner2026.Infrastructure.Data;
 
 /// <summary>
 /// Verificerer SmokeTestDataSeeder isoleret mod sin egen engangs-database — uden
@@ -72,5 +75,21 @@ public sealed class SmokeTestDataSeederTests : IAsyncLifetime
         {
             user.AuthenticatorKey.Should().BeNull();
         }
+    }
+
+    [Fact]
+    public async Task LockOutUserAsync_SaetterLockoutEndIFremtiden()
+    {
+        var connectionString = _database.AppConnectionString;
+        await SmokeTestDataSeeder.SeedAsync(connectionString);
+
+        await SmokeTestDataSeeder.LockOutUserAsync(connectionString, "plain@test.dk");
+
+        await using var context = new PlannerDbContext(E2ETestDatabase.CreateContextOptions(connectionString));
+        var user = await context.Set<ApplicationUser>()
+            .SingleAsync(u => u.Email == "plain@test.dk", TestContext.Current.CancellationToken);
+
+        user.LockoutEnabled.Should().BeTrue();
+        user.LockoutEnd.Should().BeAfter(DateTimeOffset.UtcNow);
     }
 }

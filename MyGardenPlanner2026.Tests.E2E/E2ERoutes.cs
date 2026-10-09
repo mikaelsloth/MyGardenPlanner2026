@@ -19,4 +19,5 @@ public static class E2ERoutes
     public const string Login = "/Account/Login";
     public const string Register = "/Account/Register";
     public const string RegisterConfirmation = "/Account/RegisterConfirmation";
+    public const string Lockout = "/Account/Lockout";
 }

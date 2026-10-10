@@ -22,17 +22,24 @@
 - Skærmbillede: ja `/Account/Manage/Email` ved sideindlæsning og efter submit (375, 768, 939, 940, 1280)
 - Filer: Components\Account\Pages\Manage\Email.razor(.cs), Components\Account\Pages\ConfirmEmailChange.razor(.cs)
 ### C2. Skift password
-- Pre-requisite: Ny bruger oprettet og bekræftet via UI (RegisteredUserFlow)
-- Route: `/` --> `/account/Login` --> ? --> `/account/manage/changepassword`
+- Pre-requisite: Ny bruger oprettet og bekræftet via UI (RegisteredUserFlow) og logget ind (LoginFlow).
+- Route: `/` --> `/Account/Login` --> (direkte URL, intet link i UI) --> `/Account/Manage/ChangePassword`
 - Bruger: ny bruger
 - Handling:
   a. Gå til ChangePassword og ændre password
-  b. Log ud og log derefter ind igen med det nye password
-- Forventet: 
-  a. Ved gyldigt nyt password, redirectes tilbage til siden man kom fra med bekræftelse på ændringen
-  b. Login med det nye password skal fungere - login med det gamle skal ikke fungere
-- Skærmbillede: ja: `/account/manage/changepassword (375, 768, 939, 940, 1280)
-- Filer: Components\Account\Pages\Manage\ChangePassword.razor(.cs), Components\Account\Pages\SetPassword.razor(.cs)
+  b. Log ud (ryd cookies) og log ind igen med det nye password
+  c. Log ud og forsøg at logge ind med det gamle password
+- Forventet:
+  a. Ved gyldigt nyt password redirectes til samme side (`/Account/Manage/ChangePassword`) med beskeden "Your password has been changed".
+  b. Login med det nye password lykkes.
+  c. Login med det gamle password afvises ("Error: Invalid login attempt.").
+- Negative tests:
+  - Forkert nuværende password: "Error: Incorrect password."; det gamle password virker stadig.
+  - Nyt og bekræftet password er forskellige: valideringsfejl "The new password and confirmation password do not match."
+  - Nyt password under 6 tegn: valideringsfejl "The New password must be at least 6 and at max 100 characters long."
+- Skærmbillede: ja `/Account/Manage/ChangePassword` ved sideindlæsning og efter skift (375, 768, 939, 940, 1280)
+- Filer: Components\Account\Pages\Manage\ChangePassword.razor(.cs)
+- Uden for scope: SetPassword.razor(.cs) (Pages\Manage). Den bruges kun af brugere uden lokalt password og redirecter ellers til ChangePassword.
 ### C3. Download/slet personlige data
 - Pre-requisite: Ny bruger oprettet og bekræftet via UI (
 - Route: `/` --> `/account/Login` --> ? --> `/account/manage/PersonalData`

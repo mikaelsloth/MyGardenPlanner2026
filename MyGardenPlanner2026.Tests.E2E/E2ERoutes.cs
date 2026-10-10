@@ -25,4 +25,5 @@ public static class E2ERoutes
     public const string Passkeys = "/Account/Manage/Passkeys";
     public const string ManageEmail = "/Account/Manage/Email";
     public const string ConfirmEmailChange = "/Account/ConfirmEmailChange";
+    public const string ChangePassword = "/Account/Manage/ChangePassword";
 }

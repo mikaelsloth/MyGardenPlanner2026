@@ -39,20 +39,19 @@
 - Skærmbillede: ja (375, 768, 1280): 2FA_EnableAuthenticator, 2FA_RecoveryCodes, 2FA_LoginWith2fa
 - Filer: Login.razor(.cs), LoginWith2fa.razor(.cs), Manage\TwoFactorAuthentication.razor(.cs), Manage\EnableAuthenticator.razor(.cs), Shared\ShowRecoveryCodes.razor(.cs), Shared\StatusMessage.razor(.cs), Shared\ManageLayout.razor
 ### B4. Recovery code
-- Pre-requisite: Ny bruger med 2FA aktiveret via UI (samme hjælper som B3). Gendannelseskoderne læses fra `code.recovery-code` på EnableAuthenticator-siden.
+- Pre-requisite: Ny bruger med 2FA aktiveret via UI (TwoFactorSetup.EnableAsync). Gendannelseskoderne læses fra EnableAuthenticator-siden (10 stk.).
 - Route: `/account/login` --> `/Account/LoginWith2fa` --> `/Account/LoginWithRecoveryCode`
 - Bruger: ny bruger med 2FA + 10 gendannelseskoder
 - Handling:
   1. Ryd cookies, log ind med password
-  2. På `/Account/LoginWith2fa`: klik "logge ind med en gendannelseskode"
+  2. På 2FA-prompten: klik "logge ind med en gendannelseskode"
   3. Indtast kode nr. 1 under "Gendannelseskode", klik "Log ind"
-  4. Ny session (ryd cookies, password-login igen): forsøg samme kode igen
+  4. Ny session (ryd cookies, password-login): forsøg samme kode igen
 - Forventet:
-  - Trin 3: login lykkes; `/Account/Manage` kan åbnes
-  - Trin 4: "Error: Ugyldig gendannelseskode indtastet." og brugeren er ikke logget ind
-  - Koden er altså engangs
-- Skærmbillede: ja (375, 768, 1280): `LoginWithRecoveryCode` (normal) og `LoginWithRecoveryCode_Fejl` (efter trin 4)
-- Filer: Components\Account\Pages\LoginWith2fa.razor, Components\Account\Pages\LoginWithRecoveryCode.razor(.cs), Components\Account\Pages\Manage\EnableAuthenticator.razor(.cs), Components\Account\Shared\ShowRecoveryCodes.razor, Components\Account\Shared\StatusMessage.razor(.cs)
+  - Trin 3: login lykkes (`/Account/Manage/TwoFactorAuthentication` kan åbnes)
+  - Trin 4: "Error: Ugyldig gendannelseskode indtastet." og brugeren bliver på siden (engangskode)
+- Skærmbillede: ja (375, 768, 1280): Gendannelseskode_LoginWithRecoveryCode og Gendannelseskode_LoginWithRecoveryCodeFejl
+- Filer: LoginWith2fa.razor(.cs), LoginWithRecoveryCode.razor(.cs), Manage\EnableAuthenticator.razor(.cs), Shared\ShowRecoveryCodes.razor(.cs), Shared\StatusMessage.razor(.cs)
 ### B5. Passkey
 - Pre-requisite: Chromium med WebAuthn virtual authenticator (Playwright CDP: `WebAuthn.enable` + `addVirtualAuthenticator`, ctap2/internal, resident key, user verification, automaticPresenceSimulation). Siden skal åbnes på `http://localhost:<port>`, ikke `127.0.0.1` (se risici).
 - Route: `/account/login` --> `/Account/Manage/Passkeys` --> `/Account/Manage/RenamePasskey/{id}` --> `/Account/Manage/Passkeys` --> (log ud) --> `/account/login`

@@ -11,6 +11,9 @@ public partial class Email
 {
     private string? message;
 
+    // Kun sat når IdentityNoOpEmailSender bruges (ingen rigtig e-mailudbyder endnu).
+    private string? emailChangeConfirmationLink;
+
     private ApplicationUser? user;
 
     private string? email;
@@ -62,6 +65,12 @@ public partial class Email
             new Dictionary<string, object?> { ["userId"] = userId, ["email"] = Input.NewEmail, ["code"] = code });
 
         await EmailSender.SendConfirmationLinkAsync(user, Input.NewEmail, HtmlEncoder.Default.Encode(callbackUrl));
+
+        // Samme mønster som RegisterConfirmation: uden rigtig e-mailudbyder vises linket på siden.
+        if (EmailSender is IdentityNoOpEmailSender)
+        {
+            emailChangeConfirmationLink = callbackUrl;
+        }
 
         message = "Confirmation link to change email sent. Please check your email.";
     }

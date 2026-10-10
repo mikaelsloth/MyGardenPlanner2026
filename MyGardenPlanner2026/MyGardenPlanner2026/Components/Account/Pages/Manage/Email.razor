@@ -13,6 +13,13 @@
 <h3>Manage email</h3>
 
 <StatusMessage Message="@message"/>
+@if (emailChangeConfirmationLink is not null)
+{
+    <p>
+        This app does not have a real email provider configured yet. Normally this would be sent by email:
+        <a href="@emailChangeConfirmationLink">Click here to confirm your new email</a>
+    </p>
+}
 <div class="row">
     <div class="col-xl-6">
         <form @onsubmit="OnSendEmailVerificationAsync" @formname="send-verification" id="send-verification-form" method="post">

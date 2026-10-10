@@ -45,6 +45,7 @@ Indeks til manual smoke tests i MyGardenPlanner2026.Tests.E2E. Kun det, der er v
   * Register
   * RegisterConfirmation
   * Lockout
+  * Passkeys
 
 Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 | Persona | Rolle | 2FA |
@@ -82,6 +83,8 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
   - VerifyAsync(page, key): indtaster TOTP, klikker "Verify", returnerer gendannelseskoderne
   - EnableAsync(page, rootUri, user): giver TwoFactorEnrollment(User med nøgle, RecoveryCodes)
 
+- VirtualAuthenticator.AddAsync(page): WebAuthn virtual authenticator (Chromium, CDP). CountCredentialsAsync(). Skal tilføjes før passkey-handlinger.
+
 ## 3. Læringer (undgå gentagelser)
 - Playwright-regex understøtter kun IgnoreCase og Multiline. Andre flag giver ArgumentException.
 - Interaktive Blazor Server-sider ignorerer klik og input, til kredsløbet er forbundet, og prerendering kan nulstille indtastninger. Brug ActUntilAsync, og indtast først, når siden har reageret.
@@ -99,6 +102,10 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 - Manage-siderne ligger i ManageLayout (h1 "Manage your account", tekster og titler på engelsk, titler uden "– MyGardenPlanner").
 - Ingen log ud-knap i PublicLayout/ManageLayout: log ud i E2E = page.Context.ClearCookiesAsync().
 - StatusMessage: beskeder der starter med "Error" vises som danger (role=alert), ellers success (role=status). Præfikset skal forblive engelsk.
+
+- WebAuthn kræver et domænenavn som host: kør passkey-tests på http://localhost:`<port>` (RootUri.Replace("127.0.0.1", "localhost")), ikke 127.0.0.1.
+- Login.razor starter passkey-autofill (conditional mediation) ved sideload. Passkey-tests slår den fra med AddInitScriptAsync("PublicKeyCredential.isConditionalMediationAvailable = async () => false;").
+- Passkey-fejl vises som StatusMessage (role=alert) efter redirect ("Error: ...").
 
 ## 4. Sider
 
@@ -214,6 +221,21 @@ Label: "Gendannelseskode" (Exact), knap "Log ind". Nås fra LoginWith2fa via lin
 Gyldig kode: login, redirect til forsiden. Brugt/forkert kode: "Error: Ugyldig gendannelseskode indtastet." og et fejlforsøg registreres i ReAuthFailureTracker (5 forkerte udløser sikkerhedsalarm). Ingen lockout-tælling i koden.
 Filer: LoginWithRecoveryCode.razor (+ .cs)
 ```
+```
+/Account/Manage/Passkeys
+Titel: Manage your passkeys (uden "– MyGardenPlanner"). ManageLayout (h1 "Manage your account"), h3 "Manage your passkeys".
+Tom: "No passkeys are registered." Knap "Add a new passkey" (PasskeySubmit, Create). Liste: tabel med navn ("Unnamed passkey" uden navn) og knapperne "Rename"/"Delete".
+Filer: Passkeys.razor (+ .cs), Shared\PasskeySubmit.razor (+ .razor.js)
+```
+```
+/Account/Manage/RenamePasskey/{id}
+Ingen PageTitle. h4 "Enter a name for your passkey" (uden navn). Label "Passkey name", knap "Continue".
+Succes: redirect til Passkeys med "Passkey updated successfully."
+Filer: RenamePasskey.razor (+ .cs)
+```
+```
+/Account/Login: knap "Log ind med en passkey" (PasskeySubmit, Request, e-mailfeltet sendes som username). Tomt felt giver discoverable credential.
+```
 
 Admin-sider (kendt fra PersonaAccessTests, ikke gennemgået med .razor)
 | Rute	Overskrift	Persona |
@@ -242,6 +264,7 @@ Ikke indekseret endnu:
 | B2 | Forkert login og Lockout | ForkertLoginTests | ForkertLogin_Lockout_`<bredde>` (3) | ikke kørt |
 | B3 | 2FA | TofaktorTests | 2FA_EnableAuthenticator, 2FA_RecoveryCodes, 2FA_LoginWith2fa (`<bredde>`) (9) | ikke kørt |
 | B4 | Recovery code | GendannelseskodeTests | Gendannelseskode_LoginWithRecoveryCode, Gendannelseskode_LoginWithRecoveryCodeFejl (`<bredde>`) (6) | ikke kørt |
+| B5 | Passkey | PasskeyTests | Passkey_Passkeys, Passkey_RenamePasskey, Passkey_Login (`<bredde>`) (9) | ikke kørt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
 Tests ligger under ManualSmoke/TjeklisteB/.
@@ -255,3 +278,5 @@ Login.razor.cs: fejlbeskeden "Error: Invalid login attempt." er på engelsk.
 Login.razor.cs: IsLockedOut-grenen kalder ikke TrackReAuthOutcomeAsync (relevant, når lockout-featuren bygges).
 SmtpSecurityEmailSender: doc-kommentaren siger "fejler blødt", men det gælder kun manglende konfiguration. Transportfejl (SmtpException) kastes videre og vælter login-flowet ved 5. forkerte forsøg.
 Manage-siderne (TwoFactorAuthentication, EnableAuthenticator) og StatusMessage-teksterne er på engelsk. Login-siderne er på dansk.
+RenamePasskey.razor har ingen PageTitle.
+Passkeys- og RenamePasskey-siderne og deres status-tekster er på engelsk.

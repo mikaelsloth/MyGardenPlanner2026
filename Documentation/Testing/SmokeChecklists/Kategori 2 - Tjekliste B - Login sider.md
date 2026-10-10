@@ -53,18 +53,18 @@
 - Skærmbillede: ja (375, 768, 1280): Gendannelseskode_LoginWithRecoveryCode og Gendannelseskode_LoginWithRecoveryCodeFejl
 - Filer: LoginWith2fa.razor(.cs), LoginWithRecoveryCode.razor(.cs), Manage\EnableAuthenticator.razor(.cs), Shared\ShowRecoveryCodes.razor(.cs), Shared\StatusMessage.razor(.cs)
 ### B5. Passkey
-- Pre-requisite: Chromium med WebAuthn virtual authenticator (Playwright CDP: `WebAuthn.enable` + `addVirtualAuthenticator`, ctap2/internal, resident key, user verification, automaticPresenceSimulation). Siden skal åbnes på `http://localhost:<port>`, ikke `127.0.0.1` (se risici).
+- Pre-requisite: Chromium med WebAuthn virtual authenticator (VirtualAuthenticator via CDP). Siden åbnes på `http://localhost:<port>` (WebAuthn accepterer ikke en IP som RP-id).
 - Route: `/account/login` --> `/Account/Manage/Passkeys` --> `/Account/Manage/RenamePasskey/{id}` --> `/Account/Manage/Passkeys` --> (log ud) --> `/account/login`
 - Bruger: ny bruger uden 2FA
 - Handling:
   1. Log ind med password
   2. `/Account/Manage/Passkeys`: klik "Add a new passkey"
   3. På RenamePasskey: indtast "E2E-nøgle" under "Passkey name", klik "Continue"
-  4. Ryd cookies (virtuel authenticator bevares på samme side), åbn `/account/login`
+  4. Ryd cookies, åbn `/account/login`
   5. Klik "Log ind med en passkey" (tomt e-mailfelt)
 - Forventet:
   - Trin 2: redirect til `/Account/Manage/RenamePasskey/<credentialId>`
-  - Trin 3: tilbage på Passkeys med "Passkey updated successfully." og "E2E-nøgle" i listen
-  - Trin 5: login lykkes uden password; `/Account/Manage` kan åbnes
-- Skærmbillede: ja (375, 768, 1280): `Passkeys` (med nøgle på listen), `RenamePasskey`, `Login`
-- Filer: Components\Account\Pages\Login.razor(.cs), Components\Account\Pages\Manage\Passkeys.razor(.cs), Components\Account\Pages\Manage\RenamePasskey.razor(.cs), Components\Account\Shared\PasskeySubmit.razor(.js), Components\Account\PasskeyInputModel.cs, Components\Account\PasskeyOperation.cs, Components\Account\IdentityComponentsEndpointRouteBuilderExtensions.cs
+  - Trin 3: tilbage på Passkeys med "Passkey updated successfully." og "E2E-nøgle" i listen; virtual authenticator har præcis 1 credential
+  - Trin 5: login lykkes uden password; Passkeys-siden kan åbnes og viser "E2E-nøgle"
+- Skærmbillede: ja (375, 768, 1280): Passkey_Passkeys, Passkey_RenamePasskey, Passkey_Login
+- Filer: Login.razor(.cs), Manage\Passkeys.razor(.cs), Manage\RenamePasskey.razor(.cs), Shared\PasskeySubmit.razor(.js), PasskeyInputModel.cs, PasskeyOperation.cs, IdentityComponentsEndpointRouteBuilderExtensions.cs 

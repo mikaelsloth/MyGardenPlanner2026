@@ -48,6 +48,7 @@ Indeks til manual smoke tests i MyGardenPlanner2026.Tests.E2E. Kun det, der er v
   * Passkeys
   * ManageEmail
   * ConfirmEmailChange
+  * ChangePassword
 
 Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 | Persona | Rolle | 2FA |
@@ -112,6 +113,9 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 - Email.razor viser bekræftelseslinket til e-mailskift på siden, når EmailSender er IdentityNoOpEmailSender (samme mønster som RegisterConfirmation). Uden det kan skiftet ikke bekræftes i E2E.
 - ConfirmEmailChange: gyldigt Base64Url-format med forkert token giver "Error: Der opstod en fejl ved skift af e-mail.".
 - Label "Email" (deaktiveret felt) er delstreng af "New email": brug Exact = true.
+
+- ChangePassword: succes redirecter til samme side (RedirectToCurrentPageWithStatus) med statusbeskeden "Your password has been changed". Man forbliver logget ind (RefreshSignInAsync).
+- ChangePassword: labels i markup ("Old password", "New password", "Confirm password") afviger fra Display-navnene i valideringsbeskeder ("Current password", "New password", "Confirm new password").
 
 ## 4. Sider
 
@@ -258,6 +262,16 @@ Succes: "Tak, fordi du bekræftede skiftet af din e-mail." (e-mail og brugernavn
 Fejl: "Error: Der opstod en fejl ved skift af e-mail." (ugyldig token). Mangler parametre: redirect til Login med "Error: Ugyldigt link til bekræftelse af e-mailskift.".
 Filer: ConfirmEmailChange.razor (+ .cs)
 ```
+```
+/Account/Manage/ChangePassword
+Titel: Change password (uden "– MyGardenPlanner"). ManageLayout (h1 "Manage your account"), h3 "Change password". Static SSR.
+Labels (Exact = true): "Old password", "New password", "Confirm password". Knap: "Update password".
+Succes: redirect til samme side, besked "Your password has been changed".
+Forkert nuværende password: "Error: Incorrect password." (Identity-standardtekst).
+Valideringsfejl (.validation-message): "The New password must be at least 6 and at max 100 characters long." og "The new password and confirmation password do not match.".
+Brugere uden lokalt password redirectes til Account/Manage/SetPassword.
+Filer: ChangePassword.razor (+ .cs)
+```
 
 Admin-sider (kendt fra PersonaAccessTests, ikke gennemgået med .razor)
 | Rute	Overskrift	Persona |
@@ -288,6 +302,7 @@ Ikke indekseret endnu:
 | B4 | Recovery code | GendannelseskodeTests | Gendannelseskode_LoginWithRecoveryCode, Gendannelseskode_LoginWithRecoveryCodeFejl (`<bredde>`) (6) | ikke kørt |
 | B5 | Passkey | PasskeyTests | Passkey_Passkeys, Passkey_RenamePasskey, Passkey_Login (`<bredde>`) (9) | ikke kørt |
 | C1 | Skift e-mail | SkiftEmailTests | SkiftEmail_Email_`<bredde>` (5), SkiftEmail_EmailEfterSkift_`<bredde>` (5) | ikke kørt |
+| C2 | Skift password | SkiftPasswordTests | SkiftPassword_ChangePassword_`<bredde>` (5), SkiftPassword_ChangePasswordEfterSkift_`<bredde>` (5) | ikke kørt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
 Tests ligger under ManualSmoke/TjeklisteB/.
@@ -307,3 +322,4 @@ Passkeys- og RenamePasskey-siderne og deres status-tekster er på engelsk.
 Email.razor: med IdentityNoOpEmailSender vises bekræftelseslinket til enhver ny e-mailadresse uden ejerskabsbevis (forsvinder, når en rigtig IEmailSender indsættes).
 Email.razor: OnSendEmailVerificationAsync viser ikke linket (kun relevant for ubekræftede e-mails, ikke dækket).
 ConfirmEmailChange.razor.cs: WebEncoders.Base64UrlDecode(Code) er uden try/catch. Et ikke-Base64Url-format i code kaster formentlig FormatException (500). Ikke testet.
+ChangePassword: fejlbeskeder fra Identity-password-politikken (fx "Error: Passwords must have at least one digit") er engelske og ikke dækket af test, da politikken ikke er i konteksten.

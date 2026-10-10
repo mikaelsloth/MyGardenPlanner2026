@@ -46,6 +46,8 @@ Indeks til manual smoke tests i MyGardenPlanner2026.Tests.E2E. Kun det, der er v
   * RegisterConfirmation
   * Lockout
   * Passkeys
+  * ManageEmail
+  * ConfirmEmailChange
 
 Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 | Persona | Rolle | 2FA |
@@ -106,6 +108,10 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 - WebAuthn kræver et domænenavn som host: kør passkey-tests på http://localhost:`<port>` (RootUri.Replace("127.0.0.1", "localhost")), ikke 127.0.0.1.
 - Login.razor starter passkey-autofill (conditional mediation) ved sideload. Passkey-tests slår den fra med AddInitScriptAsync("PublicKeyCredential.isConditionalMediationAvailable = async () => false;").
 - Passkey-fejl vises som StatusMessage (role=alert) efter redirect ("Error: ...").
+
+- Email.razor viser bekræftelseslinket til e-mailskift på siden, når EmailSender er IdentityNoOpEmailSender (samme mønster som RegisterConfirmation). Uden det kan skiftet ikke bekræftes i E2E.
+- ConfirmEmailChange: gyldigt Base64Url-format med forkert token giver "Error: Der opstod en fejl ved skift af e-mail.".
+- Label "Email" (deaktiveret felt) er delstreng af "New email": brug Exact = true.
 
 ## 4. Sider
 
@@ -236,6 +242,22 @@ Filer: RenamePasskey.razor (+ .cs)
 ```
 /Account/Login: knap "Log ind med en passkey" (PasskeySubmit, Request, e-mailfeltet sendes som username). Tomt felt giver discoverable credential.
 ```
+```
+/Account/Manage/Email
+Titel: Manage email (uden "– MyGardenPlanner"). ManageLayout (h1 "Manage your account"), h3 "Manage email". Static SSR.
+Labels: "New email" (Exact = true, forudfyldt med nuværende e-mail), deaktiveret felt "Email". Knap: "Change email".
+Besked: "Confirmation link to change email sent. Please check your email." (success), "Your email is unchanged." ved uændret e-mail.
+Link "Click here to confirm your new email" vises kun med IdentityNoOpEmailSender.
+Ugyldig e-mail: ValidationMessage (.validation-message).
+Filer: Email.razor (+ .cs)
+```
+```
+/Account/ConfirmEmailChange?userId&email&code
+Titel: Bekræft e-mailskift – MyGardenPlanner. h1: Bekræft e-mailskift (AuthPageShell).
+Succes: "Tak, fordi du bekræftede skiftet af din e-mail." (e-mail og brugernavn skiftes, brugeren logges ind igen).
+Fejl: "Error: Der opstod en fejl ved skift af e-mail." (ugyldig token). Mangler parametre: redirect til Login med "Error: Ugyldigt link til bekræftelse af e-mailskift.".
+Filer: ConfirmEmailChange.razor (+ .cs)
+```
 
 Admin-sider (kendt fra PersonaAccessTests, ikke gennemgået med .razor)
 | Rute	Overskrift	Persona |
@@ -256,7 +278,7 @@ Ikke indekseret endnu:
 ## 5. Dækning
 
 | Tjekliste | Punkt | Testklasse | Skærmbilleder | Status |
-| ------ | ------ | ------ | ------ |
+| ------ | ------ | ------ | ------ | ------ |
 | A1 | Offentlige sider loader | OffentligeSiderLoadTests | Loadside_`<Side>`_`<bredde>` (25) | grøn |
 | A2 | Pricing-calculator vs. Prismatrix | PricingCalculatorTests | Prisberegning_PricingCalculator_`<bredde>` (3) | grøn |
 | A3 | Mobilmenu og fokus-trap | MobilmenuTests | ingen | grøn |
@@ -265,9 +287,11 @@ Ikke indekseret endnu:
 | B3 | 2FA | TofaktorTests | 2FA_EnableAuthenticator, 2FA_RecoveryCodes, 2FA_LoginWith2fa (`<bredde>`) (9) | ikke kørt |
 | B4 | Recovery code | GendannelseskodeTests | Gendannelseskode_LoginWithRecoveryCode, Gendannelseskode_LoginWithRecoveryCodeFejl (`<bredde>`) (6) | ikke kørt |
 | B5 | Passkey | PasskeyTests | Passkey_Passkeys, Passkey_RenamePasskey, Passkey_Login (`<bredde>`) (9) | ikke kørt |
+| C1 | Skift e-mail | SkiftEmailTests | SkiftEmail_Email_`<bredde>` (5), SkiftEmail_EmailEfterSkift_`<bredde>` (5) | ikke kørt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
 Tests ligger under ManualSmoke/TjeklisteB/.
+Tests ligger under ManualSmoke/TjeklisteC/.
 
 ## 6. Åbne observationer (ikke rettet)
 Lukket NavDrawer er kun skubbet ud af skærmen med transform, så linkene i den kan nås med Tab.
@@ -280,3 +304,6 @@ SmtpSecurityEmailSender: doc-kommentaren siger "fejler blødt", men det gælder 
 Manage-siderne (TwoFactorAuthentication, EnableAuthenticator) og StatusMessage-teksterne er på engelsk. Login-siderne er på dansk.
 RenamePasskey.razor har ingen PageTitle.
 Passkeys- og RenamePasskey-siderne og deres status-tekster er på engelsk.
+Email.razor: med IdentityNoOpEmailSender vises bekræftelseslinket til enhver ny e-mailadresse uden ejerskabsbevis (forsvinder, når en rigtig IEmailSender indsættes).
+Email.razor: OnSendEmailVerificationAsync viser ikke linket (kun relevant for ubekræftede e-mails, ikke dækket).
+ConfirmEmailChange.razor.cs: WebEncoders.Base64UrlDecode(Code) er uden try/catch. Et ikke-Base64Url-format i code kaster formentlig FormatException (500). Ikke testet.

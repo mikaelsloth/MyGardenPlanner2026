@@ -23,4 +23,6 @@ public static class E2ERoutes
     public const string TwoFactorAuthentication = "/Account/Manage/TwoFactorAuthentication";
     public const string LoginWith2fa = "/Account/LoginWith2fa";
     public const string Passkeys = "/Account/Manage/Passkeys";
+    public const string ManageEmail = "/Account/Manage/Email";
+    public const string ConfirmEmailChange = "/Account/ConfirmEmailChange";
 }

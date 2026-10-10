@@ -4,17 +4,23 @@
 - [ ] Skift password
 - [ ] Download/slet personlige data
 ### C1. Skift e-mail (bekræftelseslink)
-- Pre-requisite: Ny bruger oprettet og bekræftet via UI (RegisteredUserFlow).
-- Route: `/` --> `/account/Login` -->  ? --> `/Account/Manage/Email`
-- Bruger: ny bruger
+- Pre-requisite: Ny bruger oprettet og bekræftet via UI (RegisteredUserFlow) og logget ind (LoginFlow).
+- Route: `/` --> `/Account/Login` --> (direkte URL, intet link i UI) --> `/Account/Manage/Email` --> `/Account/ConfirmEmailChange?...` (linket vises på Email-siden, fordi appen bruger IdentityNoOpEmailSender)
+- Bruger: ny bruger. Ny e-mail genereres med RegisteredUserFlow.NewEmail() (ryddes af ResetSmokeTestUsersInDB.sql).
 - Handling:
-  a. Gå til `/Account/Manage/Email` og skift email
-  b. Log ud og log ind igen med den nye email
+  a. Gå til `/Account/Manage/Email`, skift e-mail og følg bekræftelseslinket
+  b. Log ud (ryd cookies) og log ind igen med den nye e-mail
+  c. Log ud og forsøg at logge ind med den gamle e-mail
 - Forventet:
-  a. Den nye email går i bekræftelses flow
-  b. Efter bekræftelse skal den nye email fungere ved login - den gamle skal ikke.
-- Skærmbillede: ja `/Account/Manage/Email` (375, 768, 939, 940, 1280)
-- Filer: Components\Account\Pages\Manage\Email(.cs), Components\Account\Pages\ConfirmEmailChange.razor(.cs)
+  a. "Confirmation link to change email sent. Please check your email." og linket "Click here to confirm your new email". Linket åbner ConfirmEmailChange: "Tak, fordi du bekræftede skiftet af din e-mail."
+  b. Login med den nye e-mail lykkes.
+  c. Login med den gamle e-mail afvises ("Error: Invalid login attempt.").
+- Negative tests:
+  - Uændret e-mail: "Your email is unchanged." og intet link.
+  - Ugyldig e-mail: valideringsfejl, ingen besked om sendt link.
+  - Ugyldigt link (forkert token): "Error: Der opstod en fejl ved skift af e-mail."; den nye e-mail virker ikke og den gamle virker stadig.
+- Skærmbillede: ja `/Account/Manage/Email` ved sideindlæsning og efter submit (375, 768, 939, 940, 1280)
+- Filer: Components\Account\Pages\Manage\Email.razor(.cs), Components\Account\Pages\ConfirmEmailChange.razor(.cs)
 ### C2. Skift password
 - Pre-requisite: Ny bruger oprettet og bekræftet via UI (RegisteredUserFlow)
 - Route: `/` --> `/account/Login` --> ? --> `/account/manage/changepassword`

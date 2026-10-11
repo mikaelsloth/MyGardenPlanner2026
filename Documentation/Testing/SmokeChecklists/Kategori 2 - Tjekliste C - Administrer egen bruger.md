@@ -41,13 +41,17 @@
 - Filer: Components\Account\Pages\Manage\ChangePassword.razor(.cs)
 - Uden for scope: SetPassword.razor(.cs) (Pages\Manage). Den bruges kun af brugere uden lokalt password og redirecter ellers til ChangePassword.
 ### C3. Download/slet personlige data
-- Pre-requisite: Ny bruger oprettet og bekræftet via UI (
-- Route: `/` --> `/account/Login` --> ? --> `/account/manage/PersonalData`
-- Bruger: ny bruger 
-- Handling: 
-  a. Download personlige data
-  b. Slet personlige data
+- Pre-requisite: Ny bruger oprettet og bekræftet via UI (RegisteredUserFlow) og logget ind (LoginFlow).
+- Route: `/` --> `/Account/Login` --> (direkte URL, intet link i UI) --> `/Account/Manage/PersonalData` --> (link "Delete") `/Account/Manage/DeletePersonalData`
+- Bruger: ny bruger (hver test sin egen)
+- Handling:
+  a. Download personlige data (knappen "Download")
+  b. Slet personlige data (link "Delete", indtast password, "Delete data and close my account"), og forsøg derefter at logge ind
 - Forventet:
-  a.
-- Skærmbillede: ja (375, 768, 939, 940, 1280: account/manage/PersonalData
-- Filer: Components\Account\Pages\Manage\PersonalData.razor(.cs), Components\Account\Pages\Manage\DeletePersonalData.razor(.cs)
+  a. Filen `PersonalData.json` hentes. JSON indeholder mindst "Email" (brugerens e-mail) og nøglen "Authenticator Key" (null for en ny bruger).
+  b. Login med de slettede credentials afvises ("Error: Invalid login attempt."). Slet-formularen vises ikke længere.
+- Negative tests:
+  - Forkert password ved sletning: "Error: Incorrect password."; kontoen findes stadig (login virker).
+- Skærmbillede: ja `/Account/Manage/PersonalData` og `/Account/Manage/DeletePersonalData` ved sideindlæsning (375, 768, 939, 940, 1280)
+- Filer: Components\Account\Pages\Manage\PersonalData.razor(.cs), Components\Account\Pages\Manage\DeletePersonalData.razor(.cs), Components\Account\IdentityComponentsEndpointRouteBuilderExtensions.cs (POST /Account/Manage/DownloadPersonalData)
+ 

@@ -26,4 +26,6 @@ public static class E2ERoutes
     public const string ManageEmail = "/Account/Manage/Email";
     public const string ConfirmEmailChange = "/Account/ConfirmEmailChange";
     public const string ChangePassword = "/Account/Manage/ChangePassword";
+    public const string PersonalData = "/Account/Manage/PersonalData";
+    public const string DeletePersonalData = "/Account/Manage/DeletePersonalData";
 }

@@ -18,6 +18,7 @@
     <File Path="Documentation/Testing/SmokeChecklists/Kategori 2 - Tjekliste A - Offentlige sider.md" />
     <File Path="Documentation/Testing/SmokeChecklists/Kategori 2 - Tjekliste B - Login sider.md" />
     <File Path="Documentation/Testing/SmokeChecklists/Kategori 2 - Tjekliste C - Administrer egen bruger.md" />
+    <File Path="Documentation/Testing/SmokeChecklists/Kategori 2 - Tjekliste D - Step-up re-authentication.md" />
   </Folder>
   <Folder Name="/Documentation/Web Design Documents/" />
   <Folder Name="/Documentation/Web Design Documents/Compendium/">

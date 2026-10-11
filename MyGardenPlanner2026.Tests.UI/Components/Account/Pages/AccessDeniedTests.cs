@@ -57,4 +57,20 @@ public class AccessDeniedTests : BunitContext
         cut.Markup.Should().Contain("ikke adgang til denne ressource");
         navMan.Uri.Should().NotContain("EnableAuthenticator");
     }
+
+    [Fact]
+    public void AccessDenied_UserHasTwoFactorEnabled_RendersSingleHeadingAndSingleAlert()
+    {
+        var user = new ApplicationUser { Id = "user-1" };
+        var userManager = IdentityTestDoubles.CreateUserManager();
+        userManager.GetUserAsync(Arg.Any<ClaimsPrincipal>()).Returns(Task.FromResult<ApplicationUser?>(user));
+        userManager.GetTwoFactorEnabledAsync(user).Returns(Task.FromResult(true));
+        Services.AddSingleton(userManager);
+        this.UseIdentityRedirectManager();
+
+        var cut = this.RenderWithHttpContext<AccessDenied>();
+
+        cut.FindAll("h1").Should().ContainSingle();
+        cut.FindAll("[role='alert']").Should().ContainSingle();
+    }
 }

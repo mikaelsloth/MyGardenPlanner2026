@@ -212,6 +212,13 @@ Besked: div.status-message.status-danger[role=alert] "Denne konto er blevet lås
 Fil: Lockout.razor
 ```
 ```
+/Account/AccessDenied
+Titel: Adgang nægtet – MyGardenPlanner. h1: Adgang nægtet (AuthPageShell, PublicLayout).
+Besked: div.status-message.status-danger[role=alert] "Du har ikke adgang til denne ressource."
+Bruger uden 2FA redirectes til /Account/Manage/EnableAuthenticator med statusbesked.
+Filer: AccessDenied.razor (+ .cs)
+```
+```
 /Account/LoginWith2fa
 Titel: Totrinsbekræftelse – MyGardenPlanner. h1: Totrinsbekræftelse.
 Label: "Godkendelseskode", checkbox "Husk denne enhed", knap "Log ind" (Exact). Link "logge ind med en gendannelseskode".
@@ -346,3 +353,4 @@ ChangePassword: fejlbeskeder fra Identity-password-politikken (fx "Error: Passwo
 DeletePersonalData: hvis UserManager.DeleteAsync fejler, kastes InvalidOperationException (500) uden UI-fejl. Sletning af brugere med relationer (haver, medlemskaber) er ikke undersøgt eller dækket (ny bruger har ingen).
 DownloadPersonalData: (await GetAuthenticatorKeyAsync(user))! giver null i JSON for brugere uden authenticator (ingen fejl, men null-forgiving er unøjagtig).
 Efter sletning er destinationen for en ikke-logget-ind bruger (login eller NotAuthorized) ikke verificeret.
+AccessDenied.razor: indlejret AuthPageShell (to h1) rettet i PR "Fix: AccessDenied renderer AuthPageShell to gange".

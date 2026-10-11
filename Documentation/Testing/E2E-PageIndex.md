@@ -49,6 +49,8 @@ Indeks til manual smoke tests i MyGardenPlanner2026.Tests.E2E. Kun det, der er v
   * ManageEmail
   * ConfirmEmailChange
   * ChangePassword
+  * PersonalData
+  * DeletePersonalData
 
 Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 | Persona | Rolle | 2FA |
@@ -116,6 +118,9 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 
 - ChangePassword: succes redirecter til samme side (RedirectToCurrentPageWithStatus) med statusbeskeden "Your password has been changed". Man forbliver logget ind (RefreshSignInAsync).
 - ChangePassword: labels i markup ("Old password", "New password", "Confirm password") afviger fra Display-navnene i valideringsbeskeder ("Current password", "New password", "Confirm new password").
+
+- PersonalData: "Download" er en almindelig POST-formular (ikke enhanced) til /Account/Manage/DownloadPersonalData. Brug page.RunAndWaitForDownloadAsync og læs filen via download.PathAsync(). "Delete" er et link (<a>), ikke en knap.
+- DeletePersonalData: succes kører DeleteAsync + SignOutAsync og redirecter til samme side. Efterfølgende tjek er, at login afvises. Slet-knappen vises ikke længere.
 
 ## 4. Sider
 
@@ -272,6 +277,20 @@ Valideringsfejl (.validation-message): "The New password must be at least 6 and 
 Brugere uden lokalt password redirectes til Account/Manage/SetPassword.
 Filer: ChangePassword.razor (+ .cs)
 ```
+```
+/Account/Manage/PersonalData
+Titel: Personal Data (uden "– MyGardenPlanner"). ManageLayout (h1 "Manage your account"), h3 "Personal Data". Static SSR.
+Knap "Download" (POST til /Account/Manage/DownloadPersonalData, kræver login). Link "Delete" til /Account/Manage/DeletePersonalData.
+Filen PersonalData.json: nøgler fra [PersonalData]-felterne (fx "Email") samt altid "Authenticator Key" (null uden authenticator).
+Filer: PersonalData.razor (+ .cs), IdentityComponentsEndpointRouteBuilderExtensions.cs
+```
+```
+/Account/Manage/DeletePersonalData
+Titel: Delete Personal Data (uden "– MyGardenPlanner"). ManageLayout (h1 "Manage your account"), h3 "Delete Personal Data".
+Felt "Password" (kun hvis brugeren har password), knap "Delete data and close my account".
+Forkert password: "Error: Incorrect password.". Succes: konto slettes, bruger logges ud, redirect til samme side.
+Filer: DeletePersonalData.razor (+ .cs)
+```
 
 Admin-sider (kendt fra PersonaAccessTests, ikke gennemgået med .razor)
 | Rute	Overskrift	Persona |
@@ -303,6 +322,7 @@ Ikke indekseret endnu:
 | B5 | Passkey | PasskeyTests | Passkey_Passkeys, Passkey_RenamePasskey, Passkey_Login (`<bredde>`) (9) | ikke kørt |
 | C1 | Skift e-mail | SkiftEmailTests | SkiftEmail_Email_`<bredde>` (5), SkiftEmail_EmailEfterSkift_`<bredde>` (5) | ikke kørt |
 | C2 | Skift password | SkiftPasswordTests | SkiftPassword_ChangePassword_`<bredde>` (5), SkiftPassword_ChangePasswordEfterSkift_`<bredde>` (5) | ikke kørt |
+| C3 | Download/slet personlige data | PersonligeDataTests | PersonligeData_PersonalData_`<bredde>` (5), PersonligeData_DeletePersonalData_`<bredde>` (5) | ikke kørt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
 Tests ligger under ManualSmoke/TjeklisteB/.
@@ -323,3 +343,6 @@ Email.razor: med IdentityNoOpEmailSender vises bekræftelseslinket til enhver ny
 Email.razor: OnSendEmailVerificationAsync viser ikke linket (kun relevant for ubekræftede e-mails, ikke dækket).
 ConfirmEmailChange.razor.cs: WebEncoders.Base64UrlDecode(Code) er uden try/catch. Et ikke-Base64Url-format i code kaster formentlig FormatException (500). Ikke testet.
 ChangePassword: fejlbeskeder fra Identity-password-politikken (fx "Error: Passwords must have at least one digit") er engelske og ikke dækket af test, da politikken ikke er i konteksten.
+DeletePersonalData: hvis UserManager.DeleteAsync fejler, kastes InvalidOperationException (500) uden UI-fejl. Sletning af brugere med relationer (haver, medlemskaber) er ikke undersøgt eller dækket (ny bruger har ingen).
+DownloadPersonalData: (await GetAuthenticatorKeyAsync(user))! giver null i JSON for brugere uden authenticator (ingen fejl, men null-forgiving er unøjagtig).
+Efter sletning er destinationen for en ikke-logget-ind bruger (login eller NotAuthorized) ikke verificeret.

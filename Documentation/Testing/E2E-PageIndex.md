@@ -195,7 +195,8 @@ Filer: ConfirmEmail.razor (+ .cs)
 PublicHeader: header.public-header har <a href="/account/login"> "Log ind" og <a href="/account/register"> "Opret bruger".
 Synlighed under 940 px er ikke verificeret (PublicHeader.razor.css ikke læst).
 ```
-```/Account/Login
+```
+/Account/Login
 Titel: Log ind – MyGardenPlanner. h1: Log ind. Layout: PublicLayout.
 Labels: "E-mail", "Adgangskode" (Exact = true), "Husk mig". Knap: "Log ind" (Exact = true; passkey-knappen hedder "Log ind med en passkey").
 Fejl ved forkert login: StatusMessage "Error: Invalid login attempt." (engelsk).
@@ -306,6 +307,15 @@ Modal vises ved første handling i en frisk circuit (ReAuthenticationService er 
 Selektorer: #step-up-password, #step-up-totp (kun 2FA), knapper "Bekræft"/"Annullér", fejl .status-message.status-danger[role=alert].
 Tests: ManualSmoke/TjeklisteD/ModalVisesTests (StepUpModal-hjælperen).
 ```
+```
+/admin/security-policies — selektorer
+Faner: role=tab; valgt fane har klassen "active" (aria-selected er en bool-attribut: true = tom attribut, false = udeladt).
+Fanen AuditLog-eksport: #exportjob-retention, #exportjob-maxactive (type=number), knap "Gem" (step-up via StepUpGuard efter AdminActionGuard).
+Succes: .status-success[role=status] på siden: "AuditLog-eksportjob-policyen er opdateret og trådt i kraft." (ryddes ved fanskift).
+Fejl i editor: .status-danger[role=alert] (fx rate limit, ArgumentOutOfRange).
+Test-infrastruktur: fixture.SeedExtraUserAsync(role) giver en isoleret admin pr. test (egen fejltæller).
+Tests: ManualSmoke/TjeklisteD/ForkertPasswordModalTests.
+```
 
 Admin-sider (kendt fra PersonaAccessTests, ikke gennemgået med .razor)
 | Rute	Overskrift	Persona |
@@ -365,3 +375,4 @@ AccessDenied.razor: indlejret AuthPageShell (to h1) rettet i PR "Fix: AccessDeni
 Login/LoginWith2fa/LoginWithRecoveryCode kalder MarkReAuthenticated i request-scope (Scoped service) → ingen effekt på circuit; modalen vises altid ved første beskyttede handling. Modaltekst "sidst logget ind" er misvisende.
 HttpContextCurrentUserAccessor: HttpContext er normalt null i en circuit → alarm fra StepUpReAuthModal får IP "ukendt".
 AuthorizationServicesExtensions: RequireGlobalAdminPolicy registreres to gange (første overskrives).
+ReAuthFailureTracker: alarm sendes kun ved præcis Threshold (==); ved 6+ fejl inden for vinduet sendes ingen ny alarm før tælleren nulstilles (succes i login/step-up). Fejl tælles samlet på tværs af login og step-up.

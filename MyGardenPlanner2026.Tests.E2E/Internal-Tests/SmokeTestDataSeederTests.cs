@@ -109,4 +109,22 @@ public sealed class SmokeTestDataSeederTests : IAsyncLifetime
 
         id.Should().Be(expected);
     }
+
+    [Fact]
+    public async Task SeedExtraUserAsync_OpretterNyBrugerMedRolleOgToFactor_UafhaengigAfPersonas()
+    {
+        var connectionString = _database.AppConnectionString;
+        await SmokeTestDataSeeder.SeedAsync(connectionString);
+
+        var first = await SmokeTestDataSeeder.SeedExtraUserAsync(connectionString, RoleNames.PolicyAdmin);
+        var second = await SmokeTestDataSeeder.SeedExtraUserAsync(connectionString, RoleNames.PolicyAdmin);
+
+        first.Email.Should().NotBe(second.Email).And.EndWith("@test.dk");
+        first.Role.Should().Be(RoleNames.PolicyAdmin);
+        first.TwoFactorEnabled.Should().BeTrue();
+
+        var code = TotpHelper.GenerateCode(first.AuthenticatorKey!);
+        (await SmokeTestDataSeeder.VerifyAuthenticatorCodeAsync(connectionString, first.Email, code))
+            .Should().BeTrue();
+    }
 }

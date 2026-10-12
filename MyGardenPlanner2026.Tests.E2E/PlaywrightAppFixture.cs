@@ -22,6 +22,8 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
 
     public string RootUri { get; private set; } = default!;
     public const string SecurityAlertRecipient = "sikkerhedsalarm@e2e.test";
+    public const string SecurityAlertSubject =
+    "[MyGardenPlanner] Sikkerhedsalarm: Gentagne fejlede login-/re-auth-forsøg";
 
     public TestSmtpServer SmtpServer { get; private set; } = default!;
     public string AppConnectionString => _database.AppConnectionString;
@@ -99,14 +101,20 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         return await context.NewPageAsync();
     }
 
-    /// <summary>Som <see cref="LoginAndGotoAsync(string, string)"/>, men med viewport fra <see cref="Screenshots.Viewports"/>.</summary>
-    public async Task<IPage> LoginAndGotoAsync(string persona, string path, int? viewportWidth = null)
+    public Task<SmokeTestUser> SeedExtraUserAsync(string role) =>
+        SmokeTestDataSeeder.SeedExtraUserAsync(AppConnectionString, role);
+
+    /// <summary>Som persona-overloaden, men for en vilkårlig seedet bruger.</summary>
+    public async Task<IPage> LoginAndGotoAsync(SmokeTestUser user, string path, int? viewportWidth)
     {
         var page = viewportWidth is null ? await NewPageAsync() : await NewPageAsync((int)viewportWidth);
         await page.GotoAsync($"{RootUri}{path}");
-        await LoginFlow.LoginAsync(page, SmokeTestUsers[persona]);
+        await LoginFlow.LoginAsync(page, user);
         return page;
     }
+
+    public Task<IPage> LoginAndGotoAsync(string persona, string path, int? viewportWidth = null) =>
+    LoginAndGotoAsync(SmokeTestUsers[persona], path, viewportWidth);
 
     private static Process StartAppProcess(
         int port, string appConnectionString, string adminConnectionString, int smtpPort)

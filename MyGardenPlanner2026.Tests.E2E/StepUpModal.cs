@@ -37,4 +37,14 @@ public static class StepUpModal
             async () => await Dialog(page).IsVisibleAsync(),
             maxAttempts: 12,
             description: "Step-up modalen blev ikke vist");
+
+    /// <summary>Korrekt password + TOTP (brugeren skal have AuthenticatorKey). Slutter, når modalen er lukket.</summary>
+    public static async Task CompleteAsync(IPage page, SmokeTestUser user)
+    {
+        await PasswordField(page).FillAsync(user.Password);
+        await TotpField(page).FillAsync(TotpHelper.GenerateCode(user.AuthenticatorKey!));
+        await ConfirmButton(page).ClickAsync();
+
+        await Assertions.Expect(Dialog(page)).ToBeHiddenAsync();
+    }
 }

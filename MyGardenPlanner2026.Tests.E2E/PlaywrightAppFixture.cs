@@ -24,6 +24,8 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
     public const string SecurityAlertRecipient = "sikkerhedsalarm@e2e.test";
     public const string SecurityAlertSubject =
     "[MyGardenPlanner] Sikkerhedsalarm: Gentagne fejlede login-/re-auth-forsøg";
+    /// <summary>E2E-appens re-auth-vindue. 1 minut gør, at udløbstesten (Tjekliste D3) kun venter ca. ét minut.</summary>
+    public const int ReAuthMaxAgeMinutes = 1;
 
     public TestSmtpServer SmtpServer { get; private set; } = default!;
     public string AppConnectionString => _database.AppConnectionString;
@@ -147,6 +149,9 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         // tests i kollektionen. Hæves markant for E2E.
         startInfo.EnvironmentVariables["LoginRateLimit__PermitLimit"] = "1000";
         startInfo.EnvironmentVariables["LoginRateLimit__WindowSeconds"] = "60";
+
+        // Step-up re-auth: kort vindue, så udløb kan testes (appsettings: 15 min).
+        startInfo.EnvironmentVariables["ReAuthenticationPolicy__MaxAgeMinutes"] = $"{ReAuthMaxAgeMinutes}";
 
         // Peger sikkerhedsalarmer på TestSmtpServer. Uden dette bruger appen appsettings' Smtp:Host
         // (ikke tilgængelig i CI), og 5. forkerte login giver 500 (SmtpException). Tomme credentials

@@ -1,38 +1,35 @@
 # 2. Verifikationsproces pr. modul
 ## D. Step-up re-authentication
-- [ ] Log ind, vent > `ReAuthenticationPolicy:MaxAgeMinutes` (eller sæt lav værdi midlertidigt), forsøg en beskyttet handling → modal vises
+- [ ] Beskyttet handling i en frisk circuit → modal "Bekræft din identitet" vises (ingen ventetid; login markerer ikke re-auth i circuit)
 - [ ] Forkert password i modal → fejl vises, tælles i `ReAuthFailureTracker`
-- [ ] Korrekt password (+ TOTP hvis 2FA) → handling gennemføres
+- [ ] Korrekt password + TOTP → handling gennemføres
+- [ ] Inden for `ReAuthenticationPolicy:MaxAgeMinutes` → ingen ny modal; efter udløb i samme circuit → modal igen
 ### D1. Modal vises ved beskyttet handling
 - Route: `/` --> `/Account/Login` --> (direkte URL, intet link i UI)
-- Bruger: admin brugere + standard bruger
+- Bruger: Admin, PolicyAdmin, Auditor, DataAdmin, Requester
 - Handling:
-  a. log ind med forskellige brugere, vent > `ReAuthenticationPolicy:MaxAgeMinutes`
-  b. Gå til `/admin/audit-log`, `/admin/security-policies`, `/admin/subscriptions`, `/admin/jit-requests`
+  a. Requester logger ind og går til de fire admin-ruter
+  b. Admin-brugere logger ind og udløser en beskyttet handling: `/admin/subscriptions` ("Gem"), `/admin/security-policies` ("Gem"), `/admin/audit-log` ("Eksportér"). `/admin/jit-requests` vises kun (Godkend/Afvis kræver en ventende anmodning)
 - Forventet:
-  a. Standard brugere afvises - får ikke lov at se siderne
-  b. Admin brugere: ændre data --> vises modal til at requeste JIT
-- Skærmbillede: ja visning af sider + modal (375, 768, 939, 940, 1280)
-- Filer: Components\Pages\Admin\AdminAuditLogPage.razor(.cs), Components\Pages\Admin\AdminJitRequestsPage.razor(.cs), , Components\Pages\Admin\AdminSecurityPolicyPage.razor(.cs), Components\Pages\Admin\AdminSubscriptionManagementPage.razor(.cs)
+  a. Requester får AccessDenied (Plain og NoMfa redirectes til EnableAuthenticator, jf. PersonaAccessTests)
+  b. Modal "Bekræft din identitet" med password- og TOTP-felt; Annullér lukker uden ændring
+- Skærmbillede: ja side + modal (375, 768, 939, 940, 1280)
+- Filer: AdminSubscriptionManagementPage, AdminSecurityPolicyPage, AdminAuditLogPage, AdminJitRequestsPage, StepUpReAuthModal, StepUpGuard, AccessDenied
 ### D2. Forkert password i modal
 - Route: `/` --> `/Account/Login` --> (direkte URL, intet link i UI)
-- Bruger: admin bruger
-- Handling:
-  a. log ind med admin bruger, vent > `ReAuthenticationPolicy:MaxAgeMinutes`
-  b. Gå til `/admin/audit-log` --> lav ændring  -->  ved modal indtastes forkert password
+- Bruger: PolicyAdmin
+- Handling: `/admin/security-policies`, fanen "AuditLog-eksport" --> "Gem" --> forkert password i modal
 - Forventet:
-  a. Fejl vises
-  b. Fejl registreres i `ReAuthFailureTracker`
-- Skærmbillede: ja Visning af fejl side (375, 768, 939, 940, 1280)
-- Filer: ReAuthFailureTracker.cs
-### D3. Korrekt password (+ TOTP hvis 2FA) → handling gennemføres
+  a. "Error: Forkert adgangskode." vises
+  b. Fejl registreres i `ReAuthFailureTracker`; 5. fejl sender sikkerhedsalarm
+- Skærmbillede: ja fejlvisning (375, 768, 939, 940, 1280)
+- Filer: StepUpReAuthModal, ReAuthFailureTracker
+### D3. Korrekt password + TOTP → handling gennemføres
 - Route: `/` --> `/Account/Login` --> (direkte URL, intet link i UI)
-- Bruger: admin bruger
-- Handling:
-  a. log ind med forskellige brugere med og uden MFA, vent > `ReAuthenticationPolicy:MaxAgeMinutes`
-  b. Gå til `/admin/audit-log` --> lav ændring  -->  ved modal indtastes korrekt password
+- Bruger: PolicyAdmin (NoMfa som negativ test)
+- Handling: ændr `#exportjob-retention` --> "Gem" --> korrekt password + TOTP; gendan værdien bagefter
 - Forventet:
-  a. Prompt for MFA hvor påkrævet
-  b. Ændringer gemmes og vises ved reload af side
-- Skærmbillede: ja Visning af side før efter / ændring (375, 768, 1280)
- 
+  a. Prompt for TOTP; NoMfa redirectes til EnableAuthenticator
+  b. Ændringen gemmes og vises ved reload (nyt circuit giver ny modal)
+  c. Anden handling inden for vinduet giver ingen modal; efter `MaxAgeMinutes` (1 min i E2E) vises modalen igen
+- Skærmbillede: ja før/efter (375, 768, 1280)

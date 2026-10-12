@@ -46,6 +46,21 @@ public static class SmokeTestDataSeeder
         };
     }
 
+    /// <summary>
+    /// Opretter én ekstra bruger med 2FA og den angivne rolle, så en test får egen
+    /// fejltæller/session uden at røre de delte personas. Rollerne skal allerede findes
+    /// (oprettes af <see cref="SeedAsync"/>).
+    /// </summary>
+    public static async Task<SmokeTestUser> SeedExtraUserAsync(string connectionString, string role)
+    {
+        await using var provider = BuildServiceProvider(connectionString);
+        using var scope = provider.CreateScope();
+
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        return await CreateUserAsync(userManager, RegisteredUserFlow.NewEmail(), role, twoFactorEnabled: true);
+    }
+
     private static async Task<SmokeTestUser> CreateUserAsync(
         UserManager<ApplicationUser> userManager, string email, string? role, bool twoFactorEnabled)
     {

@@ -17,13 +17,17 @@
 - Filer: AdminSubscriptionManagementPage, AdminSecurityPolicyPage, AdminAuditLogPage, AdminJitRequestsPage, StepUpReAuthModal, StepUpGuard, AccessDenied
 ### D2. Forkert password i modal
 - Route: `/` --> `/Account/Login` --> (direkte URL, intet link i UI)
-- Bruger: PolicyAdmin
-- Handling: `/admin/security-policies`, fanen "AuditLog-eksport" --> "Gem" --> forkert password i modal
+- Bruger: ny PolicyAdmin pr. test (isoleret fejltæller)
+- Handling:
+  a. `/admin/security-policies`, fanen "AuditLog-eksport" --> "Gem" --> forkert password i modal
+  b. Korrekt password med tom/forkert TOTP
+  c. 5 forkerte forsøg i samme modal
 - Forventet:
-  a. "Error: Forkert adgangskode." vises
-  b. Fejl registreres i `ReAuthFailureTracker`; 5. fejl sender sikkerhedsalarm
-- Skærmbillede: ja fejlvisning (375, 768, 939, 940, 1280)
-- Filer: StepUpReAuthModal, ReAuthFailureTracker
+  a. "Error: Forkert adgangskode." vises, modalen forbliver åben, intet gemmes
+  b. "Error: Indtast venligst din godkendelseskode." (tælles ikke) / "Error: Ugyldig godkendelseskode." (tælles)
+  c. Sikkerhedsalarm sendes ved 5. fejl (tælles i `ReAuthFailureTracker`; Bruger-ID i mailen)
+- Skærmbillede: ja visning af fejl (375, 768, 939, 940, 1280)
+- Filer: StepUpReAuthModal, ReAuthFailureTracker, AuditLogExportJobPolicyEditor, AdminSecurityPolicyPage
 ### D3. Korrekt password + TOTP → handling gennemføres
 - Route: `/` --> `/Account/Login` --> (direkte URL, intet link i UI)
 - Bruger: PolicyAdmin (NoMfa som negativ test)

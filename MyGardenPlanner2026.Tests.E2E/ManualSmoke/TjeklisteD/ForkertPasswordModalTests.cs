@@ -118,16 +118,7 @@ public sealed class ForkertPasswordModalTests(PlaywrightAppFixture fixture)
         await SmokePageAssertions.ExpectPageAsync(
             page, "Sikkerhedspolicies – MyGardenPlanner", "Sikkerhedspolicies");
 
-        // Fanen er også "klar"-signalet: uden et forbundet kredsløb ignoreres klik.
-        // Fanen er også "klar"-signalet: uden et forbundet kredsløb ignoreres klik.
-        var tab = page.GetByRole(AriaRole.Tab, new() { Name = "AuditLog-eksport" });
-        await BlazorInteraction.ActUntilAsync(
-            () => tab.ClickAsync(),
-            () => IsActiveAsync(tab),
-            maxAttempts: 12,
-            description: "Fanen AuditLog-eksport blev ikke valgt");
-
-        await Assertions.Expect(page.Locator("#exportjob-retention")).ToBeVisibleAsync();
+        await SecurityPolicyPage.OpenExportJobTabAsync(page);
 
         await StepUpModal.OpenAsync(
             page, () => page.GetByRole(AriaRole.Button, new() { Name = "Gem", Exact = true }).ClickAsync());
@@ -141,12 +132,5 @@ public sealed class ForkertPasswordModalTests(PlaywrightAppFixture fixture)
         await StepUpModal.PasswordField(page).FillAsync(password);
         await StepUpModal.TotpField(page).FillAsync(code ?? string.Empty);
         await StepUpModal.ConfirmButton(page).ClickAsync();
-    }
-
-    /// <summary>Valgt fane har klassen "active" (aria-selected er en bool-attribut uden værdi).</summary>
-    private static async Task<bool> IsActiveAsync(ILocator tab)
-    {
-        var classes = await tab.GetAttributeAsync("class") ?? string.Empty;
-        return classes.Split(' ', StringSplitOptions.RemoveEmptyEntries).Contains("active");
     }
 }

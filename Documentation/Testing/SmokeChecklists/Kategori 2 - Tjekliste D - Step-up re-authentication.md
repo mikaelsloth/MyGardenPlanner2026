@@ -30,10 +30,17 @@
 - Filer: StepUpReAuthModal, ReAuthFailureTracker, AuditLogExportJobPolicyEditor, AdminSecurityPolicyPage
 ### D3. Korrekt password + TOTP → handling gennemføres
 - Route: `/` --> `/Account/Login` --> (direkte URL, intet link i UI)
-- Bruger: PolicyAdmin (NoMfa som negativ test)
-- Handling: ændr `#exportjob-retention` --> "Gem" --> korrekt password + TOTP; gendan værdien bagefter
+- Bruger: ny PolicyAdmin pr. test; NoMfa som negativ test
+- Handling:
+  a. `/admin/security-policies`, fanen "AuditLog-eksport": ændr `#exportjob-retention` --> "Gem" --> korrekt password + TOTP i modal
+  b. Reload siden
+  c. Ny handling inden for `MaxAgeMinutes`, derefter efter udløb (1 min i E2E) i samme circuit
+  d. NoMfa åbner de fire admin-ruter
 - Forventet:
-  a. Prompt for TOTP; NoMfa redirectes til EnableAuthenticator
-  b. Ændringen gemmes og vises ved reload (nyt circuit giver ny modal)
-  c. Anden handling inden for vinduet giver ingen modal; efter `MaxAgeMinutes` (1 min i E2E) vises modalen igen
-- Skærmbillede: ja før/efter (375, 768, 1280)
+  a. Prompt for TOTP; ændringen gemmes ("AuditLog-eksportjob-policyen er opdateret og trådt i kraft.")
+  b. Ændringen vises efter reload (nyt circuit; ny modal ved næste handling); værdien gendannes bagefter
+  c. Ingen modal inden for vinduet; modal vises igen efter udløb
+  d. NoMfa redirectes til EnableAuthenticator
+- Skærmbillede: ja før/efter ændring (375, 768, 1280)
+- Filer: StepUpReAuthModal, StepUpGuard, RequireRecentAuthenticationHandler, ReAuthenticationService, AuditLogExportJobPolicyEditor, AdminSecurityPolicyPage
+ 

@@ -316,6 +316,12 @@ Fejl i editor: .status-danger[role=alert] (fx rate limit, ArgumentOutOfRange).
 Test-infrastruktur: fixture.SeedExtraUserAsync(role) giver en isoleret admin pr. test (egen fejltæller).
 Tests: ManualSmoke/TjeklisteD/ForkertPasswordModalTests.
 ```
+```
+Step-up: E2E-appen kører med ReAuthenticationPolicy__MaxAgeMinutes=1 (appsettings: 15). Modal vises ved første handling i hver circuit; efter step-up gælder vinduet i samme circuit; reload = ny circuit = ny modal.
+Fanehop (SelectTab) rydder statusMessage og genindlæser editoren.
+Page-objects: SecurityPolicyPage (faner, #exportjob-retention, Gem, .status-success), StepUpModal (Dialog, felter, CompleteAsync).
+Tests: ManualSmoke/TjeklisteD/KorrektStepUpTests.
+```
 
 Admin-sider (kendt fra PersonaAccessTests, ikke gennemgået med .razor)
 | Rute	Overskrift	Persona |

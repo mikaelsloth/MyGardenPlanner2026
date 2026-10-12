@@ -298,6 +298,14 @@ Felt "Password" (kun hvis brugeren har password), knap "Delete data and close my
 Forkert password: "Error: Incorrect password.". Succes: konto slettes, bruger logges ud, redirect til samme side.
 Filer: DeletePersonalData.razor (+ .cs)
 ```
+```
+/admin/subscriptions (Admin) · /admin/security-policies (PolicyAdmin) · /admin/audit-log (Auditor) · /admin/jit-requests (DataAdmin)
+Rolle- og 2FA-beskyttet (RequireGlobalAdmin / RequirePolicyAdmin / RequireAuditViewer / RequireAnyAdminRole + MfaRequirement). Siden kræver ikke "recent auth".
+Step-up: StepUpGuard.RunAsync omkring følsomme handlinger → StepUpReAuthModal (role=dialog, "Bekræft din identitet").
+Modal vises ved første handling i en frisk circuit (ReAuthenticationService er Scoped; login markerer kun request-scope). MaxAgeMinutes default 15.
+Selektorer: #step-up-password, #step-up-totp (kun 2FA), knapper "Bekræft"/"Annullér", fejl .status-message.status-danger[role=alert].
+Tests: ManualSmoke/TjeklisteD/ModalVisesTests (StepUpModal-hjælperen).
+```
 
 Admin-sider (kendt fra PersonaAccessTests, ikke gennemgået med .razor)
 | Rute	Overskrift	Persona |
@@ -354,3 +362,6 @@ DeletePersonalData: hvis UserManager.DeleteAsync fejler, kastes InvalidOperation
 DownloadPersonalData: (await GetAuthenticatorKeyAsync(user))! giver null i JSON for brugere uden authenticator (ingen fejl, men null-forgiving er unøjagtig).
 Efter sletning er destinationen for en ikke-logget-ind bruger (login eller NotAuthorized) ikke verificeret.
 AccessDenied.razor: indlejret AuthPageShell (to h1) rettet i PR "Fix: AccessDenied renderer AuthPageShell to gange".
+Login/LoginWith2fa/LoginWithRecoveryCode kalder MarkReAuthenticated i request-scope (Scoped service) → ingen effekt på circuit; modalen vises altid ved første beskyttede handling. Modaltekst "sidst logget ind" er misvisende.
+HttpContextCurrentUserAccessor: HttpContext er normalt null i en circuit → alarm fra StepUpReAuthModal får IP "ukendt".
+AuthorizationServicesExtensions: RequireGlobalAdminPolicy registreres to gange (første overskrives).

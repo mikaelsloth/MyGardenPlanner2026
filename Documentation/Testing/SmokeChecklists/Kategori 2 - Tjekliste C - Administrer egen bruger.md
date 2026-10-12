@@ -1,5 +1,5 @@
 # 2. Verifikationsproces pr. modul
-### C. Kontoadministration
+## C. Kontoadministration
 - [ ] Skift e-mail (bekræftelseslink)
 - [ ] Skift password
 - [ ] Download/slet personlige data

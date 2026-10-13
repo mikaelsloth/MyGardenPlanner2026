@@ -11,7 +11,8 @@ Indeks til manual smoke tests i MyGardenPlanner2026.Tests.E2E. Kun det, der er v
 - Fixture: PlaywrightAppFixture
 - NewPageAsync()
 - NewPageAsync(int width): bredde fra Viewports
-- LoginAndGotoAsync(persona, path)
+- LoginAndGotoAsync(persona, path, width?): login som persona og åbn siden (valgfri viewport-bredde)
+- LoginAndGotoAsync(SmokeTestUser, path, width): samme for en vilkårlig seedet bruger
 - RootUri
 - Skærmbilleder: ScreenshotRecorder.CaptureAsync(page, kapitel, tjekliste, testnavn, komponent)
 - Gemmer TestResults/Screenshots/`<kapitel>`/`<tjekliste>`/`<testnavn>`_`<komponent>`_`<bredde>`.png (fuld side).
@@ -80,6 +81,18 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 - App-processen får Smtp__Host=127.0.0.1, Smtp__Port=<sinkens port>, Smtp__EnableSsl=false, tomme Smtp__UserName/Password.
 - MimeText: dekoder RFC 2047-headere og base64/quoted-printable (bruges af TestSmtpServer).
 - SmokeTestDataSeeder.GetUserIdAsync(connectionString, email).
+- fixture.SeedExtraUserAsync(role) → SmokeTestDataSeeder.SeedExtraUserAsync(connectionString, role): ny bruger (e2e-`<guid>`@test.dk) med rollen og 2FA. Rollen skal findes (oprettes af SeedAsync). Giver en test egen fejltæller/session uden at røre personas.
+- PlaywrightAppFixture.SecurityAlertSubject: emnet på sikkerhedsalarmen (delt med B2-testen, som har en privat kopi).
+- PlaywrightAppFixture.ReAuthMaxAgeMinutes = 1: sendes som ReAuthenticationPolicy__MaxAgeMinutes til E2E-appen (appsettings: 15).
+- StepUpModal (page-object for role=dialog "Bekræft din identitet"):
+  - Dialog, PasswordField, TotpField (kun med 2FA), ConfirmButton ("Bekræft"), CancelButton ("Annullér")
+  - Error (.status-message.status-danger)
+  - OpenAsync(page, trigger): gentager triggeren, til modalen er vist
+  - CompleteAsync(page, user): korrekt password + TOTP, slutter når modalen er lukket
+- SecurityPolicyPage (/admin/security-policies):
+  - Retention (#exportjob-retention), SaveButton ("Gem"), Success (.status-success), ExportJobSavedText
+  - SelectTabAsync(page, name), OpenExportJobTabAsync(page)
+  - ReadRetentionAsync(page), SetRetentionAsync(page, value)
 
 - Ruter: + TwoFactorAuthentication, LoginWith2fa.
 - LoginFlow: LoginAsync = SubmitPasswordAsync + (hvis 2FA) SubmitTwoFactorCodeAsync.
@@ -121,6 +134,18 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 
 - PersonalData: "Download" er en almindelig POST-formular (ikke enhanced) til /Account/Manage/DownloadPersonalData. Brug page.RunAndWaitForDownloadAsync og læs filen via download.PathAsync(). "Delete" er et link (<a>), ikke en knap.
 - DeletePersonalData: succes kører DeleteAsync + SignOutAsync og redirecter til samme side. Efterfølgende tjek er, at login afvises. Slet-knappen vises ikke længere.
+
+
+- Step-up: ReAuthenticationService er Scoped. Login markerer kun re-auth i request-scope, så en frisk circuit har intet tidsstempel, og StepUpReAuthModal vises ved første beskyttede handling uden ventetid. Efter step-up gælder vinduet i samme circuit; reload = ny circuit = ny modal.
+- Kun udløb i samme circuit kræver ventetid: E2E-appen kører med MaxAgeMinutes=1, og testen venter ca. 62 sek.
+- Fane-knapper med aria-selected="@bool": true renderes som en tom attribut, false udelades. Brug klassen "active" som valgt-signal i stedet for aria-selected.
+- Fanehop (SelectTab) rydder statusbeskeden og genindlæser editoren: brug det til at bevise, at en ny besked stammer fra en ny gem.
+- Fejltæller (ReAuthFailureTracker): alarm sendes kun ved præcis Threshold (5). Fejl tælles samlet pr. bruger på tværs af login og step-up (vindue 2 dage). Brug en ny bruger pr. test (SeedExtraUserAsync).
+- Modal: forkert password og forkert TOTP (med korrekt password) tælles. Tom TOTP tælles ikke. Skift mellem de to fejltyper, når flere forsøg skal afventes, så den nye fejltekst adskiller sig fra den forrige.
+- Alarm fra en circuit: HttpContext er normalt null, så IP-adressen i mailen er sandsynligvis "ukendt". Assertér kun "IP-adresse:", ikke værdien.
+- Admin-editors deler data på tværs af tests: gendan ændrede værdier (retention ændres ±1 time) og brug ikke basispriser (påvirker A2-beregningerne).
+- Admin-sider kræver 2FA: NoMfa redirectes til EnableAuthenticator og når aldrig modalen.
+- /Account/AccessDenied har præcis én h1 (rettet i PR0). Tjek den med SmokePageAssertions.ExpectPageAsync.
 
 ## 4. Sider
 
@@ -345,6 +370,8 @@ Adgang efter godkendelse: HasActiveElevationAsync læser DB ved hvert kald (inge
 Filer: AdminJitRequestsPage.razor (+ .cs), JitElevationRequestForm.razor (+ .cs), JitElevationApprovalQueue.razor (+ .cs), IJitElevationService.cs, JitElevationService.cs, JitElevationPolicyOptions.cs, AnyAdminRoleAuthorizationHandler.cs, JitRoleAuthorizationHandler.cs, AuthorizationServicesExtensions.cs
 Page-object JitRequestsPage: OpenAsync(fixture, bruger|persona, bredde?) logger ind, åbner siden og venter, til den er interaktiv (fanehop til Godkend og tilbage; Godkend-fanens overskrift findes ikke i prerenderet HTML). Slutter på "Anmod om adgang".
 SubmitRequestAsync klikker "Send anmodning" én gang (ikke idempotent). RequestAndWaitAsync venter på rækken. RequestRow/QueueRow(page, årsag), StatusBadge(række), Error(page), ShowHistoryAsync(page). Unik årsag: NewReason().
+GotoAsync(fixture, page): åbner siden i en allerede logget ind side. ApproveAsync/RejectAsync(page, godkender, årsag, rolle): fanehop til Godkend, venter på rækken, klikker (gentages til step-up modalen vises), StepUpModal.CompleteAsync, afventer beskeden og at rækken er væk. Kræver en frisk circuit (ingen re-auth i forvejen).
+AccessAssertions.ExpectAccessDeniedAsync(page): URL indeholder /Account/AccessDenied, titel/h1 "Adgang nægtet", teksten "Du har ikke adgang til denne ressource.".
 Tests: ManualSmoke/TjeklisteE/.
 ```
 ```
@@ -394,6 +421,8 @@ Ikke indekseret endnu:
 | D3 | Korrekt step-up, vindue og udløb, NoMfa | KorrektStepUpTests | StepUp_AdminSecurityPolicies_Foer, StepUp_AdminSecurityPolicies_Efter (`<bredde>`) (6) | ikke kørt |
 | E1 | Anmodning uden for policy-grænser | AnmodningUdenForGraenserTests | JIT_E1_Fejl_`<bredde>` (3) | ikke kørt |
 | E2 | Ansøger ser ikke egen anmodning i kø | EgenAnmodningIKoeTests | JIT_E2_Koe_`<bredde>` (5) | ikke kørt |
+| E3 | Godkendelse → adgang straks | GodkendelseTests | JIT_E3_Foer_`<bredde>` (3), JIT_E3_Efter_`<bredde>` (3) | ikke kørt |
+| E4 | Afvisning → adgang nægtes | AfvisningTests | JIT_E4_AccessDenied_`<bredde>` (3) | ikke kørt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
 Tests ligger under ManualSmoke/TjeklisteB/.

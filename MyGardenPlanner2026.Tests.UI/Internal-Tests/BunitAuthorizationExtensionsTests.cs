@@ -9,8 +9,8 @@ using Xunit;
 
 public sealed class BunitAuthorizationExtensionsTests : BunitContext
 {
-    private async Task<AuthenticationState> GetStateAsync() =>
-        await Services.GetRequiredService<AuthenticationStateProvider>().GetAuthenticationStateAsync();
+    private Task<AuthenticationState> GetStateAsync() =>
+        Services.GetRequiredService<AuthenticationStateProvider>().GetAuthenticationStateAsync();
 
     [Fact]
     public async Task AuthorizeAs_UserIdOnly_SetsAuthenticatedUserWithNameAndNameIdentifier()

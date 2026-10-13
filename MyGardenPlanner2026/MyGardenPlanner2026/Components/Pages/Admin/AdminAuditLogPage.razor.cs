@@ -52,10 +52,10 @@ public partial class AdminAuditLogPage
         await SavePreferenceAsync();
     }
 
-    private async Task HandlePageChangedAsync(int pageNumber)
+    private Task HandlePageChangedAsync(int pageNumber)
     {
         currentFilter = currentFilter with { PageNumber = pageNumber };
-        await RunSearchAsync();
+        return RunSearchAsync();
     }
 
     private async Task SavePreferenceAsync()

@@ -56,7 +56,7 @@ public partial class AuditLogFilterBar
         hasSyncedInitialFilter = true;
     }
 
-    private async Task HandleSearchAsync()
+    private Task HandleSearchAsync()
     {
         var filter = new AuditLogFilterDto(
             NullIfWhiteSpace(entityName),
@@ -70,7 +70,7 @@ public partial class AuditLogFilterBar
             PageSize: pageSize,
             SortDescending: true);
 
-        await OnSearch.InvokeAsync(filter);
+        return OnSearch.InvokeAsync(filter);
     }
 
     private static string? NullIfWhiteSpace(string? value) =>

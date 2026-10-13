@@ -9,22 +9,22 @@ using Xunit;
 /// </summary>
 public abstract class CatalogTestDbContext : TestDbContext
 {
-    protected async Task SeedSubscriptionTiersAsync()
+    protected Task SeedSubscriptionTiersAsync()
     {
         var seeder = new SubscriptionTierSeeder(CreateAdminDbContextFactory(), new DefaultSubscriptionTierCatalog());
-        await seeder.SeedAsync(TestContext.Current.CancellationToken);
+        return seeder.SeedAsync(TestContext.Current.CancellationToken);
     }
 
-    protected async Task SeedGardenVolumeDiscountsAsync()
+    protected Task SeedGardenVolumeDiscountsAsync()
     {
         var seeder = new GardenVolumeDiscountSeeder(CreateAdminDbContextFactory(), new DefaultGardenVolumeDiscountCatalog());
-        await seeder.SeedAsync(TestContext.Current.CancellationToken);
+        return seeder.SeedAsync(TestContext.Current.CancellationToken);
     }
 
-    protected async Task SeedSubscriptionAddOnsAsync()
+    protected Task SeedSubscriptionAddOnsAsync()
     {
         var seeder = new SubscriptionAddOnSeeder(CreateAdminDbContextFactory(), new DefaultSubscriptionAddOnCatalog());
-        await seeder.SeedAsync(TestContext.Current.CancellationToken);
+        return seeder.SeedAsync(TestContext.Current.CancellationToken);
     }
 
     protected async Task SeedAllCatalogsAsync()

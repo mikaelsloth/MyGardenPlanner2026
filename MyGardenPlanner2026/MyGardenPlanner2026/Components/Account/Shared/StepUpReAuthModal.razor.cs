@@ -161,10 +161,10 @@ public partial class StepUpReAuthModal
         await ReAuthFailureTracker.RecordFailureAsync(currentUser.Id, ip);
     }
 
-    private async Task CancelAsync()
+    private Task CancelAsync()
     {
         ResetForm();
-        await OnCancel.InvokeAsync();
+        return OnCancel.InvokeAsync();
     }
 
     private void ResetForm()

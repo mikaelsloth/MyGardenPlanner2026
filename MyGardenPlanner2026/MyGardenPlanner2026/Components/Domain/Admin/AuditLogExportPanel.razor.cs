@@ -132,10 +132,10 @@ public partial class AuditLogExportPanel
         await TriggerDownloadAsync();
     }
 
-    private async Task ConfirmExportAsync()
+    private Task ConfirmExportAsync()
     {
         showThresholdConfirm = false;
-        await TriggerDownloadAsync();
+        return TriggerDownloadAsync();
     }
 
     private void CancelExportConfirm()

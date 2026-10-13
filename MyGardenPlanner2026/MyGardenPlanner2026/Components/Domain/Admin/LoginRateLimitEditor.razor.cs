@@ -44,11 +44,11 @@ public partial class LoginRateLimitEditor
     [LoggerMessage(EventId = 1077, Level = LogLevel.Information, Message = "Opdatering af login rate limit-policy afvist: {Reason}")]
     static partial void LoginRateLimitPolicySaveFailed(ILogger logger, string Reason);
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         stepUpGuard = new StepUpGuard(AuthorizationService, AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy);
         adminActionGuard = new AdminActionGuard(RateLimiter);
-        await LoadAsync();
+        return LoadAsync();
     }
 
     private async Task LoadAsync()

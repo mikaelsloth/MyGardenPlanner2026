@@ -129,20 +129,20 @@ public partial class OnboardingCheckoutPage
         }
     }
 
-    private async Task HandleConfigurationContinueAsync(PricingSelectionDto selection)
+    private Task HandleConfigurationContinueAsync(PricingSelectionDto selection)
     {
         configurationErrorMessage = null;
 
         if (string.IsNullOrWhiteSpace(gardenName))
         {
             configurationErrorMessage = "Angiv venligst et navn til din have.";
-            return;
+            return Task.CompletedTask;
         }
 
         pendingSelection = selection;
         currentStep = isAuthenticated ? CheckoutStep.Payment : CheckoutStep.ChooseAuthentication;
 
-        await Task.CompletedTask;
+        return Task.CompletedTask;
     }
 
     private void BackToConfiguration()

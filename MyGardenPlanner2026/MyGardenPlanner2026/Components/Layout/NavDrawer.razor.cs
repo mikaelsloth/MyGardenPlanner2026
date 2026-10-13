@@ -56,7 +56,7 @@ public partial class NavDrawer : IAsyncDisposable
         }
     }
 
-    private async Task HandleCloseAsync() => await OnClose.InvokeAsync();
+    private Task HandleCloseAsync() => OnClose.InvokeAsync();
 
     private async Task HandleKeyDownAsync(KeyboardEventArgs e)
     {

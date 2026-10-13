@@ -41,11 +41,11 @@ public partial class ReAuthenticationPolicyEditor
     [LoggerMessage(EventId = 1074, Level = LogLevel.Information, Message = "Opdatering af step-up re-auth-policy afvist: {Reason}")]
     static partial void ReAuthPolicySaveFailed(ILogger logger, string Reason);
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         stepUpGuard = new StepUpGuard(AuthorizationService, AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy);
         adminActionGuard = new AdminActionGuard(RateLimiter);
-        await LoadAsync();
+        return LoadAsync();
     }
 
     private async Task LoadAsync()

@@ -44,11 +44,11 @@ public partial class JitElevationPolicyEditor
     [LoggerMessage(EventId = 1073, Level = LogLevel.Information, Message = "Opdatering af JIT-eskaleringspolicy afvist: {Reason}")]
     static partial void JitPolicySaveFailed(ILogger logger, string Reason);
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         stepUpGuard = new StepUpGuard(AuthorizationService, AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy);
         adminActionGuard = new AdminActionGuard(RateLimiter);
-        await LoadAsync();
+        return LoadAsync();
     }
 
     private async Task LoadAsync()

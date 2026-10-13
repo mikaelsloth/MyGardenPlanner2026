@@ -22,5 +22,5 @@ public partial class StatusBanner
 
     private string Role => Variant == StatusBannerVariant.Danger ? "alert" : "status";
 
-    private async Task HandleDismissAsync() => await OnDismiss.InvokeAsync();
+    private Task HandleDismissAsync() => OnDismiss.InvokeAsync();
 }

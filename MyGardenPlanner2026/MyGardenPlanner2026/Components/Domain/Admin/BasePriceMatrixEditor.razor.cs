@@ -44,11 +44,11 @@ public partial class BasePriceMatrixEditor
     [LoggerMessage(EventId = 1069, Level = LogLevel.Information, Message = "Opdatering af basispris for abonnement '{TierId}' afvist: {Reason}")]
     static partial void TierPriceUpdateFailed(ILogger logger, Guid TierId, string Reason);
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         stepUpGuard = new StepUpGuard(AuthorizationService, AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy);
         adminActionGuard = new AdminActionGuard(RateLimiter);
-        await LoadAsync();
+        return LoadAsync();
     }
 
     private async Task LoadAsync()

@@ -43,11 +43,11 @@ public partial class AdminApiRateLimitEditor
     [LoggerMessage(EventId = 1076, Level = LogLevel.Information, Message = "Opdatering af admin-API rate limit-policy afvist: {Reason}")]
     static partial void AdminApiRateLimitPolicySaveFailed(ILogger logger, string Reason);
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         stepUpGuard = new StepUpGuard(AuthorizationService, AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy);
         adminActionGuard = new AdminActionGuard(RateLimiter);
-        await LoadAsync();
+        return LoadAsync();
     }
 
     private async Task LoadAsync()

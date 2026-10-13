@@ -47,11 +47,11 @@ public partial class JitElevationApprovalQueue
     [LoggerMessage(EventId = 1080, Level = LogLevel.Information, Message = "Afvisning af JIT-anmodning '{RequestId}' afvist: {Reason}")]
     static partial void JitElevationRejectionFailed(ILogger logger, Guid RequestId, string Reason);
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         stepUpGuard = new StepUpGuard(AuthorizationService, AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy);
         adminActionGuard = new AdminActionGuard(RateLimiter);
-        await LoadAsync();
+        return LoadAsync();
     }
 
     private async Task LoadAsync()

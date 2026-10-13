@@ -25,5 +25,5 @@ public partial class PricingCard
         _ => string.Empty
     };
 
-    private async Task HandleSelectAsync() => await OnSelectPlan.InvokeAsync(Tier.Id);
+    private Task HandleSelectAsync() => OnSelectPlan.InvokeAsync(Tier.Id);
 }

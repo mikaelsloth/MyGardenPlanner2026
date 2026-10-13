@@ -10,8 +10,8 @@ using Xunit;
 public class SecurityPolicySettingsSeederTests : TestDbContext
 {
     [Fact]
-    public async Task SeedAsync_JitElevationPolicySettings_IsIdempotent()
-        => await AssertSeedIsIdempotentAsync(() => new JitElevationPolicySettings
+    public Task SeedAsync_JitElevationPolicySettings_IsIdempotent()
+        => AssertSeedIsIdempotentAsync(() => new JitElevationPolicySettings
         {
             MinRequestedMinutes = 30,
             MaxRequestedMinutes = 90,
@@ -19,16 +19,16 @@ public class SecurityPolicySettingsSeederTests : TestDbContext
         });
 
     [Fact]
-    public async Task SeedAsync_ReAuthenticationPolicySettings_IsIdempotent()
-        => await AssertSeedIsIdempotentAsync(() => new ReAuthenticationPolicySettings { MaxAgeMinutes = 15 });
+    public Task SeedAsync_ReAuthenticationPolicySettings_IsIdempotent()
+        => AssertSeedIsIdempotentAsync(() => new ReAuthenticationPolicySettings { MaxAgeMinutes = 15 });
 
     [Fact]
-    public async Task SeedAsync_ReAuthFailureTrackerSettings_IsIdempotent()
-        => await AssertSeedIsIdempotentAsync(() => new ReAuthFailureTrackerSettings { Threshold = 5, WindowDays = 2 });
+    public Task SeedAsync_ReAuthFailureTrackerSettings_IsIdempotent()
+        => AssertSeedIsIdempotentAsync(() => new ReAuthFailureTrackerSettings { Threshold = 5, WindowDays = 2 });
 
     [Fact]
-    public async Task SeedAsync_AdminApiRateLimitSettings_IsIdempotent()
-        => await AssertSeedIsIdempotentAsync(() => new AdminApiRateLimitSettings
+    public Task SeedAsync_AdminApiRateLimitSettings_IsIdempotent()
+        => AssertSeedIsIdempotentAsync(() => new AdminApiRateLimitSettings
         {
             PermitLimit = 100,
             WindowSeconds = 60,
@@ -36,8 +36,8 @@ public class SecurityPolicySettingsSeederTests : TestDbContext
         });
 
     [Fact]
-    public async Task SeedAsync_LoginRateLimitSettings_IsIdempotent()
-        => await AssertSeedIsIdempotentAsync(() => new LoginRateLimitSettings { PermitLimit = 5, WindowSeconds = 60 });
+    public Task SeedAsync_LoginRateLimitSettings_IsIdempotent()
+        => AssertSeedIsIdempotentAsync(() => new LoginRateLimitSettings { PermitLimit = 5, WindowSeconds = 60 });
 
     [Fact]
     public async Task SeedAsync_EmptyTable_InsertsProvidedDefaultValues()

@@ -19,6 +19,8 @@ public static class JitRequestsPage
     public const string ApproveTabName = "Godkend anmodninger";
 
     public const string PendingLabel = "Afventer";
+    public const string ApprovedLabel = "Godkendt";
+    public const string RejectedLabel = "Afvist";
 
     private const string RequestHeadingText = "Anmod om midlertidig adgang";
     private const string QueueHeadingText = "Anmodninger til godkendelse";
@@ -39,6 +41,15 @@ public static class JitRequestsPage
 
     public static Task<IPage> OpenAsync(PlaywrightAppFixture fixture, string persona, int? width = null) =>
         OpenAsync(fixture, fixture.SmokeTestUsers[persona], width);
+
+    /// <summary>Åbner siden i en allerede logget ind side og venter, til den er interaktiv. Slutter på "Anmod om adgang".</summary>
+    public static async Task GotoAsync(PlaywrightAppFixture fixture, IPage page)
+    {
+        await page.GotoAsync($"{fixture.RootUri}{E2ERoutes.AdminJitRequests}");
+
+        await SmokePageAssertions.ExpectPageAsync(page, Title, Heading);
+        await WaitUntilInteractiveAsync(page);
+    }
 
     /// <summary>
     /// Kun en interaktiv side kan skifte fane. Godkend-fanens overskrift findes ikke i prerenderet
@@ -125,6 +136,40 @@ public static class JitRequestsPage
     /// <summary>Række i godkendelseskøen med den angivne årsag.</summary>
     public static ILocator QueueRow(IPage page, string reason) =>
         page.Locator(".jit-elevation-approval-queue tbody tr").Filter(new() { HasText = reason });
+
+    public static ILocator ApproveButton(IPage page, string reason) =>
+    QueueRow(page, reason).GetByRole(AriaRole.Button, new() { Name = "Godkend", Exact = true });
+
+    public static ILocator RejectButton(IPage page, string reason) =>
+        QueueRow(page, reason).GetByRole(AriaRole.Button, new() { Name = "Afvis", Exact = true });
+
+    /// <summary>Statusbeskeden på siden efter godkend/afvis (ryddes ved fanehop).</summary>
+    public static ILocator StatusMessage(IPage page) => page.Locator(".status-success");
+
+    /// <summary>Godkender rækken med step-up. Siden skal være åbnet via <see cref="OpenAsync(PlaywrightAppFixture, SmokeTestUser, int?)"/>.</summary>
+    public static Task ApproveAsync(IPage page, SmokeTestUser approver, string reason, string role) =>
+        DecideAsync(page, approver, reason, ApproveButton(page, reason), $"Anmodning om '{role}' er godkendt.");
+
+    /// <summary>Afviser rækken med step-up.</summary>
+    public static Task RejectAsync(IPage page, SmokeTestUser approver, string reason, string role) =>
+        DecideAsync(page, approver, reason, RejectButton(page, reason), $"Anmodning om '{role}' er afvist.");
+
+    /// <summary>
+    /// Åbner køen, venter på rækken, klikker (gentages, til step-up modalen vises — en frisk circuit
+    /// har intet re-auth-tidsstempel), gennemfører step-up og afventer beskeden og at rækken er væk.
+    /// </summary>
+    private static async Task DecideAsync(
+        IPage page, SmokeTestUser approver, string reason, ILocator button, string expectedMessage)
+    {
+        await SelectTabAsync(page, ApproveTabName);
+        await Assertions.Expect(QueueRow(page, reason)).ToBeVisibleAsync();
+
+        await StepUpModal.OpenAsync(page, () => button.ClickAsync());
+        await StepUpModal.CompleteAsync(page, approver);
+
+        await Assertions.Expect(StatusMessage(page)).ToContainTextAsync(expectedMessage);
+        await Assertions.Expect(QueueRow(page, reason)).ToHaveCountAsync(0);
+    }
 
     // @bind/@onchange udløses først ved blur.
     private static async Task SetValueAsync(ILocator input, string value)

@@ -322,6 +322,38 @@ Fanehop (SelectTab) rydder statusMessage og genindlæser editoren.
 Page-objects: SecurityPolicyPage (faner, #exportjob-retention, Gem, .status-success), StepUpModal (Dialog, felter, CompleteAsync).
 Tests: ManualSmoke/TjeklisteD/KorrektStepUpTests.
 ```
+```
+/admin/jit-requests — selektorer
+Titel: JIT-adgang – MyGardenPlanner. h1: JIT-adgang. Policy: RequireAnyAdminRole + MfaRequirement (direkte admin-rolle eller aktiv JIT). Brugere uden admin-rolle (Requester, Plain) kan ikke åbne siden.
+Faner: role=tab, valgt fane har klassen "active". "Anmod om adgang" (standard) og "Godkend anmodninger". Fanehop rydder statusbeskeden og genindlæser fanens komponent.
+Statusbesked ved godkend/afvis: .status-success[role=status] på siden.
+Anmod-fanen (JitElevationRequestForm):
+  #jit-request-role (select, værdier = rollenavne, standard SystemAdmin), #jit-request-minutes (number, standard 30, @onchange), #jit-request-reason (@bind).
+  Knap "Send anmodning": ikke idempotent, ingen succesbesked; årsagsfeltet ryddes ved succes.
+  Checkbox #jit-request-show-history ("Vis afviste/udløbne"): standard fra, så kun Afventer/Godkendt vises. Nulstilles ved fanehop.
+  Tabel "Mine anmodninger": Rolle, Minutter, Årsag, Status, Oprettet. Status-badges: "Afventer", "Godkendt", "Afvist", "Udløbet".
+  Fejl: .status-danger[role=alert] "Error: <ex.Message>". Uden for grænserne: "RequestedMinutes skal være mellem {min} og {max}." efterfulgt af "(Parameter 'minutes')" og "Actual value was N.".
+  Rate limit: "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen." Ingen step-up ved anmodning.
+Godkend-fanen (JitElevationApprovalQueue):
+  h3 "Anmodninger til godkendelse". Tabel: Ansøger (bruger-ID, ikke e-mail), Rolle, Minutter, Årsag, Anmodet, Handling.
+  Knapper pr. række: "Godkend" og "Afvis" (AdminActionGuard → StepUpGuard → StepUpReAuthModal).
+  Tom kø: "Ingen ventende anmodninger, du kan godkende."
+  Beskeder: "Anmodning om '<rolle>' er godkendt." / "Anmodning om '<rolle>' er afvist." Fejl: "Error: ...".
+Kø-regler (JitElevationService.GetPendingRequestsForApprovalAsync): kun Pending, ikke egne, og kun roller godkenderen er direkte medlem af (aktiv JIT tæller ikke).
+Køen indlæses ved fanevalg og opdateres ikke automatisk. Komponenten renderer først "Ingen ventende anmodninger …" og derefter data: negative asserts kan bestå for tidligt. Brug en positiv kontrol (en anden række) før en count == 0-assert.
+Adgang efter godkendelse: HasActiveElevationAsync læser DB ved hvert kald (ingen cache). Ny sideindlæsning er nok.
+Filer: AdminJitRequestsPage.razor (+ .cs), JitElevationRequestForm.razor (+ .cs), JitElevationApprovalQueue.razor (+ .cs), IJitElevationService.cs, JitElevationService.cs, JitElevationPolicyOptions.cs, AnyAdminRoleAuthorizationHandler.cs, JitRoleAuthorizationHandler.cs, AuthorizationServicesExtensions.cs
+```
+```
+/admin/security-policies — fanen JIT-eskalering
+Faner i rækkefølge: JIT-eskalering (aktiv ved indlæsning), Step-up re-auth, Fejl-tracker, Admin-API rate limit, Login rate limit, AuditLog-eksport.
+Felter (JitElevationPolicyEditor): #jit-min, #jit-max, #jit-sweep (type=number, @onchange → blur). Knap "Gem" (AdminActionGuard → StepUpGuard).
+Succes: "JIT-eskaleringspolicyen er opdateret og trådt i kraft." Fejl: .status-danger[role=alert] (ArgumentOutOfRange). Skeleton vises, til policyen er indlæst.
+Standard (JitElevationPolicy): Min 30, Max 90, Sweep 5 minutter.
+Sweep (RoleElevationExpirySweepService): kun Approved med ValidToUtc < nu → Expired. Pending og Rejected røres aldrig. Interval er mindst 1 minut. En ændret policy afbryder ventetiden, og sweep kører med det samme.
+Adgang afgøres uafhængigt af Status: HasActiveElevationAsync tjekker ValidToUtc direkte.
+Filer: AdminSecurityPolicyPage.razor (+ .cs), JitElevationPolicyEditor.razor (+ .cs), RoleElevationExpirySweepService.cs
+```
 
 Admin-sider (kendt fra PersonaAccessTests, ikke gennemgået med .razor)
 | Rute	Overskrift	Persona |
@@ -382,3 +414,10 @@ Login/LoginWith2fa/LoginWithRecoveryCode kalder MarkReAuthenticated i request-sc
 HttpContextCurrentUserAccessor: HttpContext er normalt null i en circuit → alarm fra StepUpReAuthModal får IP "ukendt".
 AuthorizationServicesExtensions: RequireGlobalAdminPolicy registreres to gange (første overskrives).
 ReAuthFailureTracker: alarm sendes kun ved præcis Threshold (==); ved 6+ fejl inden for vinduet sendes ingen ny alarm før tælleren nulstilles (succes i login/step-up). Fejl tælles samlet på tværs af login og step-up.
+JitElevationService.RequestElevationAsync: tjekker kun minutter inden for policyen og at rollen findes. Ansøgerens berettigelse til rollen tjekkes ikke, og en bruger kan anmode om en rolle, vedkommende allerede har (backlog).
+Brugere uden admin-rolle kan ikke åbne /admin/jit-requests (RequireAnyAdminRole), så de kan ikke anmode via UI.
+JitElevationService.ApproveElevationAsync kalder securityAlertService.AlertJitRequestedAsync ved godkendelse, ikke ved anmodning. Mailens indhold er ikke verificeret.
+JitElevationApprovalQueue viser ansøgerens bruger-ID (GUID), ikke e-mail.
+JitElevationRequestForm: "Send anmodning" giver ingen succesbesked, og fejlbeskeden indeholder .NET-teksterne "(Parameter 'minutes')" og "Actual value was N." (engelsk).
+JitElevationApprovalQueue: kun InvalidOperationException fanges ved godkend/afvis; andre fejl vælter circuiten.
+Sweep rører kun Approved. Pending anmodninger udløber aldrig og forbliver i køen.

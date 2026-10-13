@@ -16,17 +16,17 @@
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.12" />
 		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
-		<PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.7.23">
+		<PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.12.1">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
 		<PackageReference Include="NSubstitute" Version="6.2.0" />
 		<PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="3.53.3" />
-		<PackageReference Include="xunit.runner.visualstudio" Version="4.0.0">
+		<PackageReference Include="xunit.runner.visualstudio" Version="4.0.1">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="xunit.v3" Version="4.0.1" />
+		<PackageReference Include="xunit.v3" Version="4.0.2" />
 	</ItemGroup>
 
 	<ItemGroup>

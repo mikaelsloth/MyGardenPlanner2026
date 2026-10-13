@@ -319,7 +319,7 @@ Tests: ManualSmoke/TjeklisteD/ForkertPasswordModalTests.
 ```
 Step-up: E2E-appen kører med ReAuthenticationPolicy__MaxAgeMinutes=1 (appsettings: 15). Modal vises ved første handling i hver circuit; efter step-up gælder vinduet i samme circuit; reload = ny circuit = ny modal.
 Fanehop (SelectTab) rydder statusMessage og genindlæser editoren.
-Page-objects: SecurityPolicyPage (faner, #exportjob-retention, Gem, .status-success), StepUpModal (Dialog, felter, CompleteAsync).
+Page-objects: SecurityPolicyPage (faner, #exportjob-retention, Gem, .status-success), StepUpModal (Dialog, felter, CompleteAsync), JitRequestsPage (se /admin/jit-requests).
 Tests: ManualSmoke/TjeklisteD/KorrektStepUpTests.
 ```
 ```
@@ -343,6 +343,9 @@ Kø-regler (JitElevationService.GetPendingRequestsForApprovalAsync): kun Pending
 Køen indlæses ved fanevalg og opdateres ikke automatisk. Komponenten renderer først "Ingen ventende anmodninger …" og derefter data: negative asserts kan bestå for tidligt. Brug en positiv kontrol (en anden række) før en count == 0-assert.
 Adgang efter godkendelse: HasActiveElevationAsync læser DB ved hvert kald (ingen cache). Ny sideindlæsning er nok.
 Filer: AdminJitRequestsPage.razor (+ .cs), JitElevationRequestForm.razor (+ .cs), JitElevationApprovalQueue.razor (+ .cs), IJitElevationService.cs, JitElevationService.cs, JitElevationPolicyOptions.cs, AnyAdminRoleAuthorizationHandler.cs, JitRoleAuthorizationHandler.cs, AuthorizationServicesExtensions.cs
+Page-object JitRequestsPage: OpenAsync(fixture, bruger|persona, bredde?) logger ind, åbner siden og venter, til den er interaktiv (fanehop til Godkend og tilbage; Godkend-fanens overskrift findes ikke i prerenderet HTML). Slutter på "Anmod om adgang".
+SubmitRequestAsync klikker "Send anmodning" én gang (ikke idempotent). RequestAndWaitAsync venter på rækken. RequestRow/QueueRow(page, årsag), StatusBadge(række), Error(page), ShowHistoryAsync(page). Unik årsag: NewReason().
+Tests: ManualSmoke/TjeklisteE/.
 ```
 ```
 /admin/security-policies — fanen JIT-eskalering
@@ -386,10 +389,13 @@ Ikke indekseret endnu:
 | C1 | Skift e-mail | SkiftEmailTests | SkiftEmail_Email_`<bredde>` (5), SkiftEmail_EmailEfterSkift_`<bredde>` (5) | ikke kørt |
 | C2 | Skift password | SkiftPasswordTests | SkiftPassword_ChangePassword_`<bredde>` (5), SkiftPassword_ChangePasswordEfterSkift_`<bredde>` (5) | ikke kørt |
 | C3 | Download/slet personlige data | PersonligeDataTests | PersonligeData_PersonalData_`<bredde>` (5), PersonligeData_DeletePersonalData_`<bredde>` (5) | ikke kørt |
+| E1 | Anmodning uden for policy-grænser | AnmodningUdenForGraenserTests | JIT_E1_Fejl_`<bredde>` (3) | ikke kørt |
+| E2 | Ansøger ser ikke egen anmodning i kø | EgenAnmodningIKoeTests | JIT_E2_Koe_`<bredde>` (5) | ikke kørt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
 Tests ligger under ManualSmoke/TjeklisteB/.
 Tests ligger under ManualSmoke/TjeklisteC/.
+Tests ligger under ManualSmoke/TjeklisteE/.
 
 ## 6. Åbne observationer (ikke rettet)
 Lukket NavDrawer er kun skubbet ud af skærmen med transform, så linkene i den kan nås med Tab.
@@ -421,3 +427,4 @@ JitElevationApprovalQueue viser ansøgerens bruger-ID (GUID), ikke e-mail.
 JitElevationRequestForm: "Send anmodning" giver ingen succesbesked, og fejlbeskeden indeholder .NET-teksterne "(Parameter 'minutes')" og "Actual value was N." (engelsk).
 JitElevationApprovalQueue: kun InvalidOperationException fanges ved godkend/afvis; andre fejl vælter circuiten.
 Sweep rører kun Approved. Pending anmodninger udløber aldrig og forbliver i køen.
+JitRequestsPage: "Actual value was N." i fejlbeskeden er .NET's engelske tekst og bruges til at skelne to fejl i træk. Skifter den tekst (fx lokalisering), skal E1 justeres.

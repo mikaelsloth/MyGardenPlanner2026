@@ -39,5 +39,5 @@ public partial class InvitationStatusCard
         _ => "badge-accent"
     };
 
-    private async Task HandleRevokeAsync() => await OnRevoke.InvokeAsync(Invitation.Id);
+    private Task HandleRevokeAsync() => OnRevoke.InvokeAsync(Invitation.Id);
 }

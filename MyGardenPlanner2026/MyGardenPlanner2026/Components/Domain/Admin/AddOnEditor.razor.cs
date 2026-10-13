@@ -61,11 +61,11 @@ public partial class AddOnEditor
     [LoggerMessage(EventId = 1068, Level = LogLevel.Information, Message = "Sletning af tilkøb '{AddOnId}' afvist: {Reason}")]
     static partial void AddOnDeleteFailed(ILogger logger, Guid AddOnId, string Reason);
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         stepUpGuard = new StepUpGuard(AuthorizationService, AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy);
         adminActionGuard = new AdminActionGuard(RateLimiter);
-        await LoadAsync();
+        return LoadAsync();
     }
 
     private async Task LoadAsync()

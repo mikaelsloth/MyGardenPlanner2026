@@ -42,11 +42,11 @@ public partial class ReAuthFailureTrackerEditor
     [LoggerMessage(EventId = 1075, Level = LogLevel.Information, Message = "Opdatering af fejl-tracker-policy afvist: {Reason}")]
     static partial void ReAuthFailureTrackerPolicySaveFailed(ILogger logger, string Reason);
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         stepUpGuard = new StepUpGuard(AuthorizationService, AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy);
         adminActionGuard = new AdminActionGuard(RateLimiter);
-        await LoadAsync();
+        return LoadAsync();
     }
 
     private async Task LoadAsync()

@@ -48,10 +48,10 @@ public partial class JitElevationRequestForm
     [LoggerMessage(EventId = 1078, Level = LogLevel.Information, Message = "JIT-anmodning om rollen '{RoleName}' afvist: {Reason}")]
     static partial void JitElevationRequestSubmitFailed(ILogger logger, string RoleName, string Reason);
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         adminActionGuard = new AdminActionGuard(RateLimiter);
-        await LoadRequestsAsync();
+        return LoadRequestsAsync();
     }
 
     private async Task LoadRequestsAsync()

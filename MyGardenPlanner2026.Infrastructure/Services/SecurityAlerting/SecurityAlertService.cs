@@ -28,14 +28,14 @@ public sealed partial class SecurityAlertService(
         Message = "SIKKERHEDSALARM: Kritisk sikkerhedspolicy '{PolicyName}' blev ændret af bruger '{UserId}'.")]
     static partial void SecurityPolicyChanged(ILogger logger, string UserId, string PolicyName);
 
-    public async Task AlertFailedReAuthAsync(string userId, string ip, CancellationToken cancellationToken = default)
+    public Task AlertFailedReAuthAsync(string userId, string ip, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(ip);
 
         FailedReAuthDetected(logger, userId, ip);
 
-        await SendAsync(
+        return SendAsync(
             "[MyGardenPlanner] Sikkerhedsalarm: Gentagne fejlede login-/re-auth-forsøg",
             BuildBody(
                 $"Bruger '{userId}' har haft gentagne fejlede MFA/re-auth-forsøg.",
@@ -43,14 +43,14 @@ public sealed partial class SecurityAlertService(
             cancellationToken);
     }
 
-    public async Task AlertJitRequestedAsync(string requesterId, string role, CancellationToken cancellationToken = default)
+    public Task AlertJitRequestedAsync(string requesterId, string role, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(requesterId);
         ArgumentException.ThrowIfNullOrWhiteSpace(role);
 
         JitElevationGranted(logger, requesterId, role);
 
-        await SendAsync(
+        return SendAsync(
             "[MyGardenPlanner] Sikkerhedsalarm: JIT-admin-rettighed tildelt/aktiveret",
             BuildBody(
                 $"Der er tildelt/aktiveret midlertidig admin-rolle '{role}' til bruger '{requesterId}'.",
@@ -58,14 +58,14 @@ public sealed partial class SecurityAlertService(
             cancellationToken);
     }
 
-    public async Task AlertPolicyChangedAsync(string userId, string policyName, CancellationToken cancellationToken = default)
+    public Task AlertPolicyChangedAsync(string userId, string policyName, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(policyName);
 
         SecurityPolicyChanged(logger, userId, policyName);
 
-        await SendAsync(
+        return SendAsync(
             "[MyGardenPlanner] Sikkerhedsalarm: Sikkerhedspolicy ændret",
             BuildBody(
                 $"Bruger '{userId}' har ændret den kritiske sikkerhedspolicy '{policyName}'.",

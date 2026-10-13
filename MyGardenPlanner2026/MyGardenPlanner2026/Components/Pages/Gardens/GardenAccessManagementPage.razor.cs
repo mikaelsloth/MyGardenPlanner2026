@@ -70,12 +70,12 @@ public partial class GardenAccessManagementPage
         freeQuota = await OnboardingService.GetFreeInvitationQuotaAsync(GardenId, currentUserId!);
     }
 
-    private async Task HandleInvitationCreatedAsync((CreateInvitationResultDto Result, string Email) created)
+    private Task HandleInvitationCreatedAsync((CreateInvitationResultDto Result, string Email) created)
     {
         lastResult = created.Result;
         lastInvitedEmail = created.Email;
         statusMessage = $"Invitation sendt til {created.Email}.";
-        await ReloadDataAsync();
+        return ReloadDataAsync();
     }
 
     private async Task HandleRevokeAsync(Guid invitationId)

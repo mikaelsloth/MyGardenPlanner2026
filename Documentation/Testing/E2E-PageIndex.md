@@ -389,12 +389,16 @@ Ikke indekseret endnu:
 | C1 | Skift e-mail | SkiftEmailTests | SkiftEmail_Email_`<bredde>` (5), SkiftEmail_EmailEfterSkift_`<bredde>` (5) | ikke kørt |
 | C2 | Skift password | SkiftPasswordTests | SkiftPassword_ChangePassword_`<bredde>` (5), SkiftPassword_ChangePasswordEfterSkift_`<bredde>` (5) | ikke kørt |
 | C3 | Download/slet personlige data | PersonligeDataTests | PersonligeData_PersonalData_`<bredde>` (5), PersonligeData_DeletePersonalData_`<bredde>` (5) | ikke kørt |
+| D1 | Modal vises ved beskyttet handling (+ AccessDenied for Requester) | ModalVisesTests | StepUp_`<Side>`_Side (20), StepUp_`<Side>`_Modal (15), StepUp_AccessDenied_`<bredde>` (5) | grøn |
+| D2 | Forkert password/TOTP i modal + alarm ved 5. fejl | ForkertPasswordModalTests | StepUp_AdminSecurityPolicies_ForkertPassword_`<bredde>` (5) | grøn |
+| D3 | Korrekt step-up, vindue og udløb, NoMfa | KorrektStepUpTests | StepUp_AdminSecurityPolicies_Foer, StepUp_AdminSecurityPolicies_Efter (`<bredde>`) (6) | ikke kørt |
 | E1 | Anmodning uden for policy-grænser | AnmodningUdenForGraenserTests | JIT_E1_Fejl_`<bredde>` (3) | ikke kørt |
 | E2 | Ansøger ser ikke egen anmodning i kø | EgenAnmodningIKoeTests | JIT_E2_Koe_`<bredde>` (5) | ikke kørt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
 Tests ligger under ManualSmoke/TjeklisteB/.
 Tests ligger under ManualSmoke/TjeklisteC/.
+Tests ligger under ManualSmoke/TjeklisteD/.
 Tests ligger under ManualSmoke/TjeklisteE/.
 
 ## 6. Åbne observationer (ikke rettet)

@@ -55,11 +55,11 @@ public partial class VolumeDiscountEditor
     [LoggerMessage(EventId = 1072, Level = LogLevel.Information, Message = "Sletning af volumenrabat-trappe '{TierId}' afvist: {Reason}")]
     static partial void VolumeDiscountDeleteFailed(ILogger logger, Guid TierId, string Reason);
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         stepUpGuard = new StepUpGuard(AuthorizationService, AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy);
         adminActionGuard = new AdminActionGuard(RateLimiter);
-        await LoadAsync();
+        return LoadAsync();
     }
 
     private async Task LoadAsync()

@@ -18,21 +18,21 @@ public partial class PricingMatrixTable
     private BillingCycle selectedCycle = BillingCycle.Annual;
     private IReadOnlyList<SubscriptionTierDto>? tiers;
 
-    protected override async Task OnInitializedAsync() => await LoadTiersAsync();
+    protected override Task OnInitializedAsync() => LoadTiersAsync();
 
     private async Task LoadTiersAsync() =>
         tiers = await PricingService.GetAllTiersAsync(selectedCycle);
 
-    private async Task SelectCycleAsync(BillingCycle cycle)
+    private Task SelectCycleAsync(BillingCycle cycle)
     {
         if (selectedCycle == cycle)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         selectedCycle = cycle;
         tiers = null;
-        await LoadTiersAsync();
+        return LoadTiersAsync();
     }
 
     private IEnumerable<IGrouping<GardenAccessLevel, SubscriptionTierDto>> GroupedTiers =>

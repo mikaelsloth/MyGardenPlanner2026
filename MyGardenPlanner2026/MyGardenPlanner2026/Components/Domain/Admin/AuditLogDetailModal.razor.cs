@@ -28,7 +28,7 @@ public partial class AuditLogDetailModal
     private string FormattedOldValues => FormatJson(Entry?.OldValues);
     private string FormattedNewValues => FormatJson(Entry?.NewValues);
 
-    private async Task HandleCloseAsync() => await OnClose.InvokeAsync();
+    private Task HandleCloseAsync() => OnClose.InvokeAsync();
 
     private static string FormatJson(string? json)
     {

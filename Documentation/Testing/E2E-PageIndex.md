@@ -52,6 +52,8 @@ Indeks til manual smoke tests i MyGardenPlanner2026.Tests.E2E. Kun det, der er v
   * ChangePassword
   * PersonalData
   * DeletePersonalData
+  * TwoFactorAuthentication
+  * LoginWith2fa.
 
 Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 | Persona | Rolle | 2FA |
@@ -94,7 +96,15 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
   - SelectTabAsync(page, name), OpenExportJobTabAsync(page)
   - ReadRetentionAsync(page), SetRetentionAsync(page, value)
 
-- Ruter: + TwoFactorAuthentication, LoginWith2fa.
+ - TabNavigation.SelectAsync(page, name): vælger role=tab og gentager klikket, til fanen er "active"
+ - AmountParser.Parse(text): beløb ud fra cifrene i en vist pris (C2)
+ - AdminSubscriptionsPage (/admin/subscriptions, fanen Basispriser):
+   - OpenAsync(fixture, bruger, bredde?): login, åbn, vent til interaktiv (fanehop; 12 rækker)
+   - PriceInput/SaveButton/SavedMessage(page, lag, kategori), ReadPriceAsync, SetPriceAsync
+   - SaveTierAsync(page, bruger, lag, kategori): Gem, step-up hvis modalen vises, afventer besked
+ - PricingMatrix (/pricing, matrixen):
+   - OpenAnonymousAsync(fixture, bredde), SelectCycleAsync(page, cyklus), ExpectPriceAsync(page, lag, kategori, beløb)
+
 - LoginFlow: LoginAsync = SubmitPasswordAsync + (hvis 2FA) SubmitTwoFactorCodeAsync.
 - TwoFactorSetup (bruger skal være logget ind uden 2FA):
   - ReadSharedKeyAsync(page): læser <kbd>, giver Base32 med store bogstaver
@@ -159,7 +169,7 @@ Fil: Components/Pages/LandingPage.razor
 ```
 /pricing PricingPage
 Titel: Priser & Abonnement – MyGardenPlanner. h1: Priser & Abonnement.
-Indeholder PricingCalculator. Øvrige sektioner (matrix, rabattabel, tilkøbskort) er ikke E2E-verificeret.
+Indeholder PricingCalculator. Matrixen er E2E-verificeret (PricingMatrix). Rabattabel og tilkøbskort er ikke.
 PricingCalculator-selektorer:
 Container: .pricing-calculator
 Selects: #calc-level, #calc-category, #calc-cycle. Option-værdier er enum-navne.
@@ -395,6 +405,10 @@ Admin-sider (kendt fra PersonaAccessTests, ikke gennemgået med .razor)
 | /admin/security-policies | Sikkerhedspolicies | PolicyAdmin |
 | /admin/audit-log | AuditLog | Auditor |
 
+/admin/subscriptions: faner (role=tab) "Basispriser", "Volumen-rabatter", "Tilkøbsmoduler"; succesbesked .status-success (role=status).
+Basispriser: .base-price-matrix-editor, 12 rækker i tbody; inputs med labels "Årlig pris for <navn>", "Månedlig pris for <navn>", "Perpetual-pris for <navn>" (<navn> = "<lag> · <kategori>"); "Gem" pr. række (step-up); fejl .status-danger.
+/pricing matrix: .pricing-matrix-table-wrapper, cyklus-faner "Årligt"/"Månedligt"/"Engangsbeløb", h3 pr. lag, th[scope=row] = kategori, pris i td.numeric (C2).
+
 - Uden 2FA redirectes til /Account/Manage/EnableAuthenticator.
 - Uden admin-rolle redirectes til /Account/AccessDenied med teksten "Du har ikke adgang til denne ressource."
 
@@ -426,12 +440,14 @@ Ikke indekseret endnu:
 | E3 | Godkendelse → adgang straks | GodkendelseTests | JIT_E3_Foer_`<bredde>` (3), JIT_E3_Efter_`<bredde>` (3) | ikke kørt |
 | E4 | Afvisning → adgang nægtes | AfvisningTests | JIT_E4_AccessDenied_`<bredde>` (3) | ikke kørt |
 | E5 | Sweep markerer udløbne som Expired | SweepUdloebTests | JIT_E5_Udloebet_`<bredde>` (3) | ikke kørt |
+| F1 | Rediger basispris | RedigerBasisprisTests | Basispris_AdminSubscriptions_Gem, Basispris_Pricing_Efter (`<bredde>`) (4) | ikke kørt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
 Tests ligger under ManualSmoke/TjeklisteB/.
 Tests ligger under ManualSmoke/TjeklisteC/.
 Tests ligger under ManualSmoke/TjeklisteD/.
 Tests ligger under ManualSmoke/TjeklisteE/.
+Tests ligger under ManualSmoke/TjeklisteF/.
 
 ## 6. Åbne observationer (ikke rettet)
 Lukket NavDrawer er kun skubbet ud af skærmen med transform, så linkene i den kan nås med Tab.
@@ -465,3 +481,6 @@ JitElevationApprovalQueue: kun InvalidOperationException fanges ved godkend/afvi
 Sweep rører kun Approved. Pending anmodninger udløber aldrig og forbliver i køen.
 JitRequestsPage: "Actual value was N." i fejlbeskeden er .NET's engelske tekst og bruges til at skelne to fejl i træk. Skifter den tekst (fx lokalisering), skal E1 justeres.
 SweepUdloebTests (E5) ændrer JIT-policyen i engangsdatabasen (Min = 1, Sweep = 1) og gendanner den i finally. Afbrydes processen midt i, forbliver policyen ændret, til databasen droppes (lokalt ved dispose, i CI ved næste CreateAsync). Testen tager 2-4 minutter, fordi appen kører med rigtig tid.
+Basispriser deles med A2. F1 gendanner i finally; ved proces-kill kan databasen forblive ændret indtil næste CreateAsync (i CI) eller dropning (lokalt).
+TabNavigation.SelectAsync dubleres af JitRequestsPage.SelectTabAsync og SecurityPolicyPage.SelectTabAsync, og AmountParser af PricingCalculatorTests.ParseAmount (kandidater til dedup-PR).
+AdminActionGuard har en kvote pr. bruger (ukendt grænse). F1 gemmer 6 gange pr. bruger.

@@ -2,6 +2,7 @@
 
 using Microsoft.Playwright;
 using MyGardenPlanner2026.Tests.E2E.Smtp;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
@@ -19,6 +20,8 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
     private E2ETestDatabase _database = default!;
     private Process _appProcess = default!;
     private IPlaywright _playwright = default!;
+    private const int MaxCapturedLines = 200;
+    private readonly ConcurrentQueue<string> _appOutput = new();
 
     public string RootUri { get; private set; } = default!;
     public const string SecurityAlertRecipient = "sikkerhedsalarm@e2e.test";
@@ -43,7 +46,7 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         var port = GetFreeTcpPort();
         RootUri = $"http://127.0.0.1:{port}";
         _appProcess = StartAppProcess(
-            port, _database.AppConnectionString, _database.AdminConnectionString, SmtpServer.Port);
+            port, _database.AppConnectionString, _database.AdminConnectionString, SmtpServer.Port, CaptureAppOutput);
         await WaitUntilReadyAsync(TimeSpan.FromSeconds(60));
 
         _playwright = await Playwright.CreateAsync();
@@ -118,8 +121,27 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
     public Task<IPage> LoginAndGotoAsync(string persona, string path, int? viewportWidth = null) =>
     LoginAndGotoAsync(SmokeTestUsers[persona], path, viewportWidth);
 
+    /// <summary>
+    /// Appens stdout/stderr skal tømmes løbende: er de omdirigeret og ulæste, fylder røret op, og
+    /// konsol-loggeren blokerer requests, der logger (fx DB-sider med EF-kommandoer). De seneste linjer
+    /// gemmes til diagnostik, hvis appen crasher under opstart.
+    /// </summary>
+    private void CaptureAppOutput(string? line)
+    {
+        if (line is null)
+        {
+            return;
+        }
+
+        _appOutput.Enqueue(line);
+
+        while (_appOutput.Count > MaxCapturedLines && _appOutput.TryDequeue(out _))
+        {
+        }
+    }
+
     private static Process StartAppProcess(
-        int port, string appConnectionString, string adminConnectionString, int smtpPort)
+        int port, string appConnectionString, string adminConnectionString, int smtpPort, Action<string?> onOutput)
     {
         var dllPath = Path.Combine(AppContext.BaseDirectory, "MyGardenPlanner2026.dll");
 
@@ -163,8 +185,15 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         startInfo.EnvironmentVariables["Smtp__Password"] = "";
         startInfo.EnvironmentVariables["Smtp__AdminSecurityEmails__0"] = SecurityAlertRecipient;
 
-        return Process.Start(startInfo)
+        var process = Process.Start(startInfo)
             ?? throw new InvalidOperationException("Kunne ikke starte MyGardenPlanner2026.dll.");
+
+        process.OutputDataReceived += (_, e) => onOutput(e.Data);
+        process.ErrorDataReceived += (_, e) => onOutput(e.Data);
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+
+        return process;
     }
 
     private async Task WaitUntilReadyAsync(TimeSpan timeout)
@@ -176,11 +205,11 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         {
             if (_appProcess.HasExited)
             {
-                var stdOut = await _appProcess.StandardOutput.ReadToEndAsync();
-                var stdErr = await _appProcess.StandardError.ReadToEndAsync();
+                await _appProcess.WaitForExitAsync();
+
                 throw new InvalidOperationException(
                     $"Appen afsluttede uventet (exit code {_appProcess.ExitCode}) under opstart.\n" +
-                    $"StdOut:\n{stdOut}\nStdErr:\n{stdErr}");
+                    $"Seneste output:\n{string.Join(Environment.NewLine, _appOutput)}");
             }
 
             try

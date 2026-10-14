@@ -131,6 +131,23 @@ public static class JitRequestsPage
     public static Task ShowHistoryAsync(IPage page) =>
         page.Locator("#jit-request-show-history").CheckAsync();
 
+    /// <summary>
+    /// Genindlæser "Mine anmodninger" uden sideindlæsning: fanehop til Godkend og tilbage
+    /// opretter formularen på ny (listen hentes igen). "Vis afviste/udløbne" nulstilles ved hop,
+    /// derfor kan den krydses af igen.
+    /// </summary>
+    public static async Task RefreshRequestsAsync(IPage page, bool showHistory = false)
+    {
+        await SelectTabAsync(page, ApproveTabName);
+        await SelectTabAsync(page, RequestTabName);
+        await Assertions.Expect(RequestHeading(page)).ToBeVisibleAsync();
+
+        if (showHistory)
+        {
+            await ShowHistoryAsync(page);
+        }
+    }
+
     // --- Godkend-fanen ---
 
     /// <summary>Række i godkendelseskøen med den angivne årsag.</summary>

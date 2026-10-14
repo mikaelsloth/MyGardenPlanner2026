@@ -77,7 +77,7 @@
   a. PolicyAdmin læser de nuværende værdier i `#jit-min` og `#jit-sweep`, sætter Min = 1 og Sweep = 1 og klikker "Gem" (step-up).
   b. A anmoder om `SystemAdmin`, 1 minut, unik årsag.
   c. Admin godkender (step-up).
-  d. A's liste kontrolleres gentagne gange (op til ca. 150 sekunder) med "Vis afviste/udløbne" valgt.
+  d. A's liste kontrolleres gentagne gange (op til 3 minutter) med "Vis afviste/udløbne" valgt. Skærmbillederne tages bagefter på nye sider for A i hver bredde.  
   e. Til sidst gendanner PolicyAdmin de oprindelige værdier (`finally`).
 - Forventet:
   a. "JIT-eskaleringspolicyen er opdateret og trådt i kraft."

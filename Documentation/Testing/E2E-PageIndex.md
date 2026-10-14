@@ -373,6 +373,7 @@ SubmitRequestAsync klikker "Send anmodning" én gang (ikke idempotent). RequestA
 GotoAsync(fixture, page): åbner siden i en allerede logget ind side. ApproveAsync/RejectAsync(page, godkender, årsag, rolle): fanehop til Godkend, venter på rækken, klikker (gentages til step-up modalen vises), StepUpModal.CompleteAsync, afventer beskeden og at rækken er væk. Kræver en frisk circuit (ingen re-auth i forvejen).
 AccessAssertions.ExpectAccessDeniedAsync(page): URL indeholder /Account/AccessDenied, titel/h1 "Adgang nægtet", teksten "Du har ikke adgang til denne ressource.".
 Tests: ManualSmoke/TjeklisteE/.
+RefreshRequestsAsync(page, showHistory?): genindlæser "Mine anmodninger" via fanehop Godkend → Anmod (ingen sideindlæsning). "Vis afviste/udløbne" nulstilles ved hop og krydses af igen med showHistory.
 ```
 ```
 /admin/security-policies — fanen JIT-eskalering
@@ -383,6 +384,7 @@ Standard (JitElevationPolicy): Min 30, Max 90, Sweep 5 minutter.
 Sweep (RoleElevationExpirySweepService): kun Approved med ValidToUtc < nu → Expired. Pending og Rejected røres aldrig. Interval er mindst 1 minut. En ændret policy afbryder ventetiden, og sweep kører med det samme.
 Adgang afgøres uafhængigt af Status: HasActiveElevationAsync tjekker ValidToUtc direkte.
 Filer: AdminSecurityPolicyPage.razor (+ .cs), JitElevationPolicyEditor.razor (+ .cs), RoleElevationExpirySweepService.cs
+Page-object SecurityPolicyPage (JIT): OpenJitTabAsync (fanehop væk og tilbage = forbundet kredsløb; venter på #jit-min), ReadJitPolicyAsync → JitPolicyValues(Min, Max, Sweep), SaveJitPolicyAsync(page, bruger, min, sweep) (sætter Min og Sweep, Gem, step-up, afventer succesbesked).
 ```
 
 Admin-sider (kendt fra PersonaAccessTests, ikke gennemgået med .razor)
@@ -423,6 +425,7 @@ Ikke indekseret endnu:
 | E2 | Ansøger ser ikke egen anmodning i kø | EgenAnmodningIKoeTests | JIT_E2_Koe_`<bredde>` (5) | ikke kørt |
 | E3 | Godkendelse → adgang straks | GodkendelseTests | JIT_E3_Foer_`<bredde>` (3), JIT_E3_Efter_`<bredde>` (3) | ikke kørt |
 | E4 | Afvisning → adgang nægtes | AfvisningTests | JIT_E4_AccessDenied_`<bredde>` (3) | ikke kørt |
+| E5 | Sweep markerer udløbne som Expired | SweepUdloebTests | JIT_E5_Udloebet_`<bredde>` (3) | ikke kørt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
 Tests ligger under ManualSmoke/TjeklisteB/.
@@ -461,3 +464,4 @@ JitElevationRequestForm: "Send anmodning" giver ingen succesbesked, og fejlbeske
 JitElevationApprovalQueue: kun InvalidOperationException fanges ved godkend/afvis; andre fejl vælter circuiten.
 Sweep rører kun Approved. Pending anmodninger udløber aldrig og forbliver i køen.
 JitRequestsPage: "Actual value was N." i fejlbeskeden er .NET's engelske tekst og bruges til at skelne to fejl i træk. Skifter den tekst (fx lokalisering), skal E1 justeres.
+SweepUdloebTests (E5) ændrer JIT-policyen i engangsdatabasen (Min = 1, Sweep = 1) og gendanner den i finally. Afbrydes processen midt i, forbliver policyen ændret, til databasen droppes (lokalt ved dispose, i CI ved næste CreateAsync). Testen tager 2-4 minutter, fordi appen kører med rigtig tid.

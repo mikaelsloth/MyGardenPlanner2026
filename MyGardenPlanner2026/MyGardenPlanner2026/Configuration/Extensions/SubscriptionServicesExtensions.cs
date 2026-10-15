@@ -19,6 +19,7 @@ public static class SubscriptionServicesExtensions
 
         services.AddScoped<ISubscriptionPricingService, SubscriptionPricingService>();
         services.AddScoped<ISubscriptionAddOnService, SubscriptionAddOnService>();
+        services.AddScoped<IGardenVolumeDiscountService, GardenVolumeDiscountService>();
         services.AddScoped<IPricingCalculatorService, PricingCalculatorService>();
 
         services.AddScoped<ISubscriptionTierAdminService, SubscriptionTierAdminService>();

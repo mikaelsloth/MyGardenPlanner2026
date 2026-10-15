@@ -122,7 +122,8 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
     - ReadNameAsync, ReadPriceAsync, SetPriceAsync, SaveAddOnAsync(page, bruger, type, navn)
     - AddDuplicateAsync(page, bruger, type, navn): forventer afvisning; DeleteLastRowAsync(page, bruger)
 - PricingAddOns (/pricing, tilkøbskort): Cards(page), Card/Price(page, navn, cyklus), ExpectPriceAsync(page, navn, cyklus, beløb)
-
+- PricingVolumeDiscounts.PercentCell/ExpectPercentAsync(page, rækkenavn, procent): rabattabellen på /pricing (række fx "2 - 5 haver")
+   
 - LoginFlow: LoginAsync = SubmitPasswordAsync + (hvis 2FA) SubmitTwoFactorCodeAsync.
 - TwoFactorSetup (bruger skal være logget ind uden 2FA):
   - ReadSharedKeyAsync(page): læser <kbd>, giver Base32 med store bogstaver
@@ -188,7 +189,7 @@ Fil: Components/Pages/LandingPage.razor
 /pricing PricingPage
 Titel: Priser & Abonnement – MyGardenPlanner. h1: Priser & Abonnement.
 Indeholder PricingCalculator. Matrixen er E2E-verificeret (PricingMatrix). Rabattabel og tilkøbskort er ikke.
-GardenVolumeDiscountTable læser standardkataloget (ikke databasen) og afspejler ikke admin-ændringer; calculatoren læser databasen.
+Rabattabellen (.garden-volume-discount-table; th[scope=row] = ‘<min> - <max> haver’ / ‘1 have’ / ‘<min>+ haver’, td = ‘<procent> % af basispris’) læser databasen via IGardenVolumeDiscountService.
 PricingCalculator-selektorer:
 Container: .pricing-calculator
 Selects: #calc-level, #calc-category, #calc-cycle. Option-værdier er enum-navne.
@@ -508,5 +509,4 @@ SweepUdloebTests (E5) ændrer JIT-policyen i engangsdatabasen (Min = 1, Sweep = 
 Basispriser deles med A2. F1 gendanner i finally; ved proces-kill kan databasen forblive ændret indtil næste CreateAsync (i CI) eller dropning (lokalt).
 TabNavigation.SelectAsync dubleres af JitRequestsPage.SelectTabAsync og SecurityPolicyPage.SelectTabAsync, og AmountParser af PricingCalculatorTests.ParseAmount (kandidater til dedup-PR).
 AdminActionGuard har en kvote pr. bruger (ukendt grænse). F1 gemmer 6 gange pr. bruger.
-GardenVolumeDiscountTable (/pricing) viser standardkataloget og ikke de redigerede trin (formodet fejl, afventer afklaring).
 PricingCalculatorTests (A2) har egne kopier af calculator-selektorer og ParseAmount/ParseNumber, og af pris-polling; kandidat til dedup mod PricingCalculatorPage, AmountParser og PriceAssertions.

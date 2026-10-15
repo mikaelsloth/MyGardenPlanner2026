@@ -46,9 +46,9 @@
   - 5 aktive haver: rabat-trappe 85, subtotal og total 714,00
   - 6 aktive haver: rabat-trappe 75, subtotal og total 756,00
 - Forventet: succesbesked "Volumenrabat-trappe fra <n> haver er opdateret." efter hver Gem; calculatoren viser de nye beløb; gendannelse lykkes.
-- Bemærk: rabattabellen "Have-abonnement (trapperabat)" på `/pricing` læser standardkataloget og ikke databasen og kan derfor ikke verificeres, før den er afklaret.
+- Bemærk: Rabattabellen på /pricing viser de nye trin: 2-5 haver 85 % og 6-10 haver 75 % af basispris.
 - Skærmbilleder (768, 1280): `Volumenrabat_AdminSubscriptions_Gem` og `Volumenrabat_Pricing_Efter`.
-- Filer: AdminSubscriptionManagementPage.razor(.cs), VolumeDiscountEditor.razor(.cs), GardenVolumeDiscountAdminService.cs, PricingPage.razor(.cs), PricingCalculatorService.cs, GardenVolumeDiscountTable.razor(.cs), DefaultGardenVolumeDiscountCatalog.cs
+- Filer: AdminSubscriptionManagementPage.razor(.cs), VolumeDiscountEditor.razor(.cs), GardenVolumeDiscountAdminService.cs, PricingPage.razor(.cs), PricingCalculatorService.cs, GardenVolumeDiscountTable.razor(.cs), DefaultGardenVolumeDiscountCatalog.cs, GardenVolumeDiscountService.cs
 
 ### F3. Tilkøb
 - Route: `/admin/subscriptions`, fane "Tilkøbsmoduler"

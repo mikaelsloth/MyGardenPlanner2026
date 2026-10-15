@@ -41,4 +41,21 @@ public static class SubscriptionTestData
         Guid? id = null) =>
         new(id ?? Guid.NewGuid(), level, category, name ?? $"{level} · {category}", description,
             price, billingCycle, isFeatured, [], new Dictionary<string, string>());
+
+    /// <summary>Volumenrabat-trin (DTO). Default: 2-5 haver, 90 % af basispris.</summary>
+    public static GardenVolumeDiscountTierDto VolumeDiscountTier(
+        int minGardens = 2, int? maxGardens = 5, decimal priceMultiplier = 0.90m, Guid? id = null) =>
+        new(id ?? Guid.NewGuid(), minGardens, maxGardens, priceMultiplier);
+
+    /// <summary>De syv standardtrin (Prismatrix tabel 2), sorteret efter MinGardens.</summary>
+    public static IReadOnlyList<GardenVolumeDiscountTierDto> DefaultVolumeDiscountTiers() =>
+    [
+        VolumeDiscountTier(1, 1, 1.00m),
+        VolumeDiscountTier(2, 5, 0.90m),
+        VolumeDiscountTier(6, 10, 0.80m),
+        VolumeDiscountTier(11, 50, 0.70m),
+        VolumeDiscountTier(51, 100, 0.60m),
+        VolumeDiscountTier(101, 200, 0.50m),
+        VolumeDiscountTier(201, null, 0.40m),
+    ];
 }

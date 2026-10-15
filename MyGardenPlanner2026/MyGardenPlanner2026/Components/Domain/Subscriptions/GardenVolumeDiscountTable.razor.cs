@@ -6,16 +6,12 @@ using MyGardenPlanner2026.Core.Contracts.Layer1;
 public partial class GardenVolumeDiscountTable
 {
     [Inject]
-    private IGardenVolumeDiscountCatalog Catalog { get; set; } = default!;
+    private IGardenVolumeDiscountService DiscountService { get; set; } = default!;
 
     private IReadOnlyList<GardenVolumeDiscountTierDto>? tiers;
 
-    protected override void OnInitialized()
-    {
-        tiers = [.. Catalog.GetDefaultTiers()
-            .OrderBy(t => t.MinGardens)
-            .Select(t => new GardenVolumeDiscountTierDto(t.Id, t.MinGardens, t.MaxGardens, t.PriceMultiplier))];
-    }
+    protected override async Task OnInitializedAsync() =>
+        tiers = await DiscountService.GetAllTiersAsync();
 
     private static string RangeLabel(GardenVolumeDiscountTierDto tier) =>
         tier.MaxGardens is null

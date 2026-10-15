@@ -14,14 +14,14 @@ using Xunit;
 public sealed class PricingPageTests : PricingTestContext
 {
     private readonly ISubscriptionPricingService pricingService = Substitute.For<ISubscriptionPricingService>();
-    private readonly IGardenVolumeDiscountCatalog volumeDiscountCatalog = Substitute.For<IGardenVolumeDiscountCatalog>();
+    private readonly IGardenVolumeDiscountService volumeDiscountService = Substitute.For<IGardenVolumeDiscountService>();
 
     public PricingPageTests()
     {
         pricingService.GetAllTiersAsync(Arg.Any<BillingCycle>(), Arg.Any<CancellationToken>()).Returns([]);
-        volumeDiscountCatalog.GetDefaultTiers().Returns([]);
+        volumeDiscountService.GetAllTiersAsync(Arg.Any<CancellationToken>()).Returns([]);
         Services.AddSingleton(pricingService);
-        Services.AddSingleton(volumeDiscountCatalog);
+        Services.AddSingleton(volumeDiscountService);
     }
 
     [Fact]
@@ -38,5 +38,16 @@ public sealed class PricingPageTests : PricingTestContext
         uri.Should().Contain($"level={GardenAccessLevel.HaveArkitekt}");
         uri.Should().Contain($"category={AccessCategory.Editor}");
         uri.Should().Contain($"cycle={BillingCycle.Annual}");
+    }
+
+    [Fact]
+    public void Render_ShowsVolumeDiscountTiersFromService()
+    {
+        volumeDiscountService.GetAllTiersAsync(Arg.Any<CancellationToken>())
+            .Returns(SubscriptionTestData.DefaultVolumeDiscountTiers());
+
+        var cut = Render<PricingPage>();
+
+        cut.FindAll(".garden-volume-discount-table tbody tr").Should().HaveCount(7);
     }
 }

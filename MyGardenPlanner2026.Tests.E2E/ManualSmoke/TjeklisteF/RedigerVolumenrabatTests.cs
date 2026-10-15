@@ -9,8 +9,7 @@ using MyGardenPlanner2026.Tests.E2E.Screenshots;
 /// <summary>
 /// Tjekliste F2: rediger volumenrabat. Ny SystemAdmin ændrer prisfaktoren på to trin (2-5 haver og
 /// 6-10 haver) på /admin/subscriptions, én række ad gangen, med step-up ved første gem. En anonym bruger
-/// ser den nye rabat i pricing-calculatoren (rabattabellen på /pricing læser standardkataloget og ikke
-/// databasen, så den kan ikke bruges). Trinene deles med A2 og gendannes altid i finally via en ny circuit.
+/// ser den nye rabat i pricing-calculatoren og i rabattabellen. Trinene deles med A2 og gendannes altid i finally via en ny circuit.
 /// OldMultiplier er seed (Prismatrix tabel 2) og kontrolleres før redigering sammen med Min/Max, så en
 /// ugendannet tidligere kørsel eller forskudt række opdages. Skærmbilleder: Volumenrabat_AdminSubscriptions_Gem
 /// og Volumenrabat_Pricing_Efter (&lt;bredde&gt;).
@@ -24,13 +23,13 @@ public sealed class RedigerVolumenrabatTests(PlaywrightAppFixture fixture)
     private const string TestName = "Volumenrabat";
 
     private sealed record DiscountChange(
-        int RowIndex, int MinGardens, int? MaxGardens, decimal OldMultiplier, decimal NewMultiplier);
+        int RowIndex, int MinGardens, int? MaxGardens, decimal OldMultiplier, decimal NewMultiplier, string RangeLabel);
 
     // Rækker sorteres efter MinGardens: 0 = 1 have, 1 = 2-5, 2 = 6-10.
     private static readonly DiscountChange[] Changes =
     [
-        new(RowIndex: 1, MinGardens: 2, MaxGardens: 5, OldMultiplier: 0.90m, NewMultiplier: 0.85m),
-        new(RowIndex: 2, MinGardens: 6, MaxGardens: 10, OldMultiplier: 0.80m, NewMultiplier: 0.75m),
+        new(RowIndex: 1, MinGardens: 2, MaxGardens: 5, OldMultiplier: 0.90m, NewMultiplier: 0.85m, RangeLabel: "2 - 5 haver"),
+        new(RowIndex: 2, MinGardens: 6, MaxGardens: 10, OldMultiplier: 0.80m, NewMultiplier: 0.75m, RangeLabel: "6 - 10 haver"),
     ];
 
     // HaveArkitekt · Editor · Annual (168,00 pr. have), 0 arkiverede, ingen tilkøb.
@@ -77,6 +76,12 @@ public sealed class RedigerVolumenrabatTests(PlaywrightAppFixture fixture)
 
             // Anonym bruger: calculatoren bruger de redigerede trin.
             var pricing = await PricingMatrix.OpenAnonymousAsync(fixture, width);
+            foreach (var change in Changes)
+            {
+                await PricingVolumeDiscounts.ExpectPercentAsync(
+                    pricing, change.RangeLabel, change.NewMultiplier * 100m);
+            }
+
             await PricingCalculatorPage.WaitUntilInteractiveAsync(pricing);
 
             foreach (var check in Checks)

@@ -16,4 +16,15 @@ public static class AmountParser
             ? null
             : decimal.Parse(digits, CultureInfo.InvariantCulture) / 100m;
     }
+
+    /// <summary>Heltal, brøk (fx "4,25") og procent ("90 %"). Kun til små tal uden tusindtalsseparator.</summary>
+    public static decimal? ParseNumber(string text)
+    {
+        var cleaned = new string([.. text.Where(c => char.IsDigit(c) || c is ',' or '.')])
+            .Replace(',', '.');
+
+        return decimal.TryParse(cleaned, NumberStyles.Number, CultureInfo.InvariantCulture, out var number)
+            ? number
+            : null;
+    }
 }

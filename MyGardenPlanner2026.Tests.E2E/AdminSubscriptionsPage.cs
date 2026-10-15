@@ -81,38 +81,18 @@ public static class AdminSubscriptionsPage
     }
 
     /// <summary>
-    /// Klikker "Gem" på rækken, gennemfører step-up, hvis modalen vises (en frisk circuit har intet
-    /// re-auth-tidsstempel; efterfølgende gem inden for vinduet har ingen modal), og afventer
-    /// rækkens succesbesked. Må ikke kaldes to gange for samme række i samme side (beskeden består).
+    /// Klikker "Gem" på rækken og gennemfører step-up, hvis modalen vises (se <see cref="AdminSaveFlow"/>).
+    /// Må ikke kaldes to gange for samme række i samme side (beskeden består).
     /// </summary>
-    public static async Task SaveTierAsync(
-        IPage page, SmokeTestUser user, GardenAccessLevel level, AccessCategory category)
-    {
-        await SaveButton(page, level, category).ClickAsync();
-
-        var message = SavedMessage(page, level, category);
-        await BlazorInteraction.WaitUntilAsync(
-            async () => await StepUpModal.Dialog(page).IsVisibleAsync() || await message.IsVisibleAsync(),
-            TimeSpan.FromSeconds(10));
-
-        if (await StepUpModal.Dialog(page).IsVisibleAsync())
-        {
-            await StepUpModal.CompleteAsync(page, user);
-        }
-
-        try
-        {
-            await Assertions.Expect(message).ToBeVisibleAsync();
-        }
-        catch (PlaywrightException)
-        {
-            var errors = await Error(page).AllTextContentsAsync();
-
-            throw new InvalidOperationException(
-                $"Gem af '{TierName(level, category)}' gav ingen succesbesked. URL: '{page.Url}'. " +
-                $"Fejltekst på siden: [{string.Join(" | ", errors)}]");
-        }
-    }
+    public static Task SaveTierAsync(
+        IPage page, SmokeTestUser user, GardenAccessLevel level, AccessCategory category) =>
+        AdminSaveFlow.SaveWithStepUpAsync(
+            page,
+            user,
+            SaveButton(page, level, category),
+            SavedMessage(page, level, category),
+            Error(page),
+            $"Gem af '{TierName(level, category)}'");
 
     private static string LabelPrefix(BillingCycle cycle) => cycle switch
     {

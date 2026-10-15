@@ -18,4 +18,19 @@ public sealed class AmountParserTests
     {
         AmountParser.Parse("kr. /år").Should().BeNull();
     }
+
+    [Theory]
+    [InlineData("85 %", 85.0)]
+    [InlineData("5", 5.0)]
+    [InlineData("4,25", 4.25)]
+    public void ParseNumber_TalOgProcent_Dekodes(string text, double expected)
+    {
+        AmountParser.ParseNumber(text).Should().Be((decimal)expected);
+    }
+
+    [Fact]
+    public void ParseNumber_UdenCifre_GiverNull()
+    {
+        AmountParser.ParseNumber("%").Should().BeNull();
+    }
 }

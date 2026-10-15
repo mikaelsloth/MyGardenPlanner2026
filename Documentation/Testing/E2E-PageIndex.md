@@ -105,6 +105,15 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
  - PricingMatrix (/pricing, matrixen):
    - OpenAnonymousAsync(fixture, bredde), SelectCycleAsync(page, cyklus), ExpectPriceAsync(page, lag, kategori, beløb)
 
+- AmountParser.ParseNumber(text): heltal, brøk og procent (fx "85 %")
+- AdminSaveFlow.SaveWithStepUpAsync(page, bruger, gemKnap, succesbesked, fejl, beskrivelse): Gem, step-up hvis modalen vises, afventer unik succesbesked
+- AdminVolumeDiscountsPage (/admin/subscriptions, fanen Volumen-rabatter):
+    - OpenAsync(fixture, bruger, bredde?): login, åbn, vælg fane, vent på 7 rækker
+    - Rækker findes via indeks (ens labels), sorteret efter MinGardens
+    - ReadMin/ReadMax/ReadMultiplierAsync, SetMultiplierAsync, SaveTierAsync(page, bruger, indeks, minGardens)
+- PricingCalculatorPage (/pricing):
+    - WaitUntilInteractiveAsync(page), CalculateAsync(page, lag, kategori, cyklus, aktive, arkiverede), ExpectResultAsync(page, vægtet, rabat%, subtotal, tilkøb, total)
+
 - LoginFlow: LoginAsync = SubmitPasswordAsync + (hvis 2FA) SubmitTwoFactorCodeAsync.
 - TwoFactorSetup (bruger skal være logget ind uden 2FA):
   - ReadSharedKeyAsync(page): læser <kbd>, giver Base32 med store bogstaver
@@ -170,6 +179,7 @@ Fil: Components/Pages/LandingPage.razor
 /pricing PricingPage
 Titel: Priser & Abonnement – MyGardenPlanner. h1: Priser & Abonnement.
 Indeholder PricingCalculator. Matrixen er E2E-verificeret (PricingMatrix). Rabattabel og tilkøbskort er ikke.
+GardenVolumeDiscountTable læser standardkataloget (ikke databasen) og afspejler ikke admin-ændringer; calculatoren læser databasen.
 PricingCalculator-selektorer:
 Container: .pricing-calculator
 Selects: #calc-level, #calc-category, #calc-cycle. Option-værdier er enum-navne.
@@ -339,6 +349,7 @@ Filer: DeletePersonalData.razor (+ .cs)
 Rolle- og 2FA-beskyttet (RequireGlobalAdmin / RequirePolicyAdmin / RequireAuditViewer / RequireAnyAdminRole + MfaRequirement). Siden kræver ikke "recent auth".
 Step-up: StepUpGuard.RunAsync omkring følsomme handlinger → StepUpReAuthModal (role=dialog, "Bekræft din identitet").
 Modal vises ved første handling i en frisk circuit (ReAuthenticationService er Scoped; login markerer kun request-scope). MaxAgeMinutes default 15.
+Volumen-rabatter: .volume-discount-editor, 7 rækker i tbody; inputs med id min-/max-/mult-<id> (labels er ens på alle rækker); "Gem" og "Slet" pr. række; "Tilføj trappe" (#add-tier); "Nulstil til standardkatalog" (+ "Ja, nulstil"). Succesbesked: "Volumenrabat-trappe fra <n> haver er opdateret."
 Selektorer: #step-up-password, #step-up-totp (kun 2FA), knapper "Bekræft"/"Annullér", fejl .status-message.status-danger[role=alert].
 Tests: ManualSmoke/TjeklisteD/ModalVisesTests (StepUpModal-hjælperen).
 ```
@@ -441,6 +452,7 @@ Ikke indekseret endnu:
 | E4 | Afvisning → adgang nægtes | AfvisningTests | JIT_E4_AccessDenied_`<bredde>` (3) | ikke kørt |
 | E5 | Sweep markerer udløbne som Expired | SweepUdloebTests | JIT_E5_Udloebet_`<bredde>` (3) | ikke kørt |
 | F1 | Rediger basispris | RedigerBasisprisTests | Basispris_AdminSubscriptions_Gem, Basispris_Pricing_Efter (`<bredde>`) (4) | ikke kørt |
+| F2 | Rediger volumenrabat | RedigerVolumenrabatTests | Volumenrabat_AdminSubscriptions_Gem, Volumenrabat_Pricing_Efter (`<bredde>`) (4) | ikke kørt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
 Tests ligger under ManualSmoke/TjeklisteB/.
@@ -484,3 +496,5 @@ SweepUdloebTests (E5) ændrer JIT-policyen i engangsdatabasen (Min = 1, Sweep = 
 Basispriser deles med A2. F1 gendanner i finally; ved proces-kill kan databasen forblive ændret indtil næste CreateAsync (i CI) eller dropning (lokalt).
 TabNavigation.SelectAsync dubleres af JitRequestsPage.SelectTabAsync og SecurityPolicyPage.SelectTabAsync, og AmountParser af PricingCalculatorTests.ParseAmount (kandidater til dedup-PR).
 AdminActionGuard har en kvote pr. bruger (ukendt grænse). F1 gemmer 6 gange pr. bruger.
+GardenVolumeDiscountTable (/pricing) viser standardkataloget og ikke de redigerede trin (formodet fejl, afventer afklaring).
+PricingCalculatorTests (A2) har egne kopier af calculator-selektorer og ParseNumber/ParseAmount; kandidat til dedup mod PricingCalculatorPage og AmountParser.

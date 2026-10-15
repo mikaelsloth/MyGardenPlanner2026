@@ -114,6 +114,15 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 - PricingCalculatorPage (/pricing):
     - WaitUntilInteractiveAsync(page), CalculateAsync(page, lag, kategori, cyklus, aktive, arkiverede), ExpectResultAsync(page, vægtet, rabat%, subtotal, tilkøb, total)
 
+- PriceAssertions.ExpectValueAsync(locator, forventet, parse, beskrivelse) / ExpectAmountAsync(locator, forventet, beskrivelse): poller en vist værdi (5 sek.)
+- AdminSaveFlow.RejectWithStepUpAsync(page, bruger, knap, fejl, forventetTekst): klik, step-up hvis modalen vises, afventer forventet fejltekst
+- AdminAddOnsPage (/admin/subscriptions, fanen Tilkøbsmoduler):
+    - OpenAsync(fixture, bruger, bredde?): login, åbn, vælg fane, vent på første række (antal kontrolleres ikke)
+    - Rækker findes via type (første kolonne): Row/NameInput/PriceInput/SaveButton(page, type)
+    - ReadNameAsync, ReadPriceAsync, SetPriceAsync, SaveAddOnAsync(page, bruger, type, navn)
+    - AddDuplicateAsync(page, bruger, type, navn): forventer afvisning; DeleteLastRowAsync(page, bruger)
+- PricingAddOns (/pricing, tilkøbskort): Cards(page), Card/Price(page, navn, cyklus), ExpectPriceAsync(page, navn, cyklus, beløb)
+
 - LoginFlow: LoginAsync = SubmitPasswordAsync + (hvis 2FA) SubmitTwoFactorCodeAsync.
 - TwoFactorSetup (bruger skal være logget ind uden 2FA):
   - ReadSharedKeyAsync(page): læser <kbd>, giver Base32 med store bogstaver
@@ -418,7 +427,9 @@ Admin-sider (kendt fra PersonaAccessTests, ikke gennemgået med .razor)
 
 /admin/subscriptions: faner (role=tab) "Basispriser", "Volumen-rabatter", "Tilkøbsmoduler"; succesbesked .status-success (role=status).
 Basispriser: .base-price-matrix-editor, 12 rækker i tbody; inputs med labels "Årlig pris for <navn>", "Månedlig pris for <navn>", "Perpetual-pris for <navn>" (<navn> = "<lag> · <kategori>"); "Gem" pr. række (step-up); fejl .status-danger.
+Tilkøbsmoduler: .add-on-editor, 5 rækker i tbody (første kolonne = AddOnType); inputs med id name-/unit-/annual-/monthly-/perpetual-<id> (labels er ens); "Gem" og "Slet" pr. række; "Tilføj tilkøb" (#new-type, #new-name, …); "Nulstil til standardkatalog". Succesbesked "Tilkøb '<navn>' er opdateret."; duplikat-fejl "Der findes allerede et tilkøb med typen '<type>'." (.status-danger, uden "Error:").
 /pricing matrix: .pricing-matrix-table-wrapper, cyklus-faner "Årligt"/"Månedligt"/"Engangsbeløb", h3 pr. lag, th[scope=row] = kategori, pris i td.numeric (C2).
+Tilkøbskort: .addon-card med h4.addon-card-title; priser i .addon-card-prices span ("<beløb> /år", "<beløb> /md.", "<beløb> (engang)", C2 da-DK). Læser databasen.
 
 - Uden 2FA redirectes til /Account/Manage/EnableAuthenticator.
 - Uden admin-rolle redirectes til /Account/AccessDenied med teksten "Du har ikke adgang til denne ressource."
@@ -453,6 +464,7 @@ Ikke indekseret endnu:
 | E5 | Sweep markerer udløbne som Expired | SweepUdloebTests | JIT_E5_Udloebet_`<bredde>` (3) | ikke kørt |
 | F1 | Rediger basispris | RedigerBasisprisTests | Basispris_AdminSubscriptions_Gem, Basispris_Pricing_Efter (`<bredde>`) (4) | ikke kørt |
 | F2 | Rediger volumenrabat | RedigerVolumenrabatTests | Volumenrabat_AdminSubscriptions_Gem, Volumenrabat_Pricing_Efter (`<bredde>`) (4) | ikke kørt |
+| F3 | Tilkøb og duplikat | RedigerTilkoebTests | Tilkoeb_AdminSubscriptions_Gem, Tilkoeb_AdminSubscriptions_Duplikat, Tilkoeb_Pricing_Efter (`<bredde>`) (6) | ikke kørt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
 Tests ligger under ManualSmoke/TjeklisteB/.
@@ -497,4 +509,4 @@ Basispriser deles med A2. F1 gendanner i finally; ved proces-kill kan databasen 
 TabNavigation.SelectAsync dubleres af JitRequestsPage.SelectTabAsync og SecurityPolicyPage.SelectTabAsync, og AmountParser af PricingCalculatorTests.ParseAmount (kandidater til dedup-PR).
 AdminActionGuard har en kvote pr. bruger (ukendt grænse). F1 gemmer 6 gange pr. bruger.
 GardenVolumeDiscountTable (/pricing) viser standardkataloget og ikke de redigerede trin (formodet fejl, afventer afklaring).
-PricingCalculatorTests (A2) har egne kopier af calculator-selektorer og ParseNumber/ParseAmount; kandidat til dedup mod PricingCalculatorPage og AmountParser.
+PricingCalculatorTests (A2) har egne kopier af calculator-selektorer og ParseAmount/ParseNumber, og af pris-polling; kandidat til dedup mod PricingCalculatorPage, AmountParser og PriceAssertions.

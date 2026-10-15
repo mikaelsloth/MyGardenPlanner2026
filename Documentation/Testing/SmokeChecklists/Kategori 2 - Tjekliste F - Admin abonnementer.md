@@ -51,21 +51,26 @@
 - Filer: AdminSubscriptionManagementPage.razor(.cs), VolumeDiscountEditor.razor(.cs), GardenVolumeDiscountAdminService.cs, PricingPage.razor(.cs), PricingCalculatorService.cs, GardenVolumeDiscountTable.razor(.cs), DefaultGardenVolumeDiscountCatalog.cs
 
 ### F3. Tilkøb
-- Route: `/admin/subscriptions` 
-- Bruger: Ny SystemAdmin B
+- Route: `/admin/subscriptions`, fane "Tilkøbsmoduler"
+- Bruger: Ny SystemAdmin B (2FA). Ingen godkender.
 - Handling:
-  a. B Rediger 2-4 felter på fanen med Tilkøbs priser
-  b. B Gennemfør stepup-modal
-  c. A godkender på `/admin/jit-requests`
-  d. B gemmer ændringer
-  e. B opretter duplikeret linje
-  f. B gemmer ændringer
-  g. B Logout og tjek `/pricing` siden som anonym bruger
-  h. Nulstil ændringer
+  a. B læser navn og pris på de to rækker (kontrol af seed)
+  b. B redigerer og gemmer én række ad gangen (Gem er pr. række; step-up ved første gem)
+  c. B forsøger at oprette et tilkøb med en type, der allerede findes ("Tilføj tilkøb")
+  d. En anonym bruger åbner `/pricing` og kontrollerer tilkøbskortene
+  e. B gendanner i en ny circuit (ny step-up); en evt. ekstra række slettes først
+- Ændringer:
+
+| Tilkøb (type) | Cyklus | Før | Efter |
+| ------ | ------ | ------ | ------ |
+| Bedforslag (Niveau 2) (BedforslagNiveau2) | Monthly | 15,00 | 17,50 |
+| Artefaktpakke A (ArtefaktpakkeA) | Annual | 48,00 | 55,00 |
+
 - Forventet:
-  a. Alle processer a-d forløber uden fejl
-  b. e-f skal fejle
-  c. Pricing siden viser de nye priser
-- Skærmbillede: ja, admin side ved Gem og Pricing side efter opdatering (768, 1280)
-- Filer: Components\Pages\Admin\AdminSubscriptionManagementPage.razor(.cs), Components\Domain\Admin\AddOnEditor.razor(.cs), Components\Pages\PricingPage.razor(.cs), 
-    Components\Domain\Subscriptions\SubscriptionAddOnCard.razor(.cs), Components\Pages\Admin\AdminJitRequestsPage.razor(.cs), PricingCalculatorService.cs
+  - a-b: succesbesked "Tilkøb '<navn>' er opdateret." efter hver Gem
+  - c: fejlen "Der findes allerede et tilkøb med typen 'BedforslagNiveau2'."; stadig 5 rækker; ingen række "e2e-duplikat"
+  - d: de nye priser på kortene (17,50 kr. /md. og 55,00 kr. /år); stadig 5 kort; intet kort "e2e-duplikat"
+  - e: gendannelse lykkes
+- Skærmbilleder (768, 1280): `Tilkoeb_AdminSubscriptions_Gem` (efter sidste gem), `Tilkoeb_AdminSubscriptions_Duplikat` (fejlen) og `Tilkoeb_Pricing_Efter`.
+- Filer: AdminSubscriptionManagementPage.razor(.cs), AddOnEditor.razor(.cs), SubscriptionAddOnAdminService.cs, PricingPage.razor(.cs), SubscriptionAddOnCard.razor(.cs), SubscriptionAddOnService.cs, DefaultSubscriptionAddOnCatalog.cs
+ 

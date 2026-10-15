@@ -1,6 +1,5 @@
 ﻿namespace MyGardenPlanner2026.Tests.E2E;
 
-using FluentAssertions;
 using Microsoft.Playwright;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Layer1;
@@ -71,25 +70,7 @@ public static class PricingCalculatorPage
         await input.BlurAsync(); // @bind/@onchange udløses først ved blur
     }
 
-    private static async Task ExpectValueAsync(
-        IPage page, string label, decimal expected, Func<string, decimal?> parse)
-    {
-        var value = ResultValue(page, label);
-        string? lastText = null;
-
-        var matched = await BlazorInteraction.WaitUntilAsync(async () =>
-        {
-            try
-            {
-                lastText = await value.InnerTextAsync(new() { Timeout = 1000 });
-                return parse(lastText) == expected;
-            }
-            catch (PlaywrightException)
-            {
-                return false; // resultatet er midlertidigt væk under genberegning
-            }
-        }, TimeSpan.FromSeconds(5));
-
-        matched.Should().BeTrue($"'{label}' skulle være {expected}, men var '{lastText}'");
-    }
+    private static Task ExpectValueAsync(
+        IPage page, string label, decimal expected, Func<string, decimal?> parse) =>
+        PriceAssertions.ExpectValueAsync(ResultValue(page, label), expected, parse, $"'{label}'");
 }

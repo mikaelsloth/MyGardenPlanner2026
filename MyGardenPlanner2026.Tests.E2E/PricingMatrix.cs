@@ -1,6 +1,5 @@
 ﻿namespace MyGardenPlanner2026.Tests.E2E;
 
-using FluentAssertions;
 using Microsoft.Playwright;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Layer1;
@@ -39,28 +38,10 @@ public static class PricingMatrix
             $"xpath=.//h3[normalize-space()='{level.ToDisplayName()}']" +
             $"/following-sibling::div[1]//tr[normalize-space(th)='{category}']/td");
 
-    public static async Task ExpectPriceAsync(
-        IPage page, GardenAccessLevel level, AccessCategory category, decimal expected)
-    {
-        var cell = PriceCell(page, level, category);
-        string? lastText = null;
-
-        var matched = await BlazorInteraction.WaitUntilAsync(async () =>
-        {
-            try
-            {
-                lastText = await cell.InnerTextAsync(new() { Timeout = 1000 });
-                return AmountParser.Parse(lastText) == expected;
-            }
-            catch (PlaywrightException)
-            {
-                return false; // tabellen er midlertidigt væk under indlæsning
-            }
-        }, TimeSpan.FromSeconds(5));
-
-        matched.Should().BeTrue(
-            $"prisen for {level} · {category} skulle være {expected}, men var '{lastText}'");
-    }
+    public static Task ExpectPriceAsync(
+        IPage page, GardenAccessLevel level, AccessCategory category, decimal expected) =>
+        PriceAssertions.ExpectAmountAsync(
+            PriceCell(page, level, category), expected, $"prisen for {level} · {category}");
 
     private static string CycleLabel(BillingCycle cycle) => cycle switch
     {

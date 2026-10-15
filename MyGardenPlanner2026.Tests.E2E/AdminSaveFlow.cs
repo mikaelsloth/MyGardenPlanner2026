@@ -42,4 +42,32 @@ public static class AdminSaveFlow
                 $"Fejltekst på siden: [{string.Join(" | ", errors)}]");
         }
     }
+
+    /// <summary>
+    /// Klikker på en handling, der forventes afvist af servicen (fx duplikat), gennemfører step-up hvis
+    /// modalen vises (guarden kører før servicen) og afventer fejlteksten. Fejlteksten må ikke være stale,
+    /// dvs. der må ikke findes en tidligere fejl med samme tekst på siden.
+    /// </summary>
+    public static async Task RejectWithStepUpAsync(
+        IPage page,
+        SmokeTestUser user,
+        ILocator actionButton,
+        ILocator errorMessage,
+        string expectedError)
+    {
+        await actionButton.ClickAsync();
+
+        var error = errorMessage.Filter(new() { HasText = expectedError });
+
+        await BlazorInteraction.WaitUntilAsync(
+            async () => await StepUpModal.Dialog(page).IsVisibleAsync() || await error.IsVisibleAsync(),
+            TimeSpan.FromSeconds(10));
+
+        if (await StepUpModal.Dialog(page).IsVisibleAsync())
+        {
+            await StepUpModal.CompleteAsync(page, user);
+        }
+
+        await Assertions.Expect(error).ToBeVisibleAsync();
+    }
 }

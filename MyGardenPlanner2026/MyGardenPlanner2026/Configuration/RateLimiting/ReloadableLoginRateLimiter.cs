@@ -7,7 +7,7 @@ using MyGardenPlanner2026.Infrastructure.Services.RateLimiting;
 using System.Threading.RateLimiting;
 
 /// <summary>
-/// PartitionedRateLimiter&lt;HttpContext&gt;-wrapper til det globale login rate limit
+/// PartitionedRateLimiter<HttpContext>-wrapper til det globale login rate limit
 /// (§4.1). RateLimiterOptions.GlobalLimiter tildeles ÉN gang ved opstart (i
 /// AddRateLimiter's configure-callback), så rebuild-mekanikken (samme mønster som
 /// AdminActionRateLimiter) ligger INDE i limiter-instansen frem for i DI-registreringen.

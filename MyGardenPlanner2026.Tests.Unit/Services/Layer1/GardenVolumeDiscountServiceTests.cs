@@ -41,7 +41,7 @@ public class GardenVolumeDiscountServiceTests : TestDbContext
     [Fact]
     public async Task GetAllTiersAsync_WithDefaultCatalogTiers_ReturnsSevenTiersWithOpenLastTier()
     {
-        await SeedAsync(new DefaultGardenVolumeDiscountCatalog().GetDefaultTiers().ToArray());
+        await SeedAsync([.. new DefaultGardenVolumeDiscountCatalog().GetDefaultTiers()]);
         var service = CreateService();
 
         var result = await service.GetAllTiersAsync(TestContext.Current.CancellationToken);
@@ -55,7 +55,7 @@ public class GardenVolumeDiscountServiceTests : TestDbContext
     [Fact]
     public async Task GetAllTiersAsync_ReflectsUpdatedMultiplier_WithoutCaching()
     {
-        await SeedAsync(new DefaultGardenVolumeDiscountCatalog().GetDefaultTiers().ToArray());
+        await SeedAsync([.. new DefaultGardenVolumeDiscountCatalog().GetDefaultTiers()]);
         var service = CreateService();
 
         await using (var context = CreateDbContext())

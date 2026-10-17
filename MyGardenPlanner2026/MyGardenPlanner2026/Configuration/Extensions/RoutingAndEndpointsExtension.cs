@@ -12,7 +12,7 @@ public static class RoutingAndEndpointsExtension
         app.MapRazorComponents<App>()
             .AddInteractiveServerRenderMode()
             .AddInteractiveWebAssemblyRenderMode()
-            .AddAdditionalAssemblies(typeof(MyGardenPlanner2026.Client._Imports).Assembly);
+            .AddAdditionalAssemblies(typeof(Client._Imports).Assembly);
 
         app.MapAdditionalIdentityEndpoints();
         app.MapAuditLogEndpoints();

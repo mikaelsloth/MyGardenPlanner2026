@@ -19,6 +19,45 @@ public static class SecurityPolicyPage
     /// <summary>Statusbeskeden på siden (ryddes ved fanskift).</summary>
     public static ILocator Success(IPage page) => page.Locator(".status-success");
 
+    // --- Faner (Tjekliste G) ---
+
+    /// <summary>Fane på /admin/security-policies. Component indgår i skærmbilledenavne (ingen mellemrum).</summary>
+    public sealed record PolicyTab(string Name, string Component);
+
+    public static readonly PolicyTab Jit = new(JitTabName, "Jit");
+    public static readonly PolicyTab ReAuth = new("Step-up re-auth", "ReAuth");
+    public static readonly PolicyTab FailureTracker = new("Fejl-tracker", "FejlTracker");
+    public static readonly PolicyTab AdminApiRateLimit = new("Admin-API rate limit", "AdminApi");
+    public static readonly PolicyTab LoginRateLimit = new(OtherTabName, "Login");
+    public static readonly PolicyTab ExportJob = new("AuditLog-eksport", "AuditLogEksport");
+
+    /// <summary>Alle faner i sidens rækkefølge.</summary>
+    public static IReadOnlyList<PolicyTab> AllTabs { get; } =
+        [Jit, ReAuth, FailureTracker, AdminApiRateLimit, LoginRateLimit, ExportJob];
+
+    /// <summary>Id'er på policyfelterne (input) pr. fane.</summary>
+    public static class FieldIds
+    {
+        public const string JitMin = "jit-min";
+        public const string JitMax = "jit-max";
+        public const string JitSweep = "jit-sweep";
+        public const string ReAuthMaxAge = "reauth-maxage";
+        public const string FailureThreshold = "failtrack-threshold";
+        public const string FailureWindowDays = "failtrack-windowdays";
+        public const string AdminApiPermit = "adminapi-permit";
+        public const string AdminApiWindow = "adminapi-window";
+        public const string AdminApiSegments = "adminapi-segments";
+        public const string LoginPermit = "login-permit";
+        public const string LoginWindow = "login-window";
+        public const string ExportRetention = "exportjob-retention";
+        public const string ExportMaxActive = "exportjob-maxactive";
+    }
+
+    public static ILocator Field(IPage page, string id) => page.Locator($"#{id}");
+
+    /// <summary>Fejlbesked fra en policy-editor (role=alert).</summary>
+    public static ILocator Error(IPage page) => page.Locator(".security-policy-editor .status-danger");
+
     /// <summary>
     /// Vælger en fane og gentager klikket, til fanen er aktiv (uden et forbundet kredsløb ignoreres klik).
     /// Aktiv fane har klassen "active"; aria-selected er en bool-attribut uden værdi.

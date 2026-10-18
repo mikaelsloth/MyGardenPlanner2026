@@ -230,16 +230,16 @@ public class AuditLogExportPanelTests : BunitContext
     }
 
     [Fact]
-    public void ReAuthExpired_ClickingEksportér_DoesNotConsumePermitBeforeStepUp()
+    public async Task ReAuthExpired_ClickingEksportér_DoesNotConsumePermitBeforeStepUp()
     {
         authorizationService.AuthorizeAsync(Arg.Any<ClaimsPrincipal>(), Arg.Any<object?>(), Arg.Any<string>())
             .Returns(Task.FromResult(AuthorizationResult.Failed()));
 
         var cut = RenderPanel();
-        cut.Find("button.btn-primary").Click();
+        await cut.Find("button.btn-primary").ClickAsync();
 
         cut.ShouldShowStepUpModal();
-        rateLimiter.DidNotReceive().TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await rateLimiter.DidNotReceive().TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

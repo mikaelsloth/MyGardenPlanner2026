@@ -135,6 +135,27 @@ public static class SecurityPolicyPage
         await Assertions.Expect(Success(page)).ToContainTextAsync(savedText);
     }
 
+    public static Task<int> ReadFieldAsync(IPage page, string id) =>
+    ReadNumberAsync(Field(page, id));
+
+    /// <summary>
+    /// Åbner en ny circuit (ny step-up) og skriver kun værdien tilbage, hvis den afviger fra originalen,
+    /// dvs. hvis testen nåede at ændre den og ikke selv gendannede. Kontrollerer altid slutværdien.
+    /// </summary>
+    public static async Task RestoreFieldAsync(
+        PlaywrightAppFixture fixture, IPage previous, PolicyTab tab, string fieldId,
+        SmokeTestUser user, int original)
+    {
+        var page = await OpenInNewCircuitAsync(fixture, previous, tab, fieldId);
+
+        if (await ReadFieldAsync(page, fieldId) != original)
+        {
+            await SaveWithStepUpAsync(page, user, fieldId, original, tab.SavedText);
+        }
+
+        await ExpectFieldValueAsync(page, fieldId, original);
+    }
+
     /// <summary>
     /// Vælger en fane og gentager klikket, til fanen er aktiv (uden et forbundet kredsløb ignoreres klik).
     /// Aktiv fane har klassen "active"; aria-selected er en bool-attribut uden værdi.

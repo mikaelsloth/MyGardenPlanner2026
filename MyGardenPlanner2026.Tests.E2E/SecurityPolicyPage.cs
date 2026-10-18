@@ -22,14 +22,29 @@ public static class SecurityPolicyPage
     // --- Faner (Tjekliste G) ---
 
     /// <summary>Fane på /admin/security-policies. Component indgår i skærmbilledenavne (ingen mellemrum).</summary>
-    public sealed record PolicyTab(string Name, string Component);
+    public sealed record PolicyTab(string Name, string Component, string SavedText, string PolicyName);
 
-    public static readonly PolicyTab Jit = new(JitTabName, "Jit");
-    public static readonly PolicyTab ReAuth = new("Step-up re-auth", "ReAuth");
-    public static readonly PolicyTab FailureTracker = new("Fejl-tracker", "FejlTracker");
-    public static readonly PolicyTab AdminApiRateLimit = new("Admin-API rate limit", "AdminApi");
-    public static readonly PolicyTab LoginRateLimit = new(OtherTabName, "Login");
-    public static readonly PolicyTab ExportJob = new("AuditLog-eksport", "AuditLogEksport");
+    public static readonly PolicyTab Jit = new(
+        JitTabName, "Jit", JitSavedText, "JitElevationPolicy");
+
+    public static readonly PolicyTab ReAuth = new(
+        "Step-up re-auth", "ReAuth",
+        "Step-up re-auth-policyen er opdateret og trådt i kraft.", "ReAuthenticationPolicy");
+
+    public static readonly PolicyTab FailureTracker = new(
+        "Fejl-tracker", "FejlTracker",
+        "Fejl-tracker-policyen er opdateret og trådt i kraft.", "ReAuthFailureTrackerPolicy");
+
+    public static readonly PolicyTab AdminApiRateLimit = new(
+        "Admin-API rate limit", "AdminApi",
+        "Admin-API rate limit-policyen er opdateret og trådt i kraft.", "AdminApiRateLimitPolicy");
+
+    public static readonly PolicyTab LoginRateLimit = new(
+        OtherTabName, "Login",
+        "Login rate limit-policyen er opdateret og trådt i kraft.", "LoginRateLimitPolicy");
+
+    public static readonly PolicyTab ExportJob = new(
+        "AuditLog-eksport", "AuditLogEksport", ExportJobSavedText, "AuditLogExportJobPolicy");
 
     /// <summary>Alle faner i sidens rækkefølge.</summary>
     public static IReadOnlyList<PolicyTab> AllTabs { get; } =
@@ -57,6 +72,68 @@ public static class SecurityPolicyPage
 
     /// <summary>Fejlbesked fra en policy-editor (role=alert).</summary>
     public static ILocator Error(IPage page) => page.Locator(".security-policy-editor .status-danger");
+
+    private const string PageTitle = "Sikkerhedspolicies – MyGardenPlanner";
+    private const string PageHeading = "Sikkerhedspolicies";
+
+    /// <summary>Logger ind som brugeren og åbner siden og fanen i en frisk circuit.</summary>
+    public static async Task<IPage> OpenAsync(
+        PlaywrightAppFixture fixture, SmokeTestUser user, PolicyTab tab, string readyFieldId, int? width = null)
+    {
+        var page = await fixture.LoginAndGotoAsync(user, E2ERoutes.AdminSecurityPolicies, width);
+
+        await SmokePageAssertions.ExpectPageAsync(page, PageTitle, PageHeading);
+        await OpenTabAsync(page, tab, readyFieldId);
+
+        return page;
+    }
+
+    /// <summary>
+    /// Ny side i samme browser-context: allerede logget ind (ingen login, så login-limiten røres ikke),
+    /// men en ny circuit uden re-auth-tidsstempel, så step-up modalen vises igen.
+    /// </summary>
+    public static async Task<IPage> OpenInNewCircuitAsync(
+        PlaywrightAppFixture fixture, IPage existing, PolicyTab tab, string readyFieldId)
+    {
+        var page = await existing.Context.NewPageAsync();
+        await page.GotoAsync($"{fixture.RootUri}{E2ERoutes.AdminSecurityPolicies}");
+
+        await SmokePageAssertions.ExpectPageAsync(page, PageTitle, PageHeading);
+        await OpenTabAsync(page, tab, readyFieldId);
+
+        return page;
+    }
+
+    /// <summary>Fanehop til en anden fane og tilbage beviser et forbundet kredsløb; derefter afventes feltet.</summary>
+    public static async Task OpenTabAsync(IPage page, PolicyTab tab, string readyFieldId)
+    {
+        var hopTab = tab == LoginRateLimit ? Jit : LoginRateLimit;
+
+        await SelectTabAsync(page, hopTab.Name);
+        await SelectTabAsync(page, tab.Name);
+        await Assertions.Expect(Field(page, readyFieldId)).ToBeVisibleAsync();
+    }
+
+    public static Task ExpectFieldValueAsync(IPage page, string id, int expected) =>
+        Assertions.Expect(Field(page, id)).ToHaveValueAsync(expected.ToString(CultureInfo.InvariantCulture));
+
+    public static Task SetFieldAsync(IPage page, string id, int value) =>
+        SetNumberAsync(Field(page, id), value);
+
+    /// <summary>
+    /// Sætter ét felt, klikker "Gem" og gennemfører step-up. Kræver en frisk circuit
+    /// (modalen skal vises). Slutter på fanens succesbesked.
+    /// </summary>
+    public static async Task SaveWithStepUpAsync(
+        IPage page, SmokeTestUser user, string fieldId, int value, string savedText)
+    {
+        await SetFieldAsync(page, fieldId, value);
+
+        await StepUpModal.OpenAsync(page, () => SaveButton(page).ClickAsync());
+        await StepUpModal.CompleteAsync(page, user);
+
+        await Assertions.Expect(Success(page)).ToContainTextAsync(savedText);
+    }
 
     /// <summary>
     /// Vælger en fane og gentager klikket, til fanen er aktiv (uden et forbundet kredsløb ignoreres klik).

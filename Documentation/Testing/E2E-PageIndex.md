@@ -466,6 +466,13 @@ Ikke indekseret endnu:
 | F1 | Rediger basispris | RedigerBasisprisTests | Basispris_AdminSubscriptions_Gem, Basispris_Pricing_Efter (`<bredde>`) (4) | ikke kørt |
 | F2 | Rediger volumenrabat | RedigerVolumenrabatTests | Volumenrabat_AdminSubscriptions_Gem, Volumenrabat_Pricing_Efter (`<bredde>`) (4) | ikke kørt |
 | F3 | Tilkøb og duplikat | RedigerTilkoebTests | Tilkoeb_AdminSubscriptions_Gem, Tilkoeb_AdminSubscriptions_Duplikat, Tilkoeb_Pricing_Efter (`<bredde>`) (6) | ikke kørt |
+| G1 | Sikkerhedspolicy-faner loader seedede værdier | SikkerhedspolicyFanerTests | Sikkerhedspolicies_G1_`<Fane>`_`<bredde>` (12) | ikke kørt |
+| G2a | JIT-policy træder i kraft | JitPolicyIKraftTests | ingen | ikke kørt |
+| G2b | Fejl-tracker-policy træder i kraft | FejlTrackerPolicyIKraftTests | ingen | ikke kørt |
+| G2c | AuditLog-eksport-policy træder i kraft | ExportJobPolicyIKraftTests | ingen | ikke kørt |
+| G2d | ReAuth-policy træder i kraft | ReAuthPolicyIKraftTests | ingen | ikke kørt |
+| G2e | Admin-API-ratelimit træder i kraft | AdminApiPolicyIKraftTests | ingen | ikke kørt |
+| G2f | Login-ratelimit træder i kraft | LoginPolicyIKraftTests | ingen | ikke kørt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
 Tests ligger under ManualSmoke/TjeklisteB/.
@@ -473,6 +480,7 @@ Tests ligger under ManualSmoke/TjeklisteC/.
 Tests ligger under ManualSmoke/TjeklisteD/.
 Tests ligger under ManualSmoke/TjeklisteE/.
 Tests ligger under ManualSmoke/TjeklisteF/.
+Tests ligger under ManualSmoke/TjeklisteG/.
 
 ## 6. Åbne observationer (ikke rettet)
 Lukket NavDrawer er kun skubbet ud af skærmen med transform, så linkene i den kan nås med Tab.

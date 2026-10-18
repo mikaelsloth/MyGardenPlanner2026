@@ -13,6 +13,7 @@
 - Login-limiteren tæller kun POST til `/account/login`, `/account/loginwith2fa` og `/account/loginwithrecoverycode`, pr. IP, i et fast vindue.
 - Admin-API-limiteren er pr. bruger og ikke HTTP: afvisningen er UI-fejlen "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen."
 - Hver Gem sender en sikkerhedsalarm ("Sikkerhedspolicy ændret") med Bruger-ID og Policy-navn til SMTP-sinken.
+- Admin-API-kvoten (permit) bruges først, når step-up er gennemført, ikke ved selve Gem-klikket. En annulleret modal koster ingen permit.
 
 ### G1. Sikkerhedspolicy-faner loader seedede værdier
 
@@ -54,8 +55,3 @@
 
 - Forventet: ændringen træder i kraft direkte efter hver Gem, og kontroladfærden opfyldes.
 - Filer: se G1 samt JitElevationRequestForm, AdminActionGuard, StepUpGuard, ReloadableLoginRateLimiter, audit-log-siden med eksport.
-
-### Kendte fund (rettes i separat PR)
-
-- `AdminActionGuard` bruger en kvote-permit, før step-up er gennemført (også hvis modalen annulleres).
-- `AdminActionGuard` viser rate-limit-fejlen, hvis bruger-id ikke kan bestemmes.

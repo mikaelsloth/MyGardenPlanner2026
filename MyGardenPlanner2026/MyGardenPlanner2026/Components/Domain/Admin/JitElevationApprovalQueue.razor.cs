@@ -62,16 +62,15 @@ public partial class JitElevationApprovalQueue
             : await JitElevationService.GetPendingRequestsForApprovalAsync(approverId);
     }
 
-    private async Task ApproveAsync(Guid requestId)
-    {
-        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
-            stepUpGuard.RunAsync(AuthenticationStateTask, () => ApproveCoreAsync(requestId)));
+    private Task ApproveAsync(Guid requestId) =>
+        stepUpGuard.RunAsync(AuthenticationStateTask, () =>
+            adminActionGuard.RunAsync(
+                AuthenticationStateTask, () => ApproveCoreAsync(requestId), message => errorMessage = message));
 
-        if (adminActionGuard.IsRateLimited)
-        {
-            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
-        }
-    }
+    private Task RejectAsync(Guid requestId) =>
+        stepUpGuard.RunAsync(AuthenticationStateTask, () =>
+            adminActionGuard.RunAsync(
+                AuthenticationStateTask, () => RejectCoreAsync(requestId), message => errorMessage = message));
 
     private async Task ApproveCoreAsync(Guid requestId)
     {
@@ -94,17 +93,6 @@ public partial class JitElevationApprovalQueue
         {
             errorMessage = $"Error: {ex.Message}";
             JitElevationApprovalFailed(Logger, requestId, ex.Message);
-        }
-    }
-
-    private async Task RejectAsync(Guid requestId)
-    {
-        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
-            stepUpGuard.RunAsync(AuthenticationStateTask, () => RejectCoreAsync(requestId)));
-
-        if (adminActionGuard.IsRateLimited)
-        {
-            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
         }
     }
 

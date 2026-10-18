@@ -54,16 +54,9 @@ public partial class ReAuthenticationPolicyEditor
         maxAgeEdit = settings.MaxAgeMinutes;
     }
 
-    private async Task SaveAsync()
-    {
-        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
-            stepUpGuard.RunAsync(AuthenticationStateTask, SaveCoreAsync));
-
-        if (adminActionGuard.IsRateLimited)
-        {
-            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
-        }
-    }
+    private Task SaveAsync() =>
+        stepUpGuard.RunAsync(AuthenticationStateTask, () =>
+            adminActionGuard.RunAsync(AuthenticationStateTask, SaveCoreAsync, message => errorMessage = message));
 
     private async Task SaveCoreAsync()
     {

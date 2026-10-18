@@ -78,15 +78,26 @@ public partial class VolumeDiscountEditor
         }
     }
 
-    private async Task SaveExistingAsync(Guid tierId)
-    {
-        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
-            stepUpGuard.RunAsync(AuthenticationStateTask, () => SaveExistingCoreAsync(tierId)));
+    private Task SaveExistingAsync(Guid tierId) =>
+        stepUpGuard.RunAsync(AuthenticationStateTask, () =>
+            adminActionGuard.RunAsync(
+                AuthenticationStateTask, () => SaveExistingCoreAsync(tierId), message => errorMessage = message));
 
-        if (adminActionGuard.IsRateLimited)
-        {
-            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
-        }
+    private Task AddNewAsync() =>
+        stepUpGuard.RunAsync(AuthenticationStateTask, () =>
+            adminActionGuard.RunAsync(AuthenticationStateTask, AddNewCoreAsync, message => errorMessage = message));
+
+    private Task DeleteAsync(Guid id) =>
+        stepUpGuard.RunAsync(AuthenticationStateTask, () =>
+            adminActionGuard.RunAsync(
+                AuthenticationStateTask, () => DeleteCoreAsync(id), message => errorMessage = message));
+
+    private Task ConfirmResetAsync()
+    {
+        showResetConfirm = false;
+
+        return stepUpGuard.RunAsync(AuthenticationStateTask, () =>
+            adminActionGuard.RunAsync(AuthenticationStateTask, ConfirmResetCoreAsync, message => errorMessage = message));
     }
 
     private async Task SaveExistingCoreAsync(Guid tierId)
@@ -105,17 +116,6 @@ public partial class VolumeDiscountEditor
         {
             errorMessage = ex.Message;
             VolumeDiscountUpdateFailed(Logger, tierId, ex.Message);
-        }
-    }
-
-    private async Task AddNewAsync()
-    {
-        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
-            stepUpGuard.RunAsync(AuthenticationStateTask, AddNewCoreAsync));
-
-        if (adminActionGuard.IsRateLimited)
-        {
-            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
         }
     }
 
@@ -142,17 +142,6 @@ public partial class VolumeDiscountEditor
         }
     }
 
-    private async Task DeleteAsync(Guid id)
-    {
-        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
-            stepUpGuard.RunAsync(AuthenticationStateTask, () => DeleteCoreAsync(id)));
-
-        if (adminActionGuard.IsRateLimited)
-        {
-            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
-        }
-    }
-
     private async Task DeleteCoreAsync(Guid id)
     {
         errorMessage = null;
@@ -171,19 +160,6 @@ public partial class VolumeDiscountEditor
 
     private void RequestReset() => showResetConfirm = true;
     private void CancelReset() => showResetConfirm = false;
-
-    private async Task ConfirmResetAsync()
-    {
-        showResetConfirm = false;
-
-        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
-            stepUpGuard.RunAsync(AuthenticationStateTask, ConfirmResetCoreAsync));
-
-        if (adminActionGuard.IsRateLimited)
-        {
-            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
-        }
-    }
 
     private async Task ConfirmResetCoreAsync()
     {

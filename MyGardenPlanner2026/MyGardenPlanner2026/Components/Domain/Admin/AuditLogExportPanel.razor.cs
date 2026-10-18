@@ -88,16 +88,13 @@ public partial class AuditLogExportPanel
         adminActionGuard = new AdminActionGuard(RateLimiter);
     }
 
-    private async Task ExportButtonClickedAsync()
-    {
-        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
-            stepUpGuard.RunAsync(AuthenticationStateTask, CheckAndExportCoreAsync));
+    private Task ExportButtonClickedAsync() =>
+        stepUpGuard.RunAsync(AuthenticationStateTask, () =>
+            adminActionGuard.RunAsync(AuthenticationStateTask, CheckAndExportCoreAsync, message => errorMessage = message));
 
-        if (adminActionGuard.IsRateLimited)
-        {
-            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
-        }
-    }
+    private Task EnqueueBackgroundExportButtonClickedAsync() =>
+        stepUpGuard.RunAsync(AuthenticationStateTask, () =>
+            adminActionGuard.RunAsync(AuthenticationStateTask, EnqueueBackgroundExportCoreAsync, message => errorMessage = message));
 
     private async Task CheckAndExportCoreAsync()
     {
@@ -160,17 +157,6 @@ public partial class AuditLogExportPanel
         ExportDownloadTriggered(Logger, userId, selectedFormat);
 
         await JS.InvokeVoidAsync("open", url, "_blank");
-    }
-
-    private async Task EnqueueBackgroundExportButtonClickedAsync()
-    {
-        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
-            stepUpGuard.RunAsync(AuthenticationStateTask, EnqueueBackgroundExportCoreAsync));
-
-        if (adminActionGuard.IsRateLimited)
-        {
-            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
-        }
     }
 
     private async Task EnqueueBackgroundExportCoreAsync()

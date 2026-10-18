@@ -62,15 +62,8 @@ public partial class JitElevationRequestForm
             : await JitElevationService.GetRequestsForUserAsync(userId);
     }
 
-    private async Task SubmitRequestAsync()
-    {
-        await adminActionGuard.RunAsync(AuthenticationStateTask, SubmitRequestCoreAsync);
-
-        if (adminActionGuard.IsRateLimited)
-        {
-            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
-        }
-    }
+    private Task SubmitRequestAsync() =>
+        adminActionGuard.RunAsync(AuthenticationStateTask, SubmitRequestCoreAsync, message => errorMessage = message);
 
     private async Task SubmitRequestCoreAsync()
     {

@@ -37,7 +37,7 @@ public class AdminActionGuardTests
     }
 
     [Fact]
-    public async Task RunAsync_NullAuthenticationStateTask_TreatsAsRateLimited_WithoutCallingLimiter()
+    public async Task RunAsync_NullAuthenticationStateTask_SetsUserUnknown_NotRateLimited_WithoutCallingLimiter()
     {
         var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
         var guard = new AdminActionGuard(rateLimiter);
@@ -46,7 +46,8 @@ public class AdminActionGuardTests
         await guard.RunAsync(null, () => { executed = true; return Task.CompletedTask; });
 
         executed.Should().BeFalse();
-        guard.IsRateLimited.Should().BeTrue();
+        guard.IsUserUnknown.Should().BeTrue();
+        guard.IsRateLimited.Should().BeFalse();
         await rateLimiter.DidNotReceive().TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 
@@ -74,6 +75,71 @@ public class AdminActionGuardTests
         guard.IsRateLimited.Should().BeTrue();
 
         await guard.RunAsync(TestPrincipals.CreateAuthStateAsync(), () => Task.CompletedTask);
+        guard.IsRateLimited.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task RunAsync_AuthenticatedUserWithoutNameIdentifier_SetsUserUnknown_WithoutCallingLimiter()
+    {
+        var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
+        var guard = new AdminActionGuard(rateLimiter);
+
+        await guard.RunAsync(TestPrincipals.CreateAuthStateAsync(userId: null), () => Task.CompletedTask);
+
+        guard.IsUserUnknown.Should().BeTrue();
+        guard.IsRateLimited.Should().BeFalse();
+        await rateLimiter.DidNotReceive().TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RunAsync_UserUnknown_InvokesOnRejectedWithUserUnknownMessage()
+    {
+        var guard = new AdminActionGuard(Substitute.For<IAdminActionRateLimiter>());
+        string? message = null;
+
+        await guard.RunAsync(null, () => Task.CompletedTask, m => message = m);
+
+        message.Should().Be("Error: Kunne ikke bestemme den aktuelle bruger.");
+    }
+
+    [Fact]
+    public async Task RunAsync_PermitDenied_InvokesOnRejectedWithRateLimitMessage()
+    {
+        var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
+        rateLimiter.TryAcquireAsync("user-1", Arg.Any<CancellationToken>()).Returns(Task.FromResult(false));
+        var guard = new AdminActionGuard(rateLimiter);
+        string? message = null;
+
+        await guard.RunAsync(TestPrincipals.CreateAuthStateAsync(), () => Task.CompletedTask, m => message = m);
+
+        message.Should().Be("Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.");
+    }
+
+    [Fact]
+    public async Task RunAsync_PermitAcquired_DoesNotInvokeOnRejected()
+    {
+        var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
+        rateLimiter.TryAcquireAsync("user-1", Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
+        var guard = new AdminActionGuard(rateLimiter);
+        var rejected = false;
+
+        await guard.RunAsync(TestPrincipals.CreateAuthStateAsync(), () => Task.CompletedTask, _ => rejected = true);
+
+        rejected.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task RunAsync_AfterUserUnknown_ResetsFlagsOnNextPermittedCall()
+    {
+        var rateLimiter = Substitute.For<IAdminActionRateLimiter>();
+        rateLimiter.TryAcquireAsync("user-1", Arg.Any<CancellationToken>()).Returns(Task.FromResult(true));
+        var guard = new AdminActionGuard(rateLimiter);
+
+        await guard.RunAsync(null, () => Task.CompletedTask);
+        guard.IsUserUnknown.Should().BeTrue();
+
+        await guard.RunAsync(TestPrincipals.CreateAuthStateAsync(), () => Task.CompletedTask);
+        guard.IsUserUnknown.Should().BeFalse();
         guard.IsRateLimited.Should().BeFalse();
     }
 }

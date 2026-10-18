@@ -228,4 +228,30 @@ public class AuditLogExportPanelTests : BunitContext
 
         invoked.Should().BeTrue();
     }
+
+    [Fact]
+    public async Task ReAuthExpired_ClickingEksportér_DoesNotConsumePermitBeforeStepUp()
+    {
+        authorizationService.AuthorizeAsync(Arg.Any<ClaimsPrincipal>(), Arg.Any<object?>(), Arg.Any<string>())
+            .Returns(Task.FromResult(AuthorizationResult.Failed()));
+
+        var cut = RenderPanel();
+        await cut.Find("button.btn-primary").ClickAsync();
+
+        cut.ShouldShowStepUpModal();
+        await rateLimiter.DidNotReceive().TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ReAuthExpired_ClickingSendTilBaggrundseksport_DoesNotConsumePermitBeforeStepUp()
+    {
+        authorizationService.AuthorizeAsync(Arg.Any<ClaimsPrincipal>(), Arg.Any<object?>(), Arg.Any<string>())
+            .Returns(Task.FromResult(AuthorizationResult.Failed()));
+
+        var cut = RenderPanel();
+        await cut.Find("button.btn-secondary").ClickAsync();
+
+        cut.ShouldShowStepUpModal();
+        await rateLimiter.DidNotReceive().TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
 }

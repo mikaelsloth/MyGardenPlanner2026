@@ -88,15 +88,26 @@ public partial class AddOnEditor
         }
     }
 
-    private async Task SaveExistingAsync(Guid addOnId)
-    {
-        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
-            stepUpGuard.RunAsync(AuthenticationStateTask, () => SaveExistingCoreAsync(addOnId)));
+    private Task SaveExistingAsync(Guid addOnId) =>
+        stepUpGuard.RunAsync(AuthenticationStateTask, () =>
+            adminActionGuard.RunAsync(
+                AuthenticationStateTask, () => SaveExistingCoreAsync(addOnId), message => errorMessage = message));
 
-        if (adminActionGuard.IsRateLimited)
-        {
-            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
-        }
+    private Task AddNewAsync() =>
+        stepUpGuard.RunAsync(AuthenticationStateTask, () =>
+            adminActionGuard.RunAsync(AuthenticationStateTask, AddNewCoreAsync, message => errorMessage = message));
+
+    private Task DeleteAsync(Guid id) =>
+        stepUpGuard.RunAsync(AuthenticationStateTask, () =>
+            adminActionGuard.RunAsync(
+                AuthenticationStateTask, () => DeleteCoreAsync(id), message => errorMessage = message));
+
+    private Task ConfirmResetAsync()
+    {
+        showResetConfirm = false;
+
+        return stepUpGuard.RunAsync(AuthenticationStateTask, () =>
+            adminActionGuard.RunAsync(AuthenticationStateTask, ConfirmResetCoreAsync, message => errorMessage = message));
     }
 
     private async Task SaveExistingCoreAsync(Guid addOnId)
@@ -126,17 +137,6 @@ public partial class AddOnEditor
         }
     }
 
-    private async Task AddNewAsync()
-    {
-        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
-            stepUpGuard.RunAsync(AuthenticationStateTask, AddNewCoreAsync));
-
-        if (adminActionGuard.IsRateLimited)
-        {
-            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
-        }
-    }
-
     private async Task AddNewCoreAsync()
     {
         errorMessage = null;
@@ -162,17 +162,6 @@ public partial class AddOnEditor
         }
     }
 
-    private async Task DeleteAsync(Guid id)
-    {
-        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
-            stepUpGuard.RunAsync(AuthenticationStateTask, () => DeleteCoreAsync(id)));
-
-        if (adminActionGuard.IsRateLimited)
-        {
-            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
-        }
-    }
-
     private async Task DeleteCoreAsync(Guid id)
     {
         errorMessage = null;
@@ -191,19 +180,6 @@ public partial class AddOnEditor
 
     private void RequestReset() => showResetConfirm = true;
     private void CancelReset() => showResetConfirm = false;
-
-    private async Task ConfirmResetAsync()
-    {
-        showResetConfirm = false;
-
-        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
-            stepUpGuard.RunAsync(AuthenticationStateTask, ConfirmResetCoreAsync));
-
-        if (adminActionGuard.IsRateLimited)
-        {
-            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
-        }
-    }
 
     private async Task ConfirmResetCoreAsync()
     {

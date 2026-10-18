@@ -126,4 +126,60 @@ public class AuditLogExportJobPolicyEditorTests : BunitContext
 
         cut.Find(".status-message.status-danger").TextContent.Should().Contain("RetentionHours");
     }
+
+    [Fact]
+    public async Task ReAuthExpired_ClickingGem_DoesNotConsumePermitBeforeStepUp()
+    {
+        authorizationService.AuthorizeAsync(Arg.Any<ClaimsPrincipal>(), Arg.Any<object?>(), Arg.Any<string>())
+            .Returns(Task.FromResult(AuthorizationResult.Failed()));
+
+        var cut = RenderEditor();
+        await cut.Find("button.btn-primary").ClickAsync();
+
+        cut.ShouldShowStepUpModal();
+        await rateLimiter.DidNotReceive().TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ReAuthExpired_CancellingStepUpModal_DoesNotConsumePermit()
+    {
+        authorizationService.AuthorizeAsync(Arg.Any<ClaimsPrincipal>(), Arg.Any<object?>(), Arg.Any<string>())
+            .Returns(Task.FromResult(AuthorizationResult.Failed()));
+
+        var cut = RenderEditor();
+        await cut.Find("button.btn-primary").ClickAsync();
+        await cut.Find(".confirm-dialog-actions button.btn-secondary").ClickAsync();
+
+        await rateLimiter.DidNotReceive().TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ReAuthExpired_AndRateLimited_ClickingGem_OpensModal_WithoutRateLimitMessageYet()
+    {
+        authorizationService.AuthorizeAsync(Arg.Any<ClaimsPrincipal>(), Arg.Any<object?>(), Arg.Any<string>())
+            .Returns(Task.FromResult(AuthorizationResult.Failed()));
+        rateLimiter.TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>()).Returns(Task.FromResult(false));
+
+        var cut = RenderEditor();
+        await cut.Find("button.btn-primary").ClickAsync();
+
+        cut.ShouldShowStepUpModal();
+        cut.Markup.Should().NotContain("For mange handlinger");
+    }
+
+    [Fact]
+    public async Task UnknownUser_ClickingGem_ShowsUserUnknownMessage_NotRateLimitMessage()
+    {
+        var cut = Render<AuditLogExportJobPolicyEditor>(p =>
+            p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync(userId: null)));
+
+        await cut.Find("button.btn-primary").ClickAsync();
+
+        var error = cut.Find(".status-message.status-danger").TextContent;
+        error.Should().Contain("Kunne ikke bestemme den aktuelle bruger");
+        error.Should().NotContain("For mange handlinger");
+        await rateLimiter.DidNotReceive().TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await adminService.DidNotReceive().UpdateAsync(
+            Arg.Any<AuditLogExportJobPolicyDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
 }

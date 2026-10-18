@@ -67,16 +67,10 @@ public partial class BasePriceMatrixEditor
         }
     }
 
-    private async Task SaveTierAsync(Guid tierId)
-    {
-        await adminActionGuard.RunAsync(AuthenticationStateTask, () =>
-            stepUpGuard.RunAsync(AuthenticationStateTask, () => SaveTierCoreAsync(tierId)));
-
-        if (adminActionGuard.IsRateLimited)
-        {
-            errorMessage = "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen.";
-        }
-    }
+    private Task SaveTierAsync(Guid tierId) =>
+        stepUpGuard.RunAsync(AuthenticationStateTask, () =>
+            adminActionGuard.RunAsync(
+                AuthenticationStateTask, () => SaveTierCoreAsync(tierId), message => errorMessage = message));
 
     private async Task SaveTierCoreAsync(Guid tierId)
     {

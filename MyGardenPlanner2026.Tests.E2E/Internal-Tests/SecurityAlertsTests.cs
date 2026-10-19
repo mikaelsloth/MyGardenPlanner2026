@@ -29,4 +29,20 @@ public sealed class SecurityAlertsTests
     {
         SecurityAlerts.IsPolicyChangedMail(Mail(PlaywrightAppFixture.SecurityAlertSubject, Body), "u1").Should().BeFalse();
     }
+
+    [Fact]
+    public void CountPolicyChangedMails_TaellerKunMatchendeBrugerOgPolicy()
+    {
+        var mails = new[]
+        {
+            Mail(SecurityAlerts.PolicyChangedSubject, Body),
+            Mail(SecurityAlerts.PolicyChangedSubject, Body.Replace("JitElevationPolicy", "ReAuthenticationPolicy")),
+            Mail(SecurityAlerts.PolicyChangedSubject, Body.Replace("Bruger-ID: u1", "Bruger-ID: u2")),
+            Mail(PlaywrightAppFixture.SecurityAlertSubject, Body),
+        };
+
+        SecurityAlerts.CountPolicyChangedMails(mails, "u1", "JitElevationPolicy").Should().Be(1);
+        SecurityAlerts.CountPolicyChangedMails(mails, "u1", "ReAuthenticationPolicy").Should().Be(1);
+        SecurityAlerts.CountPolicyChangedMails(mails, "u3", "JitElevationPolicy").Should().Be(0);
+    }
 }

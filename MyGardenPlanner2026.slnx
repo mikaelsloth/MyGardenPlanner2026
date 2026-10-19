@@ -22,6 +22,7 @@
     <File Path="Documentation/Testing/SmokeChecklists/Kategori 2 - Tjekliste E - JIT eskalering.md" />
     <File Path="Documentation/Testing/SmokeChecklists/Kategori 2 - Tjekliste F - Admin abonnementer.md" />
     <File Path="Documentation/Testing/SmokeChecklists/Kategori 2 - Tjekliste G - Sikkerhedspolicies.md" />
+    <File Path="Documentation/Testing/SmokeChecklists/Kategori 2 - Tjekliste H - RateLimiting.md" />
   </Folder>
   <Folder Name="/Documentation/Web Design Documents/" />
   <Folder Name="/Documentation/Web Design Documents/Compendium/">

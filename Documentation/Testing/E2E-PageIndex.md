@@ -95,6 +95,7 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
   - Retention (#exportjob-retention), SaveButton ("Gem"), Success (.status-success), ExportJobSavedText
   - SelectTabAsync(page, name), OpenExportJobTabAsync(page)
   - ReadRetentionAsync(page), SetRetentionAsync(page, value)
+  - SecurityAlerts.CountPolicyChangedMails(mails, userId, policyName): antal "Sikkerhedspolicy ændret"-mails for brugeren og policyen (bruges til at bekræfte hvert gem, når UI ikke har unik besked).
 
  - TabNavigation.SelectAsync(page, name): vælger role=tab og gentager klikket, til fanen er "active"
  - AmountParser.Parse(text): beløb ud fra cifrene i en vist pris (C2)
@@ -175,6 +176,11 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 - Admin-editors deler data på tværs af tests: gendan ændrede værdier (retention ændres ±1 time) og brug ikke basispriser (påvirker A2-beregningerne).
 - Admin-sider kræver 2FA: NoMfa redirectes til EnableAuthenticator og når aldrig modalen.
 - /Account/AccessDenied har præcis én h1 (rettet i PR0). Tjek den med SmokePageAssertions.ExpectPageAsync.
+
+- Admin-API-limiter (AdminActionRateLimiter): sliding window pr. bruger (singleton, 60 sek., 6 segmenter), genopbygges kun ved ændring af AdminApiRateLimitOptions (ny kvote). Forbruges efter step-up og før service-validering, så et afvist gem giver rate-limit-teksten uanset værdi. Et afvist forsøg bruger ingen permit.
+- Policy-editors har ingen unik succesbesked pr. gem og ingen disabled-knap: bekræft hvert gem via alarm-mailen "Policy: <navn>". Afvent mailen før næste indtastning (editoren genindlæser efter gem).
+- En blokeret bruger kan ikke gendanne selv: åbn en ny PolicyAdmin FØR ændringen og brug den til gendannelse.
+- Login-limiter (ReloadableLoginRateLimiter): fixed window pr. IP, kun beskyttede auth-POST'er, genopbygges (tæller nulstilles) ved policyændring. 429 uden body (OnRejected logger kun).
 
 ## 4. Sider
 
@@ -376,6 +382,9 @@ Tests: ManualSmoke/TjeklisteD/ForkertPasswordModalTests.
 Step-up: E2E-appen kører med ReAuthenticationPolicy__MaxAgeMinutes=1 (appsettings: 15). Modal vises ved første handling i hver circuit; efter step-up gælder vinduet i samme circuit; reload = ny circuit = ny modal.
 Fanehop (SelectTab) rydder statusMessage og genindlæser editoren.
 Page-objects: SecurityPolicyPage (faner, #exportjob-retention, Gem, .status-success), StepUpModal (Dialog, felter, CompleteAsync), JitRequestsPage (se /admin/jit-requests).
+Fanen Step-up re-auth: #reauth-maxage (type=number, min=1, @onchange → blur), knap "Gem". Fejl vises øverst i editoren (.security-policy-editor .status-danger[role=alert]); StepUpReAuthModal ligger i editoren. Succes: "Step-up re-auth-policyen er opdateret og trådt i kraft." (page-level, bliver stående mellem gem).
+Fanen Admin-API rate limit: #adminapi-permit, #adminapi-window, #adminapi-segments.
+Rate-limit-fejl: "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen." (AdminActionGuard.RateLimitedMessage).
 Tests: ManualSmoke/TjeklisteD/KorrektStepUpTests.
 ```
 ```
@@ -473,6 +482,7 @@ Ikke indekseret endnu:
 | G2d | ReAuth-policy træder i kraft | ReAuthPolicyIKraftTests | ingen | ikke kørt |
 | G2e | Admin-API-ratelimit træder i kraft | AdminApiPolicyIKraftTests | ingen | ikke kørt |
 | G2f | Login-ratelimit træder i kraft | LoginPolicyIKraftTests | ingen | ikke kørt |
+| H2 | Gem-spam i policy-editor → rate-limit-fejl | AdminHandlingerRateLimitTests | RateLimiting_H2_`<bredde>` (2) | ikke kørt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
 Tests ligger under ManualSmoke/TjeklisteB/.
@@ -481,6 +491,7 @@ Tests ligger under ManualSmoke/TjeklisteD/.
 Tests ligger under ManualSmoke/TjeklisteE/.
 Tests ligger under ManualSmoke/TjeklisteF/.
 Tests ligger under ManualSmoke/TjeklisteG/.
+Tests ligger under ManualSmoke/TjeklisteH/.
 
 ## 6. Åbne observationer (ikke rettet)
 Lukket NavDrawer er kun skubbet ud af skærmen med transform, så linkene i den kan nås med Tab.
@@ -518,3 +529,6 @@ Basispriser deles med A2. F1 gendanner i finally; ved proces-kill kan databasen 
 TabNavigation.SelectAsync dubleres af JitRequestsPage.SelectTabAsync og SecurityPolicyPage.SelectTabAsync, og AmountParser af PricingCalculatorTests.ParseAmount (kandidater til dedup-PR).
 AdminActionGuard har en kvote pr. bruger (ukendt grænse). F1 gemmer 6 gange pr. bruger.
 PricingCalculatorTests (A2) har egne kopier af calculator-selektorer og ParseAmount/ParseNumber, og af pris-polling; kandidat til dedup mod PricingCalculatorPage, AmountParser og PriceAssertions.
+Login-limiter: OnRejected skriver ingen body/besked, så brugeren ser blank side eller browserens egen 429-fejlside (ingen "lockout-besked"). Verificeres i H1.
+Policy-editors: Gem-knappen er ikke disabled under gem, og der er ingen unik succesbesked pr. gem.
+ReAuthenticationPolicyEditor: valideringsgrænser for MaxAge ligger i servicen (min=1 i markup, intet max i UI).

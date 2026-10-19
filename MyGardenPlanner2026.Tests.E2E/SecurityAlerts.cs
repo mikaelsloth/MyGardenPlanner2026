@@ -23,4 +23,9 @@ public static class SecurityAlerts
         mail.Recipients.Should().Equal(PlaywrightAppFixture.SecurityAlertRecipient);
         mail.Body.Should().Contain($"Policy: {policyName}");
     }
+
+    /// <summary>Antal "Sikkerhedspolicy ændret"-mails fra brugeren for den navngivne policy.</summary>
+    public static int CountPolicyChangedMails(IEnumerable<ReceivedMail> mails, string userId, string policyName) =>
+        mails.Count(m => IsPolicyChangedMail(m, userId)
+            && m.Body.Contains($"Policy: {policyName}", StringComparison.Ordinal));
 }

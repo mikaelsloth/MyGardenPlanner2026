@@ -40,6 +40,24 @@ public static class LoginFlow
     public static ILocator LoginButton(IPage page) =>
         page.GetByRole(AriaRole.Button, new() { Name = "Log ind", Exact = true });
 
+    /// <summary>
+    /// Ét loginforsøg uden 2FA: ryd cookies, åbn login, send formularen og returnér HTTP-statussen på POST'en.
+    /// Bruges, når svaret kan være 429 (LoginAsync venter på URL-skift, som et 429 aldrig giver).
+    /// </summary>
+    public static async Task<int> AttemptStatusAsync(IPage page, string rootUri, SmokeTestUser user)
+    {
+        await page.Context.ClearCookiesAsync();
+        await page.GotoAsync($"{rootUri}{E2ERoutes.Login}");
+        await FillCredentialsAsync(page, user.Email, user.Password);
+
+        var response = await page.RunAndWaitForResponseAsync(
+            () => LoginButton(page).ClickAsync(),
+            r => r.Request.Method == "POST"
+                 && r.Url.Contains(E2ERoutes.Login, StringComparison.OrdinalIgnoreCase));
+
+        return response.Status;
+    }
+
     private static async Task ClickAndVerifyNavigationAsync(IPage page, string context)
     {
         var beforeUrl = page.Url;

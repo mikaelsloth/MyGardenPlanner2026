@@ -130,7 +130,8 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
   - ReadSharedKeyAsync(page): læser <kbd>, giver Base32 med store bogstaver
   - VerifyAsync(page, key): indtaster TOTP, klikker "Verify", returnerer gendannelseskoderne
   - EnableAsync(page, rootUri, user): giver TwoFactorEnrollment(User med nøgle, RecoveryCodes)
-
+- LoginFlow.AttemptStatusAsync(page, rootUri, user): ryd cookies, åbn login, send formularen (ingen 2FA) og returnér HTTP-statussen på POST'en. Til tests, hvor svaret kan være 429.
+ 
 - VirtualAuthenticator.AddAsync(page): WebAuthn virtual authenticator (Chromium, CDP). CountCredentialsAsync(). Skal tilføjes før passkey-handlinger.
 
 ## 3. Læringer (undgå gentagelser)
@@ -265,7 +266,8 @@ Login bruger lockoutOnFailure: false. Redirect til /Account/Lockout sker kun for
 Forkert password kalder ReAuthFailureTracker.RecordFailureAsync. Ved præcis 5 forsøg (Threshold) sendes sikkerhedsalarm (ISecurityAlertService).
 5. forkerte forsøg (Threshold) sender alarm til Smtp:AdminSecurityEmails. Emne: "[MyGardenPlanner] Sikkerhedsalarm: Gentagne fejlede login-/re-auth-forsøg". Krop indeholder "Bruger-ID: <id>" og "IP-adresse: <ip>".
 Alarmen sendes kun ved præcis 5 (ikke ved 6+). Transportfejl (SmtpException) fanges ikke og giver 500 på login.
-Filer: Login.razor (+ .cs), ReAuthFailureTracker.cs, ReAuthFailureTrackerOptions.cs
+Login rate limit: fixed window pr. IP, kun beskyttede auth-POST'er (AdminAuthPathMatcher). Ved overskridelse svarer serveren 429 uden body (OnRejected logger kun). Limiteren genopbygges ved policyændring, så tælleren nulstilles straks.
+Filer: ReloadableLoginRateLimiter.cs, RateLimitingServicesExtensions.cs, Login.razor (+ .cs), ReAuthFailureTracker.cs, ReAuthFailureTrackerOptions.cs
 ```
 ```
 /Account/Lockout
@@ -482,6 +484,7 @@ Ikke indekseret endnu:
 | G2d | ReAuth-policy træder i kraft | ReAuthPolicyIKraftTests | ingen | ikke kørt |
 | G2e | Admin-API-ratelimit træder i kraft | AdminApiPolicyIKraftTests | ingen | ikke kørt |
 | G2f | Login-ratelimit træder i kraft | LoginPolicyIKraftTests | ingen | ikke kørt |
+| H1 | 6. hurtige login-forsøg → 429 | LoginRateLimitTests | RateLimiting_H1_`<bredde>` (2) | ikke kørt |
 | H2 | Gem-spam i policy-editor → rate-limit-fejl | AdminHandlingerRateLimitTests | RateLimiting_H2_`<bredde>` (2) | ikke kørt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
@@ -532,3 +535,4 @@ PricingCalculatorTests (A2) har egne kopier af calculator-selektorer og ParseAmo
 Login-limiter: OnRejected skriver ingen body/besked, så brugeren ser blank side eller browserens egen 429-fejlside (ingen "lockout-besked"). Verificeres i H1.
 Policy-editors: Gem-knappen er ikke disabled under gem, og der er ingen unik succesbesked pr. gem.
 ReAuthenticationPolicyEditor: valideringsgrænser for MaxAge ligger i servicen (min=1 i markup, intet max i UI).
+LoginPolicyIKraftTests (G2f) har en privat kopi af LoginAttemptStatusAsync; kandidat til dedup mod LoginFlow.AttemptStatusAsync.

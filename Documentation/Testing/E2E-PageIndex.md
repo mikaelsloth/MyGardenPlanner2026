@@ -134,6 +134,13 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
  
 - VirtualAuthenticator.AddAsync(page): WebAuthn virtual authenticator (Chromium, CDP). CountCredentialsAsync(). Skal tilføjes før passkey-handlinger.
 
+- AdminAccessMatrix: hardcodet matrix persona → tilladte admin-sider (Admin: Abonnementer + JIT-adgang; DataAdmin: JIT-adgang; PolicyAdmin: Sikkerhedspolicies + JIT-adgang; Auditor: JIT-adgang + AuditLog).
+  - AdminPage(Route, Title, Heading, LinkText), AllPages, For(persona), DeniedPages(persona) (komplementet), Personas.
+- AdminNavigation (page-object for nav.admin-nav-menu):
+  - Nav(page), Links(page), Link(page, side) (href-suffiks, versalfølsomt ikke)
+  - ExpectExactLinksAsync(page, forventede): positiv kontrol først, derefter fravær og samlet antal
+- LoginRedirect.ReturnPath(url): stien i ReturnUrl fra en login-URL (relativ "ReturnUrl" fra middleware og absolut "returnUrl" fra RedirectToLogin)
+
 ## 3. Læringer (undgå gentagelser)
 - Playwright-regex understøtter kun IgnoreCase og Multiline. Andre flag giver ArgumentException.
 - Interaktive Blazor Server-sider ignorerer klik og input, til kredsløbet er forbundet, og prerendering kan nulstille indtastninger. Brug ActUntilAsync, og indtast først, når siden har reageret.
@@ -182,6 +189,10 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 - Policy-editors har ingen unik succesbesked pr. gem og ingen disabled-knap: bekræft hvert gem via alarm-mailen "Policy: <navn>". Afvent mailen før næste indtastning (editoren genindlæser efter gem).
 - En blokeret bruger kan ikke gendanne selv: åbn en ny PolicyAdmin FØR ændringen og brug den til gendannelse.
 - Login-limiter (ReloadableLoginRateLimiter): fixed window pr. IP, kun beskyttede auth-POST'er, genopbygges (tæller nulstilles) ved policyændring. 429 uden body (OnRejected logger kun).
+
+- AdminNavMenu ligger i AdminLayout og er statisk (ingen rendermode på layoutet). Efter en ændring i adgang (fx godkendt JIT) kræves en ny sideindlæsning, før linkene ændres.
+- Nav-assertions: positiv kontrol (eget link synligt) før fravær/antal, ellers kan en negativ assert bestå, før nav'en er renderet.
+- AuditLog-linket kan indeholde .nav-badge (antal nye eksportfiler): find links via href-suffiks, ikke via tekst.
 
 ## 4. Sider
 
@@ -418,6 +429,24 @@ Tests: ManualSmoke/TjeklisteE/.
 RefreshRequestsAsync(page, showHistory?): genindlæser "Mine anmodninger" via fanehop Godkend → Anmod (ingen sideindlæsning). "Vis afviste/udløbne" nulstilles ved hop og krydses af igen med showHistory.
 ```
 ```
+AdminNavMenu / AdminLayout (alle admin-sider)
+Layout: AdminLayout (_Imports i Pages/Admin) → MainLayout. Ingen h1 i layoutet (hver side har sin egen).
+Navigation: nav.admin-nav-menu[aria-label='Administration'], ét <li><a> pr. tilladt link, href relativ ("admin/subscriptions"). Aktuel side har klassen "active".
+Links og policy: Abonnementer (RequireGlobalAdmin = SystemAdmin), Sikkerhedspolicies (RequirePolicyAdmin), JIT-adgang (RequireAnyAdminRole: alle fire roller), AuditLog (RequireAuditViewer). Direkte rolle eller aktiv JIT. Alle kræver MFA.
+AuditLog-linket får .nav-badge[aria-label] med antal nye eksportfiler, når der er ulæste.
+Adgang pr. persona (AdminAccessMatrix): Admin: Abonnementer, JIT-adgang. DataAdmin: JIT-adgang. PolicyAdmin: Sikkerhedspolicies, JIT-adgang. Auditor: JIT-adgang, AuditLog.
+Filer: AdminLayout.razor (+ .css), AdminNavMenu.razor (+ .cs, .css), AuthorizationServicesExtensions.cs, AnyAdminRoleAuthorizationHandler.cs, JitRoleAuthorizationHandler.cs
+Tests: ManualSmoke/TjeklisteI/AdminNavigationTests
+```
+```
+Direkte URL til admin-side uden rolle
+Anonym: redirect til /Account/Login med ReturnUrl til den forespurgte side. Auth-middleware sender relativ "ReturnUrl"; RedirectToLogin (NotAuthorized, interaktiv) sender absolut "returnUrl". Der er ingen eksplicit LoginPath/AccessDeniedPath (cookie-standarder).
+Autentificeret uden rolle (2FA aktiv): /Account/AccessDenied. Uden 2FA: redirect til EnableAuthenticator.
+Sidens h1 og AdminNavMenu vises ikke på login- eller AccessDenied-siden.
+Filer: Routes.razor (+ .cs), RedirectToLogin.razor(.cs), RedirectToAccessDenied.razor(.cs), AccessDenied.razor (+ .cs)
+Tests: ManualSmoke/TjeklisteI/AdminDirektUrlTests
+```
+```
 /admin/security-policies — fanen JIT-eskalering
 Faner i rækkefølge: JIT-eskalering (aktiv ved indlæsning), Step-up re-auth, Fejl-tracker, Admin-API rate limit, Login rate limit, AuditLog-eksport.
 Felter (JitElevationPolicyEditor): #jit-min, #jit-max, #jit-sweep (type=number, @onchange → blur). Knap "Gem" (AdminActionGuard → StepUpGuard).
@@ -486,6 +515,8 @@ Ikke indekseret endnu:
 | G2f | Login-ratelimit træder i kraft | LoginPolicyIKraftTests | ingen | ikke kørt |
 | H1 | 6. hurtige login-forsøg → 429 | LoginRateLimitTests | RateLimiting_H1_`<bredde>` (2) | ikke kørt |
 | H2 | Gem-spam i policy-editor → rate-limit-fejl | AdminHandlingerRateLimitTests | RateLimiting_H2_`<bredde>` (2) | ikke kørt |
+| I1 | AdminNavMenu viser kun tilladte links (+ JIT-eskalering) | AdminNavigationTests | Adgangskontrol_I1_`<Persona>`_`<bredde>` (8), Adgangskontrol_I1d_`<bredde>` (2) | grøn |
+| I2 | Direkte URL uden rolle (anonym → login, krydsadgang → AccessDenied) | AdminDirektUrlTests | Adgangskontrol_I2_Anonym_`<Side>`_`<bredde>` (8), Adgangskontrol_I2_AccessDenied_`<Persona>`_`<Side>`_`<bredde>` (18) | grøn |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
 Tests ligger under ManualSmoke/TjeklisteB/.
@@ -495,6 +526,7 @@ Tests ligger under ManualSmoke/TjeklisteE/.
 Tests ligger under ManualSmoke/TjeklisteF/.
 Tests ligger under ManualSmoke/TjeklisteG/.
 Tests ligger under ManualSmoke/TjeklisteH/.
+Tests ligger under ManualSmoke/TjeklisteI/.
 
 ## 6. Åbne observationer (ikke rettet)
 Lukket NavDrawer er kun skubbet ud af skærmen med transform, så linkene i den kan nås med Tab.
@@ -536,3 +568,9 @@ Login-limiter: OnRejected skriver ingen body/besked, så brugeren ser blank side
 Policy-editors: Gem-knappen er ikke disabled under gem, og der er ingen unik succesbesked pr. gem.
 ReAuthenticationPolicyEditor: valideringsgrænser for MaxAge ligger i servicen (min=1 i markup, intet max i UI).
 LoginPolicyIKraftTests (G2f) har en privat kopi af LoginAttemptStatusAsync; kandidat til dedup mod LoginFlow.AttemptStatusAsync.
+AuthorizationServicesExtensions: RequireGlobalAdminPolicy er bekræftet registreret to gange (første, RequireRole(SystemAdmin), er død kode). Fjern den første.
+AuthorizationServicesExtensions: RequireDataAdminPolicy bruges ikke af nogen side eller af AdminNavMenu. DataAdmin har kun JIT-adgang som side.
+Login/AccessDenied-stier er kun implicitte (ingen LoginPath/AccessDeniedPath i cookie-opsætningen). Sæt dem eksplicit.
+To redirect-veje til login med forskellig ReturnUrl: auth-middleware (relativ, "ReturnUrl") og RedirectToLogin (absolut, "returnUrl"). LoginRedirect.ReturnPath accepterer begge.
+AdminNavMenu er statisk: linkene opdateres først ved ny sideindlæsning efter ændret adgang (fx godkendt JIT).
+Adgangsrettigheder.md er ikke opdateret med admin-siderne (/admin/subscriptions, /admin/security-policies, /admin/jit-requests, /admin/audit-log).

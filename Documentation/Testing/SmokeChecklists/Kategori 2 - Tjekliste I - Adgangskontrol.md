@@ -2,48 +2,48 @@
 
 ## I. Adgangskontrol / navigation
 
-- [ ] `AdminNavMenu` viser kun links brugeren reelt har adgang til (test med #2, #3, #4 hver for sig)
-- [ ] Direkte URL til admin-side uden rolle → `AccessDenied` eller redirect til login
+- [x] `AdminNavMenu` viser kun links brugeren reelt har adgang til (test med #2, #3, #4 hver for sig)
+- [x] Direkte URL til admin-side uden rolle → `AccessDenied` eller redirect til login
 
 ### Forudsætninger
 
-- Alle policyændringer gendannes i `finally`.
+- Personaer: #1 Admin, #2 DataAdmin, #3 PolicyAdmin, #4 Auditor (SmokeTestPersonas).
+- Forventet adgang er hardcodet i `AdminAccessMatrix` (specifikation, ikke udledt af koden).
+- Ingen policyændringer i denne tjekliste, så intet skal gendannes i `finally`.
 
 ### I1. `AdminNavMenu` viser kun links brugeren reelt har adgang til
 
-- Route: /admin/subscriptions, /admin/security-policies, /admin/jit-requests og /admin/audit-log. Hver persona åbner sin egen startside.
-- Bruger: #2 DataAdmin, #3 PolicyAdmin, #4 Auditor, hver for sig. Evt. #1 Admin som kontrol, da det er den eneste, der ser “Abonnementer”.
+- Route: personaens startside (`/admin/subscriptions`, `/admin/jit-requests`, `/admin/security-policies`, `/admin/audit-log`)
+- Bruger: #2 DataAdmin, #3 PolicyAdmin og #4 Auditor hver for sig (+ #1 Admin som kontrol). I1d: en frisk AuditViewer + Admin (#1) som godkender.
 - Handling:
-  a. fixture.LoginAndGotoAsync(persona, startside, bredde).
-  b. Afvent SmokePageAssertions.ExpectPageAsync.
-  c. Positiv kontrol først: afvent, at personaens eget link er synligt. Nav’en renderes først ved prerender og igen ved circuit, så en negativ assertion kan ellers bestå for tidligt (samme læring som godkendelseskøen i E2).
-  d. Tæl links i nav.admin-nav-menu li og sammenlign med forventet antal.
-  e. For hvert af de fire links: synligt ⇔ forventet, valgt via href-suffiks (a[href$='admin/audit-log'] osv.).
-  f. Klik på hvert synligt link og tjek, at målsiden åbner (h1) og ikke giver AccessDenied.
-  g. Skærmbillede.
+  a. Log ind som personaen og åbn startsiden.
+  b. Afvent siden (titel, én h1, ingen skeletons) og at personaens egne links er synlige.
+  c. Tjek at øvrige links ikke findes, og at antallet af links matcher matricen.
+  d. Tjek at linket til den aktuelle side har klassen `active`.
+  e. Klik på hvert øvrigt synligt link: siden åbner uden AccessDenied.
+  f. I1d: frisk AuditViewer ser kun JIT-adgang og AuditLog. Efter anmodning om SystemAdmin og godkendelse (step-up) og en ny sideindlæsning ses også Abonnementer.
 - Forventet:
-  a. Præcis de forventede links, hverken flere eller færre.
-  b. Hvert synligt link fører til en side brugeren kan åbne.
-  c. Det aktuelle sides link har klassen active.
-- Skærmbilleder (768, 1280): Adgangskontrol_I1_<Persona>_<bredde>, taget efter positiv kontrol.
-- Filer: AdminNavMenu.razor(.cs/.css), AdminLayout.razor(.css), Pages/Admin/_Imports.razor, de fire admin-sider, AccessDenied.razor(.cs), Routes.razor(.cs)
+  - #1 Admin: Abonnementer, JIT-adgang.
+  - #2 DataAdmin: JIT-adgang.
+  - #3 PolicyAdmin: Sikkerhedspolicies, JIT-adgang.
+  - #4 Auditor: JIT-adgang, AuditLog.
+  - Efter godkendt JIT SystemAdmin: Abonnementer, JIT-adgang, AuditLog.
 
-### I2. Direkte URL til admin-side uden rolle → `AccessDenied`
+- Skærmbilleder (768, 1280): `Adgangskontrol_I1_<Persona>_<bredde>`, `Adgangskontrol_I1d_<bredde>`
+- Filer: AdminNavMenu.razor(.cs), AdminLayout.razor, AuthorizationServicesExtensions.cs, AnyAdminRoleAuthorizationHandler.cs, JitRoleAuthorizationHandler.cs
 
-- Route: alle fire admin-ruter via E2ERoutes.
-- Bruger:
-  I2a anonym: ingen login.
-  I2b krydsadgang: #2, #3 og #4 på de sider, de ikke har adgang til.
-  Allerede dækket og genbruges ikke: Requester, NoMfa og Plain.
+### I2. Direkte URL til admin-side uden rolle → `AccessDenied` / login
+
+- Route: `/admin/subscriptions`, `/admin/security-policies`, `/admin/jit-requests`, `/admin/audit-log`
+- Bruger: anonym (I2a), #1–#4 på sider uden for deres adgang (I2b).
 - Handling:
-  a. Anonym: fixture.NewPageAsync(bredde), derefter GotoAsync(rootUri + rute). Tjek URL.
-  b. Krydsadgang: fixture.LoginAndGotoAsync(persona, rute, bredde). Tjek AccessDenied med AccessAssertions.ExpectAccessDeniedAsync.
-  c. Den forbudte side leverer ikke sit h1 (fx “Administrer abonnementer”). Tjek h1-antal 0 for det.
-  d. Skærmbillede.
+  a. Anonym: åbn hver rute direkte. Tjek URL (`/Account/Login`), `ReturnUrl` og at sidens h1 og navigation ikke vises.
+  b. Krydsadgang: log ind som personaen via den afviste side (login-redirect og `ReturnUrl`). Tjek `/Account/AccessDenied` og at sidens h1 og navigation ikke vises. Gentag for personaens øvrige afviste sider.
+  c. Kontrol: personaen kan åbne sin egen side.
 - Forventet:
-  a. Anonym: redirect til login (URL indeholder /Account/Login og ReturnUrl).
-  b. Krydsadgang: /Account/AccessDenied, titel og h1 “Adgang nægtet”, teksten “Du har ikke adgang til denne ressource.”
-  c. Sidens indhold vises ikke.
-  d. Kontrol: den samme persona kan åbne sin egen side. Dermed er fejlen rolle, ikke login.
-Skærmbilleder (768, 1280): Adgangskontrol_I2_Anonym_<bredde>, Adgangskontrol_I2_AccessDenied_<Persona>_<bredde>
-Filer: AdminNavMenu.razor(.cs/.css), AdminLayout.razor(.css), Pages/Admin/_Imports.razor, de fire admin-sider, AccessDenied.razor(.cs), Routes.razor(.cs)
+  - Anonym: redirect til login med `ReturnUrl` til den forespurgte side.
+  - #1–#4 på afviste sider: AccessDenied ("Du har ikke adgang til denne ressource.").
+  - Personaens egen side åbner stadig.
+
+- Skærmbilleder (768, 1280): `Adgangskontrol_I2_Anonym_<Side>_<bredde>`, `Adgangskontrol_I2_AccessDenied_<Persona>_<Side>_<bredde>`
+- Filer: Routes.razor(.cs), RedirectToLogin.razor(.cs), RedirectToAccessDenied.razor(.cs), AccessDenied.razor(.cs), AdminAccessMatrix.cs

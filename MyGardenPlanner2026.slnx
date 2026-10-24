@@ -24,6 +24,7 @@
     <File Path="Documentation/Testing/SmokeChecklists/Kategori 2 - Tjekliste G - Sikkerhedspolicies.md" />
     <File Path="Documentation/Testing/SmokeChecklists/Kategori 2 - Tjekliste H - RateLimiting.md" />
     <File Path="Documentation/Testing/SmokeChecklists/Kategori 2 - Tjekliste I - Adgangskontrol.md" />
+    <File Path="Documentation/Testing/SmokeChecklists/Kategori 2 - Tjekliste J - Auditlog.md" />
   </Folder>
   <Folder Name="/Documentation/Web Design Documents/" />
   <Folder Name="/Documentation/Web Design Documents/Compendium/">

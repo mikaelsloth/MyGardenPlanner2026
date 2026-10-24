@@ -117,11 +117,23 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 
 - PriceAssertions.ExpectValueAsync(locator, forventet, parse, beskrivelse) / ExpectAmountAsync(locator, forventet, beskrivelse): poller en vist værdi (5 sek.)
 - AdminSaveFlow.RejectWithStepUpAsync(page, bruger, knap, fejl, forventetTekst): klik, step-up hvis modalen vises, afventer forventet fejltekst
+
+- AuditLogTestData (seeder admin.AuditLogs via app-forbindelsen, kun INSERT/SELECT; rækker kan ikke ryddes, brug unikke markører):
+  - NewEntityName(tag), NewUserEmail(), Row(...), SeedAsync(connectionString, rows)
+  - SeedBulkAsync(connectionString, BulkSeed(entitet, e-mail, antal, handling, første tidspunkt, trin i sek.)): set-baseret INSERT … SELECT, EntityId 1..antal
+  - CountAsync(connectionString, entitet?, e-mail?)
+- AuditLogPage (/admin/audit-log): OpenAsync(fixture, bruger, bredde?) (venter på interaktivitet via første rækkes "Detaljer"; kræver mindst én række), ReloadAsync
+  - Filter: SelectEntityAsync/SelectActionAsync/SelectPageSizeAsync, SetTextAsync, SetDateAsync, SearchAsync
+  - Resultater: Rows/RowsFor(page, entitet)/Cell(række, kolonne), EmptyState, PaginationInfo, Forrige/Næste
+  - Modal: DetailDialog, JsonBlock(page, 0|1), CloseButton, DetailBackdrop
+  - Eksport: ExportButton, BackgroundExportButton, ThresholdConfirm(+Button/Cancel), ExportError, ExportSuccess; JobRows
+- AuditLogExport: window.open opsnappes (init-script, installeres af AuditLogPage.OpenAsync). WaitForNewUrlAsync(page, kendtAntal), FetchAsync(page, url) → ExportResponse(Status, ContentType, ContentDisposition, Body, Text, FileName), ParseCsv, JsonRowCount, XlsxRowCount, IsZip. Verificerer ikke selve browser-downloadet.
 - AdminAddOnsPage (/admin/subscriptions, fanen Tilkøbsmoduler):
     - OpenAsync(fixture, bruger, bredde?): login, åbn, vælg fane, vent på første række (antal kontrolleres ikke)
     - Rækker findes via type (første kolonne): Row/NameInput/PriceInput/SaveButton(page, type)
     - ReadNameAsync, ReadPriceAsync, SetPriceAsync, SaveAddOnAsync(page, bruger, type, navn)
     - AddDuplicateAsync(page, bruger, type, navn): forventer afvisning; DeleteLastRowAsync(page, bruger)
+
 - PricingAddOns (/pricing, tilkøbskort): Cards(page), Card/Price(page, navn, cyklus), ExpectPriceAsync(page, navn, cyklus, beløb)
 - PricingVolumeDiscounts.PercentCell/ExpectPercentAsync(page, rækkenavn, procent): rabattabellen på /pricing (række fx "2 - 5 haver")
    
@@ -517,6 +529,10 @@ Ikke indekseret endnu:
 | H2 | Gem-spam i policy-editor → rate-limit-fejl | AdminHandlingerRateLimitTests | RateLimiting_H2_`<bredde>` (2) | ikke kørt |
 | I1 | AdminNavMenu viser kun tilladte links (+ JIT-eskalering) | AdminNavigationTests | Adgangskontrol_I1_`<Persona>`_`<bredde>` (8), Adgangskontrol_I1d_`<bredde>` (2) | grøn |
 | I2 | Direkte URL uden rolle (anonym → login, krydsadgang → AccessDenied) | AdminDirektUrlTests | Adgangskontrol_I2_Anonym_`<Side>`_`<bredde>` (8), Adgangskontrol_I2_AccessDenied_`<Persona>`_`<Side>`_`<bredde>` (18) | grøn |
+| J1 | AuditLog: filtrering, sortering, paginering, præference | (PR 3) | Auditlog_J1_Filtreret, Auditlog_J1_IngenResultater | planlagt |
+| J2 | Admin CRUD findes som rækker | (PR 5) | Auditlog_J2_Raekker | planlagt |
+| J3 | Detaljemodal viser Old/New JSON | (PR 4) | Auditlog_J3_Detaljer | planlagt |
+| J4 | Eksport: step-up, bekræftelse > 50.000, afvisning > 250.000 | (PR 6-7) | Auditlog_J4_StepUp, Auditlog_J4_Bekraeftelse, Auditlog_J4_Graense | planlagt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
 Tests ligger under ManualSmoke/TjeklisteB/.
@@ -527,6 +543,7 @@ Tests ligger under ManualSmoke/TjeklisteF/.
 Tests ligger under ManualSmoke/TjeklisteG/.
 Tests ligger under ManualSmoke/TjeklisteH/.
 Tests ligger under ManualSmoke/TjeklisteI/.
+Tests ligger under ManualSmoke/TjeklisteJ/.
 
 ## 6. Åbne observationer (ikke rettet)
 Lukket NavDrawer er kun skubbet ud af skærmen med transform, så linkene i den kan nås med Tab.
@@ -574,3 +591,6 @@ Login/AccessDenied-stier er kun implicitte (ingen LoginPath/AccessDeniedPath i c
 To redirect-veje til login med forskellig ReturnUrl: auth-middleware (relativ, "ReturnUrl") og RedirectToLogin (absolut, "returnUrl"). LoginRedirect.ReturnPath accepterer begge.
 AdminNavMenu er statisk: linkene opdateres først ved ny sideindlæsning efter ændret adgang (fx godkendt JIT).
 Adgangsrettigheder.md er ikke opdateret med admin-siderne (/admin/subscriptions, /admin/security-policies, /admin/jit-requests, /admin/audit-log).
+AuditLogFilterBar: "Til"-dato var eksklusiv (midnat); rettet i PR "AuditLog-filter Til-dato inklusiv". Datoer tolkes som UTC, men tabellen viser lokal tid (ToLocalTime), så rækker kort efter lokal midnat kan stå på en anden dag end filteret.
+AuditLogFilterBar synkroniserer kun fra InitialFilter ved første OnParametersSet. Siden indlæser præferencen asynkront, så filterfelterne er formentlig tomme efter genindlæsning (hypotese, J1 #8 forventes rød).
+AuditLog-rækker fra Blazor-handlinger har formentlig ingen handlende bruger (HttpContext er null i en circuit). Rettes efter J2.

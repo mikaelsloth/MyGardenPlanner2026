@@ -21,6 +21,7 @@ public partial class AdminAuditLogPage
     private IReadOnlyList<string> entityNameOptions = [];
     private AuditLogQueryResultDto? result;
     private AuditLogEntryDto? selectedEntryForDetail;
+    private bool filterReady;
     private bool showDetailModal;
     private AuditLogExportJobsPanel exportJobsPanel = default!;
 
@@ -38,6 +39,10 @@ public partial class AdminAuditLogPage
                 PageSize = preference.PageSize
             };
         }
+
+        // AuditLogFilterBar synkroniserer kun ÉN gang fra InitialFilter, så den må først
+        // oprettes, når det gemte filter er indlæst.
+        filterReady = true;
 
         await RunSearchAsync();
     }

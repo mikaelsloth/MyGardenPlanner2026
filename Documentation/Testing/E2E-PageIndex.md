@@ -206,6 +206,11 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 - Nav-assertions: positiv kontrol (eget link synligt) før fravær/antal, ellers kan en negativ assert bestå, før nav'en er renderet.
 - AuditLog-linket kan indeholde .nav-badge (antal nye eksportfiler): find links via href-suffiks, ikke via tekst.
 
+- AuditLog-tests deler engangsdatabasen og rækkerne kan ikke ryddes (DENY DELETE): brug unikke EntityName/UserEmail/EntityId-præfikser. Resultater verificeres ved at sammenligne hele Entitets-ID-listen, ikke kun antal, da tabellen opdateres asynkront og et gammelt resultat ellers kan bestå.
+- Visningspræferencen gemmes uden UI-signal efter søgning: vent på rækken i dbo.AuditLogViewerPreferences, før siden genindlæses.
+
+- Komponenter, der kun synkroniserer fra en parameter ved første OnParametersSet, må ikke renderes, før forælderen har indlæst parameterens endelige værdi (Blazor renderer ved første await i OnInitializedAsync).
+
 ## 4. Sider
 
 Alle er offentlige (ingen login). Titler er `<PageTitle>`.
@@ -529,7 +534,7 @@ Ikke indekseret endnu:
 | H2 | Gem-spam i policy-editor → rate-limit-fejl | AdminHandlingerRateLimitTests | RateLimiting_H2_`<bredde>` (2) | ikke kørt |
 | I1 | AdminNavMenu viser kun tilladte links (+ JIT-eskalering) | AdminNavigationTests | Adgangskontrol_I1_`<Persona>`_`<bredde>` (8), Adgangskontrol_I1d_`<bredde>` (2) | grøn |
 | I2 | Direkte URL uden rolle (anonym → login, krydsadgang → AccessDenied) | AdminDirektUrlTests | Adgangskontrol_I2_Anonym_`<Side>`_`<bredde>` (8), Adgangskontrol_I2_AccessDenied_`<Persona>`_`<Side>`_`<bredde>` (18) | grøn |
-| J1 | AuditLog: filtrering, sortering, paginering, præference | (PR 3) | Auditlog_J1_Filtreret, Auditlog_J1_IngenResultater | planlagt |
+| J1 | AuditLog: filtrering, sortering, paginering, præference | AuditLogFilterTests | Auditlog_J1_Filtreret, Auditlog_J1_IngenResultater (`<bredde>`) (4) | ikke kørt |
 | J2 | Admin CRUD findes som rækker | (PR 5) | Auditlog_J2_Raekker | planlagt |
 | J3 | Detaljemodal viser Old/New JSON | (PR 4) | Auditlog_J3_Detaljer | planlagt |
 | J4 | Eksport: step-up, bekræftelse > 50.000, afvisning > 250.000 | (PR 6-7) | Auditlog_J4_StepUp, Auditlog_J4_Bekraeftelse, Auditlog_J4_Graense | planlagt |
@@ -592,5 +597,5 @@ To redirect-veje til login med forskellig ReturnUrl: auth-middleware (relativ, "
 AdminNavMenu er statisk: linkene opdateres først ved ny sideindlæsning efter ændret adgang (fx godkendt JIT).
 Adgangsrettigheder.md er ikke opdateret med admin-siderne (/admin/subscriptions, /admin/security-policies, /admin/jit-requests, /admin/audit-log).
 AuditLogFilterBar: "Til"-dato var eksklusiv (midnat); rettet i PR "AuditLog-filter Til-dato inklusiv". Datoer tolkes som UTC, men tabellen viser lokal tid (ToLocalTime), så rækker kort efter lokal midnat kan stå på en anden dag end filteret.
-AuditLogFilterBar synkroniserer kun fra InitialFilter ved første OnParametersSet. Siden indlæser præferencen asynkront, så filterfelterne er formentlig tomme efter genindlæsning (hypotese, J1 #8 forventes rød).
+AuditLogFilterBar synkroniserer kun fra InitialFilter ved første OnParametersSet. Siden renderede den før præferencen var indlæst, så filterfelterne var tomme efter genindlæsning. Rettet: AdminAuditLogPage renderer først filterbaren, når præferencen er indlæst (filterReady).
 AuditLog-rækker fra Blazor-handlinger har formentlig ingen handlende bruger (HttpContext er null i en circuit). Rettes efter J2.

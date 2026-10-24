@@ -8,7 +8,10 @@
     <h1>AuditLog</h1>
     <p class="card-description">Søg og filtrér i systemets revisionslog. Visningen er skrivebeskyttet.</p>
 
-    <AuditLogFilterBar InitialFilter="currentFilter" EntityNameOptions="entityNameOptions" OnSearch="HandleSearchAsync" />
+    @if (filterReady)
+    {
+        <AuditLogFilterBar InitialFilter="currentFilter" EntityNameOptions="entityNameOptions" OnSearch="HandleSearchAsync" />
+    }
 
     <AuditLogResultsTable Result="result" OnPageChanged="HandlePageChangedAsync" OnViewDetails="HandleViewDetails" />
 

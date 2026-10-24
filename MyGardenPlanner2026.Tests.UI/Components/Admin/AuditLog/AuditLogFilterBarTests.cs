@@ -104,4 +104,73 @@ public class AuditLogFilterBarTests : BunitContext
 
         emitted!.PageNumber.Should().Be(1);
     }
+
+    [Fact]
+    public void ClickingSoeg_WithToDate_EmitsToUtcAsEndOfThatDay()
+    {
+        AuditLogFilterDto? emitted = null;
+
+        var cut = Render<AuditLogFilterBar>(p => p
+            .Add(x => x.InitialFilter, AuditLogTestData.EmptyFilter())
+            .Add(x => x.EntityNameOptions, [])
+            .Add(x => x.OnSearch, filter => emitted = filter));
+
+        cut.Find("#audit-filter-to").Change("2026-10-15");
+        cut.Find(".filter-bar-actions button").Click();
+
+        emitted!.ToUtc.Should().Be(new DateTimeOffset(2026, 10, 16, 0, 0, 0, TimeSpan.Zero).AddTicks(-1));
+        emitted.FromUtc.Should().BeNull();
+    }
+
+    [Fact]
+    public void ClickingSoeg_WithFromDate_EmitsFromUtcAsStartOfThatDay()
+    {
+        AuditLogFilterDto? emitted = null;
+
+        var cut = Render<AuditLogFilterBar>(p => p
+            .Add(x => x.InitialFilter, AuditLogTestData.EmptyFilter())
+            .Add(x => x.EntityNameOptions, [])
+            .Add(x => x.OnSearch, filter => emitted = filter));
+
+        cut.Find("#audit-filter-from").Change("2026-10-15");
+        cut.Find(".filter-bar-actions button").Click();
+
+        emitted!.FromUtc.Should().Be(new DateTimeOffset(2026, 10, 15, 0, 0, 0, TimeSpan.Zero));
+        emitted.ToUtc.Should().BeNull();
+    }
+
+    [Fact]
+    public void ClickingSoeg_WithSameFromAndToDate_CoversExactlyOneDay()
+    {
+        AuditLogFilterDto? emitted = null;
+
+        var cut = Render<AuditLogFilterBar>(p => p
+            .Add(x => x.InitialFilter, AuditLogTestData.EmptyFilter())
+            .Add(x => x.EntityNameOptions, [])
+            .Add(x => x.OnSearch, filter => emitted = filter));
+
+        cut.Find("#audit-filter-from").Change("2026-10-15");
+        cut.Find("#audit-filter-to").Change("2026-10-15");
+        cut.Find(".filter-bar-actions button").Click();
+
+        (emitted!.ToUtc!.Value - emitted.FromUtc!.Value).Should().Be(TimeSpan.FromDays(1).Subtract(TimeSpan.FromTicks(1)));
+    }
+
+    [Fact]
+    public void ClickingSoeg_WithSavedEndOfDayToUtc_ShowsDateAndDoesNotShiftIt()
+    {
+        var endOfDay = new DateTimeOffset(2026, 10, 16, 0, 0, 0, TimeSpan.Zero).AddTicks(-1);
+        AuditLogFilterDto? emitted = null;
+
+        var cut = Render<AuditLogFilterBar>(p => p
+            .Add(x => x.InitialFilter, AuditLogTestData.EmptyFilter() with { ToUtc = endOfDay })
+            .Add(x => x.EntityNameOptions, [])
+            .Add(x => x.OnSearch, filter => emitted = filter));
+
+        cut.Find("#audit-filter-to").GetAttribute("value").Should().Be("2026-10-15");
+
+        cut.Find(".filter-bar-actions button").Click();
+
+        emitted!.ToUtc.Should().Be(endOfDay);
+    }
 }

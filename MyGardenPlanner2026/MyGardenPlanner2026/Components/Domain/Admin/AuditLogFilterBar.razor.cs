@@ -64,14 +64,24 @@ public partial class AuditLogFilterBar
             NullIfWhiteSpace(userId),
             NullIfWhiteSpace(userEmail),
             action,
-            fromDate.HasValue ? new DateTimeOffset(fromDate.Value, TimeSpan.Zero) : null,
-            toDate.HasValue ? new DateTimeOffset(toDate.Value, TimeSpan.Zero) : null,
+            ToUtcStartOfDay(fromDate),
+            ToUtcEndOfDay(toDate),
             PageNumber: 1,
             PageSize: pageSize,
             SortDescending: true);
 
         return OnSearch.InvokeAsync(filter);
     }
+
+    /// <summary>Valgt dato som 00:00:00 UTC (Fra er inklusiv).</summary>
+    private static DateTimeOffset? ToUtcStartOfDay(DateTime? date) =>
+        date is { } d
+            ? new DateTimeOffset(DateTime.SpecifyKind(d.Date, DateTimeKind.Utc))
+            : null;
+
+    /// <summary>Valgt dato som 23:59:59,9999999 UTC, så hele Til-dagen er med (filteret bruger &lt;=).</summary>
+    private static DateTimeOffset? ToUtcEndOfDay(DateTime? date) =>
+        ToUtcStartOfDay(date)?.AddDays(1).AddTicks(-1);
 
     private static string? NullIfWhiteSpace(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value;

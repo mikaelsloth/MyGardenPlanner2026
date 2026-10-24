@@ -1,49 +1,103 @@
 # 2. Verifikationsproces pr. modul
 
-## I. Adgangskontrol / navigation
-
-- [x] `AdminNavMenu` viser kun links brugeren reelt har adgang til (test med #2, #3, #4 hver for sig)
-- [x] Direkte URL til admin-side uden rolle → `AccessDenied` eller redirect til login
+## J. Admin – AuditLog (`/admin/audit-log`, kræver AuditViewer)
+- [ ] Filtrering pr. felt (entitet, entitets-ID, bruger, handling, dato), sortering, paginering og gemt præference giver korrekte resultater
+- [ ] Alle forudgående admin CRUD-handlinger (E/F/G) findes som rækker her
+- [ ] Detaljemodal viser Old/New JSON pænt formatteret
+- [ ] Eksport CSV/JSON/Excel: kræver step-up, bekræftelse ved > 50.000 rækker, afvisning ved > 250.000 rækker
 
 ### Forudsætninger
+- Hver test er selvforsynende og uafhængig af rækkefølge. Der asserteres aldrig på absolutte totaler.
+- Hver test bruger en frisk AuditViewer (`SeedExtraUserAsync`), da visningspræferencer er pr. bruger.
+- Testdata seedes direkte i admin.AuditLogs via app-forbindelsen (INSERT-rettighed) med unikke markører:
+  - EntityName `J<n>-<guid8>`
+  - UserEmail `j-<guid>@test.dk`
+- J2 udfører selv handlingerne og sammenligner antal rækker før/efter (filter: EntityName + EntityId + Handling + dags dato).
+- J4 volumentests (50.000/50.001/250.000/250.001 rækker) kører i egen collection og egen database.
+- Dato-filtre er UTC. "Til" er inklusiv hele dagen (kræver PR 1).
+- Grænser: bekræftelse ved > 50.000, afvisning ved > 250.000 (`IAuditLogExportService.HardRowLimit`).
 
-- Personaer: #1 Admin, #2 DataAdmin, #3 PolicyAdmin, #4 Auditor (SmokeTestPersonas).
-- Forventet adgang er hardcodet i `AdminAccessMatrix` (specifikation, ikke udledt af koden).
-- Ingen policyændringer i denne tjekliste, så intet skal gendannes i `finally`.
-
-### I1. `AdminNavMenu` viser kun links brugeren reelt har adgang til
-
-- Route: personaens startside (`/admin/subscriptions`, `/admin/jit-requests`, `/admin/security-policies`, `/admin/audit-log`)
-- Bruger: #2 DataAdmin, #3 PolicyAdmin og #4 Auditor hver for sig (+ #1 Admin som kontrol). I1d: en frisk AuditViewer + Admin (#1) som godkender.
+### J1. Filtrering, sortering, paginering og præference
+- Route: /admin/audit-log
+- Bruger: #4 Auditor (rolle) – i testen en frisk AuditViewer
 - Handling:
-  a. Log ind som personaen og åbn startsiden.
-  b. Afvent siden (titel, én h1, ingen skeletons) og at personaens egne links er synlige.
-  c. Tjek at øvrige links ikke findes, og at antallet af links matcher matricen.
-  d. Tjek at linket til den aktuelle side har klassen `active`.
-  e. Klik på hvert øvrigt synligt link: siden åbner uden AccessDenied.
-  f. I1d: frisk AuditViewer ser kun JIT-adgang og AuditLog. Efter anmodning om SystemAdmin og godkendelse (step-up) og en ny sideindlæsning ses også Abonnementer.
+  a. Seed 12 rækker: 2 entiteter, 2 brugere, 3 handlinger, tidspunkter ved dagsgrænser (00:00:00 og 23:59:59, anker = i dag − 30 dage UTC). Åbn siden.
+  b. Søg pr. felt: Entitet (dropdown), Entitets-ID, Bruger-ID, E-mail, Handling, Fra, Til.
+  c. Kombiner felter. Sæt Fra = Til = én dag. Sæt Fra > Til.
+  d. Sæt Rækker pr. side = 10 og brug Næste/Forrige.
+  e. Søg, genindlæs siden (ny circuit) og kontrollér filterfelterne. Skift derefter side og genindlæs igen. Åbn siden som en anden bruger.
 - Forventet:
-  - #1 Admin: Abonnementer, JIT-adgang.
-  - #2 DataAdmin: JIT-adgang.
-  - #3 PolicyAdmin: Sikkerhedspolicies, JIT-adgang.
-  - #4 Auditor: JIT-adgang, AuditLog.
-  - Efter godkendt JIT SystemAdmin: Abonnementer, JIT-adgang, AuditLog.
+  - #1 Dropdown indeholder de seedede entitetsnavne alfabetisk. Valg giver kun den entitets rækker.
+  - #2 Entitets-ID, Bruger-ID og E-mail matcher eksakt. En delstreng giver "Ingen resultater".
+  - #3 Handling viser kun valgt type (badges "Oprettet"/"Opdateret"/"Slettet").
+  - #4 Kombinerede felter virker som AND.
+  - #5 Fra og Til er inklusive: række 00:00:00 og 23:59:59 på valgt dag er med, 1 sek. udenfor er ikke. Fra = Til giver præcis én dag. Fra > Til giver "Ingen resultater".
+  - #6 Sortering: nyeste først.
+  - #7 Paginering: "Side 1 af 2 (12 rækker i alt)". Forrige er deaktiveret på side 1, Næste er deaktiveret på side 2. Side 2 viser 2 rækker.
+  - #8 Efter Søg og genindlæsning er felter og sidestørrelse genskabet, og tabellen matcher. Sidenavigation gemmes ikke. En anden bruger ser standard (25, intet filter).
+- Skærmbilleder (768, 1280): Auditlog_J1_Filtreret, Auditlog_J1_IngenResultater
+- Filer: AuditLogFilterBar.razor(+.cs), AuditLogResultsTable.razor(+.cs), AdminAuditLogPage.razor(+.cs), AuditLogQueryService.cs
 
-- Skærmbilleder (768, 1280): `Adgangskontrol_I1_<Persona>_<bredde>`, `Adgangskontrol_I1d_<bredde>`
-- Filer: AdminNavMenu.razor(.cs), AdminLayout.razor, AuthorizationServicesExtensions.cs, AnyAdminRoleAuthorizationHandler.cs, JitRoleAuthorizationHandler.cs
-
-### I2. Direkte URL til admin-side uden rolle → `AccessDenied` / login
-
-- Route: `/admin/subscriptions`, `/admin/security-policies`, `/admin/jit-requests`, `/admin/audit-log`
-- Bruger: anonym (I2a), #1–#4 på sider uden for deres adgang (I2b).
+### J2. Admin CRUD-handlinger findes som rækker
+- Route: /admin/audit-log (handlinger udføres på admin-siderne)
+- Bruger: #4 Auditor (læser). Handlinger udføres af frisk SystemAdmin, PolicyAdmin og AuditViewer/Admin.
 - Handling:
-  a. Anonym: åbn hver rute direkte. Tjek URL (`/Account/Login`), `ReturnUrl` og at sidens h1 og navigation ikke vises.
-  b. Krydsadgang: log ind som personaen via den afviste side (login-redirect og `ReturnUrl`). Tjek `/Account/AccessDenied` og at sidens h1 og navigation ikke vises. Gentag for personaens øvrige afviste sider.
-  c. Kontrol: personaen kan åbne sin egen side.
+  a. Policy: ret AuditLog-eksport retention og gendan (G).
+  b. Volumenrabat: ret faktor på trin 2–5 og gendan (F2). EntityId = Guid fra input-id'et.
+  c. Basispris: ret og gendan (F1). ‹EntityName/EntityId verificeres›
+  d. Tilkøb: ret pris og gendan (F3). ‹EntityName verificeres›
+  e. Volumenrabat-trin: opret og slet (Create/Delete). ‹afventer service-regler›
+  f. JIT: anmod (unik årsag), godkend, afvis (E). ‹EntityName verificeres›
+  g. Åbn auditloggen som Auditor og find rækkerne.
 - Forventet:
-  - Anonym: redirect til login med `ReturnUrl` til den forespurgte side.
-  - #1–#4 på afviste sider: AccessDenied ("Du har ikke adgang til denne ressource.").
-  - Personaens egen side åbner stadig.
+  - #1 a: Update-række EntityName `AuditLogExportJobPolicySettings`, EntityId `00000000-0000-0000-0000-000000000006`. Old/New viser RetentionHours før/efter. Gendannelsen giver en række med omvendte værdier.
+  - #2 b, c, d: mindst én ny Update-række pr. handling. Nyeste række har ændret felt i Old/New.
+  - #3 e: Create-række (Old = ingen data) og Delete-række (New = ingen data, IsDeleted false i Old).
+  - #4 f: Create-række (årsag i New), Update-række ved godkend og ved afvis (status ændret).
+  - #5 Rækkerne kan genfindes via filteret (entitet + entitets-ID + handling).
+  - #6 ‹afventer beslutning 1› Rækken har handlende bruger (UserEmail, UserId). Forventes rød indtil rettet.
+- Skærmbilleder (768, 1280): Auditlog_J2_Raekker
+- Filer: AuditLoggingInterceptor.cs, HttpContextCurrentUserAccessor.cs, ‹entiteter og services verificeres›
 
-- Skærmbilleder (768, 1280): `Adgangskontrol_I2_Anonym_<Side>_<bredde>`, `Adgangskontrol_I2_AccessDenied_<Persona>_<Side>_<bredde>`
-- Filer: Routes.razor(.cs), RedirectToLogin.razor(.cs), RedirectToAccessDenied.razor(.cs), AccessDenied.razor(.cs), AdminAccessMatrix.cs
+### J3. Detaljemodal viser Old/New JSON pænt formatteret
+- Route: /admin/audit-log
+- Bruger: #4 Auditor (rolle) – i testen en frisk AuditViewer
+- Handling:
+  a. Seed 5 rækker: Create (Old null), Update (kompakt enkeltlinje-JSON), Delete (New null), ugyldig JSON og tom streng. Tilføj en rigtig række fra J2b.
+  b. Klik "Detaljer" på hver række.
+  c. Mål layout ved 375, 768, 939, 940 og 1280.
+  d. Luk med "Luk" og med klik på baggrunden.
+- Forventet:
+  - #1 Dialogen har rolle dialog og titel "Detaljer — <entitet> (<id>)". Metalinjen viser tidspunkt, e-mail og IP.
+  - #2 Gyldig JSON er indrykket og flerlinjet, og indholdet kan parses som JSON.
+  - #3 Null og tom streng viser "(ingen data)". Ugyldig JSON vises som rå tekst uden fejl.
+  - #4 Den rigtige række viser samme felter i Old og New, hvor kun de ændrede værdier afviger.
+  - #5 Fra og med 940 px står "Tidligere værdier" og "Nye værdier" side om side. Under 940 px står de under hinanden.
+  - #6 "Luk" og klik på baggrunden lukker. Klik inde i dialogen lukker ikke.
+- Skærmbilleder (768, 1280): Auditlog_J3_Detaljer
+- Filer: AuditLogDetailModal.razor(+.cs, .css), AuditLogResultsTable.razor
+
+### J4. Eksport CSV/JSON/Excel: step-up, bekræftelse > 50.000, afvisning > 250.000
+- Route: /admin/audit-log
+- Bruger: #4 Auditor (rolle) – i testen en frisk AuditViewer
+- Handling:
+  a. Eksportér i en frisk circuit. Annullér modalen. Klik igen og gennemfør step-up.
+  b. Kald `/admin/audit-log/export?format=Csv&token=ugyldigt` direkte.
+  c. Seed 3 rækker (unik e-mail). Søg på e-mailen og eksportér som CSV, JSON og Excel.
+  d. (egen collection) Seed 250.001 rækker i grupper, så filtrene giver 50.000, 50.001, 250.000 og 250.001. Eksportér for hvert filter.
+  e. Klik "Send til baggrundseksport" med 3-rækkers filteret.
+  f. (valgfri, beslutning 4) Send baggrundseksport med 250.001-filteret.
+- Forventet:
+  - #1 Første Eksportér i en frisk circuit viser step-up modalen, og intet download startes. Efter Annullér sker intet. Efter korrekt password + TOTP starter download.
+  - #2 Ugyldigt token giver 403 med "Eksport-token er ugyldig eller udløbet".
+  - #3 Filnavn `audit-log-export-<yyyyMMdd-HHmmss>.<csv|json|xlsx>`. Kun rækker fra sidst søgte filter eksporteres.
+    - CSV: header `Id,UserId,UserEmail,…,TimestampUtc` + 3 rækker (BOM ignoreres).
+    - JSON: array med 3 elementer, Action som tekst.
+    - Excel: gyldig zip med ark "AuditLog" og 4 rækker.
+  - #4 50.000 rækker: ingen bekræftelse, download starter.
+  - #5 50.001 rækker: "Eksporten omfatter 50001 rækker og kan tage et øjeblik. Fortsæt?". Annullér giver intet download. "Ja, fortsæt" downloader 50.001 rækker.
+  - #6 250.000 rækker: bekræftelse (ikke fejl). 250.001 rækker: "Error: Eksporten omfatter 250001 rækker, hvilket overstiger grænsen på 250000. Indsnævr filteret og prøv igen." Ingen bekræftelse og intet download.
+  - #7 Baggrundseksport: "Eksporten er sat i kø…" vises, og en række (Format Csv, status Afventer/Kører/Klar) står i "Baggrundseksporter". Færdiggørelse og download dækkes af G2c.
+  - #8 (valgfri) Baggrundseksport over grænsen ender som "Fejlet" med fejltekst.
+- Skærmbilleder (768, 1280): Auditlog_J4_StepUp, Auditlog_J4_Bekraeftelse, Auditlog_J4_Graense
+- Filer: AuditLogExportPanel.razor(+.cs), AuditLogExportJobsPanel.razor(+.cs), AuditLogEndpointsExtension.cs, AuditLogExportService.cs, AuditLogExportJobProcessor.cs

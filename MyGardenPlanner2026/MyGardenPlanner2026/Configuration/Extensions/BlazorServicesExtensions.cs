@@ -1,5 +1,6 @@
 ﻿namespace MyGardenPlanner2026.Configuration.Extensions;
 
+using Microsoft.AspNetCore.Components.Server.Circuits;
 using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Services;
 
@@ -14,6 +15,10 @@ public static class BlazorServicesExtensions
 
         services.AddHttpContextAccessor();
         services.AddSingleton<ICurrentUserAccessor, HttpContextCurrentUserAccessor>();
+
+        services.AddHttpContextAccessor();
+        services.AddSingleton<ICurrentUserAccessor, HttpContextCurrentUserAccessor>();
+        services.AddScoped<CircuitHandler, CircuitUserCircuitHandler>();
 
         return services;
     }

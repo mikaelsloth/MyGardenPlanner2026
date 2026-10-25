@@ -56,7 +56,7 @@
   - #3 Create-række (Old = ingen data, New viser MinGardens, PriceMultiplier, IsDeleted false) og Delete-række (Old viser IsDeleted false, New = ingen data), filtreret på trinnets ID.
   - #4 Create-række pr. anmodning (Status Pending). Update Pending → Approved og Pending → Rejected.
   - #5 Rækkerne kan genfindes via filteret (entitet + entitets-ID + handling).
-  - #6 (PR 6) Rækken har handlende bruger (UserEmail).
+  - #6 Rækken har handlende bruger (UserEmail i tabellen og UserId i detaljemodalens metalinje). IP-adressen er tom i circuits.
 
 - Skærmbilleder (768, 1280): Auditlog_J2_Raekker
 - Filer: AuditLoggingInterceptor.cs, HttpContextCurrentUserAccessor.cs, ‹entiteter og services verificeres›

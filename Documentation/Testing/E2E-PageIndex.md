@@ -222,6 +222,8 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 - AuditLog-rækker fra admin-handlinger findes ved indhold (overgangen Old → New i detaljemodalen) blandt de nyeste rækker, ikke ved position. Antal nye rækker pr. handling afhænger af servicen (fx renummerering af DisplayOrder): assertér delta ≥ forventet, medmindre servicen er gennemgået.
 - Åbn auditloggen EFTER handlingerne: entitetsdropdownen populeres ved indlæsning.
 
+- Singleton-services (fx EF-interceptors) når circuit-brugeren via CircuitUserContext (AsyncLocal sat af CircuitHandler.CreateInboundActivityHandler), ikke via IHttpContextAccessor.
+
 ## 4. Sider
 
 Alle er offentlige (ingen login). Titler er `<PageTitle>`.
@@ -554,7 +556,7 @@ Ikke indekseret endnu:
 | I1 | AdminNavMenu viser kun tilladte links (+ JIT-eskalering) | AdminNavigationTests | Adgangskontrol_I1_`<Persona>`_`<bredde>` (8), Adgangskontrol_I1d_`<bredde>` (2) | grøn |
 | I2 | Direkte URL uden rolle (anonym → login, krydsadgang → AccessDenied) | AdminDirektUrlTests | Adgangskontrol_I2_Anonym_`<Side>`_`<bredde>` (8), Adgangskontrol_I2_AccessDenied_`<Persona>`_`<Side>`_`<bredde>` (18) | grøn |
 | J1 | AuditLog: filtrering, sortering, paginering, præference | AuditLogFilterTests | Auditlog_J1_Filtreret, Auditlog_J1_IngenResultater (`<bredde>`) (4) | ikke kørt |
-| J2 | Admin CRUD findes som rækker (policy, volumenrabat, basispris, tilkøb, opret/slet trin, JIT) | AdminHandlingerIAuditLogTests | Auditlog_J2_Raekker_`<bredde>` (2) | ikke kørt (handlende bruger: skipped til PR 6) |
+| J2 | Admin CRUD findes som rækker (policy, volumenrabat, basispris, tilkøb, opret/slet trin, JIT) | AdminHandlingerIAuditLogTests | Auditlog_J2_Raekker_`<bredde>` (2) | ikke kørt |
 | J3 | AuditLog: detaljemodal viser Old/New JSON | AuditLogDetailTests | Auditlog_J3_Detaljer_`<bredde>` (2) | ikke kørt |
 | J4 | Eksport: step-up, bekræftelse > 50.000, afvisning > 250.000 | (PR 6-7) | Auditlog_J4_StepUp, Auditlog_J4_Bekraeftelse, Auditlog_J4_Graense | planlagt |
 
@@ -617,8 +619,8 @@ AdminNavMenu er statisk: linkene opdateres først ved ny sideindlæsning efter �
 Adgangsrettigheder.md er ikke opdateret med admin-siderne (/admin/subscriptions, /admin/security-policies, /admin/jit-requests, /admin/audit-log).
 AuditLogFilterBar: "Til"-dato var eksklusiv (midnat); rettet i PR "AuditLog-filter Til-dato inklusiv". Datoer tolkes som UTC, men tabellen viser lokal tid (ToLocalTime), så rækker kort efter lokal midnat kan stå på en anden dag end filteret.
 AuditLogFilterBar synkroniserer kun fra InitialFilter ved første OnParametersSet. Siden renderede den før præferencen var indlæst, så filterfelterne var tomme efter genindlæsning. Rettet: AdminAuditLogPage renderer først filterbaren, når præferencen er indlæst (filterReady).
-AuditLog-rækker fra Blazor-handlinger har formentlig ingen handlende bruger (HttpContext er null i en circuit). Rettes efter J2.
-AuditLogDetailModal: aria-modal="true", men markup'et har hverken Esc-håndtering, focus-trap eller returnering af fokus (jf. designets ConfirmDialog). Ikke testet i J3.
+AuditLog-rækker fra Blazor-handlinger har handlende bruger via CircuitUserCircuitHandler (AsyncLocal CircuitUserContext) og HttpContextCurrentUserAccessor. IP-adressen kendes ikke i en circuit og er tom i rækken.
+HttpContextCurrentUserAccessor: HttpContext er normalt null i en circuit → alarm fra StepUpReAuthModal får IP "ukendt" (UserId er nu kendt via CircuitUserContext).AuditLogDetailModal: aria-modal="true", men markup'et har hverken Esc-håndtering, focus-trap eller returnering af fokus (jf. designets ConfirmDialog). Ikke testet i J3.
 AuditLogDetailModal: dialogen kunne ikke scrolle, og "Luk" lå uden for viewporten ved 375×812 og 939×900 (to stablede JSON-blokke á max 400 px). Rettet: max-height + overflow-y: auto på dialogen og max-height 200 px på JSON-blokkene under 940 px.
 GardenVolumeDiscountTier (og SubscriptionAddOn.Type): det unikke indeks på MinGardens har intet filter på IsDeleted. Et soft-slettet trin optager sit MinGardens, så et nyt trin med samme værdi afvises med "Der findes allerede en trappe der starter ved N haver", selvom ingen synlig række har den. Ikke testet; J2 bruger en tilfældig MinGardens.
 GardenVolumeDiscountAdminService.SaveAsync: DbUpdateException fanges som duplikat-fejl uanset årsag.

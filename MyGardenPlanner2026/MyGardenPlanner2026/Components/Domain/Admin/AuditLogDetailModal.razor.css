@@ -2,6 +2,9 @@
 .audit-log-detail-dialog {
     max-width: 900px;
     width: 100%;
+    max-height: calc(100vh - 2 * var(--mgp-space-md));
+    max-height: calc(100dvh - 2 * var(--mgp-space-md));
+    overflow-y: auto;
 }
 
 .audit-log-detail-grid {
@@ -32,5 +35,9 @@
 @media (max-width: 939.98px) {
     .audit-log-detail-grid {
         grid-template-columns: 1fr;
+    }
+
+    .audit-log-detail-json {
+        max-height: 200px;
     }
 }

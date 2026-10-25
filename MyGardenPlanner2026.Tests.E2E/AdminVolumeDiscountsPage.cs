@@ -72,4 +72,50 @@ public static class AdminVolumeDiscountsPage
             SavedMessage(page, minGardens),
             Error(page),
             $"Gem af volumenrabat-trappen fra {minGardens} haver");
+
+    /// <summary>Rækkens id (Guid) udledt af input-id'et "min-&lt;guid&gt;". Samme værdi som EntityId i AuditLog.</summary>
+    public static async Task<Guid> ReadTierIdAsync(IPage page, int index)
+    {
+        var id = await MinInput(page, index).GetAttributeAsync("id")
+            ?? throw new InvalidOperationException($"Række {index} har ikke noget min-input med id.");
+
+        return Guid.Parse(id["min-".Length..]);
+    }
+
+    /// <summary>
+    /// Opretter et trin via "Tilføj trappe" (Max tom = åben trappe) med step-up, hvis modalen vises.
+    /// Et trin med højeste MinGardens havner som sidste række (indeks = antal rækker før oprettelsen).
+    /// </summary>
+    public static async Task AddTierAsync(IPage page, SmokeTestUser user, int minGardens, decimal multiplier)
+    {
+        var form = page.Locator(".volume-discount-editor .form-section");
+
+        await SetValueAsync(form.Locator("#new-min"), minGardens.ToString(CultureInfo.InvariantCulture));
+        await SetValueAsync(form.Locator("#new-mult"), multiplier.ToString("0.00", CultureInfo.InvariantCulture));
+
+        await AdminSaveFlow.SaveWithStepUpAsync(
+            page,
+            user,
+            form.Locator("#add-tier"),
+            page.Locator(".status-success")
+                .Filter(new() { HasText = $"Ny volumenrabat-trappe fra {minGardens} haver er oprettet." }),
+            Error(page),
+            $"Oprettelse af volumenrabat-trappen fra {minGardens} haver");
+    }
+
+    /// <summary>Sletter rækken ("Slet") med step-up, hvis modalen vises.</summary>
+    public static Task DeleteTierAsync(IPage page, SmokeTestUser user, int index) =>
+        AdminSaveFlow.SaveWithStepUpAsync(
+            page,
+            user,
+            Row(page, index).GetByRole(AriaRole.Button, new() { Name = "Slet", Exact = true }),
+            page.Locator(".status-success").Filter(new() { HasText = "Volumenrabat-trappen er slettet." }),
+            Error(page),
+            $"Sletning af volumenrabat-trin på række {index}");
+
+    private static async Task SetValueAsync(ILocator input, string value)
+    {
+        await input.FillAsync(value);
+        await input.BlurAsync(); // @onchange udløses først ved blur
+    }
 }

@@ -153,6 +153,9 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
   - ExpectExactLinksAsync(page, forventede): positiv kontrol først, derefter fravær og samlet antal
 - LoginRedirect.ReturnPath(url): stien i ReturnUrl fra en login-URL (relativ "ReturnUrl" fra middleware og absolut "returnUrl" fra RedirectToLogin)
 
+- AuditLogTestData.CountForEntityAsync(connectionString, entitet, entitetsId?, handling?): antal rækker, til før/efter-sammenligning.
+- AdminVolumeDiscountsPage: ReadTierIdAsync(page, indeks) (Guid = EntityId i AuditLog), AddTierAsync(page, bruger, minGardens, faktor) (Max tom), DeleteTierAsync(page, bruger, indeks). Et trin med højeste MinGardens havner som sidste række.
+
 ## 3. Læringer (undgå gentagelser)
 - Playwright-regex understøtter kun IgnoreCase og Multiline. Andre flag giver ArgumentException.
 - Interaktive Blazor Server-sider ignorerer klik og input, til kredsløbet er forbundet, og prerendering kan nulstille indtastninger. Brug ActUntilAsync, og indtast først, når siden har reageret.
@@ -215,6 +218,9 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 - Negativ assert på en Blazor-lukning (fx "klik inde i dialogen lukker ikke"): vent med WaitUntilAsync til en lukning ville være sket (fx 1 sek.) og assertér, at den ikke skete. En umiddelbar visibility-assert kan bestå, før hændelsen er nået til serveren.
 
 - Modaler skal kunne scrolle på lave viewports: en Playwright-fejl "element is outside of the viewport" efter scroll betyder, at elementet ikke kan nås for en rigtig bruger. Test at lukkeknappen kan klikkes ved 375×812 og 939×900. 
+
+- AuditLog-rækker fra admin-handlinger findes ved indhold (overgangen Old → New i detaljemodalen) blandt de nyeste rækker, ikke ved position. Antal nye rækker pr. handling afhænger af servicen (fx renummerering af DisplayOrder): assertér delta ≥ forventet, medmindre servicen er gennemgået.
+- Åbn auditloggen EFTER handlingerne: entitetsdropdownen populeres ved indlæsning.
 
 ## 4. Sider
 
@@ -548,7 +554,7 @@ Ikke indekseret endnu:
 | I1 | AdminNavMenu viser kun tilladte links (+ JIT-eskalering) | AdminNavigationTests | Adgangskontrol_I1_`<Persona>`_`<bredde>` (8), Adgangskontrol_I1d_`<bredde>` (2) | grøn |
 | I2 | Direkte URL uden rolle (anonym → login, krydsadgang → AccessDenied) | AdminDirektUrlTests | Adgangskontrol_I2_Anonym_`<Side>`_`<bredde>` (8), Adgangskontrol_I2_AccessDenied_`<Persona>`_`<Side>`_`<bredde>` (18) | grøn |
 | J1 | AuditLog: filtrering, sortering, paginering, præference | AuditLogFilterTests | Auditlog_J1_Filtreret, Auditlog_J1_IngenResultater (`<bredde>`) (4) | ikke kørt |
-| J2 | Admin CRUD findes som rækker | (PR 5) | Auditlog_J2_Raekker | planlagt |
+| J2 | Admin CRUD findes som rækker (policy, volumenrabat, basispris, tilkøb, opret/slet trin, JIT) | AdminHandlingerIAuditLogTests | Auditlog_J2_Raekker_`<bredde>` (2) | ikke kørt (handlende bruger: skipped til PR 6) |
 | J3 | AuditLog: detaljemodal viser Old/New JSON | AuditLogDetailTests | Auditlog_J3_Detaljer_`<bredde>` (2) | ikke kørt |
 | J4 | Eksport: step-up, bekræftelse > 50.000, afvisning > 250.000 | (PR 6-7) | Auditlog_J4_StepUp, Auditlog_J4_Bekraeftelse, Auditlog_J4_Graense | planlagt |
 
@@ -614,3 +620,5 @@ AuditLogFilterBar synkroniserer kun fra InitialFilter ved første OnParametersSe
 AuditLog-rækker fra Blazor-handlinger har formentlig ingen handlende bruger (HttpContext er null i en circuit). Rettes efter J2.
 AuditLogDetailModal: aria-modal="true", men markup'et har hverken Esc-håndtering, focus-trap eller returnering af fokus (jf. designets ConfirmDialog). Ikke testet i J3.
 AuditLogDetailModal: dialogen kunne ikke scrolle, og "Luk" lå uden for viewporten ved 375×812 og 939×900 (to stablede JSON-blokke á max 400 px). Rettet: max-height + overflow-y: auto på dialogen og max-height 200 px på JSON-blokkene under 940 px.
+GardenVolumeDiscountTier (og SubscriptionAddOn.Type): det unikke indeks på MinGardens har intet filter på IsDeleted. Et soft-slettet trin optager sit MinGardens, så et nyt trin med samme værdi afvises med "Der findes allerede en trappe der starter ved N haver", selvom ingen synlig række har den. Ikke testet; J2 bruger en tilfældig MinGardens.
+GardenVolumeDiscountAdminService.SaveAsync: DbUpdateException fanges som duplikat-fejl uanset årsag.

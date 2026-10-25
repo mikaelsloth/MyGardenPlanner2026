@@ -132,6 +132,31 @@ public static class AuditLogTestData
         return (int)(await command.ExecuteScalarAsync())!;
     }
 
+    /// <summary>
+    /// Antal rækker for en entitet, evt. afgrænset til ét entitets-ID og/eller en handling. Bruges til
+    /// at sammenligne før/efter en admin-handling, da rækkerne i den fælles database ikke kan ryddes.
+    /// </summary>
+    public static async Task<int> CountForEntityAsync(
+        string connectionString, string entityName, string? entityId = null, AuditAction? action = null)
+    {
+        await using var connection = new SqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        await using var command = new SqlCommand(
+            "SELECT COUNT(*) FROM [admin].[AuditLogs] " +
+            "WHERE [EntityName] = @entityName " +
+            "AND (@entityId IS NULL OR [EntityId] = @entityId) " +
+            "AND (@action IS NULL OR [Action] = @action)", connection);
+        command.Parameters.Add(Text("@entityName", entityName));
+        command.Parameters.Add(Text("@entityId", entityId));
+        command.Parameters.Add(new SqlParameter("@action", SqlDbType.Int)
+        {
+            Value = action.HasValue ? action.Value : DBNull.Value
+        });
+
+        return (int)(await command.ExecuteScalarAsync())!;
+    }
+
     private static SqlParameter Text(string name, string? value) =>
         new(name, SqlDbType.NVarChar, -1) { Value = (object?)value ?? DBNull.Value };
 }

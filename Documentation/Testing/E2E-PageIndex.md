@@ -127,7 +127,7 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
   - Resultater: Rows/RowsFor(page, entitet)/Cell(række, kolonne), EmptyState, PaginationInfo, Forrige/Næste
   - Modal: DetailDialog, JsonBlock(page, 0|1), CloseButton, DetailBackdrop
   - Eksport: ExportButton, BackgroundExportButton, ThresholdConfirm(+Button/Cancel), ExportError, ExportSuccess; JobRows
-- AuditLogExport: window.open opsnappes (init-script, installeres af AuditLogPage.OpenAsync). WaitForNewUrlAsync(page, kendtAntal), FetchAsync(page, url) → ExportResponse(Status, ContentType, ContentDisposition, Body, Text, FileName), ParseCsv, JsonRowCount, XlsxRowCount, IsZip. Verificerer ikke selve browser-downloadet.
+- AuditLogExport: window.open opsnappes (init-script, installeres af AuditLogPage.OpenAsync). WaitForNewUrlAsync(page, kendtAntal), FetchAsync(page, url) → ExportResponse(Status, ContentType, ContentDisposition, Body, Text, FileName), ParseCsv, JsonRowCount, XlsxRowCount, IsZip. Verificerer ikke selve browser-downloadet. XlsxColumn(body, kolonne)
 - AdminAddOnsPage (/admin/subscriptions, fanen Tilkøbsmoduler):
     - OpenAsync(fixture, bruger, bredde?): login, åbn, vælg fane, vent på første række (antal kontrolleres ikke)
     - Rækker findes via type (første kolonne): Row/NameInput/PriceInput/SaveButton(page, type)
@@ -223,6 +223,10 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 - Åbn auditloggen EFTER handlingerne: entitetsdropdownen populeres ved indlæsning.
 
 - Singleton-services (fx EF-interceptors) når circuit-brugeren via CircuitUserContext (AsyncLocal sat af CircuitHandler.CreateInboundActivityHandler), ikke via IHttpContextAccessor.
+
+- Eksport: step-up vises kun første gang i en circuit inden for re-auth-vinduet (1 min i E2E). Hjælpere, der eksporterer flere gange, må håndtere begge udfald (modal eller direkte URL).
+- Results.Problem skriver ikke-ASCII som \u-escapes i den rå tekst: parse JSON og læs "detail" i stedet for at søge i teksten.
+- Eksporten bruger sidst SØGTE filter (CurrentFilter), ikke de aktuelle feltværdier.
 
 ## 4. Sider
 
@@ -495,6 +499,14 @@ To kolonner (.audit-log-detail-column) med h3 "Tidligere værdier" / "Nye værdi
 Visning: gyldig JSON indrykket (2 mellemrum); null, tom eller whitespace → "(ingen data)"; ugyldig JSON → rå tekst. Knap "Luk" lukker.
 Tests: ManualSmoke/TjeklisteJ/AuditLogDetailTests.
 ```
+```
+/admin/audit-log — eksportpanel (AuditLogExportPanel)
+Panel: .audit-log-export-panel. Format: #export-format (værdier Csv/Json/Xlsx). Knapper: "Eksportér" og "Send til baggrundseksport" (begge bag step-up og rate limit).
+Eksportér åbner /admin/audit-log/export?format=…&token=…&entityName=…&userEmail=… via window.open(url, "_blank"). Filnavn audit-log-export-<yyyyMMdd-HHmmss>.<csv|json|xlsx>. Ugyldigt token: 403 med problem details "Eksport-token er ugyldig eller udløbet: …".
+CSV-header: Id,UserId,UserEmail,IpAddress,Action,EntityName,EntityId,OldValues,NewValues,TimestampUtc. JSON: array af AuditLogEntryDto (Action som tekst). Excel: ark "AuditLog".
+Baggrundseksport: succes "Eksporten er sat i kø. …", job i .audit-log-export-jobs-panel (kolonner: Oprettet, Format, Status, Rækker, Handling; status Afventer/Kører/Klar/Fejlet).
+Tests: ManualSmoke/TjeklisteJ/AuditLogEksportTests.
+```
 
 Admin-sider (kendt fra PersonaAccessTests, ikke gennemgået med .razor)
 | Rute	Overskrift	Persona |
@@ -558,7 +570,7 @@ Ikke indekseret endnu:
 | J1 | AuditLog: filtrering, sortering, paginering, præference | AuditLogFilterTests | Auditlog_J1_Filtreret, Auditlog_J1_IngenResultater (`<bredde>`) (4) | ikke kørt |
 | J2 | Admin CRUD findes som rækker (policy, volumenrabat, basispris, tilkøb, opret/slet trin, JIT) | AdminHandlingerIAuditLogTests | Auditlog_J2_Raekker_`<bredde>` (2) | ikke kørt |
 | J3 | AuditLog: detaljemodal viser Old/New JSON | AuditLogDetailTests | Auditlog_J3_Detaljer_`<bredde>` (2) | ikke kørt |
-| J4 | Eksport: step-up, bekræftelse > 50.000, afvisning > 250.000 | (PR 6-7) | Auditlog_J4_StepUp, Auditlog_J4_Bekraeftelse, Auditlog_J4_Graense | planlagt |
+| J4 | Eksport: step-up, formater, ugyldigt token, baggrundseksport (PR 7); grænser 50.000/250.000 (PR 8) | AuditLogEksportTests | Auditlog_J4_StepUp_`<bredde>` (2); Auditlog_J4_Bekraeftelse, Auditlog_J4_Graense (PR 8) | delvist, ikke kørt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
 Tests ligger under ManualSmoke/TjeklisteB/.

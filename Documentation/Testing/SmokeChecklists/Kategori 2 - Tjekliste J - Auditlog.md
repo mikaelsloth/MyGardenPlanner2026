@@ -92,12 +92,12 @@
   e. Klik "Send til baggrundseksport" med 3-rækkers filteret.
   f. (valgfri, beslutning 4) Send baggrundseksport med 250.001-filteret.
 - Forventet:
-  - #1 Første Eksportér i en frisk circuit viser step-up modalen, og intet download startes. Efter Annullér sker intet. Efter korrekt password + TOTP starter download.
+  - #1 Første Eksportér i en frisk circuit viser step-up modalen, og intet download startes. Efter Annullér og nyt klik vises modalen igen. Efter korrekt password + TOTP starter download.
   - #2 Ugyldigt token giver 403 med "Eksport-token er ugyldig eller udløbet".
-  - #3 Filnavn `audit-log-export-<yyyyMMdd-HHmmss>.<csv|json|xlsx>`. Kun rækker fra sidst søgte filter eksporteres.
+  - #3 Filnavn `audit-log-export-<yyyyMMdd-HHmmss>.<csv|json|xlsx>`. Kun rækker fra sidst søgte filter eksporteres. Ændrede, men ikke søgte felter påvirker ikke eksporten.
     - CSV: header `Id,UserId,UserEmail,…,TimestampUtc` + 3 rækker (BOM ignoreres).
     - JSON: array med 3 elementer, Action som tekst.
-    - Excel: gyldig zip med ark "AuditLog" og 4 rækker.
+    - Excel: gyldig zip med ark ‘AuditLog’ og 3 datarækker (overskrift kommer i tillæg)
   - #4 50.000 rækker: ingen bekræftelse, download starter.
   - #5 50.001 rækker: "Eksporten omfatter 50001 rækker og kan tage et øjeblik. Fortsæt?". Annullér giver intet download. "Ja, fortsæt" downloader 50.001 rækker.
   - #6 250.000 rækker: bekræftelse (ikke fejl). 250.001 rækker: "Error: Eksporten omfatter 250001 rækker, hvilket overstiger grænsen på 250000. Indsnævr filteret og prøv igen." Ingen bekræftelse og intet download.

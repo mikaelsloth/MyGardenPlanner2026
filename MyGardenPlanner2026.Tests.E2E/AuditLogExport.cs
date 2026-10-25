@@ -150,4 +150,12 @@ public static class AuditLogExport
         using var workbook = new XLWorkbook(stream);
         return workbook.Worksheet("AuditLog").RowsUsed().Count() - 1;
     }
+
+    /// <summary>Værdierne i en kolonne (1-indekseret) for datarækkerne i arket "AuditLog", i arkets rækkefølge.</summary>
+    public static IReadOnlyList<string> XlsxColumn(byte[] body, int column)
+    {
+        using var stream = new MemoryStream(body);
+        using var workbook = new XLWorkbook(stream);
+        return [.. workbook.Worksheet("AuditLog").RowsUsed().Skip(1).Select(r => r.Cell(column).GetString())];
+    }
 }

@@ -43,20 +43,20 @@
 - Route: /admin/audit-log (handlinger udføres på admin-siderne)
 - Bruger: #4 Auditor (læser). Handlinger udføres af frisk SystemAdmin, PolicyAdmin og AuditViewer/Admin.
 - Handling:
-  a. Policy: ret AuditLog-eksport retention og gendan (G).
-  b. Volumenrabat: ret faktor på trin 2–5 og gendan (F2). EntityId = Guid fra input-id'et.
-  c. Basispris: ret og gendan (F1). ‹EntityName/EntityId verificeres›
-  d. Tilkøb: ret pris og gendan (F3). ‹EntityName verificeres›
-  e. Volumenrabat-trin: opret og slet (Create/Delete). ‹afventer service-regler›
-  f. JIT: anmod (unik årsag), godkend, afvis (E). ‹EntityName verificeres›
-  g. Åbn auditloggen som Auditor og find rækkerne.
+  a. PolicyAdmin ændrer AuditLog-eksport retention og gendanner.
+  b. SystemAdmin ændrer faktor på trin 2–5 og gendanner.
+  c. SystemAdmin ændrer basispris (HaveArkitekt · Editor, årlig) og gendanner.
+  d. SystemAdmin ændrer tilkøbspris (Bedforslag Niveau 2, månedlig) og gendanner.
+  e. SystemAdmin opretter og sletter et volumenrabat-trin.
+  f. AuditViewer anmoder to gange om SystemAdmin. Admin godkender den ene og afviser den anden.
+  g. Åbn auditloggen som frisk AuditViewer og find rækkerne.
 - Forventet:
-  - #1 a: Update-række EntityName `AuditLogExportJobPolicySettings`, EntityId `00000000-0000-0000-0000-000000000006`. Old/New viser RetentionHours før/efter. Gendannelsen giver en række med omvendte værdier.
-  - #2 Old og New har samme felter, og kun de ændrede værdier afviger.
-  - #3 e: Create-række (Old = ingen data) og Delete-række (New = ingen data, IsDeleted false i Old).
-  - #4 f: Create-række (årsag i New), Update-række ved godkend og ved afvis (status ændret).
+  - #1 Præcis 2 nye Update-rækker (ændring og gendannelse).
+  - #2 Mindst 2 nye Update-rækker med Old/New som overgangen original ↔ ændret.
+  - #3 Create-række (Old = ingen data, New viser MinGardens, PriceMultiplier, IsDeleted false) og Delete-række (Old viser IsDeleted false, New = ingen data), filtreret på trinnets ID.
+  - #4 Create-række pr. anmodning (Status Pending). Update Pending → Approved og Pending → Rejected.
   - #5 Rækkerne kan genfindes via filteret (entitet + entitets-ID + handling).
-  - #6 ‹afventer beslutning 1› Rækken har handlende bruger (UserEmail, UserId). Forventes rød indtil rettet.
+  - #6 (PR 6) Rækken har handlende bruger (UserEmail).
 
 - Skærmbilleder (768, 1280): Auditlog_J2_Raekker
 - Filer: AuditLoggingInterceptor.cs, HttpContextCurrentUserAccessor.cs, ‹entiteter og services verificeres›

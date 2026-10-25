@@ -49,4 +49,27 @@ public sealed class AuditLogTestDataDatabaseTests : IAsyncLifetime
 
         (await AuditLogTestData.CountAsync(_database.AppConnectionString, entity, email)).Should().Be(1_500);
     }
+
+    [Fact]
+    public async Task CountForEntityAsync_AfgraenserPaaEntitetEntitetsIdOgHandling()
+    {
+        var entity = AuditLogTestData.NewEntityName("C");
+        var ts = new DateTimeOffset(2026, 9, 1, 0, 0, 0, TimeSpan.Zero);
+
+        await AuditLogTestData.SeedAsync(_database.AppConnectionString,
+        [
+            AuditLogTestData.Row(entity, "a", AuditAction.Create, ts),
+            AuditLogTestData.Row(entity, "a", AuditAction.Update, ts.AddSeconds(1)),
+            AuditLogTestData.Row(entity, "a", AuditAction.Update, ts.AddSeconds(2)),
+            AuditLogTestData.Row(entity, "b", AuditAction.Update, ts.AddSeconds(3)),
+        ]);
+
+        var connection = _database.AppConnectionString;
+
+        (await AuditLogTestData.CountForEntityAsync(connection, entity)).Should().Be(4);
+        (await AuditLogTestData.CountForEntityAsync(connection, entity, "a")).Should().Be(3);
+        (await AuditLogTestData.CountForEntityAsync(connection, entity, "a", AuditAction.Update)).Should().Be(2);
+        (await AuditLogTestData.CountForEntityAsync(connection, entity, action: AuditAction.Update)).Should().Be(3);
+        (await AuditLogTestData.CountForEntityAsync(connection, entity, "ukendt")).Should().Be(0);
+    }
 }

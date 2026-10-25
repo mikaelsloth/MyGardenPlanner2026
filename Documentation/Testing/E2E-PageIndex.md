@@ -156,6 +156,10 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 - AuditLogTestData.CountForEntityAsync(connectionString, entitet, entitetsId?, handling?): antal rækker, til før/efter-sammenligning.
 - AdminVolumeDiscountsPage: ReadTierIdAsync(page, indeks) (Guid = EntityId i AuditLog), AddTierAsync(page, bruger, minGardens, faktor) (Max tom), DeleteTierAsync(page, bruger, indeks). Et trin med højeste MinGardens havner som sidste række.
 
+- PlaywrightVolumeAppCollection ("Playwright App Volume"): egen PlaywrightAppFixture (app, database, SMTP-sink) til tests med store datasæt, så den fælles database ikke forurenes. Collections kører sekventielt; i CI droppes og genskabes databasen med fast navn ved næste CreateAsync.
+- AuditLogExport.FetchAsync(page, url, timeoutMs?): valgfri timeout til store eksporter (standard 30 sek.).
+- AuditLogTestData.SeedBulkAsync med StepSeconds: 0 giver rækker med identisk tidspunkt (til dagsfiltre med præcist antal).
+
 ## 3. Læringer (undgå gentagelser)
 - Playwright-regex understøtter kun IgnoreCase og Multiline. Andre flag giver ArgumentException.
 - Interaktive Blazor Server-sider ignorerer klik og input, til kredsløbet er forbundet, og prerendering kan nulstille indtastninger. Brug ActUntilAsync, og indtast først, når siden har reageret.
@@ -227,6 +231,9 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 - Eksport: step-up vises kun første gang i en circuit inden for re-auth-vinduet (1 min i E2E). Hjælpere, der eksporterer flere gange, må håndtere begge udfald (modal eller direkte URL).
 - Results.Problem skriver ikke-ASCII som \u-escapes i den rå tekst: parse JSON og læs "detail" i stedet for at søge i teksten.
 - Eksporten bruger sidst SØGTE filter (CurrentFilter), ikke de aktuelle feltværdier.
+
+- Store datasæt hører hjemme i en egen collection (PlaywrightVolumeAppCollection): rækker i admin.AuditLogs kan ikke ryddes, og andre tests (G2c: baggrundseksport med tomt filter) rammer ellers 250.000-grænsen.
+- Præcise antal rækker for et dagsfilter: seed én gruppe pr. dag med StepSeconds: 0 og tidspunkt midt på dagen (12:00 UTC), og brug Fra–Til-intervaller, så filtrene summerer til de ønskede antal.
 
 ## 4. Sider
 
@@ -506,6 +513,9 @@ Eksportér åbner /admin/audit-log/export?format=…&token=…&entityName=…&us
 CSV-header: Id,UserId,UserEmail,IpAddress,Action,EntityName,EntityId,OldValues,NewValues,TimestampUtc. JSON: array af AuditLogEntryDto (Action som tekst). Excel: ark "AuditLog".
 Baggrundseksport: succes "Eksporten er sat i kø. …", job i .audit-log-export-jobs-panel (kolonner: Oprettet, Format, Status, Rækker, Handling; status Afventer/Kører/Klar/Fejlet).
 Tests: ManualSmoke/TjeklisteJ/AuditLogEksportTests.
+Grænser: bekræftelse ved > 50.000 rækker ("Eksporten omfatter <n> rækker og kan tage et øjeblik. Fortsæt?", n uden tusindtalsseparator), afvisning ved > 250.000 ("Error: Eksporten omfatter <n> rækker, hvilket overstiger grænsen på 250000. Indsnævr filteret og prøv igen."). Endpointet afviser > 250.000 med 422 (problem details "detail").
+Baggrundseksport tjekker ikke rækkeantallet ved oprettelse: AuditLogExportJobProcessor sætter jobbet til Fejlet ("Eksporten omfatter <n> rækker, hvilket overstiger grænsen på 250000. Indsnævr filteret."), vist som .meta i job-rækken. Listen genindlæses med "Opdater".
+Tests: ManualSmoke/TjeklisteJ/AuditLogEksportVolumenTests.
 ```
 
 Admin-sider (kendt fra PersonaAccessTests, ikke gennemgået med .razor)
@@ -570,7 +580,7 @@ Ikke indekseret endnu:
 | J1 | AuditLog: filtrering, sortering, paginering, præference | AuditLogFilterTests | Auditlog_J1_Filtreret, Auditlog_J1_IngenResultater (`<bredde>`) (4) | ikke kørt |
 | J2 | Admin CRUD findes som rækker (policy, volumenrabat, basispris, tilkøb, opret/slet trin, JIT) | AdminHandlingerIAuditLogTests | Auditlog_J2_Raekker_`<bredde>` (2) | ikke kørt |
 | J3 | AuditLog: detaljemodal viser Old/New JSON | AuditLogDetailTests | Auditlog_J3_Detaljer_`<bredde>` (2) | ikke kørt |
-| J4 | Eksport: step-up, formater, ugyldigt token, baggrundseksport (PR 7); grænser 50.000/250.000 (PR 8) | AuditLogEksportTests | Auditlog_J4_StepUp_`<bredde>` (2); Auditlog_J4_Bekraeftelse, Auditlog_J4_Graense (PR 8) | delvist, ikke kørt |
+| J4 | Eksport: step-up, formater, ugyldigt token, baggrundseksport; grænser 50.000/250.000 | AuditLogEksportTests, AuditLogEksportVolumenTests | Auditlog_J4_StepUp_`<bredde>` (2), Auditlog_J4_Bekraeftelse_`<bredde>` (2), Auditlog_J4_Graense_`<bredde>` (2) | ikke kørt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
 Tests ligger under ManualSmoke/TjeklisteB/.
@@ -582,6 +592,7 @@ Tests ligger under ManualSmoke/TjeklisteG/.
 Tests ligger under ManualSmoke/TjeklisteH/.
 Tests ligger under ManualSmoke/TjeklisteI/.
 Tests ligger under ManualSmoke/TjeklisteJ/.
+Volumentests (PlaywrightVolumeAppCollection) ligger under ManualSmoke/TjeklisteJ/ (AuditLogEksportVolumenTests).
 
 ## 6. Åbne observationer (ikke rettet)
 Lukket NavDrawer er kun skubbet ud af skærmen med transform, så linkene i den kan nås med Tab.
@@ -636,3 +647,6 @@ HttpContextCurrentUserAccessor: HttpContext er normalt null i en circuit → ala
 AuditLogDetailModal: dialogen kunne ikke scrolle, og "Luk" lå uden for viewporten ved 375×812 og 939×900 (to stablede JSON-blokke á max 400 px). Rettet: max-height + overflow-y: auto på dialogen og max-height 200 px på JSON-blokkene under 940 px.
 GardenVolumeDiscountTier (og SubscriptionAddOn.Type): det unikke indeks på MinGardens har intet filter på IsDeleted. Et soft-slettet trin optager sit MinGardens, så et nyt trin med samme værdi afvises med "Der findes allerede en trappe der starter ved N haver", selvom ingen synlig række har den. Ikke testet; J2 bruger en tilfældig MinGardens.
 GardenVolumeDiscountAdminService.SaveAsync: DbUpdateException fanges som duplikat-fejl uanset årsag.
+AuditLogEksportVolumenTests.ClickWithStepUpAsync dublerer ExportAsync i AuditLogEksportTests (kandidat til dedup).
+Baggrundseksport: oprettelsen accepterer filtre over 250.000 rækker. Brugeren får først besked om afvisningen, når jobbet er behandlet (status Fejlet). Overvej at afvise ved oprettelse.
+AuditLogExportService.ExportAsync henter alle rækker i hukommelsen (SearchAsync med PageSize = totalCount). Ved 250.000 rækker som Excel (ClosedXML) kan det belaste appen kraftigt; ikke testet.

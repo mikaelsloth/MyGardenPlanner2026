@@ -88,7 +88,7 @@
   a. Eksportér i en frisk circuit. Annullér modalen. Klik igen og gennemfør step-up.
   b. Kald `/admin/audit-log/export?format=Csv&token=ugyldigt` direkte.
   c. Seed 3 rækker (unik e-mail). Søg på e-mailen og eksportér som CSV, JSON og Excel.
-  d. (egen collection) Seed 250.001 rækker i grupper, så filtrene giver 50.000, 50.001, 250.000 og 250.001. Eksportér for hvert filter.
+  d. (egen collection) Seed 250.001 rækker for én bruger fordelt på fire dage (50.000 / 1 / 199.999 / 1). Brug Fra/Til-filtre, så de giver 50.000, 50.001, 250.000 og 250.001. Eksportér som CSV for hvert filter.
   e. Klik "Send til baggrundseksport" med 3-rækkers filteret.
   f. (valgfri, beslutning 4) Send baggrundseksport med 250.001-filteret.
 - Forventet:
@@ -98,11 +98,11 @@
     - CSV: header `Id,UserId,UserEmail,…,TimestampUtc` + 3 rækker (BOM ignoreres).
     - JSON: array med 3 elementer, Action som tekst.
     - Excel: gyldig zip med ark ‘AuditLog’ og 3 datarækker (overskrift kommer i tillæg)
-  - #4 50.000 rækker: ingen bekræftelse, download starter.
+  - #4 50.000 rækker: ingen bekræftelse, download starter og indeholder 50.000 rækker.
   - #5 50.001 rækker: "Eksporten omfatter 50001 rækker og kan tage et øjeblik. Fortsæt?". Annullér giver intet download. "Ja, fortsæt" downloader 50.001 rækker.
-  - #6 250.000 rækker: bekræftelse (ikke fejl). 250.001 rækker: "Error: Eksporten omfatter 250001 rækker, hvilket overstiger grænsen på 250000. Indsnævr filteret og prøv igen." Ingen bekræftelse og intet download.
+  - #6 250.000 rækker: bekræftelse (ikke fejl). Der downloades ikke. 250.001 rækker: "Error: Eksporten omfatter 250001 rækker, hvilket overstiger grænsen på 250000. Indsnævr filteret og prøv igen." Ingen bekræftelse og intet download. Endpointet afviser samme filter med 422.
   - #7 Baggrundseksport: "Eksporten er sat i kø…" vises, og en række (Format Csv, status Afventer/Kører/Klar) står i "Baggrundseksporter". Færdiggørelse og download dækkes af G2c.
-  - #8 (valgfri) Baggrundseksport over grænsen ender som "Fejlet" med fejltekst.
+  - #8 Baggrundseksport over grænsen ender som ‘Fejlet’ med teksten ‘Eksporten omfatter 250001 rækker, hvilket overstiger grænsen på 250000. Indsnævr filteret.’ og uden download-link.
 
-- Skærmbilleder (768, 1280): Auditlog_J4_StepUp, Auditlog_J4_Bekraeftelse, Auditlog_J4_Graense
+- Skærmbilleder (768, 1280): Auditlog_J4_Bekraeftelse tages ved 50.001 rækker, Auditlog_J4_Graense ved 250.001.
 - Filer: AuditLogExportPanel.razor(+.cs), AuditLogExportJobsPanel.razor(+.cs), AuditLogEndpointsExtension.cs, AuditLogExportService.cs, AuditLogExportJobProcessor.cs

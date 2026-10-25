@@ -57,9 +57,12 @@ public static class AuditLogExport
             : throw new TimeoutException($"Ingen eksport-URL blev åbnet inden for {waitTimeout}.");
     }
 
-    public static async Task<ExportResponse> FetchAsync(IPage page, string url)
+    /// <summary>Henter URL'en med browserens cookies. Store eksporter kan kræve en længere timeout end standarden (30 sek.).</summary>
+    public static async Task<ExportResponse> FetchAsync(IPage page, string url, float? timeoutMs = null)
     {
-        var response = await page.Context.APIRequest.GetAsync(url);
+        var options = timeoutMs is null ? null : new APIRequestContextOptions { Timeout = timeoutMs };
+
+        var response = await page.Context.APIRequest.GetAsync(url, options);
         await using (response.ConfigureAwait(false))
         {
             response.Headers.TryGetValue("content-type", out var contentType);

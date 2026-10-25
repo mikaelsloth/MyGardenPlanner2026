@@ -52,7 +52,7 @@
   g. Åbn auditloggen som Auditor og find rækkerne.
 - Forventet:
   - #1 a: Update-række EntityName `AuditLogExportJobPolicySettings`, EntityId `00000000-0000-0000-0000-000000000006`. Old/New viser RetentionHours før/efter. Gendannelsen giver en række med omvendte værdier.
-  - #2 b, c, d: mindst én ny Update-række pr. handling. Nyeste række har ændret felt i Old/New.
+  - #2 Old og New har samme felter, og kun de ændrede værdier afviger.
   - #3 e: Create-række (Old = ingen data) og Delete-række (New = ingen data, IsDeleted false i Old).
   - #4 f: Create-række (årsag i New), Update-række ved godkend og ved afvis (status ændret).
   - #5 Rækkerne kan genfindes via filteret (entitet + entitets-ID + handling).
@@ -65,7 +65,7 @@
 - Route: /admin/audit-log
 - Bruger: #4 Auditor (rolle) – i testen en frisk AuditViewer
 - Handling:
-  a. Seed 5 rækker: Create (Old null), Update (kompakt enkeltlinje-JSON), Delete (New null), ugyldig JSON og tom streng. Tilføj en rigtig række fra J2b.
+  a. Seed 5 rækker: Create (Old null), Update (kompakt enkeltlinje-JSON), Delete (New null), ugyldig JSON og tom streng.
   b. Klik "Detaljer" på hver række.
   c. Mål layout ved 375, 768, 939, 940 og 1280.
   d. Luk med "Luk" og med klik på baggrunden.
@@ -73,9 +73,10 @@
   - #1 Dialogen har rolle dialog og titel "Detaljer — <entitet> (<id>)". Metalinjen viser tidspunkt, e-mail og IP.
   - #2 Gyldig JSON er indrykket og flerlinjet, og indholdet kan parses som JSON.
   - #3 Null og tom streng viser "(ingen data)". Ugyldig JSON vises som rå tekst uden fejl.
-  - #4 Den rigtige række viser samme felter i Old og New, hvor kun de ændrede værdier afviger.
-  - #5 Fra og med 940 px står "Tidligere værdier" og "Nye værdier" side om side. Under 940 px står de under hinanden.
+  - #4 Update-rækken viser både Old og New som indrykket JSON, hvor kun de ændrede værdier afviger. En rigtig række fra admin-handlinger dækkes af J2 (#2).
+  - #5 Fra og med 940 px står "Tidligere værdier" og "Nye værdier" side om side. Under 940 px står de under hinanden. Gælder ved 375, 768, 939, 940 og 1280 px.
   - #6 "Luk" og klik på baggrunden lukker. Klik inde i dialogen lukker ikke.
+  - #7 Dialogen kan scrolle, og ‘Luk’ kan nås ved 375×812 og 939×900.
 
 - Skærmbilleder (768, 1280): Auditlog_J3_Detaljer
 - Filer: AuditLogDetailModal.razor(+.cs, .css), AuditLogResultsTable.razor

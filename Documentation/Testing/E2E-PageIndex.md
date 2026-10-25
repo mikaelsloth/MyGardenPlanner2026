@@ -211,6 +211,11 @@ Smoke-brugere (SmokeTestPersonas, seedes af SmokeTestDataSeeder):
 
 - Komponenter, der kun synkroniserer fra en parameter ved første OnParametersSet, må ikke renderes, før forælderen har indlæst parameterens endelige værdi (Blazor renderer ved første await i OnInitializedAsync).
 
+- ToHaveTextAsync/ToContainTextAsync normaliserer whitespace. Brug TextContentAsync (linjeskift normaliseret) til at verificere indrykning og flerlinjet tekst.
+- Negativ assert på en Blazor-lukning (fx "klik inde i dialogen lukker ikke"): vent med WaitUntilAsync til en lukning ville være sket (fx 1 sek.) og assertér, at den ikke skete. En umiddelbar visibility-assert kan bestå, før hændelsen er nået til serveren.
+
+- Modaler skal kunne scrolle på lave viewports: en Playwright-fejl "element is outside of the viewport" efter scroll betyder, at elementet ikke kan nås for en rigtig bruger. Test at lukkeknappen kan klikkes ved 375×812 og 939×900. 
+
 ## 4. Sider
 
 Alle er offentlige (ingen login). Titler er `<PageTitle>`.
@@ -474,6 +479,14 @@ Adgang afgøres uafhængigt af Status: HasActiveElevationAsync tjekker ValidToUt
 Filer: AdminSecurityPolicyPage.razor (+ .cs), JitElevationPolicyEditor.razor (+ .cs), RoleElevationExpirySweepService.cs
 Page-object SecurityPolicyPage (JIT): OpenJitTabAsync (fanehop væk og tilbage = forbundet kredsløb; venter på #jit-min), ReadJitPolicyAsync → JitPolicyValues(Min, Max, Sweep), SaveJitPolicyAsync(page, bruger, min, sweep) (sætter Min og Sweep, Gem, step-up, afventer succesbesked).
 ```
+```
+/admin/audit-log — detaljemodal (AuditLogDetailModal)
+Åbnes med knappen "Detaljer" på en række. Backdrop: .confirm-dialog-backdrop (klik lukker; dialogen stopper bobling). Dialog: .audit-log-detail-dialog, role=dialog, aria-labelledby → h2 "Detaljer — <entitet> (<id>)".
+Metalinje: p.meta "<tidspunkt g da-DK, lokal tid> · <e-mail> (<bruger-id>) · <ip>".
+To kolonner (.audit-log-detail-column) med h3 "Tidligere værdier" / "Nye værdier" og pre.audit-log-detail-json. Side om side fra 940 px, under hinanden under (max-width 939.98px).
+Visning: gyldig JSON indrykket (2 mellemrum); null, tom eller whitespace → "(ingen data)"; ugyldig JSON → rå tekst. Knap "Luk" lukker.
+Tests: ManualSmoke/TjeklisteJ/AuditLogDetailTests.
+```
 
 Admin-sider (kendt fra PersonaAccessTests, ikke gennemgået med .razor)
 | Rute	Overskrift	Persona |
@@ -536,7 +549,7 @@ Ikke indekseret endnu:
 | I2 | Direkte URL uden rolle (anonym → login, krydsadgang → AccessDenied) | AdminDirektUrlTests | Adgangskontrol_I2_Anonym_`<Side>`_`<bredde>` (8), Adgangskontrol_I2_AccessDenied_`<Persona>`_`<Side>`_`<bredde>` (18) | grøn |
 | J1 | AuditLog: filtrering, sortering, paginering, præference | AuditLogFilterTests | Auditlog_J1_Filtreret, Auditlog_J1_IngenResultater (`<bredde>`) (4) | ikke kørt |
 | J2 | Admin CRUD findes som rækker | (PR 5) | Auditlog_J2_Raekker | planlagt |
-| J3 | Detaljemodal viser Old/New JSON | (PR 4) | Auditlog_J3_Detaljer | planlagt |
+| J3 | AuditLog: detaljemodal viser Old/New JSON | AuditLogDetailTests | Auditlog_J3_Detaljer_`<bredde>` (2) | ikke kørt |
 | J4 | Eksport: step-up, bekræftelse > 50.000, afvisning > 250.000 | (PR 6-7) | Auditlog_J4_StepUp, Auditlog_J4_Bekraeftelse, Auditlog_J4_Graense | planlagt |
 
 Tests ligger under ManualSmoke/TjeklisteA/.
@@ -599,3 +612,5 @@ Adgangsrettigheder.md er ikke opdateret med admin-siderne (/admin/subscriptions,
 AuditLogFilterBar: "Til"-dato var eksklusiv (midnat); rettet i PR "AuditLog-filter Til-dato inklusiv". Datoer tolkes som UTC, men tabellen viser lokal tid (ToLocalTime), så rækker kort efter lokal midnat kan stå på en anden dag end filteret.
 AuditLogFilterBar synkroniserer kun fra InitialFilter ved første OnParametersSet. Siden renderede den før præferencen var indlæst, så filterfelterne var tomme efter genindlæsning. Rettet: AdminAuditLogPage renderer først filterbaren, når præferencen er indlæst (filterReady).
 AuditLog-rækker fra Blazor-handlinger har formentlig ingen handlende bruger (HttpContext er null i en circuit). Rettes efter J2.
+AuditLogDetailModal: aria-modal="true", men markup'et har hverken Esc-håndtering, focus-trap eller returnering af fokus (jf. designets ConfirmDialog). Ikke testet i J3.
+AuditLogDetailModal: dialogen kunne ikke scrolle, og "Luk" lå uden for viewporten ved 375×812 og 939×900 (to stablede JSON-blokke á max 400 px). Rettet: max-height + overflow-y: auto på dialogen og max-height 200 px på JSON-blokkene under 940 px.

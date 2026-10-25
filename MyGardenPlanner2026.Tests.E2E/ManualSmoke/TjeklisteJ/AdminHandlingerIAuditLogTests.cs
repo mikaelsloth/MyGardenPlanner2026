@@ -70,22 +70,25 @@ public sealed class AdminHandlingerIAuditLogTests(PlaywrightAppFixture fixture)
         await ScreenshotRecorder.CaptureAsync(page, Chapter, Checklist, TestName, "J2_Raekker");
     }
 
-    // --- Handlende bruger (afventer PR 6) ---
+    // --- Handlende bruger ---
 
-#pragma warning disable xUnit1004 // Test methods should not be skipped
-    [Fact(Skip = "Afventer PR 6: handlende bruger i Blazor-circuits (HttpContext er null).")]
-#pragma warning restore xUnit1004 // Test methods should not be skipped
+    [Fact]
     public async Task Policy_Aendring_RaekkenHarHandlendeBruger()
     {
         var user = await fixture.SeedExtraUserAsync(RoleNames.PolicyAdmin);
+        var userId = await SmokeTestDataSeeder.GetUserIdAsync(fixture.AppConnectionString, user.Email);
 
         await ChangeAndRestoreRetentionAsync(user, Viewports.Desktop);
 
         var page = await OpenAuditAsync(Viewports.Desktop, PolicyEntity, PolicyEntityId, AuditAction.Update, LabelUpdate);
 
         // Nyeste række er gendannelsen, udført af samme bruger.
-        var userCell = AuditLogPage.Rows(page).Nth(0).Locator("td:nth-child(2)");
-        await Assertions.Expect(userCell).ToHaveTextAsync(user.Email);
+        var firstRow = AuditLogPage.Rows(page).Nth(0);
+        await Assertions.Expect(firstRow.Locator("td:nth-child(2)")).ToHaveTextAsync(user.Email);
+
+        await AuditLogPage.OpenDetailsAsync(firstRow);
+        await Assertions.Expect(AuditLogPage.DetailDialog(page).Locator("p.meta"))
+            .ToContainTextAsync($"({userId})");
     }
 
     // --- b. Volumenrabat: opdatering ---

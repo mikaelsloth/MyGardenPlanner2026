@@ -80,4 +80,26 @@ public sealed class AuditLogExportTests
     {
         AuditLogExport.IsZip("Id,UserId"u8.ToArray()).Should().BeFalse();
     }
+
+    [Fact]
+    public void XlsxColumn_GiverKolonnensDatarakkerUdenOverskrift()
+    {
+        using var stream = new MemoryStream();
+        using (var workbook = new XLWorkbook())
+        {
+            var sheet = workbook.Worksheets.Add("AuditLog");
+            sheet.Cell(1, 1).Value = "Id";
+            sheet.Cell(1, 2).Value = "UserEmail";
+            sheet.Cell(2, 1).Value = "a";
+            sheet.Cell(2, 2).Value = "x@test.dk";
+            sheet.Cell(3, 1).Value = "b";
+            sheet.Cell(3, 2).Value = "y@test.dk";
+            workbook.SaveAs(stream);
+        }
+
+        var bytes = stream.ToArray();
+
+        AuditLogExport.XlsxColumn(bytes, 1).Should().Equal("a", "b");
+        AuditLogExport.XlsxColumn(bytes, 2).Should().Equal("x@test.dk", "y@test.dk");
+    }
 }

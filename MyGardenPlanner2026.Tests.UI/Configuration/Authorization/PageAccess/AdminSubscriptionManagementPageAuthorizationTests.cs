@@ -7,9 +7,6 @@ using Xunit;
 public class AdminSubscriptionManagementPageAuthorizationTests
 {
     [Fact]
-    public void AdminSubscriptionManagementPage_RequiresGlobalAdminPolicy()
-    {
-        PageAuthorizationAssert.RequiresPolicy<AdminSubscriptionManagementPage>(
+    public void AdminSubscriptionManagementPage_RequiresGlobalAdminPolicy() => PageAuthorizationAssert.RequiresPolicy<AdminSubscriptionManagementPage>(
             AuthorizationServicesExtensions.RequireGlobalAdminPolicy);
-    }
 }

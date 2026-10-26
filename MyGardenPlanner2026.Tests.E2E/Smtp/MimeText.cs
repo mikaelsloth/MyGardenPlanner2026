@@ -36,15 +36,12 @@ public static partial class MimeText
         });
     }
 
-    public static string DecodeBody(IReadOnlyList<string> lines, string? transferEncoding, Encoding charset)
+    public static string DecodeBody(IReadOnlyList<string> lines, string? transferEncoding, Encoding charset) => (transferEncoding?.Trim().ToLowerInvariant()) switch
     {
-        return (transferEncoding?.Trim().ToLowerInvariant()) switch
-        {
-            "base64" => charset.GetString(Convert.FromBase64String(string.Concat(lines))),
-            "quoted-printable" => charset.GetString(DecodeQuotedPrintableLines(lines)),
-            _ => string.Join("\r\n", lines),
-        };
-    }
+        "base64" => charset.GetString(Convert.FromBase64String(string.Concat(lines))),
+        "quoted-printable" => charset.GetString(DecodeQuotedPrintableLines(lines)),
+        _ => string.Join("\r\n", lines),
+    };
 
     public static Encoding CharsetFromContentType(string? contentType)
     {

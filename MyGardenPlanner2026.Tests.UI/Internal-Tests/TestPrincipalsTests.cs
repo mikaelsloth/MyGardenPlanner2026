@@ -36,10 +36,7 @@ public sealed class TestPrincipalsTests
     }
 
     [Fact]
-    public void Anonymous_IsNotAuthenticated()
-    {
-        TestPrincipals.Anonymous().Identity!.IsAuthenticated.Should().BeFalse();
-    }
+    public void Anonymous_IsNotAuthenticated() => TestPrincipals.Anonymous().Identity!.IsAuthenticated.Should().BeFalse();
 
     [Fact]
     public async Task CreateAuthStateAsync_ReturnsStateForRequestedUser()

@@ -62,10 +62,7 @@ public sealed class SubscriptionTestDataTests
     }
 
     [Fact]
-    public void AddOns_WithoutId_GetDistinctIds()
-    {
-        SubscriptionTestData.BedforslagAddOn().Id.Should().NotBe(SubscriptionTestData.BedforslagAddOn().Id);
-    }
+    public void AddOns_WithoutId_GetDistinctIds() => SubscriptionTestData.BedforslagAddOn().Id.Should().NotBe(SubscriptionTestData.BedforslagAddOn().Id);
 
     [Fact]
     public void Tier_Defaults_AreAnnualBedDesignerEditorWithoutFeatures()

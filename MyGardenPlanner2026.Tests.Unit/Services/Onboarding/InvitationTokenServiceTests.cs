@@ -52,10 +52,7 @@ public sealed class InvitationTokenServiceTests
     }
 
     [Fact]
-    public void HashToken_DifferentInput_ProducesDifferentHash()
-    {
-        sut.HashToken("token-a").Should().NotBe(sut.HashToken("token-b"));
-    }
+    public void HashToken_DifferentInput_ProducesDifferentHash() => sut.HashToken("token-a").Should().NotBe(sut.HashToken("token-b"));
 
     [Theory]
     [InlineData(null)]

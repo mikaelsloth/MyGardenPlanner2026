@@ -18,10 +18,7 @@ public sealed class AuditLogExportTests
     }
 
     [Fact]
-    public void ExportResponse_UdenContentDisposition_HarIngenFileName()
-    {
-        new ExportResponse(403, null, null, []).FileName.Should().BeNull();
-    }
+    public void ExportResponse_UdenContentDisposition_HarIngenFileName() => new ExportResponse(403, null, null, []).FileName.Should().BeNull();
 
     [Fact]
     public void ExportResponse_Text_FjernerBom()
@@ -45,16 +42,10 @@ public sealed class AuditLogExportTests
     }
 
     [Fact]
-    public void ParseCsv_UdenAfsluttendeLinjeskift_MedtagerSidsteRaekke()
-    {
-        AuditLogExport.ParseCsv("a,b\n1,2").Should().HaveCount(2);
-    }
+    public void ParseCsv_UdenAfsluttendeLinjeskift_MedtagerSidsteRaekke() => AuditLogExport.ParseCsv("a,b\n1,2").Should().HaveCount(2);
 
     [Fact]
-    public void JsonRowCount_GiverAntalElementer()
-    {
-        AuditLogExport.JsonRowCount("[{\"Id\":1},{\"Id\":2},{\"Id\":3}]"u8.ToArray()).Should().Be(3);
-    }
+    public void JsonRowCount_GiverAntalElementer() => AuditLogExport.JsonRowCount("[{\"Id\":1},{\"Id\":2},{\"Id\":3}]"u8.ToArray()).Should().Be(3);
 
     [Fact]
     public void XlsxRowCount_TaellerDatarakkerUdenOverskrift_OgIsZipGenkenderFilen()
@@ -76,10 +67,7 @@ public sealed class AuditLogExportTests
     }
 
     [Fact]
-    public void IsZip_TekstFil_ErFalsk()
-    {
-        AuditLogExport.IsZip("Id,UserId"u8.ToArray()).Should().BeFalse();
-    }
+    public void IsZip_TekstFil_ErFalsk() => AuditLogExport.IsZip("Id,UserId"u8.ToArray()).Should().BeFalse();
 
     [Fact]
     public void XlsxColumn_GiverKolonnensDatarakkerUdenOverskrift()

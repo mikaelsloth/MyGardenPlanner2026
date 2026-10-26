@@ -14,10 +14,7 @@ public partial class PricingPage
 
     private IReadOnlyList<SubscriptionAddOnDto> addOns = [];
 
-    protected override async Task OnInitializedAsync()
-    {
-        addOns = await AddOnService.GetAllAddOnsAsync();
-    }
+    protected override async Task OnInitializedAsync() => addOns = await AddOnService.GetAllAddOnsAsync();
 
     private void HandleContinueToCheckout(PricingSelectionDto selection) =>
         NavigationManager.NavigateTo(

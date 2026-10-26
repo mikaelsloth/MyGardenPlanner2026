@@ -24,10 +24,7 @@ public partial class Register
     [LoggerMessage(EventId = 1026, Level = LogLevel.Information, Message = "User created a new account with password.")]
     static partial void UserCreatedAccountWithPassword(ILogger logger);
 
-    protected override void OnInitialized()
-    {
-        Input ??= new();
-    }
+    protected override void OnInitialized() => Input ??= new();
 
     public async Task RegisterUserAsync(EditContext editContext)
     {
@@ -81,12 +78,9 @@ public partial class Register
         }
     }
 
-    private IUserEmailStore<ApplicationUser> GetEmailStore()
-    {
-        return !UserManager.SupportsUserEmail
+    private IUserEmailStore<ApplicationUser> GetEmailStore() => !UserManager.SupportsUserEmail
             ? throw new NotSupportedException("The default UI requires a user store with email support.")
             : (IUserEmailStore<ApplicationUser>)UserStore;
-    }
 
     private sealed class InputModel
     {

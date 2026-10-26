@@ -14,10 +14,7 @@ public partial class LandingPage
 
     private IReadOnlyList<SubscriptionTierDto>? featuredTiers;
 
-    protected override async Task OnInitializedAsync()
-    {
-        featuredTiers = await PricingService.GetFeaturedTiersAsync(BillingCycle.Annual);
-    }
+    protected override async Task OnInitializedAsync() => featuredTiers = await PricingService.GetFeaturedTiersAsync(BillingCycle.Annual);
 
     private void HandleSelectPlan(Guid tierId)
     {

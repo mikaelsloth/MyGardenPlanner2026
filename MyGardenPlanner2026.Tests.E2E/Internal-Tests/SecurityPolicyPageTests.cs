@@ -13,19 +13,13 @@ public sealed class SecurityPolicyPageTests
     }
 
     [Fact]
-    public void AllTabs_KomponentnavneErGyldigeFilnavnedeleUdenMellemrum()
-    {
-        SecurityPolicyPage.AllTabs.Should().OnlyContain(t =>
-            !string.IsNullOrWhiteSpace(t.Component) && t.Component.All(char.IsLetterOrDigit));
-    }
+    public void AllTabs_KomponentnavneErGyldigeFilnavnedeleUdenMellemrum() => SecurityPolicyPage.AllTabs.Should().OnlyContain(t =>
+                                                                                       !string.IsNullOrWhiteSpace(t.Component) && t.Component.All(char.IsLetterOrDigit));
 
     [Fact]
-    public void AllTabs_ErISidensRaekkefoelge()
-    {
-        SecurityPolicyPage.AllTabs.Select(t => t.Name).Should().Equal(
+    public void AllTabs_ErISidensRaekkefoelge() => SecurityPolicyPage.AllTabs.Select(t => t.Name).Should().Equal(
             "JIT-eskalering", "Step-up re-auth", "Fejl-tracker",
             "Admin-API rate limit", "Login rate limit", "AuditLog-eksport");
-    }
 
     [Fact]
     public void AllTabs_HarUnikkePolicynavneOgSuccesbeskeder()

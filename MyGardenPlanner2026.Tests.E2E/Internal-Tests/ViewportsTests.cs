@@ -28,8 +28,5 @@ public sealed class ViewportsTests
     }
 
     [Fact]
-    public void All_IndeholderDeFemFasteBredder()
-    {
-        Viewports.All.Should().Equal(375, 768, 939, 940, 1280);
-    }
+    public void All_IndeholderDeFemFasteBredder() => Viewports.All.Should().Equal(375, 768, 939, 940, 1280);
 }

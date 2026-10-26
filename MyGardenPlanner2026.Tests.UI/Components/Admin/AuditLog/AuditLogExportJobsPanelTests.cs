@@ -138,7 +138,7 @@ public class AuditLogExportJobsPanelTests : BunitContext
             .Returns(Task.FromResult<IReadOnlyList<AuditLogExportJobDto>>([]));
 
         var cut = RenderPanel();
-        await cut.InvokeAsync(() => cut.Instance.RefreshAsync());
+        await cut.InvokeAsync(cut.Instance.RefreshAsync);
 
         await jobService.Received(2).GetJobsForUserAsync("user-1", Arg.Any<CancellationToken>());
     }

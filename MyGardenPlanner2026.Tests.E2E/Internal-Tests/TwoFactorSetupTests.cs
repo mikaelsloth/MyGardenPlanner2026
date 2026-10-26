@@ -8,8 +8,5 @@ public sealed class TwoFactorSetupTests
     [InlineData("abcd efgh ijkl mnop", "ABCDEFGHIJKLMNOP")]
     [InlineData("  abcd\tefgh\r\n", "ABCDEFGH")]
     [InlineData("ABCDEFGH", "ABCDEFGH")]
-    public void NormalizeKey_FjernerWhitespaceOgGiverStoreBogstaver(string formatted, string expected)
-    {
-        TwoFactorSetup.NormalizeKey(formatted).Should().Be(expected);
-    }
+    public void NormalizeKey_FjernerWhitespaceOgGiverStoreBogstaver(string formatted, string expected) => TwoFactorSetup.NormalizeKey(formatted).Should().Be(expected);
 }

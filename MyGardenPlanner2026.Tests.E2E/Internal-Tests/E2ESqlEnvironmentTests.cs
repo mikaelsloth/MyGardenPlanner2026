@@ -10,18 +10,12 @@ using FluentAssertions;
 public sealed class E2ESqlEnvironmentTests
 {
     [Fact]
-    public void MasterConnectionString_ErMigrationConnectionStringMedDatabaseMaster()
-    {
-        E2ESqlEnvironment.MasterConnectionString()
+    public void MasterConnectionString_ErMigrationConnectionStringMedDatabaseMaster() => E2ESqlEnvironment.MasterConnectionString()
             .Should().Be(E2ESqlEnvironment.MigrationConnectionString("master"));
-    }
 
     [Fact]
-    public void MigrationConnectionString_IndeholderDatabasenavnet()
-    {
-        E2ESqlEnvironment.MigrationConnectionString("MinDb")
+    public void MigrationConnectionString_IndeholderDatabasenavnet() => E2ESqlEnvironment.MigrationConnectionString("MinDb")
             .Should().Contain("Database=MinDb;");
-    }
 
     [Fact]
     public void LokalTilstand_MigrationConnectionString_BrugerTrustedConnectionModSqlExpress()

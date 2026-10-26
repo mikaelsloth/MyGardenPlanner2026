@@ -58,7 +58,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'global.json') }}
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'global.json', 'Directory.Packages.props') }}
           restore-keys: nuget-${{ runner.os }}-
 
       - name: Wait for SQL Server
@@ -81,7 +81,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('MyGardenPlanner2026.Tests.E2E/MyGardenPlanner2026.Tests.E2E.csproj') }}
+          key: playwright-${{ runner.os }}-${{ hashFiles('MyGardenPlanner2026.Tests.E2E/MyGardenPlanner2026.Tests.E2E.csproj', 'Directory.Packages.props') }}
 
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'

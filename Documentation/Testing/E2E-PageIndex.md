@@ -183,7 +183,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - Fejltæller (`ReAuthFailureTracker`): alarm sendes kun ved præcis Threshold (5). Fejl tælles samlet pr. bruger på tværs af login og step-up (vindue 2 dage). Brug en ny bruger pr. test (`SeedExtraUserAsync`).
 - Modal: forkert password og forkert TOTP (med korrekt password) tælles. Tom TOTP tælles ikke. Skift mellem de to fejltyper, når flere forsøg skal afventes, så den nye fejltekst adskiller sig fra den forrige.
 - Alarmen sendes til `Smtp:AdminSecurityEmails` (ikke til brugeren) og indeholder Bruger-ID (ikke e-mail): genkend en brugers alarm på Bruger-ID. Alarm fra en circuit: HttpContext er normalt null, så IP-adressen er sandsynligvis "ukendt". Assertér kun "IP-adresse:", ikke værdien.
-- E2E-appen skal have `Smtp__*`-miljøvariabler til `TestSmtpServer`. Ellers bruger den appsettings' Smtp:Host, og 5. forkerte login giver 500 (SmtpException).
+- E2E-appen skal have Smtp__*-miljøvariabler til TestSmtpServer. Ellers bruger den appsettings’ Smtp:Host. En transportfejl ved 5. forkerte login logges som advarsel (EventId 1130), alarmmailen udebliver, og login giver ikke længere 500.
 
 ### Rate limiting
 - Admin-API-limiter (`AdminActionRateLimiter`): sliding window pr. bruger (singleton, 60 sek., 6 segmenter), genopbygges kun ved ændring af `AdminApiRateLimitOptions` (ny kvote). Forbruges efter step-up og før service-validering, så et afvist gem giver rate-limit-teksten uanset værdi. Et afvist forsøg bruger ingen permit.
@@ -517,7 +517,7 @@ Testklasserne ligger under `ManualSmoke/Tjekliste<bogstav>/` (A–J). Volumentes
 Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gruppe. Løste punkter slettes; når alle grupper er tomme, fjernes afsnittet. Alle punkter er observationer fra tidligere gennemgange; intet er verificeret på ny.
 
 ### R1 – Login, re-auth og sikkerhedsalarm (prioritet 1)
-- R1.1 `SmtpSecurityEmailSender`: doc-kommentaren siger "fejler blødt", men det gælder kun manglende konfiguration. Transportfejl (SmtpException) kastes videre og vælter login-flowet (500) ved 5. forkerte forsøg.
+~~- R1.1 `SmtpSecurityEmailSender`: doc-kommentaren siger "fejler blødt", men det gælder kun manglende konfiguration. Transportfejl (SmtpException) kastes videre og vælter login-flowet (500) ved 5. forkerte forsøg.~~
 - R1.2 `ReAuthFailureTracker`: alarm sendes kun ved præcis Threshold (==). Ved 6+ fejl inden for vinduet sendes ingen ny alarm, før tælleren nulstilles (succes i login/step-up). Fejl tælles samlet på tværs af login og step-up.
 - R1.3 `Login.razor.cs`: IsLockedOut-grenen kalder ikke `TrackReAuthOutcomeAsync` (relevant, når lockout-featuren bygges; login bruger i dag lockoutOnFailure: false).
 - R1.4 Login/LoginWith2fa/LoginWithRecoveryCode kalder `MarkReAuthenticated` i request-scope (Scoped service) → ingen effekt på circuit; modalen vises altid ved første beskyttede handling. Modaltekst "sidst logget ind" er misvisende.

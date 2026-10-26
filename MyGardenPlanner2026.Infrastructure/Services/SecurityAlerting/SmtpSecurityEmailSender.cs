@@ -9,9 +9,9 @@ using System.Net.Mail;
 /// <summary>
 /// SMTP-baseret ISecurityEmailSender via System.Net.Mail (indbygget i .NET, ingen
 /// NuGet-afhængighed) — passer til on-prem/no-cost kravet (§4.2). Fejler "blødt": hvis
-/// Host eller AdminSecurityEmails mangler, logges en advarsel og der returneres uden at
-/// kaste, så en manglende SMTP-konfiguration aldrig kan vælte det kaldende flow (fx JIT-
-/// godkendelse eller rate limit-afvisning).
+/// Host eller AdminSecurityEmails mangler, eller SMTP-transporten fejler (SmtpException),
+/// logges en advarsel og der returneres uden at kaste, så en SMTP-fejl aldrig kan vælte det
+/// kaldende flow (fx JIT-godkendelse, login eller rate limit-afvisning).
 /// </summary>
 public sealed partial class SmtpSecurityEmailSender(
     IOptions<SmtpOptions> options, ILogger<SmtpSecurityEmailSender> logger) : ISecurityEmailSender
@@ -21,6 +21,9 @@ public sealed partial class SmtpSecurityEmailSender(
 
     [LoggerMessage(EventId = 1025, Level = LogLevel.Warning, Message = "Sikkerhedsalarm '{Subject}' blev IKKE sendt: SMTP-server (Smtp:Host) er ikke konfigureret.")]
     static partial void SmtpHostNotConfigured(ILogger logger, string Subject);
+
+    [LoggerMessage(EventId = 1130, Level = LogLevel.Warning, Message = "Sikkerhedsalarm '{Subject}' blev IKKE sendt: SMTP-afsendelsen fejlede.")]
+    static partial void SendFailed(ILogger logger, string Subject, Exception exception);
 
     public async Task SendAsync(
         IReadOnlyList<string> toAddresses, string subject, string body, CancellationToken cancellationToken = default)
@@ -66,6 +69,13 @@ public sealed partial class SmtpSecurityEmailSender(
             client.Credentials = new NetworkCredential(smtpOptions.UserName, smtpOptions.Password);
         }
 
-        await client.SendMailAsync(message, cancellationToken);
+        try
+        {
+            await client.SendMailAsync(message, cancellationToken);
+        }
+        catch (SmtpException ex)
+        {
+            SendFailed(logger, subject, ex);
+        }
     }
 }

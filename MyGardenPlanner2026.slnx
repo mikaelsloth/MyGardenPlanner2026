@@ -11,6 +11,9 @@
     <File Path="Documentation/Database/ResetSmokeTestUsersInDB.sql" />
     <File Path="ResetSmokeTestUsersInDB.sql" />
   </Folder>
+  <Folder Name="/Documentation/Logging/">
+    <File Path="Documentation/Logging/Logging Event Ids.md" />
+  </Folder>
   <Folder Name="/Documentation/Testing/">
     <File Path="Documentation/Testing/E2E-PageIndex.md" />
   </Folder>

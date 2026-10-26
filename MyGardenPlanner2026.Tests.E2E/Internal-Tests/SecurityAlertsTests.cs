@@ -13,22 +13,13 @@ public sealed class SecurityAlertsTests
         "Tidspunkt: 2026-10-18 12:00:00 UTC\r\nBruger-ID: u1\r\nPolicy: JitElevationPolicy";
 
     [Fact]
-    public void IsPolicyChangedMail_RigtigtEmneOgBruger_ErSand()
-    {
-        SecurityAlerts.IsPolicyChangedMail(Mail(SecurityAlerts.PolicyChangedSubject, Body), "u1").Should().BeTrue();
-    }
+    public void IsPolicyChangedMail_RigtigtEmneOgBruger_ErSand() => SecurityAlerts.IsPolicyChangedMail(Mail(SecurityAlerts.PolicyChangedSubject, Body), "u1").Should().BeTrue();
 
     [Fact]
-    public void IsPolicyChangedMail_AndenBruger_ErFalsk()
-    {
-        SecurityAlerts.IsPolicyChangedMail(Mail(SecurityAlerts.PolicyChangedSubject, Body), "u2").Should().BeFalse();
-    }
+    public void IsPolicyChangedMail_AndenBruger_ErFalsk() => SecurityAlerts.IsPolicyChangedMail(Mail(SecurityAlerts.PolicyChangedSubject, Body), "u2").Should().BeFalse();
 
     [Fact]
-    public void IsPolicyChangedMail_AndetEmne_ErFalsk()
-    {
-        SecurityAlerts.IsPolicyChangedMail(Mail(PlaywrightAppFixture.SecurityAlertSubject, Body), "u1").Should().BeFalse();
-    }
+    public void IsPolicyChangedMail_AndetEmne_ErFalsk() => SecurityAlerts.IsPolicyChangedMail(Mail(PlaywrightAppFixture.SecurityAlertSubject, Body), "u1").Should().BeFalse();
 
     [Fact]
     public void CountPolicyChangedMails_TaellerKunMatchendeBrugerOgPolicy()

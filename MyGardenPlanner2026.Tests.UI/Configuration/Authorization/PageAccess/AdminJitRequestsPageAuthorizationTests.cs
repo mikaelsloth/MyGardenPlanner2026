@@ -7,9 +7,6 @@ using Xunit;
 public class AdminJitRequestsPageAuthorizationTests
 {
     [Fact]
-    public void AdminJitRequestsPage_RequiresAnyAdminRolePolicy()
-    {
-        PageAuthorizationAssert.RequiresPolicy<AdminJitRequestsPage>(
+    public void AdminJitRequestsPage_RequiresAnyAdminRolePolicy() => PageAuthorizationAssert.RequiresPolicy<AdminJitRequestsPage>(
             AuthorizationServicesExtensions.RequireAnyAdminRolePolicy);
-    }
 }

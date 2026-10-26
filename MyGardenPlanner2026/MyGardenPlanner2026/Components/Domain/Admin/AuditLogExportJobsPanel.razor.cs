@@ -43,12 +43,9 @@ public partial class AuditLogExportJobsPanel
         StateHasChanged();
     }
 
-    private async Task LoadAsync()
-    {
-        jobs = currentUserId is null
+    private async Task LoadAsync() => jobs = currentUserId is null
             ? []
             : await JobService.GetJobsForUserAsync(currentUserId);
-    }
 
     private async Task ClearNotificationAsync(Guid jobId)
     {

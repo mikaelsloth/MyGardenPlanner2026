@@ -7,9 +7,6 @@ using Xunit;
 public sealed class AdminAuditLogPageAuthorizationTests
 {
     [Fact]
-    public void AdminAuditLogPage_RequiresAuditViewerPolicy()
-    {
-        PageAuthorizationAssert.RequiresPolicy<AdminAuditLogPage>(
+    public void AdminAuditLogPage_RequiresAuditViewerPolicy() => PageAuthorizationAssert.RequiresPolicy<AdminAuditLogPage>(
             AuthorizationServicesExtensions.RequireAuditViewerPolicy);
-    }
 }

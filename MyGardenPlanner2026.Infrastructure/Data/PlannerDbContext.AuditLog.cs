@@ -12,13 +12,10 @@ public partial class PlannerDbContext
     /// er ikke en §3.2-beskyttet sikkerhedspolicy-entity og kræver hverken
     /// temporal tables eller den begrænsede admin-databasebruger.
     /// </summary>
-    private static void ConfigureAuditLogViewerPreference(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<AuditLogViewerPreference>(entity =>
-        {
-            entity.ToTable("AuditLogViewerPreferences");
-            entity.HasKey(e => e.UserId);
-            entity.Property(e => e.UserId).HasMaxLength(450);
-        });
-    }
+    private static void ConfigureAuditLogViewerPreference(ModelBuilder modelBuilder) => modelBuilder.Entity<AuditLogViewerPreference>(entity =>
+                                                                                             {
+                                                                                                 entity.ToTable("AuditLogViewerPreferences");
+                                                                                                 entity.HasKey(e => e.UserId);
+                                                                                                 entity.Property(e => e.UserId).HasMaxLength(450);
+                                                                                             });
 }

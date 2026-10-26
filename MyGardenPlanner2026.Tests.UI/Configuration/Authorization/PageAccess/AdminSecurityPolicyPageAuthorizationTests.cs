@@ -7,9 +7,6 @@ using Xunit;
 public class AdminSecurityPolicyPageAuthorizationTests
 {
     [Fact]
-    public void AdminSecurityPolicyPage_RequiresPolicyAdminPolicy()
-    {
-        PageAuthorizationAssert.RequiresPolicy<AdminSecurityPolicyPage>(
+    public void AdminSecurityPolicyPage_RequiresPolicyAdminPolicy() => PageAuthorizationAssert.RequiresPolicy<AdminSecurityPolicyPage>(
             AuthorizationServicesExtensions.RequirePolicyAdminPolicy);
-    }
 }

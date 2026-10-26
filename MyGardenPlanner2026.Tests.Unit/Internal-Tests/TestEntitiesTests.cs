@@ -32,10 +32,7 @@ public sealed class TestEntitiesTests
     }
 
     [Fact]
-    public void AddOn_TwoCalls_ProduceDifferentIds()
-    {
-        TestEntities.AddOn().Id.Should().NotBe(TestEntities.AddOn().Id);
-    }
+    public void AddOn_TwoCalls_ProduceDifferentIds() => TestEntities.AddOn().Id.Should().NotBe(TestEntities.AddOn().Id);
 
     [Fact]
     public void Tier_WithoutArguments_UsesDefaults()
@@ -65,8 +62,5 @@ public sealed class TestEntitiesTests
     }
 
     [Fact]
-    public void Tier_TwoCalls_ProduceDifferentIds()
-    {
-        TestEntities.Tier().Id.Should().NotBe(TestEntities.Tier().Id);
-    }
+    public void Tier_TwoCalls_ProduceDifferentIds() => TestEntities.Tier().Id.Should().NotBe(TestEntities.Tier().Id);
 }

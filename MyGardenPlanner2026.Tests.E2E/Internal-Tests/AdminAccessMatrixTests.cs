@@ -5,12 +5,9 @@ using FluentAssertions;
 public sealed class AdminAccessMatrixTests
 {
     [Fact]
-    public void Personas_ErDeFireAdminPersonaer()
-    {
-        AdminAccessMatrix.Personas.Should().Equal(
+    public void Personas_ErDeFireAdminPersonaer() => AdminAccessMatrix.Personas.Should().Equal(
             SmokeTestPersonas.Admin, SmokeTestPersonas.DataAdmin,
             SmokeTestPersonas.PolicyAdmin, SmokeTestPersonas.Auditor);
-    }
 
     [Fact]
     public void For_AllePersonaer_HarStartsideBlandtTilladteOgAltidJitAdgang()

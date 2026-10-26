@@ -115,15 +115,12 @@ public partial class EnableAuthenticator
         return result.ToString().ToLowerInvariant();
     }
 
-    private string GenerateQrCodeUri(string email, string unformattedKey)
-    {
-        return string.Format(
+    private string GenerateQrCodeUri(string email, string unformattedKey) => string.Format(
             CultureInfo.InvariantCulture,
             AuthenticatorUriFormat,
             UrlEncoder.Encode("Microsoft.AspNetCore.Identity.UI"),
             UrlEncoder.Encode(email),
             unformattedKey);
-    }
 
     private sealed class InputModel
     {

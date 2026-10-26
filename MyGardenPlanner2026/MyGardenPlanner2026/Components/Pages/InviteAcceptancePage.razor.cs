@@ -125,14 +125,11 @@ public partial class InviteAcceptancePage
         return Task.CompletedTask;
     }
 
-    private Task ConfirmUpgradePaymentAsync()
-    {
-        return pendingUpgradeSelection is null
+    private Task ConfirmUpgradePaymentAsync() => pendingUpgradeSelection is null
             ? Task.CompletedTask
             : AcceptAsync(
             pendingUpgradeSelection.Level, pendingUpgradeSelection.Category,
             pendingUpgradeSelection.BillingCycle, pendingUpgradeSelection.AddOnQuantities);
-    }
 
     private async Task AcceptAsync(
         GardenAccessLevel grantedLayer, AccessCategory grantedCategory,

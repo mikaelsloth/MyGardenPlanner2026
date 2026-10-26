@@ -15,8 +15,5 @@ public sealed class RegisteredUserFlowTests
     }
 
     [Fact]
-    public void NewEmail_GiverNyAdresseHverGang()
-    {
-        RegisteredUserFlow.NewEmail().Should().NotBe(RegisteredUserFlow.NewEmail());
-    }
+    public void NewEmail_GiverNyAdresseHverGang() => RegisteredUserFlow.NewEmail().Should().NotBe(RegisteredUserFlow.NewEmail());
 }

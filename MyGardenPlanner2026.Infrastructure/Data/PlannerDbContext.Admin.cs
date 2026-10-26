@@ -42,81 +42,69 @@ public partial class PlannerDbContext
 
     private static void ConfigureSingletonSettings<TEntity>(
         ModelBuilder modelBuilder, string tableName, bool useTemporalTables)
-        where TEntity : class, ISingletonSettings
-    {
-        modelBuilder.Entity<TEntity>(entity =>
-        {
-            entity.ToTable(tableName, AdminSchema, b =>
-            {
-                if (useTemporalTables)
-                {
-                    b.IsTemporal(t =>
-                    {
-                        t.HasPeriodStart("ValidFromUtc");
-                        t.HasPeriodEnd("ValidToUtc");
-                    });
-                }
-            });
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).ValueGeneratedNever();
-        });
-    }
+        where TEntity : class, ISingletonSettings => modelBuilder.Entity<TEntity>(entity =>
+                                                          {
+                                                              entity.ToTable(tableName, AdminSchema, b =>
+                                                              {
+                                                                  if (useTemporalTables)
+                                                                  {
+                                                                      b.IsTemporal(t =>
+                                                                      {
+                                                                          t.HasPeriodStart("ValidFromUtc");
+                                                                          t.HasPeriodEnd("ValidToUtc");
+                                                                      });
+                                                                  }
+                                                              });
+                                                              entity.HasKey(e => e.Id);
+                                                              entity.Property(e => e.Id).ValueGeneratedNever();
+                                                          });
 
-    private static void ConfigureReAuthFailureAttempts(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<ReAuthFailureAttempt>(entity =>
-        {
-            entity.ToTable("ReAuthFailureAttempts", AdminSchema);
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).ValueGeneratedNever();
-            entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
-            entity.Property(e => e.IpAddress).HasMaxLength(45);
-            entity.HasIndex(e => new { e.UserId, e.OccurredAtUtc });
-        });
-    }
+    private static void ConfigureReAuthFailureAttempts(ModelBuilder modelBuilder) => modelBuilder.Entity<ReAuthFailureAttempt>(entity =>
+                                                                                          {
+                                                                                              entity.ToTable("ReAuthFailureAttempts", AdminSchema);
+                                                                                              entity.HasKey(e => e.Id);
+                                                                                              entity.Property(e => e.Id).ValueGeneratedNever();
+                                                                                              entity.Property(e => e.UserId).IsRequired().HasMaxLength(450);
+                                                                                              entity.Property(e => e.IpAddress).HasMaxLength(45);
+                                                                                              entity.HasIndex(e => new { e.UserId, e.OccurredAtUtc });
+                                                                                          });
 
-    private static void ConfigureRoleElevation(ModelBuilder modelBuilder, bool useTemporalTables)
-    {
-        modelBuilder.Entity<RoleElevationRequest>(entity =>
-        {
-            // OBS: Period-kolonnerne kan IKKE hedde "ValidFromUtc"/"ValidToUtc" — de navne er
-            // allerede brugt af entitetens egne forretningsfelter (eskaleringsvinduet).
-            // "Sys"-præfiks bruges til systemversionerings-perioden i stedet.
-            entity.ToTable("RoleElevationRequests", AdminSchema, b =>
-            {
-                if (useTemporalTables)
-                {
-                    b.IsTemporal(t =>
-                    {
-                        t.HasPeriodStart("SysValidFromUtc");
-                        t.HasPeriodEnd("SysValidToUtc");
-                    });
-                }
-            });
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).ValueGeneratedNever();
-            entity.Property(e => e.RequesterUserId).IsRequired().HasMaxLength(450);
-            entity.Property(e => e.ApproverUserId).HasMaxLength(450);
-            entity.Property(e => e.RoleName).IsRequired().HasMaxLength(256);
-            entity.Property(e => e.Reason).IsRequired().HasMaxLength(1000);
-            entity.Property(e => e.DeletedBy).HasMaxLength(450);
-            entity.HasIndex(e => new { e.RequesterUserId, e.Status });
-            entity.HasIndex(e => new { e.RoleName, e.Status });
-        });
-    }
+    private static void ConfigureRoleElevation(ModelBuilder modelBuilder, bool useTemporalTables) => modelBuilder.Entity<RoleElevationRequest>(entity =>
+                                                                                                          {
+                                                                                                              // OBS: Period-kolonnerne kan IKKE hedde "ValidFromUtc"/"ValidToUtc" — de navne er
+                                                                                                              // allerede brugt af entitetens egne forretningsfelter (eskaleringsvinduet).
+                                                                                                              // "Sys"-præfiks bruges til systemversionerings-perioden i stedet.
+                                                                                                              entity.ToTable("RoleElevationRequests", AdminSchema, b =>
+                                                                                                              {
+                                                                                                                  if (useTemporalTables)
+                                                                                                                  {
+                                                                                                                      b.IsTemporal(t =>
+                                                                                                                      {
+                                                                                                                          t.HasPeriodStart("SysValidFromUtc");
+                                                                                                                          t.HasPeriodEnd("SysValidToUtc");
+                                                                                                                      });
+                                                                                                                  }
+                                                                                                              });
+                                                                                                              entity.HasKey(e => e.Id);
+                                                                                                              entity.Property(e => e.Id).ValueGeneratedNever();
+                                                                                                              entity.Property(e => e.RequesterUserId).IsRequired().HasMaxLength(450);
+                                                                                                              entity.Property(e => e.ApproverUserId).HasMaxLength(450);
+                                                                                                              entity.Property(e => e.RoleName).IsRequired().HasMaxLength(256);
+                                                                                                              entity.Property(e => e.Reason).IsRequired().HasMaxLength(1000);
+                                                                                                              entity.Property(e => e.DeletedBy).HasMaxLength(450);
+                                                                                                              entity.HasIndex(e => new { e.RequesterUserId, e.Status });
+                                                                                                              entity.HasIndex(e => new { e.RoleName, e.Status });
+                                                                                                          });
 
-    private static void ConfigureAuditLog(ModelBuilder modelBuilder)
-    {
-        modelBuilder.Entity<AuditLog>(entity =>
-        {
-            entity.ToTable("AuditLogs", AdminSchema);
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.EntityName).IsRequired().HasMaxLength(200);
-            entity.Property(e => e.EntityId).IsRequired().HasMaxLength(100);
-            entity.Property(e => e.UserEmail).HasMaxLength(256);
-            entity.Property(e => e.IpAddress).HasMaxLength(45);
-            entity.HasIndex(e => new { e.EntityName, e.EntityId });
-            entity.HasIndex(e => e.TimestampUtc);
-        });
-    }
+    private static void ConfigureAuditLog(ModelBuilder modelBuilder) => modelBuilder.Entity<AuditLog>(entity =>
+                                                                             {
+                                                                                 entity.ToTable("AuditLogs", AdminSchema);
+                                                                                 entity.HasKey(e => e.Id);
+                                                                                 entity.Property(e => e.EntityName).IsRequired().HasMaxLength(200);
+                                                                                 entity.Property(e => e.EntityId).IsRequired().HasMaxLength(100);
+                                                                                 entity.Property(e => e.UserEmail).HasMaxLength(256);
+                                                                                 entity.Property(e => e.IpAddress).HasMaxLength(45);
+                                                                                 entity.HasIndex(e => new { e.EntityName, e.EntityId });
+                                                                                 entity.HasIndex(e => e.TimestampUtc);
+                                                                             });
 }

@@ -14,20 +14,11 @@ public static class StepUpAssertions
     private const string StepUpModalSelector = ".confirm-dialog";
 
     public static void ShouldShowStepUpModal<TComponent>(this IRenderedComponent<TComponent> cut)
-        where TComponent : IComponent
-    {
-        cut.FindAll(StepUpModalSelector).Should().HaveCount(1);
-    }
+        where TComponent : IComponent => cut.FindAll(StepUpModalSelector).Should().HaveCount(1);
 
     public static void ShouldNotShowStepUpModal<TComponent>(this IRenderedComponent<TComponent> cut)
-        where TComponent : IComponent
-    {
-        cut.FindAll(StepUpModalSelector).Should().BeEmpty();
-    }
+        where TComponent : IComponent => cut.FindAll(StepUpModalSelector).Should().BeEmpty();
 
     public static void ShouldShowRateLimitMessage<TComponent>(this IRenderedComponent<TComponent> cut)
-        where TComponent : IComponent
-    {
-        cut.Markup.Should().Contain(RateLimitMessage);
-    }
+        where TComponent : IComponent => cut.Markup.Should().Contain(RateLimitMessage);
 }

@@ -4,8 +4,5 @@ public partial class ManageNavMenu
 {
     private bool hasExternalLogins;
 
-    protected override async Task OnInitializedAsync()
-    {
-        hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
-    }
+    protected override async Task OnInitializedAsync() => hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();
 }

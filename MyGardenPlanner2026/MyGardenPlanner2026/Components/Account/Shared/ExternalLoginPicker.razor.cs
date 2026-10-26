@@ -15,8 +15,5 @@ public partial class ExternalLoginPicker
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
 
-    protected override async Task OnInitializedAsync()
-    {
-        externalLogins = [.. await SignInManager.GetExternalAuthenticationSchemesAsync()];
-    }
+    protected override async Task OnInitializedAsync() => externalLogins = [.. await SignInManager.GetExternalAuthenticationSchemesAsync()];
 }

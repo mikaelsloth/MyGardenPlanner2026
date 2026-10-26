@@ -76,8 +76,5 @@ public sealed partial class ReloadableLoginRateLimiter : PartitionedRateLimiter<
             });
         });
 
-    public override RateLimiterStatistics? GetStatistics(HttpContext resource)
-    {
-        return null;
-    }
+    public override RateLimiterStatistics? GetStatistics(HttpContext resource) => null;
 }

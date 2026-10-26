@@ -38,18 +38,15 @@ public class AuditLogExportPanelTests : BunitContext
         JSInterop.Mode = JSRuntimeMode.Loose;
     }
 
-    private IRenderedComponent<AuditLogExportPanel> RenderPanel(EventCallback? onJobEnqueued = null)
-    {
-        return Render<AuditLogExportPanel>(p =>
-        {
-            p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync());
-            p.Add(x => x.CurrentFilter, AuditLogTestData.EmptyFilter());
-            if (onJobEnqueued is { } callback)
-            {
-                p.Add(x => x.OnJobEnqueued, callback);
-            }
-        });
-    }
+    private IRenderedComponent<AuditLogExportPanel> RenderPanel(EventCallback? onJobEnqueued = null) => Render<AuditLogExportPanel>(p =>
+                                                                                                             {
+                                                                                                                 p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync());
+                                                                                                                 p.Add(x => x.CurrentFilter, AuditLogTestData.EmptyFilter());
+                                                                                                                 if (onJobEnqueued is { } callback)
+                                                                                                                 {
+                                                                                                                     p.Add(x => x.OnJobEnqueued, callback);
+                                                                                                                 }
+                                                                                                             });
 
     [Fact]
     public void ReAuthValid_ClickingEksportér_TriggersDownload_WithoutOpeningModal()

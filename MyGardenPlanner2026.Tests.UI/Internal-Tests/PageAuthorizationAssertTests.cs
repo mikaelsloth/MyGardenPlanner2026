@@ -17,10 +17,7 @@ public sealed class PageAuthorizationAssertTests
     }
 
     [Fact]
-    public void RequiresPolicy_PageHasExpectedPolicy_Passes()
-    {
-        PageAuthorizationAssert.RequiresPolicy<SecuredPage>("PolicyA");
-    }
+    public void RequiresPolicy_PageHasExpectedPolicy_Passes() => PageAuthorizationAssert.RequiresPolicy<SecuredPage>("PolicyA");
 
     [Fact]
     public void RequiresPolicy_PageHasOtherPolicy_Fails()

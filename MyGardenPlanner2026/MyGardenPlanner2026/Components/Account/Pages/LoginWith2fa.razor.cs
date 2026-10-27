@@ -45,7 +45,6 @@ public partial class LoginWith2fa
 
         if (result.Succeeded)
         {
-            ReAuthenticationService.MarkReAuthenticated();
             await ReAuthFailureTracker.ClearFailuresAsync(userId);
             UserLoggedIn(Logger, userId);
             RedirectManager.RedirectTo(ReturnUrl);

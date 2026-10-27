@@ -54,21 +54,6 @@ public class LoginWith2faTests : BunitContext
     }
 
     [Fact]
-    public void OnValidSubmitAsync_ValidCode_MarksReAuthenticated()
-    {
-        var (_, signInManager, _, reAuthenticationService) = RegisterFakes();
-        signInManager.TwoFactorAuthenticatorSignInAsync("123456", false, false)
-            .Returns(Task.FromResult(SignInResult.Success));
-        this.UseIdentityRedirectManager();
-
-        var cut = this.RenderWithHttpContext<LoginWith2fa>();
-        cut.Find("#Input\\.TwoFactorCode").Change("123456");
-        cut.Find("form").Submit();
-
-        reAuthenticationService.Received(1).MarkReAuthenticated();
-    }
-
-    [Fact]
     public async Task OnValidSubmitAsync_ValidCode_ClearsReAuthFailures()
     {
         var (_, signInManager, _, _) = RegisterFakes();

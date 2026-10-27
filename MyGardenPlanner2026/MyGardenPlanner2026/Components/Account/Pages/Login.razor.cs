@@ -59,7 +59,6 @@ public partial class Login
 
         if (result.Succeeded)
         {
-            ReAuthenticationService.MarkReAuthenticated();
             await TrackReAuthOutcomeAsync(succeeded: true);
             PasswordLoginSucceeded(Logger);
             RedirectManager.RedirectTo(ReturnUrl);

@@ -70,23 +70,6 @@ public class LoginTests : BunitContext
     }
 
     [Fact]
-    public void LoginUser_ValidCredentials_MarksReAuthenticated()
-    {
-        var (_, signInManager, reAuthenticationService) = RegisterFakes();
-        signInManager.PasswordSignInAsync("test@example.dk", "Password123!", false, false)
-            .Returns(Task.FromResult(SignInResult.Success));
-        this.UseIdentityRedirectManager();
-
-        var httpContext = IdentityTestDoubles.CreateHttpContextWithAuthService();
-        var cut = this.RenderWithHttpContext<Login>(httpContext);
-        cut.Find("#Input\\.Email").Change("test@example.dk");
-        cut.Find("#Input\\.Password").Change("Password123!");
-        cut.Find("form").Submit();
-
-        reAuthenticationService.Received(1).MarkReAuthenticated();
-    }
-
-    [Fact]
     public async Task LoginUser_ValidCredentials_ClearsReAuthFailures()
     {
         var (userManager, signInManager, _) = RegisterFakes();

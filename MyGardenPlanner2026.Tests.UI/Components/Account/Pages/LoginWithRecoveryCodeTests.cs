@@ -67,20 +67,6 @@ public class LoginWithRecoveryCodeTests : BunitContext
     }
 
     [Fact]
-    public void OnValidSubmitAsync_ValidRecoveryCode_MarksReAuthenticated()
-    {
-        var (_, signInManager, reAuthenticationService) = RegisterFakes();
-        signInManager.TwoFactorRecoveryCodeSignInAsync("ABCD1234").Returns(Task.FromResult(SignInResult.Success));
-        this.UseIdentityRedirectManager();
-
-        var cut = this.RenderWithHttpContext<LoginWithRecoveryCode>();
-        cut.Find("#Input\\.RecoveryCode").Change("ABCD1234");
-        cut.Find("form").Submit();
-
-        reAuthenticationService.Received(1).MarkReAuthenticated();
-    }
-
-    [Fact]
     public async Task OnValidSubmitAsync_LockedOut_RecordsReAuthFailure()
     {
         var (_, signInManager, _) = RegisterFakes();

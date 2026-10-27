@@ -210,4 +210,18 @@ public class StepUpReAuthModalTests : BunitContext
 
         await tracker.Received(1).ClearFailuresAsync("user-1", Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public void IsOpenTrue_ExplainsStepUpWithoutMentioningLastLogin()
+    {
+        RegisterFakes();
+
+        var cut = Render<StepUpReAuthModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+
+        cut.Find(".confirm-dialog-body p").TextContent
+            .Should().Be("Denne handling er følsom. Bekræft din adgangskode for at fortsætte.");
+        cut.Markup.Should().NotContain("sidst logget ind");
+    }
 }

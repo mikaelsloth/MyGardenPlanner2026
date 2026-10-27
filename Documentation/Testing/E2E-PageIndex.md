@@ -182,7 +182,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - Admin-sider kræver 2FA: NoMfa redirectes til EnableAuthenticator og når aldrig modalen.
 - Fejltæller (`ReAuthFailureTracker`): alarm sendes ved hvert multiplum af Threshold (5, 10, 15 …) inden for vinduet. Fejl tælles samlet pr. bruger på tværs af login og step-up (vindue 2 dage). Brug en ny bruger pr. test (`SeedExtraUserAsync`).
 - Modal: forkert password og forkert TOTP (med korrekt password) tælles. Tom TOTP tælles ikke. Skift mellem de to fejltyper, når flere forsøg skal afventes, så den nye fejltekst adskiller sig fra den forrige.
-- Alarmen sendes til `Smtp:AdminSecurityEmails` (ikke til brugeren) og indeholder Bruger-ID (ikke e-mail): genkend en brugers alarm på Bruger-ID. Alarm fra en circuit: HttpContext er normalt null, så IP-adressen er sandsynligvis "ukendt". Assertér kun "IP-adresse:", ikke værdien.
+- Alarmen sendes til `Smtp:AdminSecurityEmails` (ikke til brugeren) og indeholder Bruger-ID (ikke e-mail): genkend en brugers alarm på Bruger-ID. Alarm fra en circuit: IP-adressen hentes af CircuitUserCircuitHandler, når circuiten åbnes eller forbindes (R1.5). I E2E er den 127.0.0.1.
 - E2E-appen skal have Smtp__*-miljøvariabler til TestSmtpServer. Ellers bruger den appsettings’ Smtp:Host. En transportfejl ved 5. forkerte login logges som advarsel (EventId 1130), alarmmailen udebliver, og login giver ikke længere 500. Afsendelsen afbrydes efter Smtp:TimeoutSeconds (standard 10 sek.) og logges som advarsel (EventId 1134).
 
 ### Rate limiting
@@ -453,7 +453,7 @@ Detaljemodal (AuditLogDetailModal):
   To kolonner (.audit-log-detail-column) med h3 "Tidligere værdier" / "Nye værdier" og pre.audit-log-detail-json. Side om side fra 940 px, under hinanden under (max-width 939.98px). Dialogen scroller (max-height + overflow-y: auto; JSON-blokke max 200 px under 940 px).
   Visning: gyldig JSON indrykket (2 mellemrum); null, tom eller whitespace → "(ingen data)"; ugyldig JSON → rå tekst. Knap "Luk" lukker.
   Tests: ManualSmoke/TjeklisteJ/AuditLogDetailTests.
-Rækker fra Blazor-handlinger har handlende bruger via CircuitUserCircuitHandler (AsyncLocal CircuitUserContext) og HttpContextCurrentUserAccessor. IP-adressen kendes ikke i en circuit og er tom i rækken.
+Rækker fra Blazor-handlinger har handlende bruger via CircuitUserCircuitHandler (AsyncLocal CircuitUserContext) og HttpContextCurrentUserAccessor. IP-adressen er klientens IP fra circuit-forbindelsen (R1.5).
 Filter: AuditLogFilterBar synkroniserer kun fra InitialFilter ved første OnParametersSet. AdminAuditLogPage renderer derfor først filterbaren, når præferencen er indlæst (filterReady). Datoer tolkes som UTC.
 Eksportpanel (AuditLogExportPanel):
   Panel: .audit-log-export-panel. Format: #export-format (værdier Csv/Json/Xlsx). Knapper: "Eksportér" og "Send til baggrundseksport" (begge bag step-up og rate limit).
@@ -522,8 +522,8 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 ~~- R1.1 `SmtpSecurityEmailSender`: doc-kommentaren siger "fejler blødt", men det gælder kun manglende konfiguration. Transportfejl (SmtpException) kastes videre og vælter login-flowet (500) ved 5. forkerte forsøg.~~
 ~~- R1.2 `ReAuthFailureTracker`: alarm sendes kun ved præcis Threshold (==). Ved 6+ fejl inden for vinduet sendes ingen ny alarm, før tælleren nulstilles (succes i login/step-up). Fejl tælles samlet på tværs af login og step-up.~~
 ~~- R1.3 `Login.razor.cs`: IsLockedOut-grenen kalder ikke `TrackReAuthOutcomeAsync` (relevant, når lockout-featuren bygges; login bruger i dag lockoutOnFailure: false).~~
-- R1.4 Login/LoginWith2fa/LoginWithRecoveryCode kalder `MarkReAuthenticated` i request-scope (Scoped service) → ingen effekt på circuit; modalen vises altid ved første beskyttede handling. Modaltekst "sidst logget ind" er misvisende.
-- R1.5 `HttpContextCurrentUserAccessor`: HttpContext er normalt null i en circuit → alarm fra `StepUpReAuthModal` får IP "ukendt", og AuditLog-rækker fra Blazor-handlinger har tom IP (UserId er kendt via `CircuitUserContext`).
+~~- R1.4 Login/LoginWith2fa/LoginWithRecoveryCode kalder `MarkReAuthenticated` i request-scope (Scoped service) → ingen effekt på circuit; modalen vises altid ved første beskyttede handling. Modaltekst "sidst logget ind" er misvisende.~~
+~~- R1.5 `HttpContextCurrentUserAccessor`: HttpContext er normalt null i en circuit → alarm fra `StepUpReAuthModal` får IP "ukendt", og AuditLog-rækker fra Blazor-handlinger har tom IP (UserId er kendt via `CircuitUserContext`).~~
 
 Filer til Upload: SmtpSecurityEmailSender, ReAuthFailureTracker(+Options), Login/LoginWith2fa/LoginWithRecoveryCode, ReAuthenticationService, StepUpReAuthModal, HttpContextCurrentUserAccessor, CircuitUserCircuitHandler
 

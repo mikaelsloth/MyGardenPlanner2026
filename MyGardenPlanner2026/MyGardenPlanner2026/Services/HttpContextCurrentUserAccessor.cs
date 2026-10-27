@@ -7,8 +7,8 @@ using System.Security.Claims;
 /// <summary>
 /// IHttpContextAccessor er selv registreret som singleton og læser HttpContext via
 /// AsyncLocal, så denne klasse kan trygt injiceres i singleton EF Core-interceptors.
-/// I en Blazor Server-circuit er HttpContext null: her bruges i stedet brugeren, som
-/// CircuitUserCircuitHandler har sat i CircuitUserContext. IP-adressen kendes ikke i en circuit.
+/// I en Blazor Server-circuit er HttpContext normalt null: her bruges i stedet brugeren og
+/// klient-IP'en, som CircuitUserCircuitHandler har sat i CircuitUserContext.
 /// </summary>
 public sealed class HttpContextCurrentUserAccessor(IHttpContextAccessor httpContextAccessor) : ICurrentUserAccessor
 {
@@ -29,7 +29,7 @@ public sealed class HttpContextCurrentUserAccessor(IHttpContextAccessor httpCont
         }
 
         return CircuitUserContext.Current is { } circuitUser
-            ? circuitUser with { IpAddress = ipAddress }
+            ? circuitUser with { IpAddress = ipAddress ?? circuitUser.IpAddress }
             : new CurrentUserInfo(null, null, ipAddress);
     }
 }

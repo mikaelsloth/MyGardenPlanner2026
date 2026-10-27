@@ -22,7 +22,7 @@ public sealed partial class SmtpSecurityEmailSender(
     [LoggerMessage(EventId = 1025, Level = LogLevel.Warning, Message = "Sikkerhedsalarm '{Subject}' blev IKKE sendt: SMTP-server (Smtp:Host) er ikke konfigureret.")]
     static partial void SmtpHostNotConfigured(ILogger logger, string Subject);
 
-    [LoggerMessage(EventId = 1130, Level = LogLevel.Warning, Message = "Sikkerhedsalarm '{Subject}' blev IKKE sendt: SMTP-afsendelsen fejlede.")]
+    [LoggerMessage(EventId = 1133, Level = LogLevel.Warning, Message = "Sikkerhedsalarm '{Subject}' blev IKKE sendt: SMTP-afsendelsen fejlede.")]
     static partial void SendFailed(ILogger logger, string Subject, Exception exception);
 
     public async Task SendAsync(

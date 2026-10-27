@@ -2,16 +2,16 @@
 
 /// <summary>
 /// Sporer fejlede MFA/re-auth-forsøg pr. bruger over et konfigurerbart glidende vindue
-/// (§4.2, default 5 forsøg / 2 dage). Udsender ÉN ISecurityAlertService-alarm, når
-/// tærsklen nås — ikke for hvert efterfølgende forsøg derudover, for at undgå spam.
-/// Tælleren nulstilles KUN eksplicit via ClearFailuresAsync (kaldes ved korrekt login),
-/// ikke automatisk over tid — enkelte forsøg forældes dog ud af det glidende vindue.
+/// (§4.2, default 5 forsøg / 2 dage). Udsender en ISecurityAlertService-alarm, hver gang
+/// antallet af fejl i vinduet er et multiplum af tærsklen (5, 10, 15 …). Fejl, der forældes
+/// ud af vinduet, tæller ikke med. Tælleren nulstilles KUN eksplicit via ClearFailuresAsync
+/// (kaldes ved korrekt login).
 /// </summary>
 public interface IReAuthFailureTracker
 {
     /// <summary>
-    /// Registrerer et fejlet forsøg. Returnerer true hvis dette forsøg netop krydsede
-    /// tærsklen (og dermed udløste en sikkerhedsalarm).
+    /// Registrerer et fejlet forsøg. Returnerer true hvis dette forsøg udløste en
+    /// sikkerhedsalarm (antal fejl i vinduet er et multiplum af tærsklen).
     /// </summary>
     Task<bool> RecordFailureAsync(string userId, string? ipAddress, CancellationToken cancellationToken = default);
 

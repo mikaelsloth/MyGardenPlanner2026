@@ -45,7 +45,9 @@ public sealed class ReAuthFailureTracker(
 
         var countWithinWindow = attemptsForUser.Count(a => a.OccurredAtUtc >= windowStart);
 
-        if (countWithinWindow != policy.Threshold)
+        // Ny alarm for hvert multiplum af Threshold i vinduet (5, 10, 15 …). Threshold < 1
+        // er ugyldigt og giver aldrig alarm (undgår også division med nul).
+        if (policy.Threshold < 1 || countWithinWindow % policy.Threshold != 0)
         {
             return false;
         }

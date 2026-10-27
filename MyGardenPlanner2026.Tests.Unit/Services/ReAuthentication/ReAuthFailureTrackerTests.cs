@@ -49,20 +49,6 @@ public class ReAuthFailureTrackerTests : TestDbContext
     }
 
     [Fact]
-    public async Task RecordFailureAsync_ExceedsThreshold_DoesNotAlertAgain()
-    {
-        var (tracker, alertService, _) = CreateTracker(threshold: 2);
-
-        await tracker.RecordFailureAsync("user-1", "10.0.0.1", TestContext.Current.CancellationToken);
-        await tracker.RecordFailureAsync("user-1", "10.0.0.1", TestContext.Current.CancellationToken);
-        var fourthResult = await tracker.RecordFailureAsync("user-1", "10.0.0.1", TestContext.Current.CancellationToken);
-
-        fourthResult.Should().BeFalse();
-        await alertService.Received(1).AlertFailedReAuthAsync(
-            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
     public async Task RecordFailureAsync_FailuresOutsideWindow_AreNotCounted()
     {
         var (tracker, alertService, timeProvider) = CreateTracker(threshold: 2, windowDays: 2);
@@ -148,5 +134,74 @@ public class ReAuthFailureTrackerTests : TestDbContext
 
         thirdResult.Should().BeTrue(); // 3. forsøg rammer den nye, lavere tærskel (3) uden proces-genstart
         await alertService.Received(1).AlertFailedReAuthAsync("user-1", "10.0.0.1", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RecordFailureAsync_BetweenThresholdMultiples_DoesNotAlert()
+    {
+        var (tracker, alertService, _) = CreateTracker(threshold: 2);
+        var ct = TestContext.Current.CancellationToken;
+
+        var results = new List<bool>();
+        for (var i = 0; i < 3; i++)
+        {
+            results.Add(await tracker.RecordFailureAsync("user-1", "10.0.0.1", ct));
+        }
+
+        results.Should().Equal(false, true, false);
+        await alertService.Received(1).AlertFailedReAuthAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RecordFailureAsync_EveryThresholdMultiple_AlertsAgain()
+    {
+        var (tracker, alertService, _) = CreateTracker(threshold: 3);
+        var ct = TestContext.Current.CancellationToken;
+
+        var results = new List<bool>();
+        for (var i = 0; i < 7; i++)
+        {
+            results.Add(await tracker.RecordFailureAsync("user-1", "10.0.0.1", ct));
+        }
+
+        results.Should().Equal(false, false, true, false, false, true, false);
+        await alertService.Received(2).AlertFailedReAuthAsync(
+            "user-1", "10.0.0.1", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RecordFailureAsync_AfterOldFailuresExpire_CountsOnlyFailuresInWindow()
+    {
+        var (tracker, alertService, timeProvider) = CreateTracker(threshold: 2, windowDays: 2);
+        var ct = TestContext.Current.CancellationToken;
+
+        await tracker.RecordFailureAsync("user-1", "10.0.0.1", ct);
+        var second = await tracker.RecordFailureAsync("user-1", "10.0.0.1", ct);
+        second.Should().BeTrue();
+
+        timeProvider.Advance(TimeSpan.FromDays(3));
+
+        var third = await tracker.RecordFailureAsync("user-1", "10.0.0.1", ct);   // 1 i vinduet
+        var fourth = await tracker.RecordFailureAsync("user-1", "10.0.0.1", ct);  // 2 i vinduet
+
+        third.Should().BeFalse();
+        fourth.Should().BeTrue();
+        await alertService.Received(2).AlertFailedReAuthAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task RecordFailureAsync_InvalidThreshold_NeverAlertsAndDoesNotThrow(int threshold)
+    {
+        var (tracker, alertService, _) = CreateTracker(threshold: threshold);
+
+        var result = await tracker.RecordFailureAsync("user-1", "10.0.0.1", TestContext.Current.CancellationToken);
+
+        result.Should().BeFalse();
+        await alertService.DidNotReceive().AlertFailedReAuthAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 }

@@ -15,9 +15,6 @@ public static class BlazorServicesExtensions
 
         services.AddHttpContextAccessor();
         services.AddSingleton<ICurrentUserAccessor, HttpContextCurrentUserAccessor>();
-
-        services.AddHttpContextAccessor();
-        services.AddSingleton<ICurrentUserAccessor, HttpContextCurrentUserAccessor>();
         services.AddScoped<CircuitHandler, CircuitUserCircuitHandler>();
 
         return services;

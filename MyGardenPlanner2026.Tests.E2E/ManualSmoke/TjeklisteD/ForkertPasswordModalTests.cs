@@ -105,8 +105,11 @@ public sealed class ForkertPasswordModalTests(PlaywrightAppFixture fixture)
 
         alert.Recipients.Should().Equal(PlaywrightAppFixture.SecurityAlertRecipient);
         alert.Subject.Should().Be(PlaywrightAppFixture.SecurityAlertSubject);
-        // IP-værdien asserteres ikke: HttpContext er normalt null i en circuit.
-        alert.Body.Should().Contain($"Bruger-ID: {userId}").And.Contain("IP-adresse:");
+        // R1.5: IP-adressen følger circuiten (klientens loopback-adresse), ikke "ukendt".
+        alert.Body.Should().Contain($"Bruger-ID: {userId}")
+            .And.Contain("IP-adresse:")
+            .And.Contain("127.0.0.1")
+            .And.NotContain("ukendt");
     }
 
     /// <summary>Ny PolicyAdmin, logget ind på security-policies med modalen åben fra fanen AuditLog-eksport.</summary>

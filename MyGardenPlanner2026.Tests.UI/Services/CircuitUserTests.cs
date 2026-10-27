@@ -59,7 +59,7 @@ public sealed class CircuitUserTests
     {
         var provider = new FakeAuthenticationStateProvider(
             () => Task.FromResult(StateOf(Authenticated("u1", "u1@test.dk"))));
-        var handler = new CircuitUserCircuitHandler(provider);
+        var handler = new CircuitUserCircuitHandler(provider, new HttpContextAccessor { HttpContext = null });
         CurrentUserInfo? seenDuring = null;
 
         await handler.CreateInboundActivityHandler(_ =>
@@ -77,7 +77,7 @@ public sealed class CircuitUserTests
     {
         var provider = new FakeAuthenticationStateProvider(
             () => Task.FromResult(StateOf(Authenticated("u1", "u1@test.dk"))));
-        var handler = new CircuitUserCircuitHandler(provider);
+        var handler = new CircuitUserCircuitHandler(provider, new HttpContextAccessor { HttpContext = null });
 
         var act = () => handler.CreateInboundActivityHandler(
             _ => throw new InvalidOperationException("fejl"))(null!);
@@ -91,7 +91,7 @@ public sealed class CircuitUserTests
     {
         var provider = new FakeAuthenticationStateProvider(
             () => throw new InvalidOperationException("ikke sat"));
-        var handler = new CircuitUserCircuitHandler(provider);
+        var handler = new CircuitUserCircuitHandler(provider, new HttpContextAccessor { HttpContext = null });
         var called = false;
         CurrentUserInfo? seenDuring = new("x", "x", null);
 

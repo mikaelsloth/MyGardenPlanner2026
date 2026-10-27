@@ -18,8 +18,8 @@ public static class CircuitUserContext
         set => CurrentValue.Value = value;
     }
 
-    /// <summary>Null for en anonym bruger. IP-adressen kendes ikke i en circuit.</summary>
-    public static CurrentUserInfo? From(ClaimsPrincipal? user)
+    /// <summary>Null for en anonym bruger. IP-adressen er klientens IP fra circuit-forbindelsen, hvis kendt.</summary>
+    public static CurrentUserInfo? From(ClaimsPrincipal? user, string? ipAddress = null)
     {
         if (user?.Identity?.IsAuthenticated != true)
         {
@@ -29,6 +29,6 @@ public static class CircuitUserContext
         var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
         var email = user.FindFirstValue(ClaimTypes.Email) ?? user.Identity.Name;
 
-        return userId is null && email is null ? null : new CurrentUserInfo(userId, email, null);
+        return userId is null && email is null ? null : new CurrentUserInfo(userId, email, ipAddress);
     }
 }

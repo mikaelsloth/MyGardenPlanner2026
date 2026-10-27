@@ -72,6 +72,7 @@ public partial class Login
         }
         else if (result.IsLockedOut)
         {
+            await TrackReAuthOutcomeAsync(succeeded: false);
             PasswordLoginAccountLockedOut(Logger);
             RedirectManager.RedirectTo("Account/Lockout");
         }

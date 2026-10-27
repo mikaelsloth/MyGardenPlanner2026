@@ -125,4 +125,25 @@ public class LoginTests : BunitContext
 
         await tracker.Received(1).RecordFailureAsync("user-1", Arg.Any<string?>(), Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task LoginUser_LockedOut_RecordsReAuthFailure()
+    {
+        var (userManager, signInManager, _) = RegisterFakes();
+        var user = new ApplicationUser { Id = "user-1" };
+        userManager.FindByEmailAsync("test@example.dk").Returns(Task.FromResult<ApplicationUser?>(user));
+        signInManager.PasswordSignInAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<bool>())
+            .Returns(Task.FromResult(SignInResult.LockedOut));
+        this.UseIdentityRedirectManager();
+        var tracker = Services.GetRequiredService<IReAuthFailureTracker>();
+
+        var httpContext = IdentityTestDoubles.CreateHttpContextWithAuthService();
+        var cut = this.RenderWithHttpContext<Login>(httpContext);
+        await cut.Find("#Input\\.Email").ChangeAsync("test@example.dk");
+        await cut.Find("#Input\\.Password").ChangeAsync("Password123!");
+        await cut.Find("form").SubmitAsync();
+
+        await tracker.Received(1).RecordFailureAsync("user-1", Arg.Any<string?>(), Arg.Any<CancellationToken>());
+        await tracker.DidNotReceive().ClearFailuresAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
 }

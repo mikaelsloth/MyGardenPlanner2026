@@ -52,16 +52,22 @@ public partial class LoginWith2fa
         }
         else if (result.IsLockedOut)
         {
+            await RecordFailureAsync(userId);
             TwoFactorLoginAccountLockedOut(Logger, userId);
             RedirectManager.RedirectTo("Account/Lockout");
         }
         else
         {
-            var ip = CurrentUserAccessor.GetCurrent().IpAddress;
-            await ReAuthFailureTracker.RecordFailureAsync(userId, ip);
+            await RecordFailureAsync(userId);
             InvalidAuthenticatorCodeEntered(Logger, userId);
             message = "Error: Ugyldig godkendelseskode.";
         }
+    }
+
+    private async Task RecordFailureAsync(string userId)
+    {
+        var ip = CurrentUserAccessor.GetCurrent().IpAddress;
+        await ReAuthFailureTracker.RecordFailureAsync(userId, ip);
     }
 
     private sealed class InputModel

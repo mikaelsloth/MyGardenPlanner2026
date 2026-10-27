@@ -99,4 +99,21 @@ public class LoginWith2faTests : BunitContext
 
         await tracker.Received(1).RecordFailureAsync("user-1", Arg.Any<string?>(), Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task OnValidSubmitAsync_LockedOut_RecordsReAuthFailure()
+    {
+        var (_, signInManager, _, _) = RegisterFakes();
+        signInManager.TwoFactorAuthenticatorSignInAsync(Arg.Any<string>(), Arg.Any<bool>(), Arg.Any<bool>())
+            .Returns(Task.FromResult(SignInResult.LockedOut));
+        this.UseIdentityRedirectManager();
+        var tracker = Services.GetRequiredService<IReAuthFailureTracker>();
+
+        var cut = this.RenderWithHttpContext<LoginWith2fa>();
+        await cut.Find("#Input\\.TwoFactorCode").ChangeAsync("000000");
+        await cut.Find("form").SubmitAsync();
+
+        await tracker.Received(1).RecordFailureAsync("user-1", Arg.Any<string?>(), Arg.Any<CancellationToken>());
+        await tracker.DidNotReceive().ClearFailuresAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
 }

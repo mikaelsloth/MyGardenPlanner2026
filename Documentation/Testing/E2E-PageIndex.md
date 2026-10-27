@@ -282,7 +282,7 @@ Filer: ConfirmEmail.razor (+ .cs)
 Titel: Log ind – MyGardenPlanner. h1: Log ind. Layout: PublicLayout.
 Labels: "E-mail", "Adgangskode" (Exact = true), "Husk mig". Knap: "Log ind" (Exact = true; passkey-knappen hedder "Log ind med en passkey": PasskeySubmit, Request, e-mailfeltet sendes som username; tomt felt giver discoverable credential).
 Fejl ved forkert login: StatusMessage "Error: Invalid login attempt." (engelsk).
-Login bruger lockoutOnFailure: false. Redirect til /Account/Lockout sker kun for en allerede låst bruger.
+Login bruger lockoutOnFailure: false. Redirect til /Account/Lockout sker kun for en allerede låst bruger. Et login-forsøg på en låst bruger registreres også i ReAuthFailureTracker.
 Forkert password kalder ReAuthFailureTracker.RecordFailureAsync. Ved 5, 10, 15 … forsøg (multipla af Threshold) sendes sikkerhedsalarm (ISecurityAlertService) til Smtp:AdminSecurityEmails.
   Emne: "[MyGardenPlanner] Sikkerhedsalarm: Gentagne fejlede login-/re-auth-forsøg". Krop: "Bruger-ID: <id>" og "IP-adresse: <ip>".
 Login rate limit: fixed window pr. IP, kun beskyttede auth-POST'er (AdminAuthPathMatcher). Ved overskridelse svarer serveren 429 uden body.
@@ -306,6 +306,7 @@ Filer: AccessDenied.razor (+ .cs)
 Titel: Totrinsbekræftelse – MyGardenPlanner. h1: Totrinsbekræftelse.
 Label: "Godkendelseskode", checkbox "Husk denne enhed", knap "Log ind" (Exact). Link "logge ind med en gendannelseskode".
 Forkert kode: "Error: Ugyldig godkendelseskode." og et fejlforsøg registreres i ReAuthFailureTracker.
+Et forsøg på en låst bruger registreres også som fejlforsøg.
 Filer: LoginWith2fa.razor (+ .cs)
 ```
 ```
@@ -313,6 +314,7 @@ Filer: LoginWith2fa.razor (+ .cs)
 Titel: Gendannelseskode – MyGardenPlanner. h1: Bekræft med gendannelseskode.
 Label: "Gendannelseskode" (Exact), knap "Log ind". Nås fra LoginWith2fa via linket "logge ind med en gendannelseskode" (kræver password-login først).
 Gyldig kode: login, redirect til forsiden. Brugt/forkert kode: "Error: Ugyldig gendannelseskode indtastet." og et fejlforsøg registreres i ReAuthFailureTracker (5 forkerte udløser sikkerhedsalarm). Ingen lockout-tælling i koden.
+Et forsøg på en låst bruger registreres også som fejlforsøg.
 Filer: LoginWithRecoveryCode.razor (+ .cs)
 ```
 ```
@@ -519,7 +521,7 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 ### R1 – Login, re-auth og sikkerhedsalarm (prioritet 1)
 ~~- R1.1 `SmtpSecurityEmailSender`: doc-kommentaren siger "fejler blødt", men det gælder kun manglende konfiguration. Transportfejl (SmtpException) kastes videre og vælter login-flowet (500) ved 5. forkerte forsøg.~~
 ~~- R1.2 `ReAuthFailureTracker`: alarm sendes kun ved præcis Threshold (==). Ved 6+ fejl inden for vinduet sendes ingen ny alarm, før tælleren nulstilles (succes i login/step-up). Fejl tælles samlet på tværs af login og step-up.~~
-- R1.3 `Login.razor.cs`: IsLockedOut-grenen kalder ikke `TrackReAuthOutcomeAsync` (relevant, når lockout-featuren bygges; login bruger i dag lockoutOnFailure: false).
+~~- R1.3 `Login.razor.cs`: IsLockedOut-grenen kalder ikke `TrackReAuthOutcomeAsync` (relevant, når lockout-featuren bygges; login bruger i dag lockoutOnFailure: false).~~
 - R1.4 Login/LoginWith2fa/LoginWithRecoveryCode kalder `MarkReAuthenticated` i request-scope (Scoped service) → ingen effekt på circuit; modalen vises altid ved første beskyttede handling. Modaltekst "sidst logget ind" er misvisende.
 - R1.5 `HttpContextCurrentUserAccessor`: HttpContext er normalt null i en circuit → alarm fra `StepUpReAuthModal` får IP "ukendt", og AuditLog-rækker fra Blazor-handlinger har tom IP (UserId er kendt via `CircuitUserContext`).
 

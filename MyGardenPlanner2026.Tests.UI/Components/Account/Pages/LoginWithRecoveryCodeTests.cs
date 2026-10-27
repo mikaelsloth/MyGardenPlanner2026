@@ -79,4 +79,20 @@ public class LoginWithRecoveryCodeTests : BunitContext
 
         reAuthenticationService.Received(1).MarkReAuthenticated();
     }
+
+    [Fact]
+    public async Task OnValidSubmitAsync_LockedOut_RecordsReAuthFailure()
+    {
+        var (_, signInManager, _) = RegisterFakes();
+        signInManager.TwoFactorRecoveryCodeSignInAsync(Arg.Any<string>()).Returns(Task.FromResult(SignInResult.LockedOut));
+        this.UseIdentityRedirectManager();
+        var tracker = Services.GetRequiredService<IReAuthFailureTracker>();
+
+        var cut = this.RenderWithHttpContext<LoginWithRecoveryCode>();
+        await cut.Find("#Input\\.RecoveryCode").ChangeAsync("ABCD1234");
+        await cut.Find("form").SubmitAsync();
+
+        await tracker.Received(1).RecordFailureAsync("user-1", Arg.Any<string?>(), Arg.Any<CancellationToken>());
+        await tracker.DidNotReceive().ClearFailuresAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
 }

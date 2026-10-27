@@ -14,7 +14,8 @@ using Ids = MyGardenPlanner2026.Tests.E2E.SecurityPolicyPage.FieldIds;
 /// handlingen med en ny bruger, tæller rækker i admin.AuditLogs før og efter (databasen er delt og kan ikke
 /// ryddes) og åbner derefter auditloggen som en frisk AuditViewer, filtrerer på entitet (+ ID, + handling) og
 /// læser Old/New JSON via detaljemodalen. Rækkerne findes ved indhold (overgangen Old → New), ikke ved
-/// position. Handlende bruger (UserEmail) forventes først efter PR 6: testen er skipped indtil da.
+/// position. Handlende bruger (UserEmail, UserId) og klientens IP-adresse fra circuiten (R1.5) verificeres i
+/// Policy_Aendring_RaekkenHarHandlendeBrugerOgIp.
 /// Skærmbilleder: Auditlog_J2_Raekker (&lt;bredde&gt;).
 /// </summary>
 [Collection(PlaywrightAppCollection.Name)]
@@ -73,7 +74,7 @@ public sealed class AdminHandlingerIAuditLogTests(PlaywrightAppFixture fixture)
     // --- Handlende bruger ---
 
     [Fact]
-    public async Task Policy_Aendring_RaekkenHarHandlendeBruger()
+    public async Task Policy_Aendring_RaekkenHarHandlendeBrugerOgIp()
     {
         var user = await fixture.SeedExtraUserAsync(RoleNames.PolicyAdmin);
         var userId = await SmokeTestDataSeeder.GetUserIdAsync(fixture.AppConnectionString, user.Email);
@@ -87,8 +88,11 @@ public sealed class AdminHandlingerIAuditLogTests(PlaywrightAppFixture fixture)
         await Assertions.Expect(firstRow.Locator("td:nth-child(2)")).ToHaveTextAsync(user.Email);
 
         await AuditLogPage.OpenDetailsAsync(firstRow);
-        await Assertions.Expect(AuditLogPage.DetailDialog(page).Locator("p.meta"))
-            .ToContainTextAsync($"({userId})");
+        var meta = AuditLogPage.DetailDialog(page).Locator("p.meta");
+        await Assertions.Expect(meta).ToContainTextAsync($"({userId})");
+
+        // R1.5: IP-adressen er klientens IP fra circuiten (loopback i E2E), ikke tom.
+        await Assertions.Expect(meta).ToContainTextAsync("127.0.0.1");
     }
 
     // --- b. Volumenrabat: opdatering ---

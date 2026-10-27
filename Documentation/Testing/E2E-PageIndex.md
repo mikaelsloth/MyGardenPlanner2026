@@ -180,7 +180,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - Kun udløb i samme circuit kræver ventetid: E2E-appen kører med MaxAgeMinutes=1, og testen venter ca. 62 sek.
 - Eksport: step-up vises kun første gang i en circuit inden for re-auth-vinduet. Hjælpere, der eksporterer flere gange, må håndtere begge udfald (modal eller direkte URL).
 - Admin-sider kræver 2FA: NoMfa redirectes til EnableAuthenticator og når aldrig modalen.
-- Fejltæller (`ReAuthFailureTracker`): alarm sendes kun ved præcis Threshold (5). Fejl tælles samlet pr. bruger på tværs af login og step-up (vindue 2 dage). Brug en ny bruger pr. test (`SeedExtraUserAsync`).
+- Fejltæller (`ReAuthFailureTracker`): alarm sendes ved hvert multiplum af Threshold (5, 10, 15 …) inden for vinduet. Fejl tælles samlet pr. bruger på tværs af login og step-up (vindue 2 dage). Brug en ny bruger pr. test (`SeedExtraUserAsync`).
 - Modal: forkert password og forkert TOTP (med korrekt password) tælles. Tom TOTP tælles ikke. Skift mellem de to fejltyper, når flere forsøg skal afventes, så den nye fejltekst adskiller sig fra den forrige.
 - Alarmen sendes til `Smtp:AdminSecurityEmails` (ikke til brugeren) og indeholder Bruger-ID (ikke e-mail): genkend en brugers alarm på Bruger-ID. Alarm fra en circuit: HttpContext er normalt null, så IP-adressen er sandsynligvis "ukendt". Assertér kun "IP-adresse:", ikke værdien.
 - E2E-appen skal have Smtp__*-miljøvariabler til TestSmtpServer. Ellers bruger den appsettings’ Smtp:Host. En transportfejl ved 5. forkerte login logges som advarsel (EventId 1130), alarmmailen udebliver, og login giver ikke længere 500.
@@ -283,7 +283,7 @@ Titel: Log ind – MyGardenPlanner. h1: Log ind. Layout: PublicLayout.
 Labels: "E-mail", "Adgangskode" (Exact = true), "Husk mig". Knap: "Log ind" (Exact = true; passkey-knappen hedder "Log ind med en passkey": PasskeySubmit, Request, e-mailfeltet sendes som username; tomt felt giver discoverable credential).
 Fejl ved forkert login: StatusMessage "Error: Invalid login attempt." (engelsk).
 Login bruger lockoutOnFailure: false. Redirect til /Account/Lockout sker kun for en allerede låst bruger.
-Forkert password kalder ReAuthFailureTracker.RecordFailureAsync. Ved præcis 5 forsøg (Threshold) sendes sikkerhedsalarm (ISecurityAlertService) til Smtp:AdminSecurityEmails.
+Forkert password kalder ReAuthFailureTracker.RecordFailureAsync. Ved 5, 10, 15 … forsøg (multipla af Threshold) sendes sikkerhedsalarm (ISecurityAlertService) til Smtp:AdminSecurityEmails.
   Emne: "[MyGardenPlanner] Sikkerhedsalarm: Gentagne fejlede login-/re-auth-forsøg". Krop: "Bruger-ID: <id>" og "IP-adresse: <ip>".
 Login rate limit: fixed window pr. IP, kun beskyttede auth-POST'er (AdminAuthPathMatcher). Ved overskridelse svarer serveren 429 uden body.
 Filer: ReloadableLoginRateLimiter.cs, RateLimitingServicesExtensions.cs, Login.razor (+ .cs), ReAuthFailureTracker.cs, ReAuthFailureTrackerOptions.cs
@@ -518,7 +518,7 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 
 ### R1 – Login, re-auth og sikkerhedsalarm (prioritet 1)
 ~~- R1.1 `SmtpSecurityEmailSender`: doc-kommentaren siger "fejler blødt", men det gælder kun manglende konfiguration. Transportfejl (SmtpException) kastes videre og vælter login-flowet (500) ved 5. forkerte forsøg.~~
-- R1.2 `ReAuthFailureTracker`: alarm sendes kun ved præcis Threshold (==). Ved 6+ fejl inden for vinduet sendes ingen ny alarm, før tælleren nulstilles (succes i login/step-up). Fejl tælles samlet på tværs af login og step-up.
+~~- R1.2 `ReAuthFailureTracker`: alarm sendes kun ved præcis Threshold (==). Ved 6+ fejl inden for vinduet sendes ingen ny alarm, før tælleren nulstilles (succes i login/step-up). Fejl tælles samlet på tværs af login og step-up.~~
 - R1.3 `Login.razor.cs`: IsLockedOut-grenen kalder ikke `TrackReAuthOutcomeAsync` (relevant, når lockout-featuren bygges; login bruger i dag lockoutOnFailure: false).
 - R1.4 Login/LoginWith2fa/LoginWithRecoveryCode kalder `MarkReAuthenticated` i request-scope (Scoped service) → ingen effekt på circuit; modalen vises altid ved første beskyttede handling. Modaltekst "sidst logget ind" er misvisende.
 - R1.5 `HttpContextCurrentUserAccessor`: HttpContext er normalt null i en circuit → alarm fra `StepUpReAuthModal` får IP "ukendt", og AuditLog-rækker fra Blazor-handlinger har tom IP (UserId er kendt via `CircuitUserContext`).

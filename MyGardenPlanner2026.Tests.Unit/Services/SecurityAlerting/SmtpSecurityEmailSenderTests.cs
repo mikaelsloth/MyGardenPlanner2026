@@ -85,7 +85,7 @@ public class SmtpSecurityEmailSenderTests
         await act.Should().NotThrowAsync();
         logger.Received(1).Log(
             LogLevel.Warning,
-            Arg.Is<EventId>(e => e.Id == 1130),
+            Arg.Is<EventId>(e => e.Id == 1133),
             Arg.Any<Arg.AnyType>(),
             Arg.Any<SmtpException>(),
             Arg.Any<Func<Arg.AnyType, Exception?, string>>());

@@ -75,4 +75,4 @@ EventId | Fil | Metode |
 1078 | JitElevationRequestForm.razor.cs | JitElevationRequestSubmitFailed |
 1079 | JitElevationApprovalQueue.razor.cs | JitElevationApprovalFailed |
 1080 | JitElevationApprovalQueue.razor.cs | JitElevationRejectionFailed |
-1130 | SmtpSecurityEmailSender.cs | SendFailed |
+1133 | SmtpSecurityEmailSender.cs | SendFailed |

@@ -9,10 +9,15 @@
 public sealed class SmtpOptions
 {
     public const string SectionName = "Smtp";
+    public const int DefaultTimeoutSeconds = 10;
 
     public string Host { get; set; } = string.Empty;
     public int Port { get; set; } = 25;
     public bool EnableSsl { get; set; } = true;
+    /// <summary>
+    /// Maks. varighed af en afsendelse i sekunder. Værdier under 1 giver <see cref="DefaultTimeoutSeconds"/>.
+    /// </summary>
+    public int TimeoutSeconds { get; set; } = DefaultTimeoutSeconds;
     public string? UserName { get; set; }
     public string? Password { get; set; }
     public string FromAddress { get; set; } = "sikkerhed@mygardenplanner.dk";

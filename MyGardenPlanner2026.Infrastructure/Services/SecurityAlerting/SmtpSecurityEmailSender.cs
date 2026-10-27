@@ -25,6 +25,9 @@ public sealed partial class SmtpSecurityEmailSender(
     [LoggerMessage(EventId = 1133, Level = LogLevel.Warning, Message = "Sikkerhedsalarm '{Subject}' blev IKKE sendt: SMTP-afsendelsen fejlede.")]
     static partial void SendFailed(ILogger logger, string Subject, Exception exception);
 
+    [LoggerMessage(EventId = 1134, Level = LogLevel.Warning, Message = "Sikkerhedsalarm '{Subject}' blev IKKE sendt: SMTP-afsendelsen blev afbrudt efter {TimeoutSeconds} sekunder.")]
+    static partial void SendTimedOut(ILogger logger, string Subject, int TimeoutSeconds);
+
     public async Task SendAsync(
         IReadOnlyList<string> toAddresses, string subject, string body, CancellationToken cancellationToken = default)
     {
@@ -57,10 +60,15 @@ public sealed partial class SmtpSecurityEmailSender(
             message.To.Add(address);
         }
 
+        var timeoutSeconds = smtpOptions.TimeoutSeconds > 0
+            ? smtpOptions.TimeoutSeconds
+            : SmtpOptions.DefaultTimeoutSeconds;
+
 #pragma warning disable S5332
         using var client = new SmtpClient(smtpOptions.Host, smtpOptions.Port)
         {
-            EnableSsl = smtpOptions.EnableSsl
+            EnableSsl = smtpOptions.EnableSsl,
+            Timeout = (int)Math.Min(timeoutSeconds * 1000L, int.MaxValue)
         };
 #pragma warning restore S5332
 
@@ -69,13 +77,20 @@ public sealed partial class SmtpSecurityEmailSender(
             client.Credentials = new NetworkCredential(smtpOptions.UserName, smtpOptions.Password);
         }
 
+        using var timeoutSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeoutSource.CancelAfter(TimeSpan.FromSeconds(timeoutSeconds));
+
         try
         {
-            await client.SendMailAsync(message, cancellationToken);
+            await client.SendMailAsync(message, timeoutSource.Token);
         }
         catch (SmtpException ex)
         {
             SendFailed(logger, subject, ex);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            SendTimedOut(logger, subject, timeoutSeconds);
         }
     }
 }

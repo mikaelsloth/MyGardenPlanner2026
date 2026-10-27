@@ -36,10 +36,10 @@ EventId | Fil | Metode |
 1039 | AdminActionRateLimiter.cs | AdminActionRateLimited |
 1040 | AdminActionRateLimiter.cs | RateLimiterRebuilt |
 1041 | ReloadableLoginRateLimiter.cs | RateLimiterRebuilt |
-1042 | | AuditLogExportPanel.razor.cs | ExportRequested |
-1043 | | AuditLogExportPanel.razor.cs | ExportHardLimitExceeded |
-1044 | Aud |itLogExportPanel.razor.cs | ExportSoftLimitThresholdReached |
-1045 | Audit |LogExportPanel.razor.cs | ExportDownloadTriggered |
+1042 | AuditLogExportPanel.razor.cs | ExportRequested |
+1043 | AuditLogExportPanel.razor.cs | ExportHardLimitExceeded |
+1044 | AuditLogExportPanel.razor.cs | ExportSoftLimitThresholdReached |
+1045 | AuditLogExportPanel.razor.cs | ExportDownloadTriggered |
 1046 | AuditLogExportPanel.razor.cs | ExportCurrentUserCouldNotBeResolved |
 1047 | AuditLogEndpointsExtension.cs | ExportEndpointForbidden |
 1048 | AuditLogEndpointsExtension.cs | ExportEndpointTokenInvalid |
@@ -76,3 +76,4 @@ EventId | Fil | Metode |
 1079 | JitElevationApprovalQueue.razor.cs | JitElevationApprovalFailed |
 1080 | JitElevationApprovalQueue.razor.cs | JitElevationRejectionFailed |
 1133 | SmtpSecurityEmailSender.cs | SendFailed |
+1134 | SmtpSecurityEmailSender.cs | SendTimedOut |

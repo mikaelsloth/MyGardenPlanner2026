@@ -183,7 +183,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - Fejltæller (`ReAuthFailureTracker`): alarm sendes ved hvert multiplum af Threshold (5, 10, 15 …) inden for vinduet. Fejl tælles samlet pr. bruger på tværs af login og step-up (vindue 2 dage). Brug en ny bruger pr. test (`SeedExtraUserAsync`).
 - Modal: forkert password og forkert TOTP (med korrekt password) tælles. Tom TOTP tælles ikke. Skift mellem de to fejltyper, når flere forsøg skal afventes, så den nye fejltekst adskiller sig fra den forrige.
 - Alarmen sendes til `Smtp:AdminSecurityEmails` (ikke til brugeren) og indeholder Bruger-ID (ikke e-mail): genkend en brugers alarm på Bruger-ID. Alarm fra en circuit: HttpContext er normalt null, så IP-adressen er sandsynligvis "ukendt". Assertér kun "IP-adresse:", ikke værdien.
-- E2E-appen skal have Smtp__*-miljøvariabler til TestSmtpServer. Ellers bruger den appsettings’ Smtp:Host. En transportfejl ved 5. forkerte login logges som advarsel (EventId 1130), alarmmailen udebliver, og login giver ikke længere 500.
+- E2E-appen skal have Smtp__*-miljøvariabler til TestSmtpServer. Ellers bruger den appsettings’ Smtp:Host. En transportfejl ved 5. forkerte login logges som advarsel (EventId 1130), alarmmailen udebliver, og login giver ikke længere 500. Afsendelsen afbrydes efter Smtp:TimeoutSeconds (standard 10 sek.) og logges som advarsel (EventId 1134).
 
 ### Rate limiting
 - Admin-API-limiter (`AdminActionRateLimiter`): sliding window pr. bruger (singleton, 60 sek., 6 segmenter), genopbygges kun ved ændring af `AdminApiRateLimitOptions` (ny kvote). Forbruges efter step-up og før service-validering, så et afvist gem giver rate-limit-teksten uanset værdi. Et afvist forsøg bruger ingen permit.

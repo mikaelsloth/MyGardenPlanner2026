@@ -161,6 +161,9 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         startInfo.EnvironmentVariables["ConnectionStrings__SqlExpressConnection"] = appConnectionString;
         startInfo.EnvironmentVariables["ConnectionStrings__AdminSqlExpressConnection"] = adminConnectionString;
 
+        // Links (RegisterConfirmation/Email) vises kun med dette flag (R2.1/R2.2). E2E bygger på dem.
+        startInfo.EnvironmentVariables["Identity__ShowEmailLinks"] = "true";
+
         // Neutraliserer Program.cs' #if DEBUG SeedSmokeTestUsersAsync(): uden dette
         // overskriver appens egen (evt. user-secrets-konfigurerede) smoke-test-seeder
         // vores fixture-seedede brugeres 2FA-nøgler ved opstart, da e-mails er identiske.

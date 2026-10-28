@@ -13,6 +13,8 @@ public static class IdentityServicesExtensions
         services.AddCascadingAuthenticationState();
         services.AddScoped<IdentityRedirectManager>();
         services.AddScoped<PersonalDataExporter>();
+        services.AddOptions<EmailLinkDisplayOptions>()
+            .BindConfiguration(EmailLinkDisplayOptions.SectionName);
         services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
         services.AddAuthentication(options =>

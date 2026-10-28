@@ -64,8 +64,8 @@ public sealed partial class PersonligeDataTests(PlaywrightAppFixture fixture)
             await File.ReadAllTextAsync(path, TestContext.Current.CancellationToken));
 
         json.RootElement.GetProperty("Email").GetString().Should().Be(user.Email);
-        // Nøglen findes altid i filen (værdien er null for en bruger uden authenticator).
-        json.RootElement.TryGetProperty("Authenticator Key", out _).Should().BeTrue();
+        // Authenticator-nøglen er en hemmelighed og eksporteres ikke (R2.5).
+        json.RootElement.TryGetProperty("Authenticator Key", out _).Should().BeFalse();
     }
 
     [Fact]

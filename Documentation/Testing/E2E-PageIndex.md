@@ -375,8 +375,8 @@ Filer: ChangePassword.razor (+ .cs)
 /Account/Manage/PersonalData
 Titel: Personal Data. h3 "Personal Data". Static SSR.
 Knap "Download" (POST til /Account/Manage/DownloadPersonalData, kræver login). Link "Delete" til /Account/Manage/DeletePersonalData.
-Filen PersonalData.json: nøgler fra [PersonalData]-felterne (fx "Email") samt altid "Authenticator Key" (null uden authenticator).
-Filer: PersonalData.razor (+ .cs), IdentityComponentsEndpointRouteBuilderExtensions.cs
+Filen PersonalData.json: nøgler fra [PersonalData]-felterne (fx "Email") samt eksterne login-nøgler. "Authenticator Key" eksporteres ikke.
+Filer: PersonalData.razor (+ .cs), IdentityComponentsEndpointRouteBuilderExtensions.cs, PersonalDataExporter.cs
 ```
 ```
 /Account/Manage/DeletePersonalData
@@ -525,14 +525,14 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 ~~- R1.4 Login/LoginWith2fa/LoginWithRecoveryCode kalder `MarkReAuthenticated` i request-scope (Scoped service) → ingen effekt på circuit; modalen vises altid ved første beskyttede handling. Modaltekst "sidst logget ind" er misvisende.~~
 ~~- R1.5 `HttpContextCurrentUserAccessor`: HttpContext er normalt null i en circuit → alarm fra `StepUpReAuthModal` får IP "ukendt", og AuditLog-rækker fra Blazor-handlinger har tom IP (UserId er kendt via `CircuitUserContext`).~~
 
-Filer til Upload: SmtpSecurityEmailSender, ReAuthFailureTracker(+Options), Login/LoginWith2fa/LoginWithRecoveryCode, ReAuthenticationService, StepUpReAuthModal, HttpContextCurrentUserAccessor, CircuitUserCircuitHandler
+~~Filer til Upload: SmtpSecurityEmailSender, ReAuthFailureTracker(+Options), Login/LoginWith2fa/LoginWithRecoveryCode, ReAuthenticationService, StepUpReAuthModal, HttpContextCurrentUserAccessor, CircuitUserCircuitHandler~~
 
 ### R2 – Kontosider: fejlhåndtering og e-mail (prioritet 2)
 - R2.1 `Email.razor`: med `IdentityNoOpEmailSender` vises bekræftelseslinket til enhver ny e-mailadresse uden ejerskabsbevis (forsvinder, når en rigtig `IEmailSender` indsættes).
 - R2.2 `Email.razor`: `OnSendEmailVerificationAsync` viser ikke linket (kun relevant for ubekræftede e-mails, ikke dækket).
 - R2.3 `ConfirmEmailChange.razor.cs`: `WebEncoders.Base64UrlDecode(Code)` er uden try/catch. Et ikke-Base64Url-format i code kaster formentlig FormatException (500). Ikke testet.
 - R2.4 `DeletePersonalData`: hvis `UserManager.DeleteAsync` fejler, kastes InvalidOperationException (500) uden UI-fejl. Sletning af brugere med relationer (haver, medlemskaber) er ikke undersøgt eller dækket (ny bruger har ingen). Destinationen efter sletning for en ikke-logget-ind bruger (login eller NotAuthorized) er ikke verificeret.
-- R2.5 `DownloadPersonalData`: `(await GetAuthenticatorKeyAsync(user))!` giver null i JSON for brugere uden authenticator (ingen fejl, men null-forgiving er unøjagtig).
+~~- R2.5 `DownloadPersonalData`: `(await GetAuthenticatorKeyAsync(user))!` giver null i JSON for brugere uden authenticator (ingen fejl, men null-forgiving er unøjagtig).~~
 
 Filer til Upload: Email, ConfirmEmailChange, DeletePersonalData, RegisterConfirmation, IdentityComponentsEndpointRouteBuilderExtensions
 

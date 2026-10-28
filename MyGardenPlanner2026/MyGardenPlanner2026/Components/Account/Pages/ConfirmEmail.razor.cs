@@ -42,7 +42,17 @@ public partial class ConfirmEmail
         }
         else
         {
-            var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
+            string code;
+            try
+            {
+                code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
+            }
+            catch (FormatException)
+            {
+                statusMessage = "Error: Der opstod en fejl ved bekræftelse af din e-mail.";
+                return;
+            }
+
             var result = await UserManager.ConfirmEmailAsync(user, code);
             statusMessage = result.Succeeded
                 ? "Tak, fordi du bekræftede din e-mail."

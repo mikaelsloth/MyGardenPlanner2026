@@ -111,6 +111,29 @@ public sealed class SkiftEmailTests(PlaywrightAppFixture fixture)
     }
 
     [Fact]
+    public async Task SkiftEmail_KodeMedUgyldigtFormat_ViserFejlUdenServerfejlOgGammelEmailVirker()
+    {
+        var (page, user) = await LoginNewUserOnEmailPageAsync();
+        var newEmail = RegisteredUserFlow.NewEmail();
+        var userId = await SmokeTestDataSeeder.GetUserIdAsync(fixture.AppConnectionString, user.Email);
+
+        // Ikke gyldigt Base64Url (R2.3): før rettelsen gav det en serverfejl (500).
+        var response = await page.GotoAsync(
+            $"{fixture.RootUri}{E2ERoutes.ConfirmEmailChange}" +
+            $"?userId={Uri.EscapeDataString(userId)}&email={Uri.EscapeDataString(newEmail)}" +
+            $"&code={Uri.EscapeDataString("!!!")}");
+
+        response.Should().NotBeNull();
+        response!.Status.Should().Be(200);
+        await SmokePageAssertions.ExpectPageAsync(page, ConfirmTitle, ConfirmHeading);
+        await Assertions.Expect(page.GetByText(ConfirmFailedText)).ToBeVisibleAsync();
+
+        await OpenLoginAsLoggedOutAsync(page);
+        await LoginFlow.LoginAsync(page, user);
+        page.Url.Should().NotContainEquivalentOf(E2ERoutes.Login);
+    }
+
+    [Fact]
     public async Task SkiftEmail_UgyldigtBekraeftelseslink_AfvisesOgEmailErUaendret()
     {
         var (page, user) = await LoginNewUserOnEmailPageAsync();

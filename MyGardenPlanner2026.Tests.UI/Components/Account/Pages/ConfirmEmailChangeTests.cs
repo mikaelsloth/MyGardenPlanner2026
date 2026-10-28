@@ -49,4 +49,43 @@ public class ConfirmEmailChangeTests : BunitContext
 
         navMan.Uri.Should().Contain("Account/Login");
     }
+
+    private (UserManager<ApplicationUser> UserManager, ApplicationUser User) RenderWithCode(string code)
+    {
+        var user = new ApplicationUser { Id = "user-1" };
+        var userManager = IdentityTestDoubles.CreateUserManager();
+        userManager.FindByIdAsync("user-1").Returns(Task.FromResult<ApplicationUser?>(user));
+
+        Services.AddSingleton(userManager);
+        Services.AddSingleton(IdentityTestDoubles.CreateSignInManager(userManager));
+        var navMan = this.UseIdentityRedirectManager();
+        navMan.NavigateTo(
+            $"/Account/ConfirmEmailChange?UserId=user-1&Email=ny@example.dk&Code={Uri.EscapeDataString(code)}");
+
+        return (userManager, user);
+    }
+
+    [Fact]
+    public async Task ConfirmEmailChange_InvalidCodeFormat_ShowsErrorAndDoesNotChangeEmail()
+    {
+        var (userManager, _) = RenderWithCode("!!!");
+
+        var cut = this.RenderWithHttpContext<ConfirmEmailChange>();
+
+        cut.Markup.Should().Contain("Error: Der opstod en fejl ved skift af e-mail.");
+        await userManager.DidNotReceive().ChangeEmailAsync(
+            Arg.Any<ApplicationUser>(), Arg.Any<string>(), Arg.Any<string>());
+    }
+
+    [Fact]
+    public void ConfirmEmailChange_WrongToken_ShowsError()
+    {
+        var (userManager, user) = RenderWithCode(EncodedCode);
+        userManager.ChangeEmailAsync(user, "ny@example.dk", "test-code")
+            .Returns(Task.FromResult(IdentityResult.Failed()));
+
+        var cut = this.RenderWithHttpContext<ConfirmEmailChange>();
+
+        cut.Markup.Should().Contain("Error: Der opstod en fejl ved skift af e-mail.");
+    }
 }

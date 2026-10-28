@@ -10,15 +10,16 @@ using System.Text.Encodings.Web;
 public partial class Email
 {
     private string? message;
-
     // Kun sat når IdentityNoOpEmailSender bruges (ingen rigtig e-mailudbyder endnu).
     private string? emailChangeConfirmationLink;
-
     private ApplicationUser? user;
-
     private string? email;
-
     private bool isEmailConfirmed;
+    // Kun sat når linkvisning er slået til (se EmailLinkDisplayOptions).
+    private string? verificationLink;
+
+    private bool ShowLinks =>
+        EmailSender is IdentityNoOpEmailSender && EmailLinkOptions.Value.ShowEmailLinks;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -67,7 +68,7 @@ public partial class Email
         await EmailSender.SendConfirmationLinkAsync(user, Input.NewEmail, HtmlEncoder.Default.Encode(callbackUrl));
 
         // Samme mønster som RegisterConfirmation: uden rigtig e-mailudbyder vises linket på siden.
-        if (EmailSender is IdentityNoOpEmailSender)
+        if (ShowLinks)
         {
             emailChangeConfirmationLink = callbackUrl;
         }
@@ -96,6 +97,11 @@ public partial class Email
             new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code });
 
         await EmailSender.SendConfirmationLinkAsync(user, email, HtmlEncoder.Default.Encode(callbackUrl));
+
+        if (ShowLinks)
+        {
+            verificationLink = callbackUrl;
+        }
 
         message = "Verification email sent. Please check your email.";
     }

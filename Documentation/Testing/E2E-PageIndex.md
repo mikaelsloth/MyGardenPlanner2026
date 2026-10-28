@@ -21,6 +21,7 @@ Indeks til manual smoke tests i MyGardenPlanner2026.Tests.E2E. Kun det, der er v
   - `SmtpServer` (`TestSmtpServer`), `SecurityAlertRecipient`, `SecurityAlertSubject` (delt med B2-testen, som har en privat kopi)
   - `ReAuthMaxAgeMinutes = 1`: sendes som `ReAuthenticationPolicy__MaxAgeMinutes` til E2E-appen (appsettings: 15)
   - `SeedExtraUserAsync(role)` → `SmokeTestDataSeeder.SeedExtraUserAsync(connectionString, role)`: ny bruger (e2e-`<guid>`@test.dk) med rollen og 2FA. Rollen skal findes (oprettes af SeedAsync). Giver en test egen fejltæller/session uden at røre personas.
+  - Identity__ShowEmailLinks=true sendes til E2E-appen (links på RegisterConfirmation/Email vises kun med flaget, R2.1/R2.2)
 - Skærmbilleder: `ScreenshotRecorder.CaptureAsync(page, kapitel, tjekliste, testnavn, komponent)`
   - Gemmer TestResults/Screenshots/`<kapitel>`/`<tjekliste>`/`<testnavn>`_`<komponent>`_`<bredde>`.png (fuld side).
   - CI uploader mappen som artefakt e2e-screenshots.
@@ -192,7 +193,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 ### Identity-sider
 - Manage-siderne ligger i ManageLayout (se 4.3).
 - Ingen log ud-knap i PublicLayout/ManageLayout: log ud i E2E = `page.Context.ClearCookiesAsync()`.
-- Email.razor viser bekræftelseslinket til e-mailskift på siden, når EmailSender er `IdentityNoOpEmailSender` (samme mønster som RegisterConfirmation). Uden det kan skiftet ikke bekræftes i E2E.
+- Email.razor viser bekræftelseslinket til e-mailskift på siden, når EmailSender er IdentityNoOpEmailSender og Identity:ShowEmailLinks er true (E2E-fixturen sætter flaget). Uden det kan skiftet ikke bekræftes i E2E.
 - ConfirmEmailChange: forkert token eller ugyldigt Base64Url-format i code giver "Error: Der opstod en fejl ved skift af e-mail." (status 200).
 - ChangePassword: succes redirecter til samme side (`RedirectToCurrentPageWithStatus`) med "Your password has been changed". Man forbliver logget ind (`RefreshSignInAsync`). Labels i markup ("Old password", "New password", "Confirm password") afviger fra Display-navnene i valideringsbeskeder ("Current password", "New password", "Confirm new password").
 - PersonalData: "Download" er en almindelig POST-formular (ikke enhanced) til /Account/Manage/DownloadPersonalData. Brug `page.RunAndWaitForDownloadAsync` og læs filen via `download.PathAsync()`. "Delete" er et link (`<a>`), ikke en knap.
@@ -358,8 +359,9 @@ Filer: RenamePasskey.razor (+ .cs)
 Titel: Manage email. h3 "Manage email". Static SSR.
 Labels: "New email" (Exact = true, forudfyldt med nuværende e-mail), deaktiveret felt "Email". Knap: "Change email".
 Besked: "Confirmation link to change email sent. Please check your email." (success), "Your email is unchanged." ved uændret e-mail.
-Link "Click here to confirm your new email" vises kun med IdentityNoOpEmailSender.
+Link "Click here to confirm your new email" vises kun med IdentityNoOpEmailSender og Identity:ShowEmailLinks = true.
 Ugyldig e-mail: ValidationMessage (.validation-message).
+Ubekræftet e-mail: knappen "Send verification email" giver "Verification email sent. Please check your email." og (samme betingelser) linket "Click here to verify your email". Ikke dækket af E2E: brugere med ubekræftet e-mail kan ikke logge ind (RequireConfirmedAccount), så kun bUnit dækker det.
 Filer: Email.razor (+ .cs)
 ```
 ```
@@ -529,8 +531,8 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 ~~Filer til Upload: SmtpSecurityEmailSender, ReAuthFailureTracker(+Options), Login/LoginWith2fa/LoginWithRecoveryCode, ReAuthenticationService, StepUpReAuthModal, HttpContextCurrentUserAccessor, CircuitUserCircuitHandler~~
 
 ### R2 – Kontosider: fejlhåndtering og e-mail (prioritet 2)
-- R2.1 `Email.razor`: med `IdentityNoOpEmailSender` vises bekræftelseslinket til enhver ny e-mailadresse uden ejerskabsbevis (forsvinder, når en rigtig `IEmailSender` indsættes).
-- R2.2 `Email.razor`: `OnSendEmailVerificationAsync` viser ikke linket (kun relevant for ubekræftede e-mails, ikke dækket).
+- R2.1 \RegisterConfirmation`: viser stadig bekræftelseslinket uden flag og afslører, om en e-mail findes (D8). `Email.razor` er rettet i PR 3.`
+~~- R2.2 `Email.razor`: `OnSendEmailVerificationAsync` viser ikke linket (kun relevant for ubekræftede e-mails, ikke dækket).~~
 ~~- R2.3 `ConfirmEmailChange.razor.cs`: `WebEncoders.Base64UrlDecode(Code)` er uden try/catch. Et ikke-Base64Url-format i code kaster formentlig FormatException (500). Ikke testet.~~
 - R2.4 `DeletePersonalData`: hvis `UserManager.DeleteAsync` fejler, kastes InvalidOperationException (500) uden UI-fejl. Sletning af brugere med relationer (haver, medlemskaber) er ikke undersøgt eller dækket (ny bruger har ingen). Destinationen efter sletning for en ikke-logget-ind bruger (login eller NotAuthorized) er ikke verificeret.
 ~~- R2.5 `DownloadPersonalData`: `(await GetAuthenticatorKeyAsync(user))!` giver null i JSON for brugere uden authenticator (ingen fejl, men null-forgiving er unøjagtig).~~

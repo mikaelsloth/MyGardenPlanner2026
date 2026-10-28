@@ -193,7 +193,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - Manage-siderne ligger i ManageLayout (se 4.3).
 - Ingen log ud-knap i PublicLayout/ManageLayout: log ud i E2E = `page.Context.ClearCookiesAsync()`.
 - Email.razor viser bekræftelseslinket til e-mailskift på siden, når EmailSender er `IdentityNoOpEmailSender` (samme mønster som RegisterConfirmation). Uden det kan skiftet ikke bekræftes i E2E.
-- ConfirmEmailChange: gyldigt Base64Url-format med forkert token giver "Error: Der opstod en fejl ved skift af e-mail.".
+- ConfirmEmailChange: forkert token eller ugyldigt Base64Url-format i code giver "Error: Der opstod en fejl ved skift af e-mail." (status 200).
 - ChangePassword: succes redirecter til samme side (`RedirectToCurrentPageWithStatus`) med "Your password has been changed". Man forbliver logget ind (`RefreshSignInAsync`). Labels i markup ("Old password", "New password", "Confirm password") afviger fra Display-navnene i valideringsbeskeder ("Current password", "New password", "Confirm new password").
 - PersonalData: "Download" er en almindelig POST-formular (ikke enhanced) til /Account/Manage/DownloadPersonalData. Brug `page.RunAndWaitForDownloadAsync` og læs filen via `download.PathAsync()`. "Delete" er et link (`<a>`), ikke en knap.
 - DeletePersonalData: succes kører DeleteAsync + SignOutAsync og redirecter til samme side. Efterfølgende tjek er, at login afvises. Slet-knappen vises ikke længere.
@@ -275,6 +275,7 @@ Filer: RegisterConfirmation.razor (+ .cs)
 /Account/ConfirmEmail
 Titel: Bekræft e-mail – MyGardenPlanner. h1: Bekræft e-mail.
 Succes: "Tak, fordi du bekræftede din e-mail." + link "Klik her for at logge ind".
+Fejl (forkert token eller ugyldigt format i code): "Error: Der opstod en fejl ved bekræftelse af din e-mail." Ingen login-link.
 Filer: ConfirmEmail.razor (+ .cs)
 ```
 ```
@@ -321,7 +322,7 @@ Filer: LoginWithRecoveryCode.razor (+ .cs)
 /Account/ConfirmEmailChange?userId&email&code
 Titel: Bekræft e-mailskift – MyGardenPlanner. h1: Bekræft e-mailskift (AuthPageShell).
 Succes: "Tak, fordi du bekræftede skiftet af din e-mail." (e-mail og brugernavn skiftes, brugeren logges ind igen).
-Fejl: "Error: Der opstod en fejl ved skift af e-mail." (ugyldig token). Mangler parametre: redirect til Login med "Error: Ugyldigt link til bekræftelse af e-mailskift.".
+Fejl: "Error: Der opstod en fejl ved skift af e-mail." (ugyldig token eller ugyldigt Base64Url-format).
 Filer: ConfirmEmailChange.razor (+ .cs)
 ```
 
@@ -530,7 +531,7 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 ### R2 – Kontosider: fejlhåndtering og e-mail (prioritet 2)
 - R2.1 `Email.razor`: med `IdentityNoOpEmailSender` vises bekræftelseslinket til enhver ny e-mailadresse uden ejerskabsbevis (forsvinder, når en rigtig `IEmailSender` indsættes).
 - R2.2 `Email.razor`: `OnSendEmailVerificationAsync` viser ikke linket (kun relevant for ubekræftede e-mails, ikke dækket).
-- R2.3 `ConfirmEmailChange.razor.cs`: `WebEncoders.Base64UrlDecode(Code)` er uden try/catch. Et ikke-Base64Url-format i code kaster formentlig FormatException (500). Ikke testet.
+~~- R2.3 `ConfirmEmailChange.razor.cs`: `WebEncoders.Base64UrlDecode(Code)` er uden try/catch. Et ikke-Base64Url-format i code kaster formentlig FormatException (500). Ikke testet.~~
 - R2.4 `DeletePersonalData`: hvis `UserManager.DeleteAsync` fejler, kastes InvalidOperationException (500) uden UI-fejl. Sletning af brugere med relationer (haver, medlemskaber) er ikke undersøgt eller dækket (ny bruger har ingen). Destinationen efter sletning for en ikke-logget-ind bruger (login eller NotAuthorized) er ikke verificeret.
 ~~- R2.5 `DownloadPersonalData`: `(await GetAuthenticatorKeyAsync(user))!` giver null i JSON for brugere uden authenticator (ingen fejl, men null-forgiving er unøjagtig).~~
 

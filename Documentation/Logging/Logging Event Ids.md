@@ -75,5 +75,8 @@ EventId | Fil | Metode |
 1078 | JitElevationRequestForm.razor.cs | JitElevationRequestSubmitFailed |
 1079 | JitElevationApprovalQueue.razor.cs | JitElevationApprovalFailed |
 1080 | JitElevationApprovalQueue.razor.cs | JitElevationRejectionFailed |
+1081 | AccountDeletionService.cs | AccountDataDeleted |
+1082 | AccountDeletionService.cs | AccountDeletionBlocked |
+1083 | DeletePersonalData.razor.cs | UserDeleteFailed |
 1133 | SmtpSecurityEmailSender.cs | SendFailed |
 1134 | SmtpSecurityEmailSender.cs | SendTimedOut |

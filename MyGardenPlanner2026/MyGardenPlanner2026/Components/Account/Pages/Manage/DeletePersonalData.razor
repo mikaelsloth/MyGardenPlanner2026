@@ -2,7 +2,9 @@
 
 @using Microsoft.AspNetCore.Identity
 @using MyGardenPlanner2026.Core.Entities;
+@using MyGardenPlanner2026.Core.Contracts.Account;
 
+@inject IAccountDeletionService AccountDeletionService
 @inject UserManager<ApplicationUser> UserManager
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityRedirectManager RedirectManager

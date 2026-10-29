@@ -2,7 +2,6 @@
 
 using Microsoft.AspNetCore.Components;
 using MyGardenPlanner2026.Core.Entities;
-using System;
 using System.ComponentModel.DataAnnotations;
 
 public partial class DeletePersonalData
@@ -21,6 +20,9 @@ public partial class DeletePersonalData
 
     [LoggerMessage(EventId = 1019, Level = LogLevel.Information, Message = "User with ID '{UserId}' deleted themselves.")]
     static partial void UserSelfDeleted(ILogger logger, string UserId);
+
+    [LoggerMessage(EventId = 1083, Level = LogLevel.Warning, Message = "Deleting user with ID '{UserId}' failed: {Errors}.")]
+    static partial void UserDeleteFailed(ILogger logger, string UserId, string Errors);
 
     protected override async Task OnInitializedAsync()
     {
@@ -50,18 +52,31 @@ public partial class DeletePersonalData
             return;
         }
 
+        var userId = await UserManager.GetUserIdAsync(user);
+
+        var dataResult = await AccountDeletionService.DeleteUserDataAsync(userId);
+        if (dataResult.IsBlocked)
+        {
+            message = "Error: You are the only owner of gardens shared with other members: "
+                + string.Join(", ", dataResult.BlockingGardenNames)
+                + ". Ownership must be transferred before your account can be deleted.";
+            return;
+        }
+
         var result = await UserManager.DeleteAsync(user);
         if (!result.Succeeded)
         {
-            throw new InvalidOperationException("Unexpected error occurred deleting user.");
+            UserDeleteFailed(Logger, userId, string.Join(", ", result.Errors.Select(e => e.Code)));
+            message = "Error: Your account could not be deleted. Please try again.";
+            return;
         }
 
         await SignInManager.SignOutAsync();
 
-        var userId = await UserManager.GetUserIdAsync(user);
         UserSelfDeleted(Logger, userId);
 
-        RedirectManager.RedirectToCurrentPage();
+        // D4-2: efter sletning sendes brugeren til forsiden.
+        RedirectManager.RedirectTo("");
     }
 
     private sealed class InputModel

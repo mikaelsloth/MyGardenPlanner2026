@@ -197,7 +197,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - ConfirmEmailChange: forkert token eller ugyldigt Base64Url-format i code giver "Error: Der opstod en fejl ved skift af e-mail." (status 200).
 - ChangePassword: succes redirecter til samme side (`RedirectToCurrentPageWithStatus`) med "Your password has been changed". Man forbliver logget ind (`RefreshSignInAsync`). Labels i markup ("Old password", "New password", "Confirm password") afviger fra Display-navnene i valideringsbeskeder ("Current password", "New password", "Confirm new password").
 - PersonalData: "Download" er en almindelig POST-formular (ikke enhanced) til /Account/Manage/DownloadPersonalData. Brug `page.RunAndWaitForDownloadAsync` og læs filen via `download.PathAsync()`. "Delete" er et link (`<a>`), ikke en knap.
-- DeletePersonalData: succes kører DeleteAsync + SignOutAsync og redirecter til samme side. Efterfølgende tjek er, at login afvises. Slet-knappen vises ikke længere.
+- DeletePersonalData: succes sletter først brugerens data (AccountDeletionService), derefter brugeren (DeleteAsync + SignOutAsync) og redirecter til forsiden. Efterfølgende tjek er, at login afvises. Slet-knappen vises ikke længere.
 
 ### Admin-navigation
 - AdminNavMenu ligger i AdminLayout og er statisk (ingen rendermode på layoutet). Efter en ændring i adgang (fx godkendt JIT) kræves en ny sideindlæsning, før linkene ændres. Adgang efter godkendelse: `HasActiveElevationAsync` læser DB ved hvert kald (ingen cache), så ny sideindlæsning er nok.
@@ -385,8 +385,8 @@ Filer: PersonalData.razor (+ .cs), IdentityComponentsEndpointRouteBuilderExtensi
 /Account/Manage/DeletePersonalData
 Titel: Delete Personal Data. h3 "Delete Personal Data".
 Felt "Password" (kun hvis brugeren har password), knap "Delete data and close my account".
-Forkert password: "Error: Incorrect password.". Succes: konto slettes, bruger logges ud, redirect til samme side.
-Filer: DeletePersonalData.razor (+ .cs)
+Forkert password: "Error: Incorrect password.". Eneste ejer i have med andre medlemmer: "Error: You are the only owner of gardens shared with other members: <haver>. Ownership must be transferred before your account can be deleted." Fejlet DeleteAsync: "Error: Your account could not be deleted. Please try again." Succes: data og konto slettes, bruger logges ud, redirect til forsiden.
+Filer: DeletePersonalData.razor (+ .cs), AccountDeletionService.cs, IAccountDeletionService.cs
 ```
 
 ### 4.4 Admin
@@ -606,3 +606,12 @@ Filer til Upload: de berørte sider, StatusMessage
 - R9.8 `AdminActionGuard` har en kvote pr. bruger (ukendt grænse). F1 gemmer 6 gange pr. bruger.
 
 Filer til Upload: de berørte E2E-filer
+
+### R10 – Kontosletning: ejerskab og backup (separat scope)
+- R10.1 Eneste ejer i en have med andre medlemmer blokerer kontosletning. Mangler: ejerskabsoverdragelse (vælg ny ejer) eller bekræftelse af, at alles adgang til havedata slettes (dog ikke andre brugeres konti).
+- R10.2 Tilbyd en backup-fil af brugerens data, som kun kan bruges, hvis brugeren vender tilbage.
+- R10.3 Layer 2/3-data (bede, planer m.m.) skal medtages i AccountDeletionService (eller kaskade), når de bygges.
+- R10.4 AccountDeletionService bruger ExecuteDelete og skriver derfor ingen AuditLog-rækker. Overvej en eksplicit audit-post som dokumentation.
+- R10.5 Kontosider på engelsk (blokeringsbesked mv.) lokaliseres i R8.
+
+Filer til Upload: AccountDeletionService, DeletePersonalData, Garden-entiteterne

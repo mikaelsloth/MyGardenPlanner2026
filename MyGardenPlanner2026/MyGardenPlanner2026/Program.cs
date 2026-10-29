@@ -21,7 +21,8 @@ builder.Services
     .AddSecurityPolicySettingsSeeding(builder.Configuration)
     .AddSecurityPolicyRuntimeReload()
     .AddAuditLogServices()
-    .AddOnboardingServices();
+    .AddOnboardingServices()
+    .AddUserDeletionServices();
 
 #if DEBUG
 builder.Services.AddSmokeTestUserSeeding(builder.Configuration);
@@ -30,7 +31,7 @@ builder.Services.AddSmokeTestUserSeeding(builder.Configuration);
 var app = builder.Build();
 
 var startupLogger = app.Services.GetRequiredService<ILogger<Program>>();
-Program.StartupEnvironment(startupLogger, builder.Environment.EnvironmentName, provider ?? "ukendt");
+StartupEnvironment(startupLogger, builder.Environment.EnvironmentName, provider ?? "ukendt");
 
 // 1.1 Add seeds in development
 if (app.Environment.IsDevelopment())

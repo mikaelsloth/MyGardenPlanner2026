@@ -77,7 +77,8 @@ public sealed partial class PersonligeDataTests(PlaywrightAppFixture fixture)
         await page.GetByLabel("Password", new() { Exact = true }).FillAsync(user.Password);
         await page.GetByRole(AriaRole.Button, new() { Name = DeleteButtonName, Exact = true }).ClickAsync();
 
-        // Brugeren er logget ud, så slet-formularen vises ikke længere.
+        // D4-2: efter sletning redirectes til forsiden, og brugeren er logget ud.
+        await Assertions.Expect(page).ToHaveURLAsync($"{fixture.RootUri}/");
         await Assertions.Expect(page.GetByRole(AriaRole.Button, new() { Name = DeleteButtonName, Exact = true }))
             .ToHaveCountAsync(0);
 

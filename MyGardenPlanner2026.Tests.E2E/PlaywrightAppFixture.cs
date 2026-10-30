@@ -22,6 +22,8 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
     private IPlaywright _playwright = default!;
     private const int MaxCapturedLines = 200;
     private readonly ConcurrentQueue<string> _appOutput = new();
+    private AppLogFile? _appLog;
+    private string? _lastLoggedTest;
 
     public string RootUri { get; private set; } = default!;
     public const string SecurityAlertRecipient = "sikkerhedsalarm@e2e.test";
@@ -47,6 +49,7 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
 
         var port = GetFreeTcpPort();
         RootUri = $"http://127.0.0.1:{port}";
+        _appLog = new AppLogFile(Path.Combine(RepoPaths.FindRepoRoot(), "TestResults", "AppLogs", $"app-{port}.log"));
         _appProcess = StartAppProcess(
             port, _database.AppConnectionString, _database.AdminConnectionString, SmtpServer.Port, CaptureAppOutput);
         await WaitUntilReadyAsync(TimeSpan.FromSeconds(60));
@@ -77,6 +80,7 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         }
 
         _appProcess?.Dispose();
+        _appLog?.Dispose();
 
         if (SmtpServer is not null)
         {
@@ -91,6 +95,7 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
 
     public async Task<IPage> NewPageAsync()
     {
+        LogTestStart();
         await _contexts.ReleaseIfNewTestAsync();
         var context = await Browser.NewContextAsync();
         _contexts.Add(context);
@@ -100,6 +105,7 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
     /// <summary>Åbner en ny side med viewport fra <see cref="Screenshots.Viewports"/>.</summary>
     public async Task<IPage> NewPageAsync(int viewportWidth)
     {
+        LogTestStart();
         await _contexts.ReleaseIfNewTestAsync();
         var context = await Browser.NewContextAsync(new BrowserNewContextOptions
         {
@@ -136,6 +142,7 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
             return;
         }
 
+        _appLog?.WriteLine(line);
         _appOutput.Enqueue(line);
 
         while (_appOutput.Count > MaxCapturedLines && _appOutput.TryDequeue(out _))
@@ -235,6 +242,19 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         }
 
         throw new TimeoutException($"Appen svarede ikke på {RootUri} inden for {timeout}.");
+    }
+
+    /// <summary>Markerer i app-loggen, hvornår en ny test går i gang (første sideoprettelse i testen).</summary>
+    private void LogTestStart()
+    {
+        var name = TestContext.Current.Test?.TestDisplayName;
+        if (name is null || name == _lastLoggedTest)
+        {
+            return;
+        }
+
+        _lastLoggedTest = name;
+        _appLog?.WriteLine($"=== TEST START: {name}");
     }
 
     private static int GetFreeTcpPort()

@@ -193,7 +193,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 ### Identity-sider
 - Manage-siderne ligger i ManageLayout (se 4.3).
 - Ingen log ud-knap i PublicLayout/ManageLayout: log ud i E2E = `page.Context.ClearCookiesAsync()`.
-- Email.razor viser bekræftelseslinket til e-mailskift på siden, når EmailSender er IdentityNoOpEmailSender og Identity:ShowEmailLinks er true (E2E-fixturen sætter flaget). Uden det kan skiftet ikke bekræftes i E2E.
+- Email.razor RegisterConfirmation viser links til e-mailskift på siden, når EmailSender er IdentityNoOpEmailSender og Identity:ShowEmailLinks er true (E2E-fixturen sætter flaget). Uden det kan skiftet ikke bekræftes i E2E.
 - ConfirmEmailChange: forkert token eller ugyldigt Base64Url-format i code giver "Error: Der opstod en fejl ved skift af e-mail." (status 200).
 - ChangePassword: succes redirecter til samme side (`RedirectToCurrentPageWithStatus`) med "Your password has been changed". Man forbliver logget ind (`RefreshSignInAsync`). Labels i markup ("Old password", "New password", "Confirm password") afviger fra Display-navnene i valideringsbeskeder ("Current password", "New password", "Confirm new password").
 - PersonalData: "Download" er en almindelig POST-formular (ikke enhanced) til /Account/Manage/DownloadPersonalData. Brug `page.RunAndWaitForDownloadAsync` og læs filen via `download.PathAsync()`. "Delete" er et link (`<a>`), ikke en knap.
@@ -269,7 +269,7 @@ Filer: Register.razor (+ .cs)
 ```
 /Account/RegisterConfirmation
 Titel: Bekræft registrering – MyGardenPlanner. h1: Bekræft registrering.
-Link "Klik her for at bekræfte din konto" vises kun med IdentityNoOpEmailSender, ellers <p role="alert">.
+Link "Klik her for at bekræfte din konto" vises kun med IdentityNoOpEmailSender og Identity:ShowEmailLinks = true (E2E-fixturen sætter flaget). Ukendt e-mail (flag til): status 404 og "Error: Kunne ikke finde bruger for den angivne e-mail.". Uden flaget (eller med anden sender) slås brugeren ikke op, og siden viser <p role="alert"> "Tjek venligst din e-mail for at bekræfte din konto." uanset om e-mailen findes. Flag-fra er kun dækket af bUnit.
 Filer: RegisterConfirmation.razor (+ .cs)
 ```
 ```
@@ -531,13 +531,13 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 ~~Filer til Upload: SmtpSecurityEmailSender, ReAuthFailureTracker(+Options), Login/LoginWith2fa/LoginWithRecoveryCode, ReAuthenticationService, StepUpReAuthModal, HttpContextCurrentUserAccessor, CircuitUserCircuitHandler~~
 
 ### R2 – Kontosider: fejlhåndtering og e-mail (prioritet 2)
-- R2.1 \RegisterConfirmation`: viser stadig bekræftelseslinket uden flag og afslører, om en e-mail findes (D8). `Email.razor` er rettet i PR 3.`
+~~- R2.1 \RegisterConfirmation`: viser stadig bekræftelseslinket uden flag og afslører, om en e-mail findes (D8). `Email.razor` er rettet i PR 3.`~~
 ~~- R2.2 `Email.razor`: `OnSendEmailVerificationAsync` viser ikke linket (kun relevant for ubekræftede e-mails, ikke dækket).~~
 ~~- R2.3 `ConfirmEmailChange.razor.cs`: `WebEncoders.Base64UrlDecode(Code)` er uden try/catch. Et ikke-Base64Url-format i code kaster formentlig FormatException (500). Ikke testet.~~
-- R2.4 `DeletePersonalData`: hvis `UserManager.DeleteAsync` fejler, kastes InvalidOperationException (500) uden UI-fejl. Sletning af brugere med relationer (haver, medlemskaber) er ikke undersøgt eller dækket (ny bruger har ingen). Destinationen efter sletning for en ikke-logget-ind bruger (login eller NotAuthorized) er ikke verificeret.
+~~- R2.4 `DeletePersonalData`: hvis `UserManager.DeleteAsync` fejler, kastes InvalidOperationException (500) uden UI-fejl. Sletning af brugere med relationer (haver, medlemskaber) er ikke undersøgt eller dækket (ny bruger har ingen). Destinationen efter sletning for en ikke-logget-ind bruger (login eller NotAuthorized) er ikke verificeret.~~
 ~~- R2.5 `DownloadPersonalData`: `(await GetAuthenticatorKeyAsync(user))!` giver null i JSON for brugere uden authenticator (ingen fejl, men null-forgiving er unøjagtig).~~
 
-Filer til Upload: Email, ConfirmEmailChange, DeletePersonalData, RegisterConfirmation, IdentityComponentsEndpointRouteBuilderExtensions
+~~Filer til Upload: Email, ConfirmEmailChange, DeletePersonalData, RegisterConfirmation, IdentityComponentsEndpointRouteBuilderExtensions~~
 
 ### R3 – JIT-eskalering: regler og robusthed (prioritet 3)
 - R3.1 `JitElevationService.RequestElevationAsync` tjekker kun minutter inden for policyen og at rollen findes. Ansøgerens berettigelse til rollen tjekkes ikke, og en bruger kan anmode om en rolle, vedkommende allerede har (backlog).

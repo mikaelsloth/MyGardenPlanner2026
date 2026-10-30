@@ -2,7 +2,9 @@
 
 @using Microsoft.AspNetCore.Identity
 @using MyGardenPlanner2026.Core.Entities;
+@using Microsoft.Extensions.Options
 
+@inject IOptions<EmailLinkDisplayOptions> EmailLinkOptions
 @inject UserManager<ApplicationUser> UserManager
 @inject IEmailSender<ApplicationUser> EmailSender
 @inject NavigationManager NavigationManager

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using MyGardenPlanner2026.Core.Entities;
 
-// Remove the "else if (EmailSender is IdentityNoOpEmailSender)" block from RegisterConfirmation.razor after updating with a real implementation.
+// Når en rigtig IEmailSender er på plads: fjern EmailLinkDisplayOptions samt ShowLinks-grenene i RegisterConfirmation og Manage/Email.
 internal sealed class IdentityNoOpEmailSender : IEmailSender<ApplicationUser>
 {
     private readonly NoOpEmailSender emailSender = new(); // change to IEmailSender emailSender later

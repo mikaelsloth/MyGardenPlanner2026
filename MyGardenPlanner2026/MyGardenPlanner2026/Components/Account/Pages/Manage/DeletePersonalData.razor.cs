@@ -53,8 +53,9 @@ public partial class DeletePersonalData
         }
 
         var userId = await UserManager.GetUserIdAsync(user);
+        var email = await UserManager.GetEmailAsync(user);
 
-        var dataResult = await AccountDeletionService.DeleteUserDataAsync(userId);
+        var dataResult = await AccountDeletionService.DeleteUserDataAsync(userId, email, CancellationToken.None);
         if (dataResult.IsBlocked)
         {
             message = "Error: You are the only owner of gardens shared with other members: "

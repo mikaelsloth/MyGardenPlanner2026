@@ -13,20 +13,21 @@ using MyGardenPlanner2026.Infrastructure.Data;
 /// ExecuteDelete går uden om interceptors og skriver derfor ingen AuditLog-rækker (loggen
 /// 'AccountDataDeleted' dokumenterer sletningen). AuditLogs og RoleElevationRequests røres ikke.
 /// re-auth-fejlforsøg ligger i admin-schema og slettes via IReAuthFailureTracker.
+/// Invitationer sendt til brugerens e-mail slettes også (match på nuværende e-mail, case-insensitivt).
 /// </summary>
 public sealed partial class AccountDeletionService(
     IDbContextFactory<PlannerDbContext> contextFactory,
     IReAuthFailureTracker reAuthFailureTracker,
     ILogger<AccountDeletionService> logger) : IAccountDeletionService
 {
-    [LoggerMessage(EventId = 1081, Level = LogLevel.Information, Message = "Account data deleted for user '{UserId}': {Gardens} gardens, {Memberships} memberships, {Entitlements} entitlements, {Drafts} checkout drafts, {InvitationsDeleted} invitations deleted, {InvitationsRevoked} invitations revoked.")]
-    static partial void AccountDataDeleted(ILogger logger, string UserId, int Gardens, int Memberships, int Entitlements, int Drafts, int InvitationsDeleted, int InvitationsRevoked);
+    [LoggerMessage(EventId = 1081, Level = LogLevel.Information, Message = "Account data deleted for user '{UserId}': {Gardens} gardens, {Memberships} memberships, {Entitlements} entitlements, {Drafts} checkout drafts, {InvitationsDeleted} invitations sent by the user deleted, {InvitationsToEmailDeleted} invitations to the user's e-mail deleted, {InvitationsRevoked} pending invitations revoked.")]
+    static partial void AccountDataDeleted(ILogger logger, string UserId, int Gardens, int Memberships, int Entitlements, int Drafts, int InvitationsDeleted, int InvitationsToEmailDeleted, int InvitationsRevoked);
 
     [LoggerMessage(EventId = 1082, Level = LogLevel.Warning, Message = "Account deletion for user '{UserId}' blocked: sole owner of {GardenCount} garden(s) with other members.")]
     static partial void AccountDeletionBlocked(ILogger logger, string UserId, int GardenCount);
 
     public async Task<AccountDeletionResult> DeleteUserDataAsync(
-        string userId, CancellationToken cancellationToken = default)
+        string userId, string? email, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
 
@@ -61,11 +62,24 @@ public sealed partial class AccountDeletionService(
             .Where(d => d.UserId == userId)
             .ExecuteDeleteAsync(cancellationToken);
 
-        // D11: accepterede invitationer slettes, ubrugte ugyldiggøres.
+        // D11/D14: invitationer brugeren har sendt og som er accepteret eller tilbagekaldt, slettes.
         var invitationsDeleted = await context.GardenInvitations.IgnoreQueryFilters()
-            .Where(i => i.InvitedByUserId == userId && i.IsAccepted)
+            .Where(i => i.InvitedByUserId == userId && (i.IsAccepted || i.IsRevoked))
             .ExecuteDeleteAsync(cancellationToken);
 
+        // D14: invitationer sendt TIL brugerens e-mail (persondata) slettes uanset status.
+        var invitationsToEmailDeleted = 0;
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            var normalizedEmail = email.Trim().ToLowerInvariant();
+#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons -- see https://learn.microsoft.com/da-dk/ef/core/miscellaneous/collations-and-case-sensitivity#translation-of-built-in-net-string-operations
+            invitationsToEmailDeleted = await context.GardenInvitations.IgnoreQueryFilters()
+                .Where(i => i.Email.Trim().ToLower() == normalizedEmail)
+                .ExecuteDeleteAsync(cancellationToken);
+#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
+        }
+
+        // D11: brugerens øvrige (ubrugte) invitationer ugyldiggøres.
         var invitationsRevoked = await context.GardenInvitations.IgnoreQueryFilters()
             .Where(i => i.InvitedByUserId == userId && !i.IsAccepted && !i.IsRevoked)
             .ExecuteUpdateAsync(s => s.SetProperty(i => i.IsRevoked, true), cancellationToken);
@@ -74,7 +88,7 @@ public sealed partial class AccountDeletionService(
 
         await reAuthFailureTracker.ClearFailuresAsync(userId, cancellationToken);
 
-        AccountDataDeleted(logger, userId, gardens, memberships, entitlements, drafts, invitationsDeleted, invitationsRevoked);
+        AccountDataDeleted(logger, userId, gardens, memberships, entitlements, drafts, invitationsDeleted, invitationsToEmailDeleted, invitationsRevoked);
         return AccountDeletionResult.Completed();
     }
 

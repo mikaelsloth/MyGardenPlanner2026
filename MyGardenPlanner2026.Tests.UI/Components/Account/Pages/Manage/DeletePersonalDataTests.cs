@@ -16,6 +16,7 @@ using Xunit;
 public class DeletePersonalDataTests : BunitContext
 {
     private const string Password = "Rigtig123!";
+    private const string UserEmail = "bruger@example.dk";
 
     private (UserManager<ApplicationUser> UserManager, SignInManager<ApplicationUser> SignInManager, IAccountDeletionService AccountDeletion, ApplicationUser User) RegisterFakes(bool hasPassword = true)
     {
@@ -24,6 +25,7 @@ public class DeletePersonalDataTests : BunitContext
         userManager.GetUserAsync(Arg.Any<ClaimsPrincipal>()).Returns(Task.FromResult<ApplicationUser?>(user));
         userManager.HasPasswordAsync(user).Returns(Task.FromResult(hasPassword));
         userManager.GetUserIdAsync(user).Returns(Task.FromResult("user-1"));
+        userManager.GetEmailAsync(user).Returns(Task.FromResult<string?>(UserEmail));
 
         var accountDeletion = Substitute.For<IAccountDeletionService>();
         Services.AddSingleton(accountDeletion);
@@ -66,7 +68,7 @@ public class DeletePersonalDataTests : BunitContext
         await cut.Find("form").SubmitAsync();
 
         cut.Markup.Should().Contain("Error: Incorrect password.");
-        await accountDeletion.DidNotReceive().DeleteUserDataAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await accountDeletion.DidNotReceive().DeleteUserDataAsync(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<CancellationToken>());
         await userManager.DidNotReceive().DeleteAsync(Arg.Any<ApplicationUser>());
         await signInManager.DidNotReceive().SignOutAsync();
     }
@@ -76,7 +78,7 @@ public class DeletePersonalDataTests : BunitContext
     {
         var (userManager, signInManager, accountDeletion, user) = RegisterFakes();
         userManager.CheckPasswordAsync(user, Password).Returns(Task.FromResult(true));
-        accountDeletion.DeleteUserDataAsync("user-1", Arg.Any<CancellationToken>())
+        accountDeletion.DeleteUserDataAsync("user-1", UserEmail, Arg.Any<CancellationToken>())
             .Returns(AccountDeletionResult.Blocked(["Have A", "Have B"]));
         this.UseIdentityRedirectManager();
 
@@ -95,7 +97,7 @@ public class DeletePersonalDataTests : BunitContext
         var (userManager, signInManager, accountDeletion, user) = RegisterFakes();
         userManager.CheckPasswordAsync(user, Password).Returns(Task.FromResult(true));
         userManager.DeleteAsync(user).Returns(Task.FromResult(IdentityResult.Failed(new IdentityError { Code = "Fejl" })));
-        accountDeletion.DeleteUserDataAsync("user-1", Arg.Any<CancellationToken>())
+        accountDeletion.DeleteUserDataAsync("user-1", UserEmail, Arg.Any<CancellationToken>())
             .Returns(AccountDeletionResult.Completed());
         this.UseIdentityRedirectManager();
 
@@ -113,7 +115,7 @@ public class DeletePersonalDataTests : BunitContext
         var (userManager, signInManager, accountDeletion, user) = RegisterFakes();
         userManager.CheckPasswordAsync(user, Password).Returns(Task.FromResult(true));
         userManager.DeleteAsync(user).Returns(Task.FromResult(IdentityResult.Success));
-        accountDeletion.DeleteUserDataAsync("user-1", Arg.Any<CancellationToken>())
+        accountDeletion.DeleteUserDataAsync("user-1", UserEmail, Arg.Any<CancellationToken>())
             .Returns(AccountDeletionResult.Completed());
         var navMan = this.UseIdentityRedirectManager();
 
@@ -121,7 +123,7 @@ public class DeletePersonalDataTests : BunitContext
         await cut.Find("#Input\\.Password").ChangeAsync(Password);
         await cut.Find("form").SubmitAsync();
 
-        await accountDeletion.Received(1).DeleteUserDataAsync("user-1", Arg.Any<CancellationToken>());
+        await accountDeletion.Received(1).DeleteUserDataAsync("user-1", UserEmail, Arg.Any<CancellationToken>());
         await userManager.Received(1).DeleteAsync(user);
         await signInManager.Received(1).SignOutAsync();
         navMan.Uri.Should().Be(navMan.BaseUri);
@@ -132,7 +134,7 @@ public class DeletePersonalDataTests : BunitContext
     {
         var (userManager, _, accountDeletion, user) = RegisterFakes(hasPassword: false);
         userManager.DeleteAsync(user).Returns(Task.FromResult(IdentityResult.Success));
-        accountDeletion.DeleteUserDataAsync("user-1", Arg.Any<CancellationToken>())
+        accountDeletion.DeleteUserDataAsync("user-1", UserEmail, Arg.Any<CancellationToken>())
             .Returns(AccountDeletionResult.Completed());
         this.UseIdentityRedirectManager();
 

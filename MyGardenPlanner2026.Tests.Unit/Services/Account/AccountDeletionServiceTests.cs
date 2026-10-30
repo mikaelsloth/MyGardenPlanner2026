@@ -15,6 +15,7 @@ public sealed class AccountDeletionServiceTests : IDisposable
 {
     private const string UserId = "user-1";
     private const string OtherUserId = "user-2";
+    private const string UserEmail = "bruger@example.dk";
 
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
     private readonly DbContextOptions<PlannerDbContext> _options;
@@ -79,14 +80,16 @@ public sealed class AccountDeletionServiceTests : IDisposable
         await context.SaveChangesAsync(Ct);
     }
 
-    private async Task<Guid> SeedInvitationAsync(Guid gardenId, string invitedBy, bool accepted = false, bool revoked = false)
+    private async Task<Guid> SeedInvitationAsync(
+        Guid gardenId, string invitedBy, bool accepted = false, bool revoked = false,
+        string email = "inviteret@example.dk")
     {
         await using var context = new PlannerDbContext(_options);
         var invitation = new GardenInvitation
         {
             GardenId = gardenId,
             InvitedByUserId = invitedBy,
-            Email = "inviteret@example.dk",
+            Email = email,
             TokenHash = Guid.NewGuid().ToString("N"),
             ExpiresUtc = DateTimeOffset.UtcNow.AddDays(7),
             IsAccepted = accepted,
@@ -147,7 +150,7 @@ public sealed class AccountDeletionServiceTests : IDisposable
     [Fact]
     public async Task DeleteUserDataAsync_BlankUserId_Throws()
     {
-        var act = () => _sut.DeleteUserDataAsync(" ", Ct);
+        var act = () => _sut.DeleteUserDataAsync(" ", UserEmail, Ct);
 
         await act.Should().ThrowAsync<ArgumentException>();
     }
@@ -159,7 +162,7 @@ public sealed class AccountDeletionServiceTests : IDisposable
         await SeedEntitlementAsync(garden.Id, UserId);
         await SeedDraftAsync(UserId);
 
-        var result = await _sut.DeleteUserDataAsync(UserId, Ct);
+        var result = await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
 
         result.IsBlocked.Should().BeFalse();
         (await CountGardensAsync()).Should().Be(0);
@@ -173,7 +176,7 @@ public sealed class AccountDeletionServiceTests : IDisposable
     {
         var garden = await SeedGardenAsync("Fælles have", (OtherUserId, true), (UserId, false));
 
-        var result = await _sut.DeleteUserDataAsync(UserId, Ct);
+        var result = await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
 
         result.IsBlocked.Should().BeFalse();
         (await CountGardensAsync()).Should().Be(1);
@@ -187,7 +190,7 @@ public sealed class AccountDeletionServiceTests : IDisposable
     {
         await SeedGardenAsync("Fælles have", (UserId, true), (OtherUserId, true));
 
-        var result = await _sut.DeleteUserDataAsync(UserId, Ct);
+        var result = await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
 
         result.IsBlocked.Should().BeFalse();
         (await CountGardensAsync()).Should().Be(1);
@@ -202,7 +205,7 @@ public sealed class AccountDeletionServiceTests : IDisposable
         await SeedEntitlementAsync(garden.Id, UserId);
         await SeedDraftAsync(UserId);
 
-        var result = await _sut.DeleteUserDataAsync(UserId, Ct);
+        var result = await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
 
         result.IsBlocked.Should().BeTrue();
         result.BlockingGardenNames.Should().Equal("Blokeret have");
@@ -219,7 +222,7 @@ public sealed class AccountDeletionServiceTests : IDisposable
         await SeedGardenAsync("Blokeret have", (UserId, true), (OtherUserId, false));
         await SeedGardenAsync("Egen have", (UserId, true));
 
-        var result = await _sut.DeleteUserDataAsync(UserId, Ct);
+        var result = await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
 
         result.IsBlocked.Should().BeTrue();
         (await CountGardensAsync()).Should().Be(2);
@@ -231,27 +234,57 @@ public sealed class AccountDeletionServiceTests : IDisposable
         var garden = await SeedGardenAsync("Fælles have", (OtherUserId, true));
         await SeedSoftDeletedMembershipAsync(garden.Id, UserId);
 
-        await _sut.DeleteUserDataAsync(UserId, Ct);
+        await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
 
         (await CountMembershipsAsync(UserId)).Should().Be(0);
         (await CountMembershipsAsync(OtherUserId)).Should().Be(1);
     }
 
     [Fact]
-    public async Task DeleteUserDataAsync_Invitations_AcceptedDeletedPendingRevokedOthersUntouched()
+    public async Task DeleteUserDataAsync_InvitationsSentByUser_AcceptedAndRevokedDeletedPendingRevoked()
     {
         var garden = await SeedGardenAsync("Fælles have", (OtherUserId, true), (UserId, false));
         var accepted = await SeedInvitationAsync(garden.Id, UserId, accepted: true);
+        var revoked = await SeedInvitationAsync(garden.Id, UserId, revoked: true);
         var pending = await SeedInvitationAsync(garden.Id, UserId);
         var othersPending = await SeedInvitationAsync(garden.Id, OtherUserId);
 
-        await _sut.DeleteUserDataAsync(UserId, Ct);
+        await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
 
         (await FindInvitationAsync(accepted)).Should().BeNull();
+        (await FindInvitationAsync(revoked)).Should().BeNull();
         (await FindInvitationAsync(pending))!.IsRevoked.Should().BeTrue();
         (await FindInvitationAsync(othersPending))!.IsRevoked.Should().BeFalse();
     }
 
+    [Fact]
+    public async Task DeleteUserDataAsync_InvitationsToUsersEmail_AreDeletedRegardlessOfStateAndCase()
+    {
+        var garden = await SeedGardenAsync("Fælles have", (OtherUserId, true), (UserId, false));
+        var pending = await SeedInvitationAsync(garden.Id, OtherUserId, email: "Bruger@Example.DK");
+        var accepted = await SeedInvitationAsync(garden.Id, OtherUserId, accepted: true, email: UserEmail);
+        var revoked = await SeedInvitationAsync(garden.Id, OtherUserId, revoked: true, email: UserEmail);
+        var toSomeoneElse = await SeedInvitationAsync(garden.Id, OtherUserId, email: "anden@example.dk");
+
+        await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
+
+        (await FindInvitationAsync(pending)).Should().BeNull();
+        (await FindInvitationAsync(accepted)).Should().BeNull();
+        (await FindInvitationAsync(revoked)).Should().BeNull();
+        (await FindInvitationAsync(toSomeoneElse)).Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_NoEmail_SkipsEmailInvitations()
+    {
+        var garden = await SeedGardenAsync("Fælles have", (OtherUserId, true), (UserId, false));
+        var toUsersEmail = await SeedInvitationAsync(garden.Id, OtherUserId, email: UserEmail);
+
+        var result = await _sut.DeleteUserDataAsync(UserId, null, Ct);
+
+        result.IsBlocked.Should().BeFalse();
+        (await FindInvitationAsync(toUsersEmail)).Should().NotBeNull();
+    }
     [Fact]
     public async Task DeleteUserDataAsync_OtherUsersData_IsUntouched()
     {
@@ -260,7 +293,7 @@ public sealed class AccountDeletionServiceTests : IDisposable
         await SeedDraftAsync(OtherUserId);
         await SeedDraftAsync(UserId);
 
-        await _sut.DeleteUserDataAsync(UserId, Ct);
+        await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
 
         (await CountGardensAsync()).Should().Be(1);
         (await CountMembershipsAsync(OtherUserId)).Should().Be(1);
@@ -274,7 +307,7 @@ public sealed class AccountDeletionServiceTests : IDisposable
     {
         await SeedGardenAsync("Min have", (UserId, true));
 
-        await _sut.DeleteUserDataAsync(UserId, Ct);
+        await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
 
         await _tracker.Received(1).ClearFailuresAsync(UserId, Arg.Any<CancellationToken>());
     }

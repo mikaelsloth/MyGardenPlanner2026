@@ -102,3 +102,12 @@ jobs:
           path: TestResults/Screenshots/
           if-no-files-found: ignore
           retention-days: 14
+      
+      - name: Upload app logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-app-logs
+          path: TestResults/AppLogs/
+          if-no-files-found: ignore
+          retention-days: 14

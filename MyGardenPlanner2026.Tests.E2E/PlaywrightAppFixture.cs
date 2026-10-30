@@ -29,6 +29,8 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
     "[MyGardenPlanner] Sikkerhedsalarm: Gentagne fejlede login-/re-auth-forsøg";
     /// <summary>E2E-appens re-auth-vindue. 1 minut gør, at udløbstesten (Tjekliste D3) kun venter ca. ét minut.</summary>
     public const int ReAuthMaxAgeMinutes = 1;
+    /// <summary>Standard-timeout for Expect. CI-runnere er langsomme til at forbinde Blazor-circuits.</summary>
+    public const float ExpectTimeoutMs = 15_000;
 
     public TestSmtpServer SmtpServer { get; private set; } = default!;
     public string AppConnectionString => _database.AppConnectionString;
@@ -50,17 +52,16 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         await WaitUntilReadyAsync(TimeSpan.FromSeconds(60));
 
         _playwright = await Playwright.CreateAsync();
+        Assertions.SetDefaultExpectTimeout(ExpectTimeoutMs);
         Browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions { Headless = true });
     }
 
-    private readonly List<IBrowserContext> _contexts = [];
+    private readonly PerTestResources<IBrowserContext> _contexts =
+        new(() => TestContext.Current.Test?.UniqueID, context => context.CloseAsync());
 
     public async ValueTask DisposeAsync()
     {
-        foreach (var context in _contexts)
-        {
-            await context.CloseAsync();
-        }
+        await _contexts.CloseAllAsync();
 
         if (Browser is not null)
         {
@@ -90,6 +91,7 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
 
     public async Task<IPage> NewPageAsync()
     {
+        await _contexts.ReleaseIfNewTestAsync();
         var context = await Browser.NewContextAsync();
         _contexts.Add(context);
         return await context.NewPageAsync();
@@ -98,6 +100,7 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
     /// <summary>Åbner en ny side med viewport fra <see cref="Screenshots.Viewports"/>.</summary>
     public async Task<IPage> NewPageAsync(int viewportWidth)
     {
+        await _contexts.ReleaseIfNewTestAsync();
         var context = await Browser.NewContextAsync(new BrowserNewContextOptions
         {
             ViewportSize = Screenshots.Viewports.For(viewportWidth),

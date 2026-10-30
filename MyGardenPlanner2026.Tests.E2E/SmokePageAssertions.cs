@@ -13,7 +13,8 @@ public static class SmokePageAssertions
         await Assertions.Expect(h1).ToHaveCountAsync(1);
         await Assertions.Expect(h1).ToHaveTextAsync(heading);
 
-        await Assertions.Expect(page.Locator("[class*='skeleton']")).ToHaveCountAsync(0);
+        await Assertions.Expect(page.Locator("[class*='skeleton']"))
+            .ToHaveCountAsync(0, new() { Timeout = 30_000 });
         await Assertions.Expect(page.Locator("#blazor-error-ui")).ToBeHiddenAsync();
     }
 }

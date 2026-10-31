@@ -21,6 +21,11 @@ public partial class JitElevationRequestForm
     private static readonly string[] AdminRoles =
     [RoleNames.SystemAdmin, RoleNames.DataAdmin, RoleNames.PolicyAdmin, RoleNames.AuditViewer];
 
+    private const string UnexpectedFailureMessage =
+    "Error: Handlingen kunne ikke gennemføres. Prøv igen, eller kontakt en administrator.";
+    private const string LoadFailureMessage =
+        "Error: Dine anmodninger kunne ikke indlæses. Prøv igen senere.";
+
     [Inject]
     private IJitElevationService JitElevationService { get; set; } = default!;
 
@@ -51,6 +56,12 @@ public partial class JitElevationRequestForm
     [LoggerMessage(EventId = 1078, Level = LogLevel.Information, Message = "JIT-anmodning om rollen '{RoleName}' afvist: {Reason}")]
     static partial void JitElevationRequestSubmitFailed(ILogger logger, string RoleName, string Reason);
 
+    [LoggerMessage(EventId = 1139, Level = LogLevel.Error, Message = "Uventet fejl ved JIT-anmodning om rollen '{RoleName}'.")]
+    static partial void JitElevationRequestUnexpectedFailure(ILogger logger, Exception ex, string RoleName);
+
+    [LoggerMessage(EventId = 1140, Level = LogLevel.Error, Message = "Fejl ved indlæsning af brugerens JIT-anmodninger.")]
+    static partial void JitElevationRequestsLoadFailed(ILogger logger, Exception ex);
+
     protected override Task OnInitializedAsync()
     {
         adminActionGuard = new AdminActionGuard(RateLimiter);
@@ -59,10 +70,18 @@ public partial class JitElevationRequestForm
 
     private async Task LoadRequestsAsync()
     {
-        var userId = await CurrentUserIdResolver.ResolveAsync(AuthenticationStateTask);
-        myRequests = userId is null
-            ? []
-            : await JitElevationService.GetRequestsForUserAsync(userId);
+        try
+        {
+            var userId = await CurrentUserIdResolver.ResolveAsync(AuthenticationStateTask);
+            myRequests = userId is null
+                ? []
+                : await JitElevationService.GetRequestsForUserAsync(userId);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            errorMessage = LoadFailureMessage;
+            JitElevationRequestsLoadFailed(Logger, ex);
+        }
     }
 
     private async Task SubmitRequestAsync()
@@ -95,6 +114,11 @@ public partial class JitElevationRequestForm
         {
             errorMessage = $"Error: {ex.Message}";
             JitElevationRequestSubmitFailed(Logger, selectedRole, ex.Message);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            errorMessage = UnexpectedFailureMessage;
+            JitElevationRequestUnexpectedFailure(Logger, ex, selectedRole);
         }
     }
 

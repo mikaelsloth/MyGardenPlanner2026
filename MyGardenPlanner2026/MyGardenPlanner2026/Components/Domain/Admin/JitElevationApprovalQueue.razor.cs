@@ -17,6 +17,10 @@ using System.Globalization;
 public partial class JitElevationApprovalQueue
 {
     private static readonly CultureInfo DanishCulture = new("da-DK");
+    private const string UnexpectedFailureMessage =
+    "Error: Handlingen kunne ikke gennemføres. Prøv igen, eller kontakt en administrator.";
+    private const string LoadFailureMessage =
+        "Error: Anmodninger kunne ikke indlæses. Prøv igen senere.";
 
     [Inject]
     private IJitElevationService JitElevationService { get; set; } = default!;
@@ -47,6 +51,15 @@ public partial class JitElevationApprovalQueue
     [LoggerMessage(EventId = 1080, Level = LogLevel.Information, Message = "Afvisning af JIT-anmodning '{RequestId}' afvist: {Reason}")]
     static partial void JitElevationRejectionFailed(ILogger logger, Guid RequestId, string Reason);
 
+    [LoggerMessage(EventId = 1136, Level = LogLevel.Error, Message = "Uventet fejl ved godkendelse af JIT-anmodning '{RequestId}'.")]
+    static partial void JitElevationApprovalUnexpectedFailure(ILogger logger, Exception ex, Guid RequestId);
+
+    [LoggerMessage(EventId = 1137, Level = LogLevel.Error, Message = "Uventet fejl ved afvisning af JIT-anmodning '{RequestId}'.")]
+    static partial void JitElevationRejectionUnexpectedFailure(ILogger logger, Exception ex, Guid RequestId);
+
+    [LoggerMessage(EventId = 1138, Level = LogLevel.Error, Message = "Fejl ved indlæsning af JIT-anmodninger til godkendelse.")]
+    static partial void JitElevationApprovalLoadFailed(ILogger logger, Exception ex);
+
     protected override Task OnInitializedAsync()
     {
         stepUpGuard = new StepUpGuard(AuthorizationService, AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy);
@@ -56,10 +69,18 @@ public partial class JitElevationApprovalQueue
 
     private async Task LoadAsync()
     {
-        var approverId = await CurrentUserIdResolver.ResolveAsync(AuthenticationStateTask);
-        pendingRequests = approverId is null
-            ? []
-            : await JitElevationService.GetPendingRequestsForApprovalAsync(approverId);
+        try
+        {
+            var approverId = await CurrentUserIdResolver.ResolveAsync(AuthenticationStateTask);
+            pendingRequests = approverId is null
+                ? []
+                : await JitElevationService.GetPendingRequestsForApprovalAsync(approverId);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            errorMessage = LoadFailureMessage;
+            JitElevationApprovalLoadFailed(Logger, ex);
+        }
     }
 
     private Task ApproveAsync(Guid requestId) =>
@@ -94,6 +115,11 @@ public partial class JitElevationApprovalQueue
             errorMessage = $"Error: {ex.Message}";
             JitElevationApprovalFailed(Logger, requestId, ex.Message);
         }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            errorMessage = UnexpectedFailureMessage;
+            JitElevationApprovalUnexpectedFailure(Logger, ex, requestId);
+        }
     }
 
     private async Task RejectCoreAsync(Guid requestId)
@@ -117,6 +143,11 @@ public partial class JitElevationApprovalQueue
         {
             errorMessage = $"Error: {ex.Message}";
             JitElevationRejectionFailed(Logger, requestId, ex.Message);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            errorMessage = UnexpectedFailureMessage;
+            JitElevationRejectionUnexpectedFailure(Logger, ex, requestId);
         }
     }
 }

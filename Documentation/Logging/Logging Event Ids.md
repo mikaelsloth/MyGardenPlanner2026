@@ -81,3 +81,8 @@ EventId | Fil | Metode |
 1133 | SmtpSecurityEmailSender.cs | SendFailed |
 1134 | SmtpSecurityEmailSender.cs | SendTimedOut |
 1135 | JitElevationService.cs | ElevationRequestReasonMissing
+1136 | JitElevationApprovalQueue.razor.cs | JitElevationApprovalUnexpectedFailure
+1137 | JitElevationApprovalQueue.razor.cs | JitElevationRejectionUnexpectedFailure
+1138 | JitElevationApprovalQueue.razor.cs | JitElevationApprovalLoadFailed
+1139 | JitElevationRequestForm.razor.cs | JitElevationRequestUnexpectedFailure
+1140 | JitElevationRequestForm.razor.cs | JitElevationRequestsLoadFailed

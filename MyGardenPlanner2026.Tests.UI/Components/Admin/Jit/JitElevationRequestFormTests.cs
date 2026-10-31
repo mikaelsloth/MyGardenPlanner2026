@@ -157,4 +157,36 @@ public class JitElevationRequestFormTests : BunitContext
         messages.Should().NotContain(m => m.Contains("sendt"));
         cut.Markup.Should().Contain("Årsag skal udfyldes.");
     }
+
+    [Fact]
+    public void SubmitRequestAsync_ServiceThrowsUnexpectedException_ShowsGenericError_AndNoSuccessMessage()
+    {
+        var service = RegisterFakes();
+        service.RequestElevationAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns<RoleElevationRequestDto>(_ => throw new TimeoutException("intern-db-fejl"));
+        var messages = new List<string>();
+
+        var cut = Render<JitElevationRequestForm>(p => p
+            .Add(x => x.OnStatusMessage, EventCallback.Factory.Create<string>(this, m => messages.Add(m)))
+            .AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("#jit-request-reason").Change("Skal rette en fejl.");
+        cut.Find("button.btn-primary").Click();
+
+        cut.Markup.Should().Contain("Handlingen kunne ikke gennemføres");
+        cut.Markup.Should().NotContain("intern-db-fejl");
+        messages.Should().NotContain(m => m.Contains("sendt"));
+    }
+
+    [Fact]
+    public void LoadRequestsAsync_ServiceThrows_ShowsLoadError_AndDoesNotThrow()
+    {
+        var service = RegisterFakes();
+        service.GetRequestsForUserAsync("user-1", Arg.Any<CancellationToken>())
+            .Returns<IReadOnlyList<RoleElevationRequestDto>>(_ => throw new TimeoutException("intern-db-fejl"));
+
+        var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+
+        cut.Markup.Should().Contain("Dine anmodninger kunne ikke indlæses");
+        cut.Markup.Should().NotContain("intern-db-fejl");
+    }
 }

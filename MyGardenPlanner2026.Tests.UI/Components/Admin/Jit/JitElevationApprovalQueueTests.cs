@@ -171,4 +171,49 @@ public class JitElevationApprovalQueueTests : BunitContext
 
         cut.Markup.Should().Contain("dual-custody");
     }
+
+    [Fact]
+    public void ApproveCoreAsync_ServiceThrowsUnexpectedException_ShowsGenericError_WithoutInternalDetails()
+    {
+        var service = RegisterFakes(reAuthSucceeds: true);
+        service.ApproveElevationAsync("approver-1", Request1Id, Arg.Any<CancellationToken>())
+            .Returns<RoleElevationRequestDto>(_ => throw new TimeoutException("intern-db-fejl"));
+        string? receivedMessage = null;
+
+        var cut = Render<JitElevationApprovalQueue>(p => p
+            .Add(x => x.OnStatusMessage, EventCallback.Factory.Create<string>(this, m => receivedMessage = m))
+            .AddCascadingValue(TestPrincipals.CreateAuthStateAsync("approver-1")));
+        cut.Find("button.btn-primary").Click();
+
+        cut.Markup.Should().Contain("Handlingen kunne ikke gennemføres");
+        cut.Markup.Should().NotContain("intern-db-fejl");
+        receivedMessage.Should().BeNull();
+    }
+
+    [Fact]
+    public void RejectCoreAsync_ServiceThrowsUnexpectedException_ShowsGenericError_WithoutInternalDetails()
+    {
+        var service = RegisterFakes(reAuthSucceeds: true);
+        service.RejectElevationAsync("approver-1", Request1Id, Arg.Any<CancellationToken>())
+            .Returns<RoleElevationRequestDto>(_ => throw new TimeoutException("intern-db-fejl"));
+
+        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync("approver-1")));
+        cut.Find("button.btn-danger").Click();
+
+        cut.Markup.Should().Contain("Handlingen kunne ikke gennemføres");
+        cut.Markup.Should().NotContain("intern-db-fejl");
+    }
+
+    [Fact]
+    public void LoadAsync_ServiceThrows_ShowsLoadError_AndDoesNotThrow()
+    {
+        var service = RegisterFakes();
+        service.GetPendingRequestsForApprovalAsync("approver-1", Arg.Any<CancellationToken>())
+            .Returns<IReadOnlyList<RoleElevationRequestDto>>(_ => throw new TimeoutException("intern-db-fejl"));
+
+        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync("approver-1")));
+
+        cut.Markup.Should().Contain("Anmodninger kunne ikke indlæses");
+        cut.Markup.Should().NotContain("intern-db-fejl");
+    }
 }

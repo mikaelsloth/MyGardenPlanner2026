@@ -17,7 +17,7 @@ public sealed class JitPolicyIKraftTests(PlaywrightAppFixture fixture)
     private const int ChangedMin = 15;
     private const int RequestedMinutes = 20;
 
-    private const string OutOfRangeText = "Error: RequestedMinutes skal være mellem 30 og 90.";
+    private const string OutOfRangeText = "Antal minutter skal være mellem 30 og 90.";
 
     [Fact]
     public async Task JitMinimum_AendretTil15_AccepterStraksAnmodningPaa20Minutter()
@@ -33,7 +33,7 @@ public sealed class JitPolicyIKraftTests(PlaywrightAppFixture fixture)
 
         var error = JitRequestsPage.Error(requesterPage);
         await Assertions.Expect(error).ToContainTextAsync(OutOfRangeText);
-        await Assertions.Expect(error).ToContainTextAsync($"Actual value was {RequestedMinutes}");
+        await Assertions.Expect(error).ToContainTextAsync($"{RequestedMinutes} minutter ligger uden for grænsen");
 
         var policyPage = await SecurityPolicyPage.OpenAsync(fixture, policyAdmin, SecurityPolicyPage.Jit, Ids.JitMin);
         await SecurityPolicyPage.ExpectFieldValueAsync(policyPage, Ids.JitMin, OriginalMin);

@@ -17,12 +17,11 @@ public sealed class AnmodningUdenForGraenserTests(PlaywrightAppFixture fixture)
     private const string Chapter = "2";
     private const string Checklist = "Tjekliste E";
     private const string TestName = "JIT";
+    private const string OutOfRangeText = "Antal minutter skal være mellem 30 og 90.";
 
     private const int BelowMin = 29;
     private const int AboveMax = 91;
     private const int WithinLimits = 30;
-
-    private const string OutOfRangeText = "Error: RequestedMinutes skal være mellem 30 og 90.";
 
     [Theory]
     [InlineData(Viewports.Mobile)]
@@ -48,6 +47,8 @@ public sealed class AnmodningUdenForGraenserTests(PlaywrightAppFixture fixture)
         // Kontrol: inden for grænserne accepteres. Rækken beviser også, at listen er indlæst,
         // før der assertes på fravær af de afviste rækker.
         await JitRequestsPage.RequestAndWaitAsync(page, RoleNames.SystemAdmin, WithinLimits, okReason);
+        await Assertions.Expect(JitRequestsPage.StatusMessage(page))
+            .ToContainTextAsync($"Anmodning om '{RoleNames.SystemAdmin}' er sendt.");
         await Assertions.Expect(JitRequestsPage.StatusBadge(JitRequestsPage.RequestRow(page, okReason)))
             .ToHaveTextAsync(JitRequestsPage.PendingLabel);
         await Assertions.Expect(JitRequestsPage.Error(page)).ToHaveCountAsync(0);
@@ -59,14 +60,14 @@ public sealed class AnmodningUdenForGraenserTests(PlaywrightAppFixture fixture)
     }
 
     /// <summary>
-    /// Fejlen indeholder den afviste værdi ("Actual value was N."). Den adskiller 2. fra 1. fejl,
-    /// så testen ikke består på den forrige, endnu synlige fejlbesked.
+    /// Fejlen indeholder den afviste værdi ("29 minutter ligger uden for grænsen."). Den adskiller
+    /// 2. fra 1. fejl, så testen ikke består på den forrige, endnu synlige fejlbesked.
     /// </summary>
     private static async Task ExpectOutOfRangeAsync(IPage page, int minutes)
     {
         var error = JitRequestsPage.Error(page);
 
         await Assertions.Expect(error).ToContainTextAsync(OutOfRangeText);
-        await Assertions.Expect(error).ToContainTextAsync($"Actual value was {minutes}");
+        await Assertions.Expect(error).ToContainTextAsync($"{minutes} minutter ligger uden for grænsen");
     }
 }

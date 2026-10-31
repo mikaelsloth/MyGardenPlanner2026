@@ -53,4 +53,16 @@ public class AdminJitRequestsPageTests : BunitContext
 
         cut.Markup.Should().Contain("Anmodninger til godkendelse");
     }
+
+    [Fact]
+    public void AdminJitRequestsPage_SubmittingRequest_ShowsSuccessStatusMessage()
+    {
+        RegisterFakes();
+        var cut = Render<AdminJitRequestsPage>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+
+        cut.Find("#jit-request-reason").Change("Skal rette en fejl.");
+        cut.Find("button.btn-primary").Click();
+
+        cut.Find(".status-success").TextContent.Should().Contain("Anmodning om 'SystemAdmin' er sendt.");
+    }
 }

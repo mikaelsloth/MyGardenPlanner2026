@@ -80,3 +80,4 @@ EventId | Fil | Metode |
 1083 | DeletePersonalData.razor.cs | UserDeleteFailed |
 1133 | SmtpSecurityEmailSender.cs | SendFailed |
 1134 | SmtpSecurityEmailSender.cs | SendTimedOut |
+1135 | JitElevationService.cs | ElevationRequestReasonMissing

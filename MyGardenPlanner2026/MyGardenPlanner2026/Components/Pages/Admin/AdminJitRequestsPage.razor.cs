@@ -13,5 +13,6 @@ public partial class AdminJitRequestsPage
         statusMessage = null;
     }
 
-    private void SetStatusMessage(string message) => statusMessage = message;
+    private void SetStatusMessage(string message) =>
+        statusMessage = string.IsNullOrEmpty(message) ? null : message;
 }

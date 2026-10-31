@@ -33,6 +33,9 @@ public partial class JitElevationRequestForm
     [CascadingParameter]
     private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
+    [Parameter]
+    public EventCallback<string> OnStatusMessage { get; set; }
+
     private string selectedRole = RoleNames.SystemAdmin;
     private int minutes = 30;
     private string reason = string.Empty;
@@ -62,8 +65,12 @@ public partial class JitElevationRequestForm
             : await JitElevationService.GetRequestsForUserAsync(userId);
     }
 
-    private Task SubmitRequestAsync() =>
-        adminActionGuard.RunAsync(AuthenticationStateTask, SubmitRequestCoreAsync, message => errorMessage = message);
+    private async Task SubmitRequestAsync()
+    {
+        // Ryd en gammel succesbesked på siden, før et nyt forsøg.
+        await OnStatusMessage.InvokeAsync(string.Empty);
+        await adminActionGuard.RunAsync(AuthenticationStateTask, SubmitRequestCoreAsync, message => errorMessage = message);
+    }
 
     private async Task SubmitRequestCoreAsync()
     {
@@ -79,10 +86,12 @@ public partial class JitElevationRequestForm
 
             await JitElevationService.RequestElevationAsync(userId, selectedRole, minutes, reason);
 
+            var requestedRole = selectedRole;
             reason = string.Empty;
             await LoadRequestsAsync();
+            await OnStatusMessage.InvokeAsync($"Anmodning om '{requestedRole}' er sendt.");
         }
-        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        catch (Exception ex) when (ex is JitElevationValidationException or InvalidOperationException)
         {
             errorMessage = $"Error: {ex.Message}";
             JitElevationRequestSubmitFailed(Logger, selectedRole, ex.Message);

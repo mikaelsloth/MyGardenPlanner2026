@@ -54,12 +54,20 @@ public sealed partial class JitElevationService(
     [LoggerMessage(EventId = 1034, Level = LogLevel.Information, Message = "Anmodning '{RequestId}' kunne ikke {Action} fra status '{Status}'.")]
     static partial void ElevationInvalidStatusForAction(ILogger logger, Guid RequestId, string Action, RoleElevationStatus Status);
 
+    [LoggerMessage(EventId = 1135, Level = LogLevel.Information, Message = "Bruger '{UserId}' anmodede om JIT-eskalering uden årsag.")]
+    static partial void ElevationRequestReasonMissing(ILogger logger, string UserId);
+
     public async Task<RoleElevationRequestDto> RequestElevationAsync(
         string userId, string roleName, int minutes, string reason, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userId);
         ArgumentException.ThrowIfNullOrWhiteSpace(roleName);
-        ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            ElevationRequestReasonMissing(logger, userId);
+            throw new JitElevationValidationException("Årsag skal udfyldes.");
+        }
 
         var policy = policyOptionsMonitor.CurrentValue;
 
@@ -74,9 +82,9 @@ public sealed partial class JitElevationService(
         if (minutes < policy.MinRequestedMinutes || minutes > policy.MaxRequestedMinutes)
         {
             ElevationRequestMinutesOutOfRange(logger, userId, minutes, policy.MinRequestedMinutes, policy.MaxRequestedMinutes);
-            throw new ArgumentOutOfRangeException(
-                nameof(minutes), minutes,
-                $"RequestedMinutes skal være mellem {policy.MinRequestedMinutes} og {policy.MaxRequestedMinutes}.");
+            throw new JitElevationValidationException(
+                $"{minutes} minutter ligger uden for grænsen. " +
+                $"Antal minutter skal være mellem {policy.MinRequestedMinutes} og {policy.MaxRequestedMinutes}.");
         }
 
         if (!await roleManager.RoleExistsAsync(roleName))

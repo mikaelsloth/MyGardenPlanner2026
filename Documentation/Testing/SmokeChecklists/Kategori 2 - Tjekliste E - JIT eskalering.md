@@ -22,9 +22,9 @@
   b. Anmod om `SystemAdmin`, 91 minutter, unik årsag.
   c. Kontrol: anmod om `SystemAdmin`, 30 minutter, unik årsag.
 - Forventet:
-  a. Fejl (`status-danger`, role=alert): "Error: RequestedMinutes skal være mellem 30 og 90." Ingen række i "Mine anmodninger", heller ikke med "Vis afviste/udløbne".
-  b. Samme fejl. Ingen række.
-  c. Ingen fejl. Rækken vises med status "Afventer" (beviser, at a/b blev afvist på grund af grænserne).
+  a. Fejl (`status-danger`, role=alert): "Error: 29 minutter ligger uden for grænsen. Antal minutter skal være mellem 30 og 90." Ingen række i "Mine anmodninger", heller ikke med "Vis afviste/udløbne".
+  b. Fejl: "Error: 91 minutter ligger uden for grænsen. Antal minutter skal være mellem 30 og 90". Ingen række.
+  c. Success besked vises: ’Anmodning om ‘<rolle>‘ er sendt.’. Rækken vises med status "Afventer" (beviser, at a/b blev afvist på grund af grænserne).
 - Skærmbillede: ja, fejlen efter handling b (375, 768, 1280)
 - Filer: `JitRequestsPage.cs` (ny), `ManualSmoke/TjeklisteE/AnmodningUdenForGraenserTests.cs`; produktion: `AdminJitRequestsPage.razor`, `JitElevationRequestForm.razor`, `JitElevationService.cs`, `JitElevationPolicyOptions.cs`
 

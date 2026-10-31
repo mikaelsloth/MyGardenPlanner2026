@@ -2,6 +2,7 @@
 
 using Bunit;
 using FluentAssertions;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Domain.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
@@ -99,17 +100,17 @@ public class JitElevationRequestFormTests : BunitContext
     }
 
     [Fact]
-    public void SubmitRequestAsync_ServiceThrowsArgumentOutOfRangeException_ShowsErrorMessage()
+    public void SubmitRequestAsync_ServiceThrowsValidationException_ShowsErrorMessage()
     {
         var service = RegisterFakes();
         service.RequestElevationAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
-            .Returns<RoleElevationRequestDto>(_ => throw new ArgumentOutOfRangeException(
-                "minutes", "RequestedMinutes skal være mellem 30 og 90."));
+            .Returns<RoleElevationRequestDto>(_ => throw new JitElevationValidationException(
+                "Antal minutter skal være mellem 30 og 90."));
 
         var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
         cut.Find("button.btn-primary").Click();
 
-        cut.Markup.Should().Contain("RequestedMinutes skal være mellem 30 og 90.");
+        cut.Markup.Should().Contain("Antal minutter skal være mellem 30 og 90.");
     }
 
     [Fact]
@@ -123,5 +124,37 @@ public class JitElevationRequestFormTests : BunitContext
         _ = service.DidNotReceive().RequestElevationAsync(
             Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
         cut.ShouldShowRateLimitMessage();
+    }
+
+    [Fact]
+    public void SubmitRequestAsync_Success_InvokesOnStatusMessageWithRoleName()
+    {
+        RegisterFakes();
+        var messages = new List<string>();
+
+        var cut = Render<JitElevationRequestForm>(p => p
+            .Add(x => x.OnStatusMessage, EventCallback.Factory.Create<string>(this, m => messages.Add(m)))
+            .AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("#jit-request-reason").Change("Skal rette en fejl.");
+        cut.Find("button.btn-primary").Click();
+
+        messages.Last().Should().Be("Anmodning om 'SystemAdmin' er sendt.");
+    }
+
+    [Fact]
+    public void SubmitRequestAsync_ValidationFails_DoesNotInvokeSuccessMessage()
+    {
+        var service = RegisterFakes();
+        service.RequestElevationAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns<RoleElevationRequestDto>(_ => throw new JitElevationValidationException("Årsag skal udfyldes."));
+        var messages = new List<string>();
+
+        var cut = Render<JitElevationRequestForm>(p => p
+            .Add(x => x.OnStatusMessage, EventCallback.Factory.Create<string>(this, m => messages.Add(m)))
+            .AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("button.btn-primary").Click();
+
+        messages.Should().NotContain(m => m.Contains("sendt"));
+        cut.Markup.Should().Contain("Årsag skal udfyldes.");
     }
 }

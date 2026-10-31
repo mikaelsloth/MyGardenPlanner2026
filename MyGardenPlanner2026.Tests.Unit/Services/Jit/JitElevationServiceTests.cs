@@ -73,14 +73,14 @@ public class JitElevationServiceTests : TestDbContext
     [Theory]
     [InlineData(29)]
     [InlineData(91)]
-    public async Task RequestElevationAsync_MinutesOutsideDefaultPolicyRange_ThrowsArgumentOutOfRangeException(int minutes)
+    public async Task RequestElevationAsync_MinutesOutsideDefaultPolicyRange_ThrowsValidationException(int minutes)
     {
         var service = CreateService("SystemAdmin");
 
         var act = async () => await service.RequestElevationAsync(
             "user-1", "SystemAdmin", minutes, "Test.", TestContext.Current.CancellationToken);
 
-        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        await act.Should().ThrowAsync<JitElevationValidationException>();
     }
 
     [Theory]
@@ -97,6 +97,34 @@ public class JitElevationServiceTests : TestDbContext
     }
 
     [Fact]
+    public async Task RequestElevationAsync_MinutesOutsideRange_MessageContainsValueAndBounds()
+    {
+        var service = CreateService("SystemAdmin");
+
+        var act = async () => await service.RequestElevationAsync(
+            "user-1", "SystemAdmin", 91, "Test.", TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<JitElevationValidationException>()
+            .WithMessage("91 minutter ligger uden for grænsen. Antal minutter skal være mellem 30 og 90.");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task RequestElevationAsync_MissingReason_ThrowsValidationException_AndCreatesNoRequest(string reason)
+    {
+        var service = CreateService("SystemAdmin");
+
+        var act = async () => await service.RequestElevationAsync(
+            "user-1", "SystemAdmin", 45, reason, TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<JitElevationValidationException>()
+            .WithMessage("Årsag skal udfyldes.");
+        (await service.GetRequestsForUserAsync("user-1", TestContext.Current.CancellationToken))
+            .Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task RequestElevationAsync_CustomPolicy_RespectsConfiguredBounds()
     {
         var policy = new JitElevationPolicyOptions { MinRequestedMinutes = 10, MaxRequestedMinutes = 15 };
@@ -108,7 +136,7 @@ public class JitElevationServiceTests : TestDbContext
             "user-1", "SystemAdmin", 20, "Test.", TestContext.Current.CancellationToken);
 
         await withinBounds.Should().NotThrowAsync();
-        await outsideBounds.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        await outsideBounds.Should().ThrowAsync<JitElevationValidationException>();
     }
 
     [Fact]
@@ -317,7 +345,7 @@ public class JitElevationServiceTests : TestDbContext
         var service = CreateServiceWithMonitor(monitor, "SystemAdmin");
         var stillOldBounds = async () => await service.RequestElevationAsync(
             "user-1", "SystemAdmin", 120, "Test.", TestContext.Current.CancellationToken);
-        await stillOldBounds.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        await stillOldBounds.Should().ThrowAsync<JitElevationValidationException>();
 
         monitor.Set(new JitElevationPolicyOptions { MinRequestedMinutes = 30, MaxRequestedMinutes = 150 });
 

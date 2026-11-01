@@ -2,6 +2,10 @@
 
 using MyGardenPlanner2026.Core.Entities.Common;
 
+/// <param name="RequesterEmail">
+/// Ansøgerens e-mail. Udfyldes kun af GetPendingRequestsForApprovalAsync; null = brugeren findes ikke
+/// længere (slettet). Øvrige metoder returnerer null.
+/// </param>
 public sealed record RoleElevationRequestDto(
     Guid Id,
     string RequesterUserId,
@@ -12,4 +16,5 @@ public sealed record RoleElevationRequestDto(
     int RequestedMinutes,
     DateTimeOffset? ValidFromUtc,
     DateTimeOffset? ValidToUtc,
-    DateTimeOffset CreatedAtUtc);
+    DateTimeOffset CreatedAtUtc,
+    string? RequesterEmail = null);

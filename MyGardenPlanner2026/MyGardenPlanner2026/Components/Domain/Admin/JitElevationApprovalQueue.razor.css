@@ -4,3 +4,14 @@
     display: grid;
     gap: var(--mgp-space-md);
 }
+
+.requester-sub {
+    display: block;
+    color: var(--mgp-text-muted);
+    font-size: var(--font-size-xs);
+}
+
+.requester-note {
+    color: var(--mgp-text-muted);
+    font-size: var(--font-size-xs);
+}

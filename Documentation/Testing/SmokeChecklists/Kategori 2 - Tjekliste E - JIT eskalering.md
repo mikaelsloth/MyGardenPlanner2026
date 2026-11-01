@@ -36,7 +36,7 @@
   b. A åbner "Godkend anmodninger".
   c. Auditor (#4) åbner "Godkend anmodninger".
 - Forventet:
-  b. B's række vises (positiv kontrol, testen venter på den). A's egen række vises ikke. Under "Anmod om adgang" → "Mine anmodninger" har A sin række med status "Afventer".
+  b. B's række vises (positiv kontrol, testen venter på den). A's egen række vises ikke. Under "Anmod om adgang" → "Mine anmodninger" har A sin række med status "Afventer". B’s række viser B’s e-mail.
   c. Auditor ser både A's og B's række.
 - Skærmbillede: ja, A's kø (375, 768, 939, 940, 1280)
 - Filer: `JitRequestsPage.cs`, `ManualSmoke/TjeklisteE/EgenAnmodningIKoeTests.cs`; produktion: `JitElevationApprovalQueue.razor`, `JitElevationService.cs` (`GetPendingRequestsForApprovalAsync`)

@@ -246,4 +246,29 @@ public class JitElevationApprovalQueueTests : BunitContext
         cut.Markup.Should().Contain("netop er behandlet af en anden bruger");
         _ = service.Received(2).GetPendingRequestsForApprovalAsync("approver-1", Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public void JitElevationApprovalQueue_RequesterEmailKnown_ShowsEmailAndUserId()
+    {
+        RegisterFakes(pendingRequests: [Request1 with { RequesterEmail = "ansoeger@test.dk" }]);
+
+        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync("approver-1")));
+
+        var cell = cut.Find("tbody tr td").TextContent;
+        cell.Should().Contain("ansoeger@test.dk");
+        cell.Should().Contain("requester-1");
+        cell.Should().NotContain("(Slettet)");
+    }
+
+    [Fact]
+    public void JitElevationApprovalQueue_RequesterEmailMissing_ShowsUserIdMarkedAsDeleted()
+    {
+        RegisterFakes();
+
+        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync("approver-1")));
+
+        var cell = cut.Find("tbody tr td").TextContent;
+        cell.Should().Contain("requester-1");
+        cell.Should().Contain("(Slettet)");
+    }
 }

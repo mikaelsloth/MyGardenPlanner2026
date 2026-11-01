@@ -465,6 +465,49 @@ public class JitElevationServiceTests : TestDbContext
     }
 
     [Fact]
+    public async Task GetPendingRequestsForApprovalAsync_ReturnsRequesterEmail()
+    {
+        var userManager = CreateUserManagerWithRoles("approver-1", "SystemAdmin");
+        userManager.FindByIdAsync("requester-1")
+            .Returns(Task.FromResult<ApplicationUser?>(new ApplicationUser { Id = "requester-1", Email = "ansoeger@test.dk" }));
+        var service = CreateServiceWithUserManager(userManager, "SystemAdmin");
+        await service.RequestElevationAsync("requester-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
+
+        var result = await service.GetPendingRequestsForApprovalAsync("approver-1", TestContext.Current.CancellationToken);
+
+        result.Should().ContainSingle().Which.RequesterEmail.Should().Be("ansoeger@test.dk");
+    }
+
+    [Fact]
+    public async Task GetPendingRequestsForApprovalAsync_RequesterNoLongerExists_ReturnsNullEmail()
+    {
+        var service = CreateServiceWithUserManager(
+            CreateUserManagerWithRoles("approver-1", "SystemAdmin"), "SystemAdmin");
+        await service.RequestElevationAsync("deleted-user", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
+
+        var result = await service.GetPendingRequestsForApprovalAsync("approver-1", TestContext.Current.CancellationToken);
+
+        result.Should().ContainSingle().Which.RequesterEmail.Should().BeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task GetPendingRequestsForApprovalAsync_SameRequesterTwice_LooksUpUserOnce()
+    {
+        var userManager = CreateUserManagerWithRoles("approver-1", "SystemAdmin");
+        userManager.FindByIdAsync("requester-1")
+            .Returns(Task.FromResult<ApplicationUser?>(new ApplicationUser { Id = "requester-1", Email = "ansoeger@test.dk" }));
+        var service = CreateServiceWithUserManager(userManager, "SystemAdmin");
+        await service.RequestElevationAsync("requester-1", "SystemAdmin", 45, "Første.", TestContext.Current.CancellationToken);
+        await service.RequestElevationAsync("requester-1", "SystemAdmin", 45, "Anden.", TestContext.Current.CancellationToken);
+
+        var result = await service.GetPendingRequestsForApprovalAsync("approver-1", TestContext.Current.CancellationToken);
+
+        result.Should().HaveCount(2);
+        result.Should().OnlyContain(r => r.RequesterEmail == "ansoeger@test.dk");
+        await userManager.Received(1).FindByIdAsync("requester-1");
+    }
+
+    [Fact]
     public async Task GetPendingRequestsForApprovalAsync_ApproverDoesNotHaveMatchingRole_ReturnsEmpty()
     {
         var service = CreateServiceWithUserManager(

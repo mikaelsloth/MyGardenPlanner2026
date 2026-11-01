@@ -217,9 +217,11 @@ public sealed partial class JitElevationService(
                 && approverRoles.Contains(r.RoleName))
             .ToListAsync(cancellationToken);
 
+        var emails = await ResolveRequesterEmailsAsync(requests.Select(r => r.RequesterUserId));
+
         return [.. requests
             .OrderBy(r => r.CreatedAtUtc)
-            .Select(ToDto)];
+            .Select(r => ToDto(r) with { RequesterEmail = emails.GetValueOrDefault(r.RequesterUserId) })];
     }
 
     private static async Task<RoleElevationRequest> LoadPendingRequestAsync(
@@ -258,6 +260,19 @@ public sealed partial class JitElevationService(
             throw new InvalidOperationException(
                 $"Anmodningen kan ikke {action}, da den netop er behandlet af en anden bruger.");
         }
+    }
+
+    private async Task<Dictionary<string, string?>> ResolveRequesterEmailsAsync(IEnumerable<string> userIds)
+    {
+        var emails = new Dictionary<string, string?>();
+
+        foreach (var id in userIds.Distinct())
+        {
+            var user = await userManager.FindByIdAsync(id);
+            emails[id] = user?.Email;
+        }
+
+        return emails;
     }
 
     private static RoleElevationRequestDto ToDto(RoleElevationRequest request) => new(

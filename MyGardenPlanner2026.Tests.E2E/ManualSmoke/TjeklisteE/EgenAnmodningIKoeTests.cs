@@ -50,6 +50,9 @@ public sealed class EgenAnmodningIKoeTests(PlaywrightAppFixture fixture)
         // A's kø: B's række (positiv kontrol), ikke A's egen.
         await JitRequestsPage.SelectTabAsync(pageA, JitRequestsPage.ApproveTabName);
         await Assertions.Expect(JitRequestsPage.QueueRow(pageA, reasonB)).ToBeVisibleAsync();
+        // B er en rigtig bruger: køen viser e-mailen, ikke "(Slettet)".
+        await Assertions.Expect(JitRequestsPage.QueueRow(pageA, reasonB)).ToContainTextAsync("@test.dk");
+        await Assertions.Expect(JitRequestsPage.QueueRow(pageA, reasonB)).Not.ToContainTextAsync("(Slettet)");
         await Assertions.Expect(JitRequestsPage.QueueRow(pageA, reasonA)).ToHaveCountAsync(0);
 
         await ScreenshotRecorder.CaptureAsync(pageA, Chapter, Checklist, TestName, "E2_Koe");

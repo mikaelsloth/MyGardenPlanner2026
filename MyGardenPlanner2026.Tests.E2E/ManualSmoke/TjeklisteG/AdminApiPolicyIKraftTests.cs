@@ -6,9 +6,10 @@ using Ids = MyGardenPlanner2026.Tests.E2E.SecurityPolicyPage.FieldIds;
 
 /// <summary>
 /// Tjekliste G2 (Admin-API rate limit): PermitLimit 100 → 10. Limiteren (AdminActionRateLimiter) er pr. bruger
-/// og ikke HTTP: en frisk admin B sender 10 JIT-anmodninger (hver går gennem AdminActionGuard), og den 11.
+/// og ikke HTTP: /// Tjekliste G2 (Admin-API rate limit): PermitLimit 100 → 10. Limiteren (AdminActionRateLimiter) er pr. bruger
+/// og ikke HTTP: en frisk admin B sender 10 ugyldige JIT-anmodninger (minutter under grænsen; hver går gennem
+/// AdminActionGuard og bruger et permit, men afvises af servicen og efterlader ingen række), og den 11.
 /// afvises med UI-fejlen "For mange handlinger på kort tid". Ingen HTTP 429. Policyen gendannes i finally.
-/// Hver afsendt anmodning efterlader en Afventer-række i engangsdatabasen (uden betydning for andre tests).
 /// </summary>
 [Collection(PlaywrightAppCollection.Name)]
 [Trait(TestCategories.Category, TestCategories.ManualSmoke)]
@@ -39,18 +40,21 @@ public sealed class AdminApiPolicyIKraftTests(PlaywrightAppFixture fixture)
             await SecurityAlerts.ExpectPolicyChangedAsync(
                 fixture.SmtpServer, policyAdminId, SecurityPolicyPage.AdminApiRateLimit.PolicyName);
 
-            // B's kvote er ny (limiteren genopbygges ved ændringen). 10 handlinger lykkes ...
+            // B's kvote er ny (limiteren genopbygges ved ændringen). 10 handlinger slipper igennem limiteren:
+            // de er ugyldige (minutter under policy-grænsen), så de afvises af servicen, men har brugt et permit.
+            // Værdien indgår i fejlteksten, så hvert forsøg kan skelnes fra det forrige.
             var adminPage = await JitRequestsPage.OpenAsync(fixture, admin);
 
-            for (var i = 0; i < ChangedPermit; i++)
+            for (var minutes = 1; minutes <= ChangedPermit; minutes++)
             {
-                await JitRequestsPage.RequestAndWaitAsync(
-                    adminPage, RoleNames.SystemAdmin, Minutes, JitRequestsPage.NewReason());
+                await JitRequestsPage.SubmitRequestAsync(
+                    adminPage, RoleNames.SystemAdmin, minutes, JitRequestsPage.NewReason());
+
+                await Assertions.Expect(JitRequestsPage.Error(adminPage))
+                    .ToContainTextAsync($"Error: {minutes} minutter ligger uden for grænsen");
             }
 
-            await Assertions.Expect(JitRequestsPage.Error(adminPage)).ToHaveCountAsync(0);
-
-            // ... og den 11. afvises.
+            // ... og den 11. afvises af limiteren, før servicen kaldes (derfor en gyldig værdi).
             var blockedReason = JitRequestsPage.NewReason();
             await JitRequestsPage.SubmitRequestAsync(adminPage, RoleNames.SystemAdmin, Minutes, blockedReason);
 

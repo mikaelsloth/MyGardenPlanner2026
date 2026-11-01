@@ -5,9 +5,10 @@
 - [ ] Godkendelse → adgang til den beskyttede side virker straks
 - [ ] Afvisning → adgang nægtes
 - [ ] Sæt `SweepIntervalMinutes` lavt midlertidigt → verificér at udløbne anmodninger får status `Expired`
+- [ ] Anmodning afvises, hvis ansøger allerede er medlem af rollen eller har en afventende/aktiv anmodning
 
 ### Forudsætninger
-- Anmoder (A) og peer (B) er friske brugere med rollen `AuditViewer` (`SeedExtraUserAsync`). #6 (Requester) har ingen admin-rolle og kan ikke åbne `/admin/jit-requests`.
+- A er en frisk AuditViewer; B i E2 er en frisk PolicyAdmin”. Erstat linjen “Rolleberettigelse ... tjekkes ikke ...” med: “Servicen afviser anmodning om en rolle, ansøger allerede har (E6). Godkend/Afvis kræver direkte medlemskab af rollen.
 - Godkender af `SystemAdmin`-anmodninger er Admin (#1). Godkender af `AuditViewer`-anmodninger er Auditor (#4).
 - Hver anmodning har en unik årsag (GUID), fordi Admin og Auditor deles mellem tests.
 - Step-up (password + TOTP) kræves kun ved Godkend/Afvis og ved Gem af policy, ikke ved selve anmodningen.
@@ -32,12 +33,14 @@
 - Route: `/admin/jit-requests` (fanen "Godkend anmodninger")
 - Bruger: ny `AuditViewer` A og B, samt Auditor (#4)
 - Handling:
-  a. A og B anmoder hver om `AuditViewer`, 30 minutter, hver sin unikke årsag.
-  b. A åbner "Godkend anmodninger".
-  c. Auditor (#4) åbner "Godkend anmodninger".
+  a. A (AuditViewer) anmoder om SystemAdmin; B (PolicyAdmin) anmoder om AuditViewer. 
+  b. A åbner “Godkend anmodninger”. 
+  c. Auditor (#4) åbner den. 
+  d. Admin (#1) åbner den.
 - Forventet:
-  b. B's række vises (positiv kontrol, testen venter på den). A's egen række vises ikke. Under "Anmod om adgang" → "Mine anmodninger" har A sin række med status "Afventer". B’s række viser B’s e-mail.
-  c. Auditor ser både A's og B's række.
+  a. B’s række vises med B’s e-mail (positiv kontrol), A’s egen ikke. A’s række står under “Mine anmodninger” som “Afventer”. 
+  b. Auditor ser B’s række, ikke A’s. 
+  c. Admin ser A’s række, ikke B’s.
 - Skærmbillede: ja, A's kø (375, 768, 939, 940, 1280)
 - Filer: `JitRequestsPage.cs`, `ManualSmoke/TjeklisteE/EgenAnmodningIKoeTests.cs`; produktion: `JitElevationApprovalQueue.razor`, `JitElevationService.cs` (`GetPendingRequestsForApprovalAsync`)
 
@@ -59,7 +62,7 @@
 ### E4. Afvisning → adgang nægtes
 - Route/bruger: som E3
 - Handling:
-  a. A anmoder om `SystemAdmin`, 30 minutter, unik årsag.
+  a. A anmoder om SystemAdmin (afvises) og om PolicyAdmin (kontrol, forbliver afventende).
   b. Admin klikker "Afvis" på rækken og gennemfører step-up.
   c. A åbner `/admin/subscriptions`.
   d. A åbner `/admin/jit-requests`, først uden og derefter med "Vis afviste/udløbne".
@@ -85,3 +88,18 @@
   e. Min/Max/Sweep er tilbage på 30/90/5, så E1 ikke påvirkes.
 - Skærmbillede: ja, A's liste med "Udløbet" (375, 768, 1280)
 - Filer: `JitRequestsPage.cs`, `SecurityPolicyPage.cs` (JIT-selektorer), `ManualSmoke/TjeklisteE/SweepUdloebTests.cs`; produktion: `JitElevationPolicyEditor.razor`, `RoleElevationExpirySweepService.cs`, `JitElevationPolicyOptions.cs`
+
+### E6 Ansøger kan **ikke** se egen anmodning i godkendelseskøen
+- route /admin/jit-requests
+- bruger ny AuditViewer
+- Handling:
+  a. A (AuditViewer) anmoder om SystemAdmin; B (PolicyAdmin) anmoder om AuditViewer. 
+  b. A åbner “Godkend anmodninger”. 
+  c. Auditor (#4) åbner den. 
+  d. Admin (#1) åbner den.
+- Forventet:
+  a. B’s række vises med B’s e-mail (positiv kontrol), A’s egen ikke. A’s række står under “Mine anmodninger” som “Afventer”. 
+  b. Auditor ser B’s række, ikke A’s. 
+  c. Admin ser A’s række, ikke B’s.
+- skærmbillede ja (375, 768, 1280) 
+- filer AnmodningAfvisesTests.cs

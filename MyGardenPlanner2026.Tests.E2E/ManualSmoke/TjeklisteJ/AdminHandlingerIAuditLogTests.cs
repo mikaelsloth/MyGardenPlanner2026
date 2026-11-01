@@ -279,15 +279,19 @@ public sealed class AdminHandlingerIAuditLogTests(PlaywrightAppFixture fixture)
     public async Task Jit_AnmodningGodkendelseOgAfvisning_FindesSomCreateOgUpdateRaekker()
     {
         var requester = await fixture.SeedExtraUserAsync(RoleNames.AuditViewer);
+        var rejectedRequester = await fixture.SeedExtraUserAsync(RoleNames.AuditViewer);
         var admin = fixture.SmokeTestUsers[SmokeTestPersonas.Admin];
         var approvedReason = JitRequestsPage.NewReason();
         var rejectedReason = JitRequestsPage.NewReason();
 
         var before = await CountAsync(JitEntity);
 
+        // Hver ansøger har kun én åben anmodning pr. rolle (ellers afvises den anden som dublet).
         var requesterPage = await JitRequestsPage.OpenAsync(fixture, requester);
         await JitRequestsPage.RequestAndWaitAsync(requesterPage, RoleNames.SystemAdmin, Minutes, approvedReason);
-        await JitRequestsPage.RequestAndWaitAsync(requesterPage, RoleNames.SystemAdmin, Minutes, rejectedReason);
+
+        var rejectedRequesterPage = await JitRequestsPage.OpenAsync(fixture, rejectedRequester);
+        await JitRequestsPage.RequestAndWaitAsync(rejectedRequesterPage, RoleNames.SystemAdmin, Minutes, rejectedReason);
 
         // To admin-sider: step-up vises kun i en frisk circuit.
         var approvePage = await JitRequestsPage.OpenAsync(fixture, admin);

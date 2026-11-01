@@ -203,6 +203,9 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - AdminNavMenu ligger i AdminLayout og er statisk (ingen rendermode på layoutet). Efter en ændring i adgang (fx godkendt JIT) kræves en ny sideindlæsning, før linkene ændres. Adgang efter godkendelse: `HasActiveElevationAsync` læser DB ved hvert kald (ingen cache), så ny sideindlæsning er nok.
 - AuditLog-linket kan indeholde `.nav-badge` (antal nye eksportfiler): find links via href-suffiks, ikke via tekst.
 
+### Jit elevation
+- RoleElevationRequest.Status er concurrency-token: den anden af to samtidige godkend/afvis får en InvalidOperationException (DbUpdateConcurrencyException oversat i JitElevationService.SaveDecisionAsync).
+
 ## 4. Sider
 
 ### 4.1 Offentlige sider
@@ -443,6 +446,7 @@ Godkend-fanen (JitElevationApprovalQueue):
   Knapper pr. række: "Godkend" og "Afvis" (AdminActionGuard → StepUpGuard → StepUpReAuthModal).
   Tom kø: "Ingen ventende anmodninger, du kan godkende."
   Beskeder: "Anmodning om '<rolle>' er godkendt." / "Anmodning om '<rolle>' er afvist." Fejl: "Error: ...". Uventet fejl: "Error: Handlingen kunne ikke gennemføres. Prøv igen, eller kontakt en administrator." Indlæsningsfejl: "Error: Dine anmodninger kunne ikke indlæses. Prøv igen senere."
+  Samtidig behandling: "Error: Anmodningen kan ikke godkendes/afvises, da den netop er behandlet af en anden bruger." Køen genindlæses.
   Kø-regler (JitElevationService.GetPendingRequestsForApprovalAsync): kun Pending, ikke egne, og kun roller godkenderen er direkte medlem af (aktiv JIT tæller ikke).
   Køen indlæses ved fanevalg og opdateres ikke automatisk.
 Filer: AdminJitRequestsPage.razor (+ .cs), JitElevationRequestForm.razor (+ .cs), JitElevationApprovalQueue.razor (+ .cs), IJitElevationService.cs, JitElevationService.cs, JitElevationPolicyOptions.cs, AnyAdminRoleAuthorizationHandler.cs, JitRoleAuthorizationHandler.cs, AuthorizationServicesExtensions.cs
@@ -545,7 +549,7 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 - R3.3 `ApproveElevationAsync` kalder `securityAlertService.AlertJitRequestedAsync` ved godkendelse, ikke ved anmodning. Mailens indhold er ikke verificeret.
 - R3.4 `JitElevationApprovalQueue` viser ansøgerens bruger-ID (GUID), ikke e-mail.
 ~~- R3.5 `JitElevationRequestForm`: "Send anmodning" giver ingen succesbesked, og fejlbeskeden indeholder .NET-teksterne "(Parameter 'minutes')" og "Actual value was N." (engelsk). `JitRequestsPage` bruger "Actual value was N." til at skelne to fejl i træk (E1); ændres teksten (fx lokalisering), skal E1 justeres.~~
-- R3.6 Samtidige godkendelser af samme anmodning håndteres ikke (concurrency-token mangler, PR 2b).
+~~- R3.6 Samtidige godkendelser af samme anmodning håndteres ikke (concurrency-token mangler, PR 2b).~~
 - R3.7 Sweep rører kun Approved. Pending anmodninger udløber aldrig og forbliver i køen.
 - R3.8 Approve/Reject i JitElevationService tjekker ikke, at godkenderen er direkte medlem af rollen (kun køen filtrerer).
 - R3-backlog: Ansøger skal kunne trække egen anmodning tilbage (ny funktionalitet, uden for R3-scope).

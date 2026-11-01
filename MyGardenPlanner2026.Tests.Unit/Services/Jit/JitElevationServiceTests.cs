@@ -2,10 +2,13 @@
 
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities;
+using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Infrastructure.Services;
 using MyGardenPlanner2026.Infrastructure.Services.Jit;
@@ -231,6 +234,62 @@ public class JitElevationServiceTests : TestDbContext
             "user-1", request.Id, TestContext.Current.CancellationToken);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task RoleElevationRequest_StatusChangedByOtherContext_SaveThrowsConcurrencyException()
+    {
+        var id = await SeedPendingRequestAsync();
+
+        using var first = CreateDbContext();
+        using var second = CreateDbContext();
+        var firstCopy = await first.RoleElevationRequests.SingleAsync(r => r.Id == id, TestContext.Current.CancellationToken);
+        var secondCopy = await second.RoleElevationRequests.SingleAsync(r => r.Id == id, TestContext.Current.CancellationToken);
+
+        firstCopy.Status = RoleElevationStatus.Approved;
+        await first.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        secondCopy.Status = RoleElevationStatus.Rejected;
+        var act = async () => await second.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<DbUpdateConcurrencyException>();
+    }
+
+    [Fact]
+    public async Task ApproveElevationAsync_RequestRejectedConcurrently_ThrowsInvalidOperationException_AndSendsNoAlert()
+    {
+        var id = await SeedPendingRequestAsync();
+        var service = CreateServiceWithSaveInterceptor(
+            () => ChangeStatusInOtherContextAsync(id, RoleElevationStatus.Rejected, "user-3"));
+
+        var act = async () => await service.ApproveElevationAsync("user-2", id, TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Anmodningen kan ikke godkendes, da den netop er behandlet af en anden bruger.");
+        await securityAlertService.DidNotReceive().AlertJitRequestedAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+
+        using var verify = CreateDbContext();
+        var stored = await verify.RoleElevationRequests.SingleAsync(r => r.Id == id, TestContext.Current.CancellationToken);
+        stored.Status.Should().Be(RoleElevationStatus.Rejected);
+        stored.ApproverUserId.Should().Be("user-3");
+    }
+
+    [Fact]
+    public async Task RejectElevationAsync_RequestApprovedConcurrently_ThrowsInvalidOperationException()
+    {
+        var id = await SeedPendingRequestAsync();
+        var service = CreateServiceWithSaveInterceptor(
+            () => ChangeStatusInOtherContextAsync(id, RoleElevationStatus.Approved, "user-3"));
+
+        var act = async () => await service.RejectElevationAsync("user-2", id, TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Anmodningen kan ikke afvises, da den netop er behandlet af en anden bruger.");
+
+        using var verify = CreateDbContext();
+        var stored = await verify.RoleElevationRequests.SingleAsync(r => r.Id == id, TestContext.Current.CancellationToken);
+        stored.Status.Should().Be(RoleElevationStatus.Approved);
     }
 
     [Fact]
@@ -462,5 +521,53 @@ public class JitElevationServiceTests : TestDbContext
         var act = async () => await service.GetPendingRequestsForApprovalAsync(approverUserId!, TestContext.Current.CancellationToken);
 
         await act.Should().ThrowAsync<ArgumentException>();
+    }
+
+    private async Task<Guid> SeedPendingRequestAsync()
+    {
+        using var seed = CreateDbContext();
+        var request = new RoleElevationRequest
+        {
+            RequesterUserId = "user-1",
+            RoleName = "SystemAdmin",
+            Reason = "Test.",
+            RequestedMinutes = 45
+        };
+        seed.Add(request);
+        await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        return request.Id;
+    }
+
+    private async Task ChangeStatusInOtherContextAsync(Guid id, RoleElevationStatus status, string approverUserId)
+    {
+        using var other = CreateDbContext();
+        var request = await other.RoleElevationRequests.SingleAsync(r => r.Id == id, TestContext.Current.CancellationToken);
+        request.Status = status;
+        request.ApproverUserId = approverUserId;
+        await other.SaveChangesAsync(TestContext.Current.CancellationToken);
+    }
+
+    private JitElevationService CreateServiceWithSaveInterceptor(Func<Task> beforeFirstSave) =>
+        new(CreateAdminDbContextFactoryWithInterceptors(new BeforeFirstSaveInterceptor(beforeFirstSave)),
+            IdentityTestDoubles.CreateRoleManagerWithRoles("SystemAdmin"), IdentityTestDoubles.CreateUserManager(),
+            new TestOptionsMonitor<JitElevationPolicyOptions>(new JitElevationPolicyOptions()),
+            TimeProvider.System, securityAlertService, logger);
+
+    /// <summary>Simulerer en samtidig bruger: kører handlingen lige før tjenestens første SaveChanges.</summary>
+    private sealed class BeforeFirstSaveInterceptor(Func<Task> action) : SaveChangesInterceptor
+    {
+        private bool fired;
+
+        public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
+            DbContextEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            if (!fired)
+            {
+                fired = true;
+                await action();
+            }
+
+            return result;
+        }
     }
 }

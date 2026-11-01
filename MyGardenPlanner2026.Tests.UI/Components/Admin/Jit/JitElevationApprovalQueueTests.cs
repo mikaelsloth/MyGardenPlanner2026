@@ -216,4 +216,34 @@ public class JitElevationApprovalQueueTests : BunitContext
         cut.Markup.Should().Contain("Anmodninger kunne ikke indlæses");
         cut.Markup.Should().NotContain("intern-db-fejl");
     }
+
+    [Fact]
+    public void ApproveCoreAsync_ServiceThrowsInvalidOperationException_ReloadsQueue()
+    {
+        var service = RegisterFakes(reAuthSucceeds: true);
+        service.ApproveElevationAsync("approver-1", Request1Id, Arg.Any<CancellationToken>())
+            .Returns<RoleElevationRequestDto>(_ => throw new InvalidOperationException(
+                "Anmodningen kan ikke godkendes, da den netop er behandlet af en anden bruger."));
+
+        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync("approver-1")));
+        cut.Find("button.btn-primary").Click();
+
+        cut.Markup.Should().Contain("netop er behandlet af en anden bruger");
+        _ = service.Received(2).GetPendingRequestsForApprovalAsync("approver-1", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public void RejectCoreAsync_ServiceThrowsInvalidOperationException_ReloadsQueue()
+    {
+        var service = RegisterFakes(reAuthSucceeds: true);
+        service.RejectElevationAsync("approver-1", Request1Id, Arg.Any<CancellationToken>())
+            .Returns<RoleElevationRequestDto>(_ => throw new InvalidOperationException(
+                "Anmodningen kan ikke afvises, da den netop er behandlet af en anden bruger."));
+
+        var cut = Render<JitElevationApprovalQueue>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync("approver-1")));
+        cut.Find("button.btn-danger").Click();
+
+        cut.Markup.Should().Contain("netop er behandlet af en anden bruger");
+        _ = service.Received(2).GetPendingRequestsForApprovalAsync("approver-1", Arg.Any<CancellationToken>());
+    }
 }

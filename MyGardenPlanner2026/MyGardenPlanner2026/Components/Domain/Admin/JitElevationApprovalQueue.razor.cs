@@ -114,6 +114,7 @@ public partial class JitElevationApprovalQueue
         {
             errorMessage = $"Error: {ex.Message}";
             JitElevationApprovalFailed(Logger, requestId, ex.Message);
+            await LoadAsync(); // listen kan være forældet (fx behandlet af en anden godkender)
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -143,6 +144,7 @@ public partial class JitElevationApprovalQueue
         {
             errorMessage = $"Error: {ex.Message}";
             JitElevationRejectionFailed(Logger, requestId, ex.Message);
+            await LoadAsync(); // listen kan være forældet (fx behandlet af en anden godkender)
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

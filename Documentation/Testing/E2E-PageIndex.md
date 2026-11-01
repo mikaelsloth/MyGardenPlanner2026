@@ -189,6 +189,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 ### Rate limiting
 - Admin-API-limiter (`AdminActionRateLimiter`): sliding window pr. bruger (singleton, 60 sek., 6 segmenter), genopbygges kun ved ændring af `AdminApiRateLimitOptions` (ny kvote). Forbruges efter step-up og før service-validering, så et afvist gem giver rate-limit-teksten uanset værdi. Et afvist forsøg bruger ingen permit.
 - Login-limiter (`ReloadableLoginRateLimiter`): fixed window pr. IP, kun beskyttede auth-POST'er, genopbygges (tæller nulstilles) ved policyændring. 429 uden body (OnRejected logger kun).
+- G2e bruger ugyldige JIT-anmodninger (minutter under grænsen) til at forbruge permits: et permit bruges før service-validering, og der oprettes ingen rækker.
 
 ### Identity-sider
 - Manage-siderne ligger i ManageLayout (se 4.3).
@@ -205,6 +206,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 
 ### Jit elevation
 - RoleElevationRequest.Status er concurrency-token: den anden af to samtidige godkend/afvis får en InvalidOperationException (DbUpdateConcurrencyException oversat i JitElevationService.SaveDecisionAsync).
+- Servicen afviser en anmodning om en rolle, ansøger allerede har, eller som ansøger har en afventende/aktiv anmodning om (dublet). Tests, der skal bruge flere anmodninger, bruger en ny bruger pr. anmodning (SeedExtraUserAsync) eller forskellige roller.
 
 ## 4. Sider
 
@@ -432,7 +434,7 @@ Tests: ManualSmoke/TjeklisteD/ForkertPasswordModalTests, ManualSmoke/TjeklisteD/
 ```
 ```
 /admin/jit-requests
-Titel: JIT-adgang – MyGardenPlanner. h1: JIT-adgang. Brugere uden admin-rolle (Requester, Plain) kan ikke åbne siden.
+Titel: JIT-adgang – MyGardenPlanner. h1: JIT-adgang. Brugere uden admin-rolle (Requester, Plain) kan ikke åbne siden. Det er tilsigtet: kun brugere med en admin-rolle kan anmode (R3.2).
 Faner: role=tab, valgt fane har klassen "active". "Anmod om adgang" (standard) og "Godkend anmodninger". Fanehop rydder statusbeskeden og genindlæser fanens komponent.
 Statusbesked ved godkend/afvis: .status-success[role=status] på siden.
 Anmod-fanen (JitElevationRequestForm):
@@ -441,13 +443,15 @@ Anmod-fanen (JitElevationRequestForm):
   Checkbox #jit-request-show-history ("Vis afviste/udløbne"): standard fra, så kun Afventer/Godkendt vises. Nulstilles ved fanehop.
   Tabel "Mine anmodninger": Rolle, Minutter, Årsag, Status, Oprettet. Status-badges: "Afventer", "Godkendt", "Afvist", "Udløbet".
   Fejl: .status-danger[role=alert] "Error: <ex.Message>". Uden for grænserne: “<N> minutter ligger uden for grænsen. Antal minutter skal være mellem {min} og {max}.” Tom årsag: “Årsag skal udfyldes.”. Rate limit: "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen." Uventet fejl: "Error: Handlingen kunne ikke gennemføres. Prøv igen, eller kontakt en administrator." Indlæsningsfejl: "Error: Dine anmodninger kunne ikke indlæses. Prøv igen senere."
+  Fejl; Allerede medlem: "Error: Du er allerede medlem af rollen '<rolle>'." Åben anmodning: "Error: Du har allerede en afventende eller aktiv anmodning om rollen '<rolle>'." (“Aktiv” = Approved og ValidToUtc ≥ nu.)
 Godkend-fanen (JitElevationApprovalQueue):
   h3 "Anmodninger til godkendelse". Tabel: Ansøger (e-mail, bruger-ID i lille tekst under; slettet bruger vises som ‘<bruger-ID> (Slettet)’), Rolle, Minutter, Årsag, Anmodet, Handling.
   Knapper pr. række: "Godkend" og "Afvis" (AdminActionGuard → StepUpGuard → StepUpReAuthModal).
   Tom kø: "Ingen ventende anmodninger, du kan godkende."
   Beskeder: "Anmodning om '<rolle>' er godkendt." / "Anmodning om '<rolle>' er afvist." Fejl: "Error: ...". Uventet fejl: "Error: Handlingen kunne ikke gennemføres. Prøv igen, eller kontakt en administrator." Indlæsningsfejl: "Error: Dine anmodninger kunne ikke indlæses. Prøv igen senere."
+  Ikke medlem af rollen: "Error: Anmodningen kan ikke godkendes/afvises, da du ikke er direkte medlem af rollen '<rolle>'."
   Samtidig behandling: "Error: Anmodningen kan ikke godkendes/afvises, da den netop er behandlet af en anden bruger." Køen genindlæses.
-  Kø-regler (JitElevationService.GetPendingRequestsForApprovalAsync): kun Pending, ikke egne, og kun roller godkenderen er direkte medlem af (aktiv JIT tæller ikke).
+  Kø-regler (JitElevationService.GetPendingRequestsForApprovalAsync): kun Pending, ikke egne, og kun roller godkenderen er direkte medlem af (aktiv JIT tæller ikke). Ikke medlem af rollen: "Error: Anmodningen kan ikke godkendes/afvises, da du ikke er direkte medlem af rollen '<rolle>'."
   Køen indlæses ved fanevalg og opdateres ikke automatisk.
 Filer: AdminJitRequestsPage.razor (+ .cs), JitElevationRequestForm.razor (+ .cs), JitElevationApprovalQueue.razor (+ .cs), IJitElevationService.cs, JitElevationService.cs, JitElevationPolicyOptions.cs, AnyAdminRoleAuthorizationHandler.cs, JitRoleAuthorizationHandler.cs, AuthorizationServicesExtensions.cs
 Tests: ManualSmoke/TjeklisteE/.
@@ -500,6 +504,7 @@ Eksportpanel (AuditLogExportPanel):
 | E3 | Godkendelse → adgang straks | GodkendelseTests | JIT_E3_Foer_`<bredde>` (3), JIT_E3_Efter_`<bredde>` (3) | ikke kørt |
 | E4 | Afvisning → adgang nægtes | AfvisningTests | JIT_E4_AccessDenied_`<bredde>` (3) | ikke kørt |
 | E5 | Sweep markerer udløbne som Expired | SweepUdloebTests | JIT_E5_Udloebet_`<bredde>` (3) | ikke kørt |
+| E6 | Anmodning afvises ved medlemskab/åben anmodning | AnmodningAfvisesTests | JIT_E6_Fejl_<bredde> (3) | ikke kørt |
 | F1 | Rediger basispris | RedigerBasisprisTests | Basispris_AdminSubscriptions_Gem, Basispris_Pricing_Efter (`<bredde>`) (4) | ikke kørt |
 | F2 | Rediger volumenrabat | RedigerVolumenrabatTests | Volumenrabat_AdminSubscriptions_Gem, Volumenrabat_Pricing_Efter (`<bredde>`) (4) | ikke kørt |
 | F3 | Tilkøb og duplikat | RedigerTilkoebTests | Tilkoeb_AdminSubscriptions_Gem, Tilkoeb_AdminSubscriptions_Duplikat, Tilkoeb_Pricing_Efter (`<bredde>`) (6) | ikke kørt |
@@ -544,14 +549,14 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 ~~Filer til Upload: Email, ConfirmEmailChange, DeletePersonalData, RegisterConfirmation, IdentityComponentsEndpointRouteBuilderExtensions~~
 
 ### R3 – JIT-eskalering: regler og robusthed (prioritet 3)
-- R3.1 `JitElevationService.RequestElevationAsync` tjekker kun minutter inden for policyen og at rollen findes. Ansøgerens berettigelse til rollen tjekkes ikke, og en bruger kan anmode om en rolle, vedkommende allerede har (backlog).
-- R3.2 Brugere uden admin-rolle kan ikke åbne /admin/jit-requests (RequireAnyAdminRole), så de kan ikke anmode via UI. Afklar den tilsigtede adfærd.
+~~- R3.1 `JitElevationService.RequestElevationAsync` tjekker kun minutter inden for policyen og at rollen findes. Ansøgerens berettigelse til rollen tjekkes ikke, og en bruger kan anmode om en rolle, vedkommende allerede har (backlog).~~
+~~- R3.2 Brugere uden admin-rolle kan ikke åbne /admin/jit-requests (RequireAnyAdminRole), så de kan ikke anmode via UI. Afklar den tilsigtede adfærd.~~
 - R3.3 `ApproveElevationAsync` kalder `securityAlertService.AlertJitRequestedAsync` ved godkendelse, ikke ved anmodning. Mailens indhold er ikke verificeret.
 ~~- R3.4 `JitElevationApprovalQueue` viser ansøgerens bruger-ID (GUID), ikke e-mail.~~
 ~~- R3.5 `JitElevationRequestForm`: "Send anmodning" giver ingen succesbesked, og fejlbeskeden indeholder .NET-teksterne "(Parameter 'minutes')" og "Actual value was N." (engelsk). `JitRequestsPage` bruger "Actual value was N." til at skelne to fejl i træk (E1); ændres teksten (fx lokalisering), skal E1 justeres.~~
 ~~- R3.6 Samtidige godkendelser af samme anmodning håndteres ikke (concurrency-token mangler, PR 2b).~~
 - R3.7 Sweep rører kun Approved. Pending anmodninger udløber aldrig og forbliver i køen.
-- R3.8 Approve/Reject i JitElevationService tjekker ikke, at godkenderen er direkte medlem af rollen (kun køen filtrerer).
+~~- R3.8 Approve/Reject i JitElevationService tjekker ikke, at godkenderen er direkte medlem af rollen (kun køen filtrerer).~~
 - R3-backlog: Ansøger skal kunne trække egen anmodning tilbage (ny funktionalitet, uden for R3-scope).
 
 Filer til Upload: JitElevationService/IJitElevationService, JitElevationRequestForm, JitElevationApprovalQueue, RoleElevationExpirySweepService, AdminJitRequestsPage

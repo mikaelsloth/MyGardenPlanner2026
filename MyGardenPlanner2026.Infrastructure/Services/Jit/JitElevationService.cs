@@ -17,6 +17,8 @@ using MyGardenPlanner2026.Infrastructure.Services.Jit;
 /// - RequestedMinutes skal ligge inden for policyens Min/MaxRequestedMinutes
 ///   (konfigurerbar via JitElevationPolicyOptions, sektion "JitElevationPolicy").
 /// - Peer approval / dual-custody: godkender/afviser må ikke være ansøgeren selv.
+/// - Ansøger må ikke allerede være direkte medlem af rollen eller have en afventende/aktiv anmodning om den.
+/// - Godkender/afviser skal være direkte medlem af den anmodede rolle.
 /// Skriver via IAdminDbContextFactory, da RoleElevationRequests ligger i admin-schema.
 /// Alle anmodninger, godkendelser, afvisninger og valideringsfejl logges som Information
 /// til brug for driftsmæssig sporing (§4.2-relateret, om end ikke en sikkerhedsalarm i sig selv).
@@ -60,6 +62,15 @@ public sealed partial class JitElevationService(
     [LoggerMessage(EventId = 1141, Level = LogLevel.Information, Message = "Anmodning '{RequestId}' kunne ikke {Action} for bruger '{ApproverUserId}': anmodningen blev ændret samtidigt af en anden bruger.")]
     static partial void ElevationConcurrentDecisionRejected(ILogger logger, Guid RequestId, string Action, string ApproverUserId);
 
+    [LoggerMessage(EventId = 1142, Level = LogLevel.Information, Message = "Bruger '{UserId}' anmodede om rollen '{RoleName}', som brugeren allerede er direkte medlem af.")]
+    static partial void ElevationRequestAlreadyMember(ILogger logger, string UserId, string RoleName);
+
+    [LoggerMessage(EventId = 1143, Level = LogLevel.Information, Message = "Bruger '{UserId}' anmodede om rollen '{RoleName}', men har allerede en afventende eller aktiv anmodning.")]
+    static partial void ElevationRequestAlreadyOpen(ILogger logger, string UserId, string RoleName);
+
+    [LoggerMessage(EventId = 1144, Level = LogLevel.Information, Message = "Bruger '{ApproverUserId}' forsøgte at {Action} anmodning '{RequestId}' uden at være direkte medlem af rollen '{RoleName}'.")]
+    static partial void ElevationApproverNotRoleMember(ILogger logger, string ApproverUserId, string Action, Guid RequestId, string RoleName);
+
     public async Task<RoleElevationRequestDto> RequestElevationAsync(
         string userId, string roleName, int minutes, string reason, CancellationToken cancellationToken = default)
     {
@@ -96,7 +107,20 @@ public sealed partial class JitElevationService(
             throw new InvalidOperationException($"Rollen '{roleName}' findes ikke.");
         }
 
+        if (await IsInDirectRoleAsync(userId, roleName))
+        {
+            ElevationRequestAlreadyMember(logger, userId, roleName);
+            throw new JitElevationValidationException($"Du er allerede medlem af rollen '{roleName}'.");
+        }
+
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        if (await HasOpenRequestAsync(context, userId, roleName, cancellationToken))
+        {
+            ElevationRequestAlreadyOpen(logger, userId, roleName);
+            throw new JitElevationValidationException(
+                $"Du har allerede en afventende eller aktiv anmodning om rollen '{roleName}'.");
+        }
 
         var request = new RoleElevationRequest
         {
@@ -120,7 +144,7 @@ public sealed partial class JitElevationService(
         ArgumentException.ThrowIfNullOrWhiteSpace(approverUserId);
 
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
-        var request = await LoadPendingRequestAsync(context, logger, approverUserId, requestId, "godkendes", cancellationToken);
+        var request = await LoadPendingRequestAsync(context, approverUserId, requestId, "godkendes", cancellationToken);
 
         var now = timeProvider.GetUtcNow();
         request.Status = RoleElevationStatus.Approved;
@@ -143,7 +167,7 @@ public sealed partial class JitElevationService(
         ArgumentException.ThrowIfNullOrWhiteSpace(approverUserId);
 
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
-        var request = await LoadPendingRequestAsync(context, logger, approverUserId, requestId, "afvises", cancellationToken);
+        var request = await LoadPendingRequestAsync(context, approverUserId, requestId, "afvises", cancellationToken);
 
         request.Status = RoleElevationStatus.Rejected;
         request.ApproverUserId = approverUserId;
@@ -202,7 +226,7 @@ public sealed partial class JitElevationService(
             return [];
         }
 
-        var approverRoles = await userManager.GetRolesAsync(approverUser);
+        var approverRoles = await GetDirectRolesAsync(approverUserId);
         if (approverRoles.Count == 0)
         {
             return [];
@@ -224,8 +248,8 @@ public sealed partial class JitElevationService(
             .Select(r => ToDto(r) with { RequesterEmail = emails.GetValueOrDefault(r.RequesterUserId) })];
     }
 
-    private static async Task<RoleElevationRequest> LoadPendingRequestAsync(
-        PlannerDbContext context, ILogger logger, string approverUserId, Guid requestId, string action, CancellationToken cancellationToken)
+    private async Task<RoleElevationRequest> LoadPendingRequestAsync(
+        PlannerDbContext context, string approverUserId, Guid requestId, string action, CancellationToken cancellationToken)
     {
         var request = await context.RoleElevationRequests
             .SingleOrDefaultAsync(r => r.Id == requestId, cancellationToken)
@@ -236,6 +260,13 @@ public sealed partial class JitElevationService(
             ElevationSelfActionRejected(logger, approverUserId, action, requestId);
             throw new InvalidOperationException(
                 $"Anmodningen kan ikke {action} af ansøgeren selv (dual-custody / peer approval).");
+        }
+
+        if (!await IsInDirectRoleAsync(approverUserId, request.RoleName))
+        {
+            ElevationApproverNotRoleMember(logger, approverUserId, action, requestId, request.RoleName);
+            throw new InvalidOperationException(
+                $"Anmodningen kan ikke {action}, da du ikke er direkte medlem af rollen '{request.RoleName}'.");
         }
 
         if (request.Status != RoleElevationStatus.Pending)
@@ -273,6 +304,34 @@ public sealed partial class JitElevationService(
         }
 
         return emails;
+    }
+
+    private async Task<IList<string>> GetDirectRolesAsync(string userId)
+    {
+        var user = await userManager.FindByIdAsync(userId);
+        if (user is null)
+        {
+            return [];
+        }
+
+        return await userManager.GetRolesAsync(user);
+    }
+
+    private async Task<bool> IsInDirectRoleAsync(string userId, string roleName) =>
+        (await GetDirectRolesAsync(userId)).Contains(roleName);
+
+    private async Task<bool> HasOpenRequestAsync(
+        PlannerDbContext context, string userId, string roleName, CancellationToken cancellationToken)
+    {
+        // DateTimeOffset-sammenligning sker i hukommelsen (SQLite kan ikke oversætte den).
+        var candidates = await context.RoleElevationRequests
+            .Where(r => r.RequesterUserId == userId
+                && r.RoleName == roleName
+                && (r.Status == RoleElevationStatus.Pending || r.Status == RoleElevationStatus.Approved))
+            .ToListAsync(cancellationToken);
+
+        var now = timeProvider.GetUtcNow();
+        return candidates.Any(r => r.Status == RoleElevationStatus.Pending || r.ValidToUtc >= now);
     }
 
     private static RoleElevationRequestDto ToDto(RoleElevationRequest request) => new(

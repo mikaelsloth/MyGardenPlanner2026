@@ -87,3 +87,6 @@ EventId | Fil | Metode |
 1139 | JitElevationRequestForm.razor.cs | JitElevationRequestUnexpectedFailure
 1140 | JitElevationRequestForm.razor.cs | JitElevationRequestsLoadFailed
 1141 | JitElevationService.cs | ElevationConcurrentDecisionRejected
+1142 | JitElevationService.cs | ElevationRequestAlreadyMember
+1143 | JitElevationService.cs | ElevationRequestAlreadyOpen
+1144 | JitElevationService.cs | ElevationApproverNotRoleMember

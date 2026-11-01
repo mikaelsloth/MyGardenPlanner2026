@@ -5,10 +5,11 @@ using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Tests.E2E.Screenshots;
 
 /// <summary>
-/// Tjekliste E4: afvisning nægter adgang. Ny AuditViewer (A) anmoder to gange om SystemAdmin; Admin (#1)
+/// Tjekliste E4: afvisning nægter adgang. Ny AuditViewer (A) anmoder om SystemAdmin og PolicyAdmin 
+/// (to anmodninger om samme rolle afvises som dublet); Admin (#1)
 /// afviser den ene med step-up. A får AccessDenied på /admin/subscriptions. Den afviste række er skjult
-/// som standard (kun Afventer/Godkendt vises) og vises som "Afvist" med "Vis afviste/udløbne". Den anden,
-/// stadig afventende række er positiv kontrol: den beviser, at listen er indlæst, før fraværet af den
+/// som standard (kun Afventer/Godkendt vises) og vises som "Afvist" med "Vis afviste/udløbne". Den anden række (PolicyAdmin), 
+/// som forbliver afventende, er positiv kontrol: den beviser, at listen er indlæst, før fraværet af den
 /// afviste række asserteres. Skærmbilleder: JIT_E4_AccessDenied_&lt;bredde&gt;.
 /// </summary>
 [Collection(PlaywrightAppCollection.Name)]
@@ -32,10 +33,10 @@ public sealed class AfvisningTests(PlaywrightAppFixture fixture)
         var rejectedReason = JitRequestsPage.NewReason();
         var controlReason = JitRequestsPage.NewReason();
 
-        // A anmoder to gange om SystemAdmin.
+        // A anmoder om SystemAdmin (afvises) og om PolicyAdmin (kontrolrække, forbliver afventende).
         var pageA = await JitRequestsPage.OpenAsync(fixture, userA, width);
         await JitRequestsPage.RequestAndWaitAsync(pageA, RoleNames.SystemAdmin, Minutes, rejectedReason);
-        await JitRequestsPage.RequestAndWaitAsync(pageA, RoleNames.SystemAdmin, Minutes, controlReason);
+        await JitRequestsPage.RequestAndWaitAsync(pageA, RoleNames.PolicyAdmin, Minutes, controlReason);
 
         // Admin afviser den ene (step-up).
         var pageAdmin = await JitRequestsPage.OpenAsync(fixture, admin);

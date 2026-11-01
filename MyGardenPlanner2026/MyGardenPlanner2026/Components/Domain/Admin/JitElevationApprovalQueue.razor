@@ -35,7 +35,18 @@
                     @foreach (var request in pendingRequests)
                     {
                         <tr @key="request.Id">
-                            <td>@request.RequesterUserId</td>
+                            <td>
+                                @if (request.RequesterEmail is not null)
+                                {
+                                    <span>@request.RequesterEmail</span>
+                                    <small class="requester-sub">@request.RequesterUserId</small>
+                                }
+                                else
+                                {
+                                    <span>@request.RequesterUserId</span>
+                                    <small class="requester-note">(Slettet)</small>
+                                }
+                            </td>
                             <td>@request.RoleName</td>
                             <td class="numeric">@request.RequestedMinutes</td>
                             <td>@request.Reason</td>

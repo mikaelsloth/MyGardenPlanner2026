@@ -442,7 +442,7 @@ Anmod-fanen (JitElevationRequestForm):
   Tabel "Mine anmodninger": Rolle, Minutter, Årsag, Status, Oprettet. Status-badges: "Afventer", "Godkendt", "Afvist", "Udløbet".
   Fejl: .status-danger[role=alert] "Error: <ex.Message>". Uden for grænserne: “<N> minutter ligger uden for grænsen. Antal minutter skal være mellem {min} og {max}.” Tom årsag: “Årsag skal udfyldes.”. Rate limit: "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen." Uventet fejl: "Error: Handlingen kunne ikke gennemføres. Prøv igen, eller kontakt en administrator." Indlæsningsfejl: "Error: Dine anmodninger kunne ikke indlæses. Prøv igen senere."
 Godkend-fanen (JitElevationApprovalQueue):
-  h3 "Anmodninger til godkendelse". Tabel: Ansøger (bruger-ID, ikke e-mail), Rolle, Minutter, Årsag, Anmodet, Handling.
+  h3 "Anmodninger til godkendelse". Tabel: Ansøger (e-mail, bruger-ID i lille tekst under; slettet bruger vises som ‘<bruger-ID> (Slettet)’), Rolle, Minutter, Årsag, Anmodet, Handling.
   Knapper pr. række: "Godkend" og "Afvis" (AdminActionGuard → StepUpGuard → StepUpReAuthModal).
   Tom kø: "Ingen ventende anmodninger, du kan godkende."
   Beskeder: "Anmodning om '<rolle>' er godkendt." / "Anmodning om '<rolle>' er afvist." Fejl: "Error: ...". Uventet fejl: "Error: Handlingen kunne ikke gennemføres. Prøv igen, eller kontakt en administrator." Indlæsningsfejl: "Error: Dine anmodninger kunne ikke indlæses. Prøv igen senere."
@@ -547,7 +547,7 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 - R3.1 `JitElevationService.RequestElevationAsync` tjekker kun minutter inden for policyen og at rollen findes. Ansøgerens berettigelse til rollen tjekkes ikke, og en bruger kan anmode om en rolle, vedkommende allerede har (backlog).
 - R3.2 Brugere uden admin-rolle kan ikke åbne /admin/jit-requests (RequireAnyAdminRole), så de kan ikke anmode via UI. Afklar den tilsigtede adfærd.
 - R3.3 `ApproveElevationAsync` kalder `securityAlertService.AlertJitRequestedAsync` ved godkendelse, ikke ved anmodning. Mailens indhold er ikke verificeret.
-- R3.4 `JitElevationApprovalQueue` viser ansøgerens bruger-ID (GUID), ikke e-mail.
+~~- R3.4 `JitElevationApprovalQueue` viser ansøgerens bruger-ID (GUID), ikke e-mail.~~
 ~~- R3.5 `JitElevationRequestForm`: "Send anmodning" giver ingen succesbesked, og fejlbeskeden indeholder .NET-teksterne "(Parameter 'minutes')" og "Actual value was N." (engelsk). `JitRequestsPage` bruger "Actual value was N." til at skelne to fejl i træk (E1); ændres teksten (fx lokalisering), skal E1 justeres.~~
 ~~- R3.6 Samtidige godkendelser af samme anmodning håndteres ikke (concurrency-token mangler, PR 2b).~~
 - R3.7 Sweep rører kun Approved. Pending anmodninger udløber aldrig og forbliver i køen.

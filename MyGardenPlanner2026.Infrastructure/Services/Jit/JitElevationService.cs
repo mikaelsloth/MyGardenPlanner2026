@@ -57,6 +57,9 @@ public sealed partial class JitElevationService(
     [LoggerMessage(EventId = 1135, Level = LogLevel.Information, Message = "Bruger '{UserId}' anmodede om JIT-eskalering uden årsag.")]
     static partial void ElevationRequestReasonMissing(ILogger logger, string UserId);
 
+    [LoggerMessage(EventId = 1141, Level = LogLevel.Information, Message = "Anmodning '{RequestId}' kunne ikke {Action} for bruger '{ApproverUserId}': anmodningen blev ændret samtidigt af en anden bruger.")]
+    static partial void ElevationConcurrentDecisionRejected(ILogger logger, Guid RequestId, string Action, string ApproverUserId);
+
     public async Task<RoleElevationRequestDto> RequestElevationAsync(
         string userId, string roleName, int minutes, string reason, CancellationToken cancellationToken = default)
     {
@@ -125,7 +128,7 @@ public sealed partial class JitElevationService(
         request.ValidFromUtc = now;
         request.ValidToUtc = now.AddMinutes(request.RequestedMinutes);
 
-        await context.SaveChangesAsync(cancellationToken);
+        await SaveDecisionAsync(context, logger, request.Id, approverUserId, "godkendes", cancellationToken);
 
         ElevationApproved(logger, request.Id, request.RoleName, approverUserId);
 
@@ -145,7 +148,7 @@ public sealed partial class JitElevationService(
         request.Status = RoleElevationStatus.Rejected;
         request.ApproverUserId = approverUserId;
 
-        await context.SaveChangesAsync(cancellationToken);
+        await SaveDecisionAsync(context, logger, request.Id, approverUserId, "afvises", cancellationToken);
 
         ElevationRejected(logger, request.Id, request.RoleName, approverUserId);
 
@@ -240,6 +243,21 @@ public sealed partial class JitElevationService(
         }
 
         return request;
+    }
+
+    private static async Task SaveDecisionAsync(
+    PlannerDbContext context, ILogger logger, Guid requestId, string approverUserId, string action, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            ElevationConcurrentDecisionRejected(logger, requestId, action, approverUserId);
+            throw new InvalidOperationException(
+                $"Anmodningen kan ikke {action}, da den netop er behandlet af en anden bruger.");
+        }
     }
 
     private static RoleElevationRequestDto ToDto(RoleElevationRequest request) => new(

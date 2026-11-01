@@ -92,6 +92,9 @@ public partial class PlannerDbContext
             entity.Property(e => e.RoleName).IsRequired().HasMaxLength(256);
             entity.Property(e => e.Reason).IsRequired().HasMaxLength(1000);
             entity.Property(e => e.DeletedBy).HasMaxLength(450);
+            // Concurrency: kun den første af to samtidige godkend/afvis-handlinger på samme anmodning
+            // kan lykkes (UPDATE ... WHERE Status = <indlæst værdi>). Ingen skemaændring.
+            entity.Property(e => e.Status).IsConcurrencyToken();
             entity.HasIndex(e => new { e.RequesterUserId, e.Status });
             entity.HasIndex(e => new { e.RoleName, e.Status });
         });

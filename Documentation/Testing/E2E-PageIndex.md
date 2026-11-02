@@ -74,6 +74,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - App-processen får `Smtp__Host=127.0.0.1`, `Smtp__Port=<sinkens port>`, `Smtp__EnableSsl=false`, tomme `Smtp__UserName/Password`, og `Smtp__AdminSecurityEmails__0` = `SecurityAlertRecipient` (eneste modtager).
 - `MimeText`: dekoder RFC 2047-headere og base64/quoted-printable (bruges af `TestSmtpServer`).
 - `SecurityAlerts.CountPolicyChangedMails(mails, userId, policyName)`: antal "Sikkerhedspolicy ændret"-mails for brugeren og policyen (bekræfter hvert gem, når UI ikke har unik besked).
+- `SecurityAlerts.ExpectJitRequestedAsync/ExpectJitApprovedAsync(smtp, ...)`: venter på JIT-alarmen for ansøgerens Bruger-ID og kontrollerer felterne.
 
 ### 2.4 Interaktion og asserts
 
@@ -437,6 +438,7 @@ Tests: ManualSmoke/TjeklisteD/ForkertPasswordModalTests, ManualSmoke/TjeklisteD/
 Titel: JIT-adgang – MyGardenPlanner. h1: JIT-adgang. Brugere uden admin-rolle (Requester, Plain) kan ikke åbne siden. Det er tilsigtet: kun brugere med en admin-rolle kan anmode (R3.2).
 Faner: role=tab, valgt fane har klassen "active". "Anmod om adgang" (standard) og "Godkend anmodninger". Fanehop rydder statusbeskeden og genindlæser fanens komponent.
 Statusbesked ved godkend/afvis: .status-success[role=status] på siden.
+Sikkerhedsalarm (mail til Smtp:AdminSecurityEmails): ved anmodning (emne "...JIT-adgang anmodet"; Bruger-ID, Rolle, Minutter) og ved godkendelse (emne "...JIT-admin-rettighed tildelt/aktiveret"; Bruger-ID, Godkender-ID, Rolle, Minutter). Ingen alarm ved afvisning.
 Anmod-fanen (JitElevationRequestForm):
   #jit-request-role (select, værdier = rollenavne, standard SystemAdmin), #jit-request-minutes (number, standard 30, @onchange), #jit-request-reason (@bind).
   Knap "Send anmodning": ikke idempotent; ved succes vises .status-success på siden: ‘Anmodning om ‘<rolle>‘ er sendt.’; årsagsfeltet ryddes. Ingen step-up ved anmodning.
@@ -505,6 +507,7 @@ Eksportpanel (AuditLogExportPanel):
 | E4 | Afvisning → adgang nægtes | AfvisningTests | JIT_E4_AccessDenied_`<bredde>` (3) | ikke kørt |
 | E5 | Sweep markerer udløbne som Expired | SweepUdloebTests | JIT_E5_Udloebet_`<bredde>` (3) | ikke kørt |
 | E6 | Anmodning afvises ved medlemskab/åben anmodning | AnmodningAfvisesTests | JIT_E6_Fejl_<bredde> (3) | ikke kørt |
+| E7 | JIT sender sikkerhedsalarm ved anmodning og godkendelse | SikkerhedsalarmTests | ingen | ikke kørt |
 | F1 | Rediger basispris | RedigerBasisprisTests | Basispris_AdminSubscriptions_Gem, Basispris_Pricing_Efter (`<bredde>`) (4) | ikke kørt |
 | F2 | Rediger volumenrabat | RedigerVolumenrabatTests | Volumenrabat_AdminSubscriptions_Gem, Volumenrabat_Pricing_Efter (`<bredde>`) (4) | ikke kørt |
 | F3 | Tilkøb og duplikat | RedigerTilkoebTests | Tilkoeb_AdminSubscriptions_Gem, Tilkoeb_AdminSubscriptions_Duplikat, Tilkoeb_Pricing_Efter (`<bredde>`) (6) | ikke kørt |
@@ -551,7 +554,7 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 ### R3 – JIT-eskalering: regler og robusthed (prioritet 3)
 ~~- R3.1 `JitElevationService.RequestElevationAsync` tjekker kun minutter inden for policyen og at rollen findes. Ansøgerens berettigelse til rollen tjekkes ikke, og en bruger kan anmode om en rolle, vedkommende allerede har (backlog).~~
 ~~- R3.2 Brugere uden admin-rolle kan ikke åbne /admin/jit-requests (RequireAnyAdminRole), så de kan ikke anmode via UI. Afklar den tilsigtede adfærd.~~
-- R3.3 `ApproveElevationAsync` kalder `securityAlertService.AlertJitRequestedAsync` ved godkendelse, ikke ved anmodning. Mailens indhold er ikke verificeret.
+~~- R3.3 `ApproveElevationAsync` kalder `securityAlertService.AlertJitRequestedAsync` ved godkendelse, ikke ved anmodning. Mailens indhold er ikke verificeret.~~
 ~~- R3.4 `JitElevationApprovalQueue` viser ansøgerens bruger-ID (GUID), ikke e-mail.~~
 ~~- R3.5 `JitElevationRequestForm`: "Send anmodning" giver ingen succesbesked, og fejlbeskeden indeholder .NET-teksterne "(Parameter 'minutes')" og "Actual value was N." (engelsk). `JitRequestsPage` bruger "Actual value was N." til at skelne to fejl i træk (E1); ændres teksten (fx lokalisering), skal E1 justeres.~~
 ~~- R3.6 Samtidige godkendelser af samme anmodning håndteres ikke (concurrency-token mangler, PR 2b).~~

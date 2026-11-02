@@ -3,6 +3,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Contracts.Admin;
+using System.Globalization;
 
 /// <summary>
 /// Standardimplementering af ISecurityAlertService. Logger strukturerede events via
@@ -21,8 +22,12 @@ public sealed partial class SecurityAlertService(
     static partial void FailedReAuthDetected(ILogger logger, string UserId, string IpAddress);
 
     [LoggerMessage(EventId = 2002, Level = LogLevel.Warning,
-        Message = "SIKKERHEDSALARM: JIT-admin-rollen '{RoleName}' er godkendt/aktiveret for bruger '{RequesterId}'.")]
-    static partial void JitElevationGranted(ILogger logger, string RequesterId, string RoleName);
+        Message = "SIKKERHEDSALARM: JIT-admin-rollen '{RoleName}' er godkendt/aktiveret for bruger '{RequesterId}' af bruger '{ApproverId}' i {Minutes} minutter.")]
+    static partial void JitElevationGranted(ILogger logger, string RequesterId, string ApproverId, string RoleName, int Minutes);
+
+    [LoggerMessage(EventId = 2004, Level = LogLevel.Information,
+        Message = "SIKKERHEDSALARM: Bruger '{RequesterId}' har anmodet om JIT-admin-rollen '{RoleName}' i {Minutes} minutter.")]
+    static partial void JitElevationRequested(ILogger logger, string RequesterId, string RoleName, int Minutes);
 
     [LoggerMessage(EventId = 2003, Level = LogLevel.Warning,
         Message = "SIKKERHEDSALARM: Kritisk sikkerhedspolicy '{PolicyName}' blev ændret af bruger '{UserId}'.")]
@@ -43,18 +48,41 @@ public sealed partial class SecurityAlertService(
             cancellationToken);
     }
 
-    public Task AlertJitRequestedAsync(string requesterId, string role, CancellationToken cancellationToken = default)
+    public Task AlertJitRequestedAsync(string requesterId, string role, int minutes, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(requesterId);
         ArgumentException.ThrowIfNullOrWhiteSpace(role);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(minutes);
 
-        JitElevationGranted(logger, requesterId, role);
+        JitElevationRequested(logger, requesterId, role, minutes);
+
+        var minutesText = minutes.ToString(CultureInfo.InvariantCulture);
+
+        return SendAsync(
+            "[MyGardenPlanner] Sikkerhedsalarm: JIT-adgang anmodet",
+            BuildBody(
+                $"Bruger '{requesterId}' har anmodet om midlertidig admin-rolle '{role}' i {minutesText} minutter.",
+                [("Bruger-ID", requesterId), ("Rolle", role), ("Minutter", minutesText)]),
+            cancellationToken);
+    }
+
+    public Task AlertJitApprovedAsync(
+        string requesterId, string approverId, string role, int minutes, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(requesterId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(approverId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(role);
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(minutes);
+
+        JitElevationGranted(logger, requesterId, approverId, role, minutes);
+
+        var minutesText = minutes.ToString(CultureInfo.InvariantCulture);
 
         return SendAsync(
             "[MyGardenPlanner] Sikkerhedsalarm: JIT-admin-rettighed tildelt/aktiveret",
             BuildBody(
-                $"Der er tildelt/aktiveret midlertidig admin-rolle '{role}' til bruger '{requesterId}'.",
-                [("Bruger-ID", requesterId), ("Rolle", role)]),
+                $"Der er tildelt/aktiveret midlertidig admin-rolle '{role}' til bruger '{requesterId}' i {minutesText} minutter, godkendt af bruger '{approverId}'.",
+                [("Bruger-ID", requesterId), ("Godkender-ID", approverId), ("Rolle", role), ("Minutter", minutesText)]),
             cancellationToken);
     }
 

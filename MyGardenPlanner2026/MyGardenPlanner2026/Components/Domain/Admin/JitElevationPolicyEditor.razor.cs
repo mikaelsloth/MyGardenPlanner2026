@@ -37,6 +37,7 @@ public partial class JitElevationPolicyEditor
     private int minEdit;
     private int maxEdit;
     private int sweepEdit;
+    private int pendingExpiryEdit;
     private string? errorMessage;
     private StepUpGuard stepUpGuard = default!;
     private AdminActionGuard adminActionGuard = default!;
@@ -57,6 +58,7 @@ public partial class JitElevationPolicyEditor
         minEdit = settings.MinRequestedMinutes;
         maxEdit = settings.MaxRequestedMinutes;
         sweepEdit = settings.SweepIntervalMinutes;
+        pendingExpiryEdit = settings.PendingExpiryHours;
     }
 
     private Task SaveAsync() =>
@@ -75,7 +77,7 @@ public partial class JitElevationPolicyEditor
                 return;
             }
 
-            await AdminService.UpdateAsync(new JitElevationPolicyDto(minEdit, maxEdit, sweepEdit), userId);
+            await AdminService.UpdateAsync(new JitElevationPolicyDto(minEdit, maxEdit, sweepEdit, pendingExpiryEdit), userId);
 
             await LoadAsync();
             await OnStatusMessage.InvokeAsync("JIT-eskaleringspolicyen er opdateret og trådt i kraft.");

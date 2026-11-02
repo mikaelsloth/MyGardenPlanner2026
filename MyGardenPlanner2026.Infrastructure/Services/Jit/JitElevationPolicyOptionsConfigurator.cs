@@ -28,5 +28,6 @@ public sealed class JitElevationPolicyOptionsConfigurator(IAdminDbContextFactory
         options.MinRequestedMinutes = settings.MinRequestedMinutes;
         options.MaxRequestedMinutes = settings.MaxRequestedMinutes;
         options.SweepIntervalMinutes = settings.SweepIntervalMinutes;
+        options.PendingExpiryHours = settings.PendingExpiryHours;
     }
 }

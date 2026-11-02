@@ -16,6 +16,7 @@ public class JitElevationPolicySettings : ISoftDelete, ISingletonSettings
     public int MinRequestedMinutes { get; set; }
     public int MaxRequestedMinutes { get; set; }
     public int SweepIntervalMinutes { get; set; }
+    public int PendingExpiryHours { get; set; }
 
     public bool IsDeleted { get; set; }
     public DateTimeOffset? DeletedAtUtc { get; set; }

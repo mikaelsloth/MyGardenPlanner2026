@@ -28,7 +28,8 @@ public static class SecurityPolicySettingsSeedExtensions
             {
                 MinRequestedMinutes = o.MinRequestedMinutes,
                 MaxRequestedMinutes = o.MaxRequestedMinutes,
-                SweepIntervalMinutes = o.SweepIntervalMinutes
+                SweepIntervalMinutes = o.SweepIntervalMinutes,
+                PendingExpiryHours = o.PendingExpiryHours
             }));
 
         services.AddScoped(sp => CreateSeeder<ReAuthenticationPolicySettings, ReAuthenticationPolicyOptions>(

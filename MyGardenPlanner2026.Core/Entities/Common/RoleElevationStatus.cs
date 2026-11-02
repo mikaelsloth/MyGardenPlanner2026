@@ -5,5 +5,6 @@ public enum RoleElevationStatus
     Pending = 0,
     Approved = 1,
     Rejected = 2,
-    Expired = 3
+    Expired = 3,
+    Cancelled = 4
 }

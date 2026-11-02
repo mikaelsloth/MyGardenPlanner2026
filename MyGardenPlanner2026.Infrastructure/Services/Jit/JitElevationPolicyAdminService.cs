@@ -16,6 +16,9 @@ public sealed class JitElevationPolicyAdminService(
     ISecurityPolicyChangeSignal changeSignal,
     ISecurityAlertService securityAlertService) : IJitElevationPolicyAdminService
 {
+    public const int MinPendingExpiryHours = 1;
+    public const int MaxPendingExpiryHours = 720;
+
     public async Task<JitElevationPolicyDto> GetAsync(CancellationToken cancellationToken = default)
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
@@ -44,12 +47,20 @@ public sealed class JitElevationPolicyAdminService(
             throw new ArgumentOutOfRangeException(nameof(update), "SweepIntervalMinutes skal være positiv.");
         }
 
+        if (update.PendingExpiryHours is < MinPendingExpiryHours or > MaxPendingExpiryHours)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(update),
+                $"Udløb af ventende anmodninger skal være mellem {MinPendingExpiryHours} og {MaxPendingExpiryHours} timer.");
+        }
+
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
         var settings = await LoadAsync(context, cancellationToken);
 
         settings.MinRequestedMinutes = update.MinRequestedMinutes;
         settings.MaxRequestedMinutes = update.MaxRequestedMinutes;
         settings.SweepIntervalMinutes = update.SweepIntervalMinutes;
+        settings.PendingExpiryHours = update.PendingExpiryHours;
 
         await context.SaveChangesAsync(cancellationToken);
 
@@ -66,5 +77,6 @@ public sealed class JitElevationPolicyAdminService(
             ?? throw new InvalidOperationException("JIT-eskaleringspolicy er ikke seedet.");
 
     private static JitElevationPolicyDto ToDto(JitElevationPolicySettings settings) =>
-        new(settings.MinRequestedMinutes, settings.MaxRequestedMinutes, settings.SweepIntervalMinutes);
+        new(settings.MinRequestedMinutes, settings.MaxRequestedMinutes,
+            settings.SweepIntervalMinutes, settings.PendingExpiryHours);
 }

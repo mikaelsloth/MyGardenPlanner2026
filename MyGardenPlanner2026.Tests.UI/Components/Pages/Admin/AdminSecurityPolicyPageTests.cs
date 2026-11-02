@@ -14,7 +14,7 @@ public class AdminSecurityPolicyPageTests : BunitContext
     private void RegisterFakes()
     {
         var jitService = Substitute.For<IJitElevationPolicyAdminService>();
-        jitService.GetAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult(new JitElevationPolicyDto(30, 90, 5)));
+        jitService.GetAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult(new JitElevationPolicyDto(30, 90, 5, 48)));
         Services.AddSingleton(jitService);
 
         var reAuthService = Substitute.For<IReAuthenticationPolicyAdminService>();

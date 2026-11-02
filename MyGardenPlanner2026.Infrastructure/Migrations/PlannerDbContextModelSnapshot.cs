@@ -17,7 +17,7 @@ namespace MyGardenPlanner2026.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -418,6 +418,9 @@ namespace MyGardenPlanner2026.Infrastructure.Migrations
                     b.Property<int>("MinRequestedMinutes")
                         .HasColumnType("int");
 
+                    b.Property<int>("PendingExpiryHours")
+                        .HasColumnType("int");
+
                     b.Property<int>("SweepIntervalMinutes")
                         .HasColumnType("int");
 
@@ -647,6 +650,7 @@ namespace MyGardenPlanner2026.Infrastructure.Migrations
                         .HasColumnType("nvarchar(256)");
 
                     b.Property<int>("Status")
+                        .IsConcurrencyToken()
                         .HasColumnType("int");
 
                     b.Property<DateTime>("SysValidFromUtc")

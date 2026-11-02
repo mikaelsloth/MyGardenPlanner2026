@@ -13,4 +13,9 @@ public sealed class JitElevationPolicyOptions
     public int SweepIntervalMinutes { get; set; } = 5;
     /// <summary>Timer en Pending-anmodning kan stå ubehandlet, før den annulleres (sweep, PR 6b).</summary>
     public int PendingExpiryHours { get; set; } = 48;
+    /// <summary>
+    /// PendingExpiryHours som tidsrum, mindst 1 time, så en fejlkonfigureret værdi (0) ikke
+    /// annullerer alle ventende anmodninger. Delt af sweep og JitElevationService.
+    /// </summary>
+    public TimeSpan PendingExpiry => TimeSpan.FromHours(Math.Max(1, PendingExpiryHours));
 }

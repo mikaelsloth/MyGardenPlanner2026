@@ -9,8 +9,9 @@ using MyGardenPlanner2026.Tests.E2E.Screenshots;
 /// Tjekliste E5: lavt sweep-interval markerer udløbne eskaleringer som Expired. Ny PolicyAdmin sætter
 /// MinRequestedMinutes = 1 og SweepIntervalMinutes = 1 (standard 30 og 5; uden Min = 1 kan en godkendt
 /// anmodning ikke udløbe inden for rimelig tid). Ny AuditViewer (A) anmoder om SystemAdmin i 1 minut,
-/// Admin (#1) godkender. RoleElevationExpirySweepService sætter kun Approved med ValidToUtc &lt; nu til
-/// Expired, så testen poller A's liste (med "Vis afviste/udløbne"), til rækken står som "Udløbet" —
+/// Admin (#1) godkender. RoleElevationExpirySweepService sætter Approved med ValidToUtc < nu til Expired 
+/// (og Pending ældre end PendingExpiryHours til Cancelled, hvilket ikke berører friske rækker), 
+/// så testen poller A's liste (med "Vis afviste/udløbne"), til rækken står som "Udløbet" —
 /// senest ca. 60 sekunder efter udløb. Policyen gendannes i finally via en ny circuit (ny step-up),
 /// så E1 (standardgrænser 30-90) ikke påvirkes. Skærmbilleder: JIT_E5_Udloebet_&lt;bredde&gt;.
 /// Testen tager ca. 2-4 minutter (appen kører med rigtig tid).

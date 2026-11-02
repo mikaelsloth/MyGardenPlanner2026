@@ -90,3 +90,5 @@ EventId | Fil | Metode |
 1142 | JitElevationService.cs | ElevationRequestAlreadyMember
 1143 | JitElevationService.cs | ElevationRequestAlreadyOpen
 1144 | JitElevationService.cs | ElevationApproverNotRoleMember
+1145 | JitElevationService.cs | ElevationRequestExpired
+1146 | RoleElevationExpirySweepService.cs | JitPendingRequestsCancelled

@@ -9,11 +9,11 @@ using MyGardenPlanner2026.Infrastructure.Data;
 using MyGardenPlanner2026.Infrastructure.Services.Jit;
 
 /// <summary>
-/// Periodisk baggrundsjob der markerer udløbne, godkendte JIT-eskaleringer som Expired.
-/// Rent datahygiejne/audit-formål: den faktiske adgangskontrol sker allerede i
-/// JitElevationService.HasActiveElevationAsync, som tjekker ValidToUtc direkte mod
-/// TimeProvider ved hvert kald, uafhængigt af Status. Sweep'et sikrer blot, at
-/// Status-feltet i admin.RoleElevationRequests korrekt afspejler Expired i UI/rapportering.
+/// Periodisk baggrundsjob der (1) markerer udløbne, godkendte JIT-eskaleringer som Expired og
+/// (2) markerer ventende anmodninger, der har stået ubehandlet længere end PendingExpiryHours, som Cancelled.
+/// Den faktiske adgangskontrol sker uafhængigt af Status i JitElevationService (ValidToUtc tjekkes direkte,
+/// og udløbne Pending afvises ved godkend/afvis). Sweep'et sikrer, at Status-feltet i
+/// admin.RoleElevationRequests afspejler virkeligheden i UI/rapportering.
 ///
 /// Bruger normal SaveChangesAsync (IKKE ExecuteUpdateAsync), så AuditLoggingInterceptor
 /// korrekt registrerer status-overgangen — se doc-kommentar på RoleElevationRequest.
@@ -39,6 +39,9 @@ public sealed partial class RoleElevationExpirySweepService(
 
     [LoggerMessage(EventId = 1022, Level = LogLevel.Error, Message = "Fejl under sweep af udløbne JIT-eskaleringer.")]
     static partial void SweepFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(EventId = 1146, Level = LogLevel.Information, Message = "Markerede {Count} ventende JIT-anmodninger som Cancelled (ubehandlet i over {Hours} timer).")]
+    static partial void JitPendingRequestsCancelled(ILogger logger, int Count, double Hours);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -83,20 +86,27 @@ public sealed partial class RoleElevationExpirySweepService(
 
     /// <summary>
     /// Kører sweep'et én gang. Offentlig og uafhængig af timeren, så den kan testes direkte.
+    /// Returnerer antal ændrede anmodninger (Approved → Expired plus Pending → Cancelled).
     /// </summary>
     public async Task<int> SweepOnceAsync(CancellationToken cancellationToken = default)
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
         var now = timeProvider.GetUtcNow();
+        var pendingExpiry = policyOptionsMonitor.CurrentValue.PendingExpiry;
 
-        var approvedRequests = await context.RoleElevationRequests
-            .Where(r => r.Status == RoleElevationStatus.Approved)
+        var openRequests = await context.RoleElevationRequests
+            .Where(r => r.Status == RoleElevationStatus.Approved || r.Status == RoleElevationStatus.Pending)
             .ToListAsync(cancellationToken);
 
-        var expired = approvedRequests.Where(r => r.ValidToUtc < now).ToList();
+        var expired = openRequests
+            .Where(r => r.Status == RoleElevationStatus.Approved && r.ValidToUtc < now)
+            .ToList();
+        var cancelled = openRequests
+            .Where(r => r.Status == RoleElevationStatus.Pending && r.CreatedAtUtc.Add(pendingExpiry) < now)
+            .ToList();
 
-        if (expired.Count == 0)
+        if (expired.Count == 0 && cancelled.Count == 0)
         {
             return 0;
         }
@@ -106,10 +116,23 @@ public sealed partial class RoleElevationExpirySweepService(
             request.Status = RoleElevationStatus.Expired;
         }
 
+        foreach (var request in cancelled)
+        {
+            request.Status = RoleElevationStatus.Cancelled;
+        }
+
         await context.SaveChangesAsync(cancellationToken);
 
-        JitEscalationExpired(logger, expired.Count);
+        if (expired.Count > 0)
+        {
+            JitEscalationExpired(logger, expired.Count);
+        }
 
-        return expired.Count;
+        if (cancelled.Count > 0)
+        {
+            JitPendingRequestsCancelled(logger, cancelled.Count, pendingExpiry.TotalHours);
+        }
+
+        return expired.Count + cancelled.Count;
     }
 }

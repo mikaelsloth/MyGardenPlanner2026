@@ -720,6 +720,95 @@ public class JitElevationServiceTests : TestDbContext
             Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
     }
 
+    private static readonly TimeSpan PendingExpiry = TimeSpan.FromHours(48);
+
+    [Fact]
+    public async Task ApproveElevationAsync_PendingOlderThanExpiry_Throws_AndStaysPending_AndSendsNoAlert()
+    {
+        var timeProvider = new TestTimeProvider(new DateTimeOffset(2026, 8, 28, 10, 0, 0, TimeSpan.Zero));
+        var service = CreateServiceWithTimeProvider(timeProvider, "SystemAdmin");
+        var request = await service.RequestElevationAsync("user-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
+        timeProvider.Advance(PendingExpiry + TimeSpan.FromSeconds(1));
+
+        var act = async () => await service.ApproveElevationAsync("user-2", request.Id, TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Anmodningen kan ikke godkendes, da den er udløbet.");
+        (await service.GetRequestsForUserAsync("user-1", TestContext.Current.CancellationToken))
+            .Single().Status.Should().Be(RoleElevationStatus.Pending);
+        await securityAlertService.DidNotReceive().AlertJitApprovedAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RejectElevationAsync_PendingOlderThanExpiry_Throws()
+    {
+        var timeProvider = new TestTimeProvider(new DateTimeOffset(2026, 8, 28, 10, 0, 0, TimeSpan.Zero));
+        var service = CreateServiceWithTimeProvider(timeProvider, "SystemAdmin");
+        var request = await service.RequestElevationAsync("user-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
+        timeProvider.Advance(PendingExpiry + TimeSpan.FromSeconds(1));
+
+        var act = async () => await service.RejectElevationAsync("user-2", request.Id, TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Anmodningen kan ikke afvises, da den er udløbet.");
+    }
+
+    [Fact]
+    public async Task ApproveElevationAsync_PendingExactlyAtExpiry_Succeeds()
+    {
+        var timeProvider = new TestTimeProvider(new DateTimeOffset(2026, 8, 28, 10, 0, 0, TimeSpan.Zero));
+        var service = CreateServiceWithTimeProvider(timeProvider, "SystemAdmin");
+        var request = await service.RequestElevationAsync("user-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
+        timeProvider.Advance(PendingExpiry);
+
+        var approved = await service.ApproveElevationAsync("user-2", request.Id, TestContext.Current.CancellationToken);
+
+        approved.Status.Should().Be(RoleElevationStatus.Approved);
+    }
+
+    [Fact]
+    public async Task ApproveElevationAsync_CancelledRequest_ThrowsDanishMessage()
+    {
+        var service = CreateService("SystemAdmin");
+        var id = await SeedPendingRequestAsync(RoleElevationStatus.Cancelled);
+
+        var act = async () => await service.ApproveElevationAsync("user-2", id, TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Anmodningen kan ikke godkendes, da den er annulleret.");
+    }
+
+    [Fact]
+    public async Task GetPendingRequestsForApprovalAsync_ExcludesPendingOlderThanExpiry()
+    {
+        var timeProvider = new TestTimeProvider(new DateTimeOffset(2026, 8, 28, 10, 0, 0, TimeSpan.Zero));
+        var service = CreateServiceWithTimeProvider(timeProvider, "SystemAdmin");
+        await service.RequestElevationAsync("user-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
+
+        (await service.GetPendingRequestsForApprovalAsync("user-2", TestContext.Current.CancellationToken))
+            .Should().ContainSingle();
+
+        timeProvider.Advance(PendingExpiry + TimeSpan.FromSeconds(1));
+
+        (await service.GetPendingRequestsForApprovalAsync("user-2", TestContext.Current.CancellationToken))
+            .Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task RequestElevationAsync_PreviousPendingExpired_AllowsNewRequest()
+    {
+        var timeProvider = new TestTimeProvider(new DateTimeOffset(2026, 8, 28, 10, 0, 0, TimeSpan.Zero));
+        var service = CreateServiceWithTimeProvider(timeProvider, "SystemAdmin");
+        await service.RequestElevationAsync("user-1", "SystemAdmin", 45, "Første.", TestContext.Current.CancellationToken);
+        timeProvider.Advance(PendingExpiry + TimeSpan.FromSeconds(1));
+
+        var act = async () => await service.RequestElevationAsync(
+            "user-1", "SystemAdmin", 45, "Anden.", TestContext.Current.CancellationToken);
+
+        await act.Should().NotThrowAsync();
+    }
+
     [Fact]
     public async Task RejectElevationAsync_ApproverNotMemberOfRole_Throws_AndRequestStaysPending()
     {
@@ -735,7 +824,7 @@ public class JitElevationServiceTests : TestDbContext
             .Single().Status.Should().Be(RoleElevationStatus.Pending);
     }
 
-    private async Task<Guid> SeedPendingRequestAsync()
+    private async Task<Guid> SeedPendingRequestAsync(RoleElevationStatus status = RoleElevationStatus.Pending)
     {
         using var seed = CreateDbContext();
         var request = new RoleElevationRequest
@@ -743,7 +832,8 @@ public class JitElevationServiceTests : TestDbContext
             RequesterUserId = "user-1",
             RoleName = "SystemAdmin",
             Reason = "Test.",
-            RequestedMinutes = 45
+            RequestedMinutes = 45,
+            Status = status
         };
         seed.Add(request);
         await seed.SaveChangesAsync(TestContext.Current.CancellationToken);

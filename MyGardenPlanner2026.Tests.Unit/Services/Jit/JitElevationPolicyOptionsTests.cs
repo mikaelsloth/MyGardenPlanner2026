@@ -30,4 +30,22 @@ public class JitElevationPolicyOptionsTests
 
         options.PendingExpiryHours.Should().Be(48);
     }
+
+    [Fact]
+    public void PendingExpiry_ReturnsConfiguredHours()
+    {
+        var options = new JitElevationPolicyOptions { PendingExpiryHours = 72 };
+
+        options.PendingExpiry.Should().Be(TimeSpan.FromHours(72));
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-5)]
+    public void PendingExpiry_NonPositiveHours_FallsBackToOneHour(int hours)
+    {
+        var options = new JitElevationPolicyOptions { PendingExpiryHours = hours };
+
+        options.PendingExpiry.Should().Be(TimeSpan.FromHours(1));
+    }
 }

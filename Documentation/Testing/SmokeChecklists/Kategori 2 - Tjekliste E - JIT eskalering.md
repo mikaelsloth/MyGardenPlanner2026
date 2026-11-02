@@ -85,7 +85,7 @@
   e. Til sidst gendanner PolicyAdmin de oprindelige værdier (`finally`).
 - Forventet:
   a. "JIT-eskaleringspolicyen er opdateret og trådt i kraft."
-  d. A's række skifter fra "Godkendt" til "Udløbet" senest ca. 60 sekunder efter udløb. Kun godkendte anmodninger udløber.
+  d. A's række skifter fra "Godkendt" til "Udløbet" senest ca. 60 sekunder efter udløb. Kun godkendte anmodninger udløber til Expired. Ventende anmodninger annulleres først efter PendingExpiryHours (48 timer), og det dækkes af enhedstests.
   e. Min/Max/Sweep er tilbage på 30/90/5, så E1 ikke påvirkes.
 - Skærmbillede: ja, A's liste med "Udløbet" (375, 768, 1280)
 - Filer: `JitRequestsPage.cs`, `SecurityPolicyPage.cs` (JIT-selektorer), `ManualSmoke/TjeklisteE/SweepUdloebTests.cs`; produktion: `JitElevationPolicyEditor.razor`, `RoleElevationExpirySweepService.cs`, `JitElevationPolicyOptions.cs`

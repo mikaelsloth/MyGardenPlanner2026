@@ -22,7 +22,9 @@ using MyGardenPlanner2026.Infrastructure.Services.Jit;
 /// Skriver via IAdminDbContextFactory, da RoleElevationRequests ligger i admin-schema.
 /// Alle anmodninger, godkendelser, afvisninger og valideringsfejl logges som Information
 /// til brug for driftsmæssig sporing (§4.2-relateret, om end ikke en sikkerhedsalarm i sig selv).
-/// </summary>
+/// - Ventende anmodninger udløber efter JitElevationPolicy.PendingExpiryHours: godkend/afvis afvises, de vises ikke
+///   i køen og tæller ikke som åbne. Statusændringen til Cancelled udføres af RoleElevationExpirySweepService.
+///</summary>
 public sealed partial class JitElevationService(
     IAdminDbContextFactory contextFactory,
     RoleManager<IdentityRole> roleManager,
@@ -70,6 +72,9 @@ public sealed partial class JitElevationService(
 
     [LoggerMessage(EventId = 1144, Level = LogLevel.Information, Message = "Bruger '{ApproverUserId}' forsøgte at {Action} anmodning '{RequestId}' uden at være direkte medlem af rollen '{RoleName}'.")]
     static partial void ElevationApproverNotRoleMember(ILogger logger, string ApproverUserId, string Action, Guid RequestId, string RoleName);
+
+    [LoggerMessage(EventId = 1145, Level = LogLevel.Information, Message = "Anmodning '{RequestId}' kunne ikke {Action}: den har været ventende længere end policyens udløbsgrænse.")]
+    static partial void ElevationRequestExpired(ILogger logger, Guid RequestId, string Action);
 
     public async Task<RoleElevationRequestDto> RequestElevationAsync(
         string userId, string roleName, int minutes, string reason, CancellationToken cancellationToken = default)
@@ -127,7 +132,8 @@ public sealed partial class JitElevationService(
             RequesterUserId = userId,
             RoleName = roleName,
             RequestedMinutes = minutes,
-            Reason = reason
+            Reason = reason,
+            CreatedAtUtc = timeProvider.GetUtcNow()
         };
 
         await context.RoleElevationRequests.AddAsync(request, CancellationToken.None);
@@ -237,11 +243,16 @@ public sealed partial class JitElevationService(
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
         // OBS: sortering på CreatedAtUtc (DateTimeOffset) sker client-side — se note ovenfor.
-        var requests = await context.RoleElevationRequests
+        var now = timeProvider.GetUtcNow();
+
+        // OBS: sortering og udløbsfilter på DateTimeOffset sker client-side — se note ovenfor.
+        var requests = (await context.RoleElevationRequests
             .Where(r => r.Status == RoleElevationStatus.Pending
                 && r.RequesterUserId != approverUserId
                 && approverRoles.Contains(r.RoleName))
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken))
+            .Where(r => !IsPendingExpired(r, now))
+            .ToList();
 
         var emails = await ResolveRequesterEmailsAsync(requests.Select(r => r.RequesterUserId));
 
@@ -271,10 +282,22 @@ public sealed partial class JitElevationService(
                 $"Anmodningen kan ikke {action}, da du ikke er direkte medlem af rollen '{request.RoleName}'.");
         }
 
+        if (request.Status == RoleElevationStatus.Cancelled)
+        {
+            ElevationInvalidStatusForAction(logger, requestId, action, request.Status);
+            throw new InvalidOperationException($"Anmodningen kan ikke {action}, da den er annulleret.");
+        }
+
         if (request.Status != RoleElevationStatus.Pending)
         {
             ElevationInvalidStatusForAction(logger, requestId, action, request.Status);
             throw new InvalidOperationException($"Anmodningen kan ikke {action} fra status '{request.Status}'.");
+        }
+
+        if (IsPendingExpired(request, timeProvider.GetUtcNow()))
+        {
+            ElevationRequestExpired(logger, requestId, action);
+            throw new InvalidOperationException($"Anmodningen kan ikke {action}, da den er udløbet.");
         }
 
         return request;
@@ -328,8 +351,14 @@ public sealed partial class JitElevationService(
             .ToListAsync(cancellationToken);
 
         var now = timeProvider.GetUtcNow();
-        return candidates.Any(r => r.Status == RoleElevationStatus.Pending || r.ValidToUtc >= now);
+        return candidates.Any(r => r.Status == RoleElevationStatus.Pending
+            ? !IsPendingExpired(r, now)
+            : r.ValidToUtc >= now);
     }
+
+    private bool IsPendingExpired(RoleElevationRequest request, DateTimeOffset now) =>
+    request.Status == RoleElevationStatus.Pending
+    && request.CreatedAtUtc.Add(policyOptionsMonitor.CurrentValue.PendingExpiry) < now;
 
     private static RoleElevationRequestDto ToDto(RoleElevationRequest request) => new(
         request.Id, request.RequesterUserId, request.ApproverUserId, request.RoleName, request.Status,

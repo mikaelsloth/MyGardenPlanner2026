@@ -208,6 +208,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 ### Jit elevation
 - RoleElevationRequest.Status er concurrency-token: den anden af to samtidige godkend/afvis får en InvalidOperationException (DbUpdateConcurrencyException oversat i JitElevationService.SaveDecisionAsync).
 - Servicen afviser en anmodning om en rolle, ansøger allerede har, eller som ansøger har en afventende/aktiv anmodning om (dublet). Tests, der skal bruge flere anmodninger, bruger en ny bruger pr. anmodning (SeedExtraUserAsync) eller forskellige roller.
+- Sweep og servicen bruger JitElevationPolicyOptions.PendingExpiry (mindst 1 time). Udløb af Pending kan ikke afventes i E2E og dækkes af xUnit.
 
 ## 4. Sider
 
@@ -425,7 +426,7 @@ Tilkøbsmoduler: .add-on-editor, 5 rækker i tbody (første kolonne = AddOnType)
 Faner i rækkefølge (role=tab, valgt = klassen "active"): JIT-eskalering (aktiv ved indlæsning), Step-up re-auth, Fejl-tracker, Admin-API rate limit, Login rate limit, AuditLog-eksport.
 Fejl i editor: .status-danger[role=alert] (fx rate limit, ArgumentOutOfRange). Skeleton vises, til policyen er indlæst. Gem-knap "Gem" (AdminActionGuard → StepUpGuard).
 JIT-eskalering (JitElevationPolicyEditor): #jit-min, #jit-max, #jit-sweep (type=number, @onchange → blur), #jit-pending-expiry. Succes: "JIT-eskaleringspolicyen er opdateret og trådt i kraft." Standard (JitElevationPolicy): Min 30, Max 90, Sweep 5 minutter, PendingExpiryHours 48 timer (grænser 1–720).
-  Sweep (RoleElevationExpirySweepService): kun Approved med ValidToUtc < nu → Expired. Pending og Rejected røres aldrig. Interval er mindst 1 minut. En ændret policy afbryder ventetiden, og sweep kører med det samme.
+  Sweep (RoleElevationExpirySweepService): Approved med ValidToUtc < nu → Expired. Pending med CreatedAtUtc + PendingExpiryHours < nu → Cancelled (dækket af xUnit, ikke E2E). Rejected, Expired og Cancelled røres aldrig. Interval er mindst 1 minut. En ændret policy afbryder ventetiden, og sweep kører med det samme.
   Adgang afgøres uafhængigt af Status: HasActiveElevationAsync tjekker ValidToUtc direkte.
 Step-up re-auth: #reauth-maxage (type=number, min=1, @onchange → blur). Fejl vises øverst i editoren (.security-policy-editor .status-danger[role=alert]); StepUpReAuthModal ligger i editoren. Succes: "Step-up re-auth-policyen er opdateret og trådt i kraft." (page-level, bliver stående mellem gem).
 Admin-API rate limit: #adminapi-permit, #adminapi-window, #adminapi-segments. Fejl: "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen." (AdminActionGuard.RateLimitedMessage).
@@ -444,6 +445,7 @@ Anmod-fanen (JitElevationRequestForm):
   Knap "Send anmodning": ikke idempotent; ved succes vises .status-success på siden: ‘Anmodning om ‘<rolle>‘ er sendt.’; årsagsfeltet ryddes. Ingen step-up ved anmodning.
   Checkbox #jit-request-show-history ("Vis afviste/udløbne/annullerede"): standard fra, så kun Afventer/Godkendt vises. Nulstilles ved fanehop.
   Tabel "Mine anmodninger": Rolle, Minutter, Årsag, Status, Oprettet. Status-badges: "Afventer", "Godkendt", "Afvist", "Udløbet", "Annulleret".
+  En udløbet Pending tæller ikke som åben anmodning (D1b).
   Fejl: .status-danger[role=alert] "Error: <ex.Message>". Uden for grænserne: “<N> minutter ligger uden for grænsen. Antal minutter skal være mellem {min} og {max}.” Tom årsag: “Årsag skal udfyldes.”. Rate limit: "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen." Uventet fejl: "Error: Handlingen kunne ikke gennemføres. Prøv igen, eller kontakt en administrator." Indlæsningsfejl: "Error: Dine anmodninger kunne ikke indlæses. Prøv igen senere."
   Fejl; Allerede medlem: "Error: Du er allerede medlem af rollen '<rolle>'." Åben anmodning: "Error: Du har allerede en afventende eller aktiv anmodning om rollen '<rolle>'." (“Aktiv” = Approved og ValidToUtc ≥ nu.)
 Godkend-fanen (JitElevationApprovalQueue):
@@ -451,6 +453,7 @@ Godkend-fanen (JitElevationApprovalQueue):
   Knapper pr. række: "Godkend" og "Afvis" (AdminActionGuard → StepUpGuard → StepUpReAuthModal).
   Tom kø: "Ingen ventende anmodninger, du kan godkende."
   Beskeder: "Anmodning om '<rolle>' er godkendt." / "Anmodning om '<rolle>' er afvist." Fejl: "Error: ...". Uventet fejl: "Error: Handlingen kunne ikke gennemføres. Prøv igen, eller kontakt en administrator." Indlæsningsfejl: "Error: Dine anmodninger kunne ikke indlæses. Prøv igen senere."
+    Udløbet: "Error: Anmodningen kan ikke godkendes/afvises, da den er udløbet." Annulleret: "Error: Anmodningen kan ikke godkendes/afvises, da den er annulleret." Køen viser ikke Pending ældre end PendingExpiryHours.
   Ikke medlem af rollen: "Error: Anmodningen kan ikke godkendes/afvises, da du ikke er direkte medlem af rollen '<rolle>'."
   Samtidig behandling: "Error: Anmodningen kan ikke godkendes/afvises, da den netop er behandlet af en anden bruger." Køen genindlæses.
   Kø-regler (JitElevationService.GetPendingRequestsForApprovalAsync): kun Pending, ikke egne, og kun roller godkenderen er direkte medlem af (aktiv JIT tæller ikke). Ikke medlem af rollen: "Error: Anmodningen kan ikke godkendes/afvises, da du ikke er direkte medlem af rollen '<rolle>'."
@@ -558,11 +561,11 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 ~~- R3.4 `JitElevationApprovalQueue` viser ansøgerens bruger-ID (GUID), ikke e-mail.~~
 ~~- R3.5 `JitElevationRequestForm`: "Send anmodning" giver ingen succesbesked, og fejlbeskeden indeholder .NET-teksterne "(Parameter 'minutes')" og "Actual value was N." (engelsk). `JitRequestsPage` bruger "Actual value was N." til at skelne to fejl i træk (E1); ændres teksten (fx lokalisering), skal E1 justeres.~~
 ~~- R3.6 Samtidige godkendelser af samme anmodning håndteres ikke (concurrency-token mangler, PR 2b).~~
-- R3.7 Sweep rører kun Approved. Pending anmodninger udløber aldrig og forbliver i køen. (6a: policy og status leveret; 6b: sweep og godkendelse af udløbne)
+~~- R3.7 Sweep rører kun Approved. Pending anmodninger udløber aldrig og forbliver i køen. (6a: policy og status leveret; 6b: sweep og godkendelse af udløbne)~~
 ~~- R3.8 Approve/Reject i JitElevationService tjekker ikke, at godkenderen er direkte medlem af rollen (kun køen filtrerer).~~
 - R3-backlog: Ansøger skal kunne trække egen anmodning tilbage (ny funktionalitet, uden for R3-scope).
 
-Filer til Upload: JitElevationService/IJitElevationService, JitElevationRequestForm, JitElevationApprovalQueue, RoleElevationExpirySweepService, AdminJitRequestsPage
+~~Filer til Upload: JitElevationService/IJitElevationService, JitElevationRequestForm, JitElevationApprovalQueue, RoleElevationExpirySweepService, AdminJitRequestsPage~~
 
 ### R4 – Abonnementsdata og admin-services (prioritet 4)
 - R4.1 `GardenVolumeDiscountTier` (og `SubscriptionAddOn.Type`): det unikke indeks på MinGardens har intet filter på IsDeleted. Et soft-slettet trin optager sit MinGardens, så et nyt trin med samme værdi afvises med "Der findes allerede en trappe der starter ved N haver", selvom ingen synlig række har den. Ikke testet; J2 bruger en tilfældig MinGardens.

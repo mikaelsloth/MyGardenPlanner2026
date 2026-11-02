@@ -280,8 +280,8 @@ public class JitElevationServiceTests : TestDbContext
 
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("Anmodningen kan ikke godkendes, da den netop er behandlet af en anden bruger.");
-        await securityAlertService.DidNotReceive().AlertJitRequestedAsync(
-            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await securityAlertService.DidNotReceive().AlertJitApprovedAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
 
         using var verify = CreateDbContext();
         var stored = await verify.RoleElevationRequests.SingleAsync(r => r.Id == id, TestContext.Current.CancellationToken);
@@ -392,12 +392,12 @@ public class JitElevationServiceTests : TestDbContext
 
         await service.ApproveElevationAsync("user-2", request.Id, TestContext.Current.CancellationToken);
 
-        await securityAlertService.Received(1).AlertJitRequestedAsync(
-            "user-1", "SystemAdmin", Arg.Any<CancellationToken>());
+        await securityAlertService.Received(1).AlertJitApprovedAsync(
+            "user-1", "user-2", "SystemAdmin", 45, Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task RejectElevationAsync_DoesNotSendSecurityAlert()
+    public async Task RejectElevationAsync_DoesNotSendApprovalAlert()
     {
         var service = CreateService("SystemAdmin");
         var request = await service.RequestElevationAsync(
@@ -405,8 +405,46 @@ public class JitElevationServiceTests : TestDbContext
 
         await service.RejectElevationAsync("user-2", request.Id, TestContext.Current.CancellationToken);
 
+        await securityAlertService.DidNotReceive().AlertJitApprovedAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RequestElevationAsync_ValidRequest_SendsSecurityAlert()
+    {
+        var service = CreateService("SystemAdmin");
+
+        await service.RequestElevationAsync("user-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
+
+        await securityAlertService.Received(1).AlertJitRequestedAsync(
+            "user-1", "SystemAdmin", 45, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RequestElevationAsync_MinutesOutsideRange_SendsNoSecurityAlert()
+    {
+        var service = CreateService("SystemAdmin");
+
+        var act = async () => await service.RequestElevationAsync(
+            "user-1", "SystemAdmin", 91, "Test.", TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<JitElevationValidationException>();
         await securityAlertService.DidNotReceive().AlertJitRequestedAsync(
-            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RequestElevationAsync_DuplicateRequest_SendsAlertOnlyForFirst()
+    {
+        var service = CreateService("SystemAdmin");
+        await service.RequestElevationAsync("user-1", "SystemAdmin", 45, "Første.", TestContext.Current.CancellationToken);
+
+        var act = async () => await service.RequestElevationAsync(
+            "user-1", "SystemAdmin", 45, "Anden.", TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<JitElevationValidationException>();
+        await securityAlertService.Received(1).AlertJitRequestedAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -678,8 +716,8 @@ public class JitElevationServiceTests : TestDbContext
             .WithMessage("Anmodningen kan ikke godkendes, da du ikke er direkte medlem af rollen 'SystemAdmin'.");
         (await service.GetRequestsForUserAsync("user-1", TestContext.Current.CancellationToken))
             .Single().Status.Should().Be(RoleElevationStatus.Pending);
-        await securityAlertService.DidNotReceive().AlertJitRequestedAsync(
-            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+        await securityAlertService.DidNotReceive().AlertJitApprovedAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

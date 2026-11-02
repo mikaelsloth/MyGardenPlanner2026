@@ -6,6 +6,7 @@
 - [ ] Afvisning → adgang nægtes
 - [ ] Sæt `SweepIntervalMinutes` lavt midlertidigt → verificér at udløbne anmodninger får status `Expired`
 - [ ] Anmodning afvises, hvis ansøger allerede er medlem af rollen eller har en afventende/aktiv anmodning
+- [ ] Anmodning og godkendelse sender sikkerhedsalarm til admin-listen
 
 ### Forudsætninger
 - A er en frisk AuditViewer; B i E2 er en frisk PolicyAdmin”. Erstat linjen “Rolleberettigelse ... tjekkes ikke ...” med: “Servicen afviser anmodning om en rolle, ansøger allerede har (E6). Godkend/Afvis kræver direkte medlemskab af rollen.
@@ -89,7 +90,7 @@
 - Skærmbillede: ja, A's liste med "Udløbet" (375, 768, 1280)
 - Filer: `JitRequestsPage.cs`, `SecurityPolicyPage.cs` (JIT-selektorer), `ManualSmoke/TjeklisteE/SweepUdloebTests.cs`; produktion: `JitElevationPolicyEditor.razor`, `RoleElevationExpirySweepService.cs`, `JitElevationPolicyOptions.cs`
 
-### E6 Ansøger kan **ikke** se egen anmodning i godkendelseskøen
+### E6 Anmodning afvises, hvis ansøger allerede er medlem af rollen eller har en afventende/aktiv anmodning
 - route /admin/jit-requests
 - bruger ny AuditViewer
 - Handling:
@@ -103,3 +104,15 @@
   c. Admin ser A’s række, ikke B’s.
 - skærmbillede ja (375, 768, 1280) 
 - filer AnmodningAfvisesTests.cs
+
+### E7 Anmodning og godkendelse sender sikkerhedsalarm til admin-listen
+- route /admin/jit-requests
+- bruger ny AuditViewer (A) og Admin (#1)
+- handling 
+  a. A anmoder om SystemAdmin, 30 minutter
+  b. Admin godkender (step-up)
+- forventet 
+  a. mail med emne “...JIT-adgang anmodet” og Bruger-ID, Rolle, Minutter
+  b. mail med emne “...tildelt/aktiveret” og Bruger-ID, Godkender-ID, Rolle, Minutter
+- skærmbillede nej
+- filer SikkerhedsalarmTests.cs, SecurityAlerts.cs

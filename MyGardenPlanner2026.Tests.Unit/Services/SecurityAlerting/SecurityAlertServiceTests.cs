@@ -48,16 +48,64 @@ public class SecurityAlertServiceTests
     }
 
     [Fact]
-    public async Task AlertJitRequestedAsync_EmailBody_ContainsRequesterIdAndRole()
+    public async Task AlertJitRequestedAsync_SendsEmail_WithRequestSubjectAndRequesterRoleAndMinutes()
     {
         var (service, emailSender) = CreateService();
 
-        await service.AlertJitRequestedAsync("user-2", "SystemAdmin", TestContext.Current.CancellationToken);
+        await service.AlertJitRequestedAsync("user-2", "SystemAdmin", 45, TestContext.Current.CancellationToken);
 
         await emailSender.Received(1).SendAsync(
-            Arg.Any<IReadOnlyList<string>>(), Arg.Any<string>(),
-            Arg.Is<string>(body => body.Contains("user-2") && body.Contains("SystemAdmin")),
+            Arg.Is<IReadOnlyList<string>>(r => r.SequenceEqual(AdminEmails)),
+            Arg.Is<string>(subject => subject.Contains("anmodet")),
+            Arg.Is<string>(body => body.Contains("Bruger-ID: user-2")
+                && body.Contains("Rolle: SystemAdmin")
+                && body.Contains("Minutter: 45")),
             Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task AlertJitApprovedAsync_SendsEmail_WithApprovalSubjectAndRequesterApproverRoleAndMinutes()
+    {
+        var (service, emailSender) = CreateService();
+
+        await service.AlertJitApprovedAsync("user-2", "user-3", "SystemAdmin", 45, TestContext.Current.CancellationToken);
+
+        await emailSender.Received(1).SendAsync(
+            Arg.Is<IReadOnlyList<string>>(r => r.SequenceEqual(AdminEmails)),
+            Arg.Is<string>(subject => subject.Contains("tildelt/aktiveret")),
+            Arg.Is<string>(body => body.Contains("Bruger-ID: user-2")
+                && body.Contains("Godkender-ID: user-3")
+                && body.Contains("Rolle: SystemAdmin")
+                && body.Contains("Minutter: 45")),
+            Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(null, "SystemAdmin", 30)]
+    [InlineData("user-2", "", 30)]
+    [InlineData("user-2", "SystemAdmin", 0)]
+    public async Task AlertJitRequestedAsync_InvalidArguments_ThrowsArgumentException(string? requesterId, string? role, int minutes)
+    {
+        var (service, _) = CreateService();
+
+        var act = async () => await service.AlertJitRequestedAsync(requesterId!, role!, minutes);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
+
+    [Theory]
+    [InlineData(null, "user-3", "SystemAdmin", 30)]
+    [InlineData("user-2", "", "SystemAdmin", 30)]
+    [InlineData("user-2", "user-3", null, 30)]
+    [InlineData("user-2", "user-3", "SystemAdmin", -1)]
+    public async Task AlertJitApprovedAsync_InvalidArguments_ThrowsArgumentException(
+        string? requesterId, string? approverId, string? role, int minutes)
+    {
+        var (service, _) = CreateService();
+
+        var act = async () => await service.AlertJitApprovedAsync(requesterId!, approverId!, role!, minutes);
+
+        await act.Should().ThrowAsync<ArgumentException>();
     }
 
     [Fact]

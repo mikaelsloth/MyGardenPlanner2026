@@ -134,6 +134,7 @@ public sealed partial class JitElevationService(
         await context.SaveChangesAsync(cancellationToken);
 
         ElevationRequested(logger, userId, roleName, minutes);
+        await securityAlertService.AlertJitRequestedAsync(userId, roleName, minutes, cancellationToken);
 
         return ToDto(request);
     }
@@ -156,7 +157,8 @@ public sealed partial class JitElevationService(
 
         ElevationApproved(logger, request.Id, request.RoleName, approverUserId);
 
-        await securityAlertService.AlertJitRequestedAsync(request.RequesterUserId, request.RoleName, cancellationToken);
+        await securityAlertService.AlertJitApprovedAsync(
+            request.RequesterUserId, approverUserId, request.RoleName, request.RequestedMinutes, cancellationToken);
 
         return ToDto(request);
     }
@@ -309,12 +311,7 @@ public sealed partial class JitElevationService(
     private async Task<IList<string>> GetDirectRolesAsync(string userId)
     {
         var user = await userManager.FindByIdAsync(userId);
-        if (user is null)
-        {
-            return [];
-        }
-
-        return await userManager.GetRolesAsync(user);
+        return user is null ? [] : await userManager.GetRolesAsync(user);
     }
 
     private async Task<bool> IsInDirectRoleAsync(string userId, string roleName) =>

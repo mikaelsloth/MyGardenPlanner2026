@@ -10,7 +10,33 @@ using MyGardenPlanner2026.Tests.E2E.Smtp;
 public static class SecurityAlerts
 {
     public const string PolicyChangedSubject = "[MyGardenPlanner] Sikkerhedsalarm: Sikkerhedspolicy ændret";
+    public const string JitRequestedSubject = "[MyGardenPlanner] Sikkerhedsalarm: JIT-adgang anmodet";
+    public const string JitApprovedSubject = "[MyGardenPlanner] Sikkerhedsalarm: JIT-admin-rettighed tildelt/aktiveret";
 
+    /// <summary>Venter på anmodningsalarmen for ansøgeren og kontrollerer modtager, rolle og minutter.</summary>
+    public static async Task ExpectJitRequestedAsync(TestSmtpServer smtp, string requesterId, string role, int minutes)
+    {
+        var mail = await smtp.WaitForMessageAsync(m =>
+            m.Subject == JitRequestedSubject
+            && m.Body.Contains($"Bruger-ID: {requesterId}", StringComparison.Ordinal));
+
+        mail.Recipients.Should().Equal(PlaywrightAppFixture.SecurityAlertRecipient);
+        mail.Body.Should().Contain($"Rolle: {role}").And.Contain($"Minutter: {minutes}");
+    }
+
+    /// <summary>Venter på godkendelsesalarmen for ansøgeren og kontrollerer godkender, rolle og minutter.</summary>
+    public static async Task ExpectJitApprovedAsync(
+        TestSmtpServer smtp, string requesterId, string approverId, string role, int minutes)
+    {
+        var mail = await smtp.WaitForMessageAsync(m =>
+            m.Subject == JitApprovedSubject
+            && m.Body.Contains($"Bruger-ID: {requesterId}", StringComparison.Ordinal));
+
+        mail.Recipients.Should().Equal(PlaywrightAppFixture.SecurityAlertRecipient);
+        mail.Body.Should().Contain($"Godkender-ID: {approverId}")
+            .And.Contain($"Rolle: {role}")
+            .And.Contain($"Minutter: {minutes}");
+    }
     public static bool IsPolicyChangedMail(ReceivedMail mail, string userId) =>
         mail.Subject == PolicyChangedSubject
         && mail.Body.Contains($"Bruger-ID: {userId}", StringComparison.Ordinal);

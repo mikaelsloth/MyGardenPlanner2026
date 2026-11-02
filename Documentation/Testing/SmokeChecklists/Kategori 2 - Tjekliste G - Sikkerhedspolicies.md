@@ -24,7 +24,7 @@
 
 | Fane | Felter | Forventet |
 | ------ | ------ | ------ |
-| JIT-eskalering | `jit-min` / `jit-max` / `jit-sweep` | 30 / 90 / 5 |
+| JIT-eskalering | `jit-min` / `jit-max` / `jit-sweep` / `jit-pending-expiry` | 30 / 90 / 5 / 48 |
 | Step-up re-auth | `reauth-maxage` | 1 |
 | Fejl-tracker | `failtrack-threshold` / `failtrack-windowdays` | 5 / 2 |
 | Admin-API rate limit | `adminapi-permit` / `adminapi-window` / `adminapi-segments` | 100 / 60 / 6 |

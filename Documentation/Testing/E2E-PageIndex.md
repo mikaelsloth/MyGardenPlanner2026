@@ -100,7 +100,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - `SecurityPolicyPage` (/admin/security-policies):
   - `Retention` (#exportjob-retention), `SaveButton` ("Gem"), `Success` (.status-success), `ExportJobSavedText`
   - `SelectTabAsync(page, name)`, `OpenExportJobTabAsync(page)`, `ReadRetentionAsync(page)`, `SetRetentionAsync(page, value)`
-  - JIT: `OpenJitTabAsync` (fanehop væk og tilbage = forbundet kredsløb; venter på #jit-min), `ReadJitPolicyAsync` → `JitPolicyValues(Min, Max, Sweep)`, `SaveJitPolicyAsync(page, bruger, min, sweep)` (sætter Min og Sweep, Gem, step-up, afventer succesbesked)
+  - JIT: `OpenJitTabAsync` (fanehop væk og tilbage = forbundet kredsløb; venter på #jit-min), `ReadJitPolicyAsync` → `JitPolicyValues(Min, Max, Sweep, PendingExpiry)`, `SaveJitPolicyAsync(page, bruger, min, sweep)` (sætter Min og Sweep, Gem, step-up, afventer succesbesked)
 - `AdminSubscriptionsPage` (/admin/subscriptions, fanen Basispriser):
   - `OpenAsync(fixture, bruger, bredde?)`: login, åbn, vent til interaktiv (fanehop; 12 rækker)
   - `PriceInput/SaveButton/SavedMessage(page, lag, kategori)`, `ReadPriceAsync`, `SetPriceAsync`
@@ -424,7 +424,7 @@ Tilkøbsmoduler: .add-on-editor, 5 rækker i tbody (første kolonne = AddOnType)
 /admin/security-policies
 Faner i rækkefølge (role=tab, valgt = klassen "active"): JIT-eskalering (aktiv ved indlæsning), Step-up re-auth, Fejl-tracker, Admin-API rate limit, Login rate limit, AuditLog-eksport.
 Fejl i editor: .status-danger[role=alert] (fx rate limit, ArgumentOutOfRange). Skeleton vises, til policyen er indlæst. Gem-knap "Gem" (AdminActionGuard → StepUpGuard).
-JIT-eskalering (JitElevationPolicyEditor): #jit-min, #jit-max, #jit-sweep (type=number, @onchange → blur). Succes: "JIT-eskaleringspolicyen er opdateret og trådt i kraft." Standard (JitElevationPolicy): Min 30, Max 90, Sweep 5 minutter.
+JIT-eskalering (JitElevationPolicyEditor): #jit-min, #jit-max, #jit-sweep (type=number, @onchange → blur), #jit-pending-expiry. Succes: "JIT-eskaleringspolicyen er opdateret og trådt i kraft." Standard (JitElevationPolicy): Min 30, Max 90, Sweep 5 minutter, PendingExpiryHours 48 timer (grænser 1–720).
   Sweep (RoleElevationExpirySweepService): kun Approved med ValidToUtc < nu → Expired. Pending og Rejected røres aldrig. Interval er mindst 1 minut. En ændret policy afbryder ventetiden, og sweep kører med det samme.
   Adgang afgøres uafhængigt af Status: HasActiveElevationAsync tjekker ValidToUtc direkte.
 Step-up re-auth: #reauth-maxage (type=number, min=1, @onchange → blur). Fejl vises øverst i editoren (.security-policy-editor .status-danger[role=alert]); StepUpReAuthModal ligger i editoren. Succes: "Step-up re-auth-policyen er opdateret og trådt i kraft." (page-level, bliver stående mellem gem).
@@ -442,8 +442,8 @@ Sikkerhedsalarm (mail til Smtp:AdminSecurityEmails): ved anmodning (emne "...JIT
 Anmod-fanen (JitElevationRequestForm):
   #jit-request-role (select, værdier = rollenavne, standard SystemAdmin), #jit-request-minutes (number, standard 30, @onchange), #jit-request-reason (@bind).
   Knap "Send anmodning": ikke idempotent; ved succes vises .status-success på siden: ‘Anmodning om ‘<rolle>‘ er sendt.’; årsagsfeltet ryddes. Ingen step-up ved anmodning.
-  Checkbox #jit-request-show-history ("Vis afviste/udløbne"): standard fra, så kun Afventer/Godkendt vises. Nulstilles ved fanehop.
-  Tabel "Mine anmodninger": Rolle, Minutter, Årsag, Status, Oprettet. Status-badges: "Afventer", "Godkendt", "Afvist", "Udløbet".
+  Checkbox #jit-request-show-history ("Vis afviste/udløbne/annullerede"): standard fra, så kun Afventer/Godkendt vises. Nulstilles ved fanehop.
+  Tabel "Mine anmodninger": Rolle, Minutter, Årsag, Status, Oprettet. Status-badges: "Afventer", "Godkendt", "Afvist", "Udløbet", "Annulleret".
   Fejl: .status-danger[role=alert] "Error: <ex.Message>". Uden for grænserne: “<N> minutter ligger uden for grænsen. Antal minutter skal være mellem {min} og {max}.” Tom årsag: “Årsag skal udfyldes.”. Rate limit: "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen." Uventet fejl: "Error: Handlingen kunne ikke gennemføres. Prøv igen, eller kontakt en administrator." Indlæsningsfejl: "Error: Dine anmodninger kunne ikke indlæses. Prøv igen senere."
   Fejl; Allerede medlem: "Error: Du er allerede medlem af rollen '<rolle>'." Åben anmodning: "Error: Du har allerede en afventende eller aktiv anmodning om rollen '<rolle>'." (“Aktiv” = Approved og ValidToUtc ≥ nu.)
 Godkend-fanen (JitElevationApprovalQueue):
@@ -558,7 +558,7 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 ~~- R3.4 `JitElevationApprovalQueue` viser ansøgerens bruger-ID (GUID), ikke e-mail.~~
 ~~- R3.5 `JitElevationRequestForm`: "Send anmodning" giver ingen succesbesked, og fejlbeskeden indeholder .NET-teksterne "(Parameter 'minutes')" og "Actual value was N." (engelsk). `JitRequestsPage` bruger "Actual value was N." til at skelne to fejl i træk (E1); ændres teksten (fx lokalisering), skal E1 justeres.~~
 ~~- R3.6 Samtidige godkendelser af samme anmodning håndteres ikke (concurrency-token mangler, PR 2b).~~
-- R3.7 Sweep rører kun Approved. Pending anmodninger udløber aldrig og forbliver i køen.
+- R3.7 Sweep rører kun Approved. Pending anmodninger udløber aldrig og forbliver i køen. (6a: policy og status leveret; 6b: sweep og godkendelse af udløbne)
 ~~- R3.8 Approve/Reject i JitElevationService tjekker ikke, at godkenderen er direkte medlem af rollen (kun køen filtrerer).~~
 - R3-backlog: Ansøger skal kunne trække egen anmodning tilbage (ny funktionalitet, uden for R3-scope).
 

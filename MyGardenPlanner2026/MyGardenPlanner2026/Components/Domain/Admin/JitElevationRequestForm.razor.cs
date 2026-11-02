@@ -128,6 +128,7 @@ public partial class JitElevationRequestForm
         RoleElevationStatus.Approved => "badge-primary",
         RoleElevationStatus.Rejected => "badge-danger-soft",
         RoleElevationStatus.Expired => "badge-archived",
+        RoleElevationStatus.Cancelled => "badge-archived",
         _ => string.Empty
     };
 
@@ -137,6 +138,7 @@ public partial class JitElevationRequestForm
         RoleElevationStatus.Approved => "Godkendt",
         RoleElevationStatus.Rejected => "Afvist",
         RoleElevationStatus.Expired => "Udløbet",
+        RoleElevationStatus.Cancelled => "Annulleret",
         _ => status.ToString()
     };
 

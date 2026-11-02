@@ -16,7 +16,7 @@ public class JitElevationPolicyEditorTests : BunitContext
     {
         var adminService = Substitute.For<IJitElevationPolicyAdminService>();
         adminService.GetAsync(Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(new JitElevationPolicyDto(30, 90, 5)));
+            .Returns(Task.FromResult(new JitElevationPolicyDto(30, 90, 5, 48)));
         Services.AddSingleton(adminService);
 
         this.RegisterAdminStepUpFakes<JitElevationPolicyEditor>(reAuthSucceeds, rateLimiterPermits);
@@ -34,6 +34,7 @@ public class JitElevationPolicyEditorTests : BunitContext
         cut.Find("#jit-min").GetAttribute("value").Should().Be("30");
         cut.Find("#jit-max").GetAttribute("value").Should().Be("90");
         cut.Find("#jit-sweep").GetAttribute("value").Should().Be("5");
+        cut.Find("#jit-pending-expiry").GetAttribute("value").Should().Be("48");
     }
 
     [Fact]
@@ -46,7 +47,7 @@ public class JitElevationPolicyEditorTests : BunitContext
         cut.Find("button.btn-primary").Click();
 
         _ = service.Received().UpdateAsync(
-            Arg.Is<JitElevationPolicyDto>(d => d.MinRequestedMinutes == 30 && d.MaxRequestedMinutes == 120 && d.SweepIntervalMinutes == 5),
+            Arg.Is<JitElevationPolicyDto>(d => d.MinRequestedMinutes == 30 && d.MaxRequestedMinutes == 120 && d.SweepIntervalMinutes == 5 && d.PendingExpiryHours == 48),
             "user-1",
             Arg.Any<CancellationToken>());
         cut.ShouldNotShowStepUpModal();
@@ -103,5 +104,18 @@ public class JitElevationPolicyEditorTests : BunitContext
 
         _ = service.DidNotReceive().UpdateAsync(Arg.Any<JitElevationPolicyDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
         cut.ShouldShowRateLimitMessage();
+    }
+
+    [Fact]
+    public void ReAuthValid_ClickingGem_SendsEditedPendingExpiryHours()
+    {
+        var service = RegisterFakes(reAuthSucceeds: true);
+
+        var cut = Render<JitElevationPolicyEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("#jit-pending-expiry").Change("72");
+        cut.Find("button.btn-primary").Click();
+
+        _ = service.Received().UpdateAsync(
+            Arg.Is<JitElevationPolicyDto>(d => d.PendingExpiryHours == 72), "user-1", Arg.Any<CancellationToken>());
     }
 }

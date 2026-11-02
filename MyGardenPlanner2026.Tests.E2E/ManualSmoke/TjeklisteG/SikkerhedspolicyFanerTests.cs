@@ -31,6 +31,7 @@ public sealed class SikkerhedspolicyFanerTests(PlaywrightAppFixture fixture)
             new(Ids.JitMin, 30),
             new(Ids.JitMax, 90),
             new(Ids.JitSweep, 5),
+            new(Ids.JitPendingExpiry, 48),
         ]),
         new(SecurityPolicyPage.ReAuth,
         [

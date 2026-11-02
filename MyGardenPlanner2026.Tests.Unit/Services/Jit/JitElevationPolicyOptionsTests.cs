@@ -22,4 +22,12 @@ public class JitElevationPolicyOptionsTests
 
         options.SweepIntervalMinutes.Should().Be(5);
     }
+
+    [Fact]
+    public void DefaultOptions_HasFortyEightHourPendingExpiry()
+    {
+        var options = new JitElevationPolicyOptions();
+
+        options.PendingExpiryHours.Should().Be(48);
+    }
 }

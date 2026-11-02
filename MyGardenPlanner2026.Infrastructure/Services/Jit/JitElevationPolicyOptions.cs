@@ -11,4 +11,6 @@ public sealed class JitElevationPolicyOptions
     public int MinRequestedMinutes { get; set; } = 30;
     public int MaxRequestedMinutes { get; set; } = 90;
     public int SweepIntervalMinutes { get; set; } = 5;
+    /// <summary>Timer en Pending-anmodning kan stå ubehandlet, før den annulleres (sweep, PR 6b).</summary>
+    public int PendingExpiryHours { get; set; } = 48;
 }

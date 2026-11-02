@@ -27,14 +27,15 @@ public class SecurityPolicyRuntimeReloadTests : TestDbContext
         return services.BuildServiceProvider();
     }
 
-    private async Task SeedAsync(int maxRequestedMinutes)
+    private async Task SeedAsync(int maxRequestedMinutes, int pendingExpiryHours = 48)
     {
         using var context = CreateDbContext();
         context.Add(new JitElevationPolicySettings
         {
             MinRequestedMinutes = 30,
             MaxRequestedMinutes = maxRequestedMinutes,
-            SweepIntervalMinutes = 5
+            SweepIntervalMinutes = 5,
+            PendingExpiryHours = pendingExpiryHours
         });
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
     }
@@ -64,7 +65,7 @@ public class SecurityPolicyRuntimeReloadTests : TestDbContext
             CreateAdminDbContextFactory(), signal, Substitute.For<ISecurityAlertService>());
 
         await adminService.UpdateAsync(
-            new JitElevationPolicyDto(30, 120, 5), "user-1", TestContext.Current.CancellationToken);
+            new JitElevationPolicyDto(30, 120, 5, 48), "user-1", TestContext.Current.CancellationToken);
 
         monitor.CurrentValue.MaxRequestedMinutes.Should().Be(120);
     }
@@ -82,5 +83,16 @@ public class SecurityPolicyRuntimeReloadTests : TestDbContext
         signal.TriggerChange<ReAuthenticationPolicyOptions>(); // urelateret type
 
         monitor.CurrentValue.MaxRequestedMinutes.Should().Be(90); // uændret
+    }
+
+    [Fact]
+    public async Task IOptionsMonitor_ReflectsPendingExpiryHours_FromDatabase()
+    {
+        await SeedAsync(maxRequestedMinutes: 90, pendingExpiryHours: 72);
+        using var provider = BuildProvider();
+
+        var monitor = provider.GetRequiredService<IOptionsMonitor<JitElevationPolicyOptions>>();
+
+        monitor.CurrentValue.PendingExpiryHours.Should().Be(72);
     }
 }

@@ -189,4 +189,20 @@ public class JitElevationRequestFormTests : BunitContext
         cut.Markup.Should().Contain("Dine anmodninger kunne ikke indlæses");
         cut.Markup.Should().NotContain("intern-db-fejl");
     }
+
+    [Fact]
+    public void CancelledRequest_HiddenByDefault_ShownAsAnnulleretWithHistory()
+    {
+        RegisterFakes([CreateDto(RoleElevationStatus.Pending), CreateDto(RoleElevationStatus.Cancelled)]);
+
+        var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+
+        cut.FindAll("tbody tr").Should().HaveCount(1);
+        cut.Markup.Should().NotContain("Annulleret");
+
+        cut.Find("#jit-request-show-history").Change(true);
+
+        cut.FindAll("tbody tr").Should().HaveCount(2);
+        cut.Markup.Should().Contain("Annulleret");
+    }
 }

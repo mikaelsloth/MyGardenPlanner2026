@@ -66,6 +66,7 @@ public static class SecurityPolicyPage
         public const string LoginWindow = "login-window";
         public const string ExportRetention = "exportjob-retention";
         public const string ExportMaxActive = "exportjob-maxactive";
+        public const string JitPendingExpiry = "jit-pending-expiry";
     }
 
     public static ILocator Field(IPage page, string id) => page.Locator($"#{id}");
@@ -193,13 +194,15 @@ public static class SecurityPolicyPage
 
     // --- Fanen JIT-eskalering (standardfane) ---
 
-    public sealed record JitPolicyValues(int Min, int Max, int Sweep);
+    public sealed record JitPolicyValues(int Min, int Max, int Sweep, int PendingExpiry);
 
     public static ILocator JitMin(IPage page) => page.Locator("#jit-min");
 
     public static ILocator JitMax(IPage page) => page.Locator("#jit-max");
 
     public static ILocator JitSweep(IPage page) => page.Locator("#jit-sweep");
+
+    public static ILocator JitPendingExpiry(IPage page) => page.Locator("#jit-pending-expiry");
 
     /// <summary>
     /// JIT-eskalering er standardfanen ved indlæsning, men prerenderede indtastninger kan nulstilles.
@@ -216,7 +219,8 @@ public static class SecurityPolicyPage
     public static async Task<JitPolicyValues> ReadJitPolicyAsync(IPage page) => new(
         await ReadNumberAsync(JitMin(page)),
         await ReadNumberAsync(JitMax(page)),
-        await ReadNumberAsync(JitSweep(page)));
+        await ReadNumberAsync(JitSweep(page)),
+        await ReadNumberAsync(JitPendingExpiry(page)));
 
     /// <summary>Sætter Min og Sweep (Max uændret), klikker "Gem" og gennemfører step-up. Slutter på succesbeskeden.</summary>
     public static async Task SaveJitPolicyAsync(IPage page, SmokeTestUser user, int min, int sweep)

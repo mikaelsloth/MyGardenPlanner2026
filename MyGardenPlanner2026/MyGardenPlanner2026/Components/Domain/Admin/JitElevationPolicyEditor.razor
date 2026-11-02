@@ -39,6 +39,12 @@
                        value="@sweepEdit" @onchange="e => sweepEdit = ParseInt(e.Value)" />
                 <p class="help">Hvor ofte udløbne eskaleringer markeres som Expired.</p>
             </div>
+            <div class="field">
+                <label class="field-label" for="jit-pending-expiry">Udløb af ventende anmodninger (timer)</label>
+                <input id="jit-pending-expiry" type="number" min="1" max="720" class="form-control"
+                       value="@pendingExpiryEdit" @onchange="e => pendingExpiryEdit = ParseInt(e.Value)" />
+                <p class="help">Ubehandlede anmodninger annulleres automatisk efter dette antal timer.</p>
+            </div>
         </div>
 
         <div class="form-actions">

@@ -1078,7 +1078,8 @@ namespace MyGardenPlanner2026.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("MinGardens")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("GardenVolumeDiscountTiers", "admin");
 
@@ -1149,7 +1150,8 @@ namespace MyGardenPlanner2026.Infrastructure.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Type")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("SubscriptionAddOns", "admin");
 

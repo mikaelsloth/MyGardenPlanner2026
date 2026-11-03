@@ -24,4 +24,11 @@ public interface IJitElevationService
     /// </summary>
     Task<IReadOnlyList<RoleElevationRequestDto>> GetPendingRequestsForApprovalAsync(
         string approverUserId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Lader ansøgeren trække en egen, afventende (Pending) anmodning tilbage. Anmodningen får status Cancelled.
+    /// Kaster InvalidOperationException, hvis anmodningen ikke findes, ikke tilhører brugeren eller ikke længere er Pending.
+    /// </summary>
+    Task<RoleElevationRequestDto> CancelRequestAsync(
+        string requesterUserId, Guid requestId, CancellationToken cancellationToken = default);
 }

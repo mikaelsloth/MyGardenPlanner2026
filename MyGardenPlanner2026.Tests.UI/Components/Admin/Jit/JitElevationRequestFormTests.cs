@@ -205,4 +205,110 @@ public class JitElevationRequestFormTests : BunitContext
         cut.FindAll("tbody tr").Should().HaveCount(2);
         cut.Markup.Should().Contain("Annulleret");
     }
+
+    [Fact]
+    public void PendingRow_ShowsWithdrawButton_OtherStatusesDoNot()
+    {
+        RegisterFakes([CreateDto(RoleElevationStatus.Pending), CreateDto(RoleElevationStatus.Approved)]);
+
+        var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+
+        cut.FindAll("tbody tr button").Should().ContainSingle()
+            .Which.TextContent.Trim().Should().Be("Træk tilbage");
+    }
+
+    [Fact]
+    public void ClickingWithdraw_ShowsConfirmation_WithoutCallingService()
+    {
+        var service = RegisterFakes([CreateDto(RoleElevationStatus.Pending)]);
+
+        var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("tbody tr button").Click();
+
+        cut.Markup.Should().Contain("Træk anmodningen tilbage?");
+        _ = service.DidNotReceive().CancelRequestAsync(
+            Arg.Any<string>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public void KeepButton_HidesConfirmation_WithoutCallingService()
+    {
+        var service = RegisterFakes([CreateDto(RoleElevationStatus.Pending)]);
+
+        var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("tbody tr button").Click();
+        cut.Find("button.btn-secondary").Click();
+
+        cut.Markup.Should().NotContain("Træk anmodningen tilbage?");
+        cut.Find("tbody tr button").TextContent.Trim().Should().Be("Træk tilbage");
+        _ = service.DidNotReceive().CancelRequestAsync(
+            Arg.Any<string>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public void ConfirmingWithdraw_CallsServiceAndInvokesOnStatusMessage()
+    {
+        var dto = CreateDto(RoleElevationStatus.Pending);
+        var service = RegisterFakes([dto]);
+        var messages = new List<string>();
+
+        var cut = Render<JitElevationRequestForm>(p => p
+            .Add(x => x.OnStatusMessage, EventCallback.Factory.Create<string>(this, m => messages.Add(m)))
+            .AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("tbody tr button").Click();
+        cut.Find("button.btn-danger").Click();
+
+        _ = service.Received().CancelRequestAsync("user-1", dto.Id, Arg.Any<CancellationToken>());
+        messages.Last().Should().Be("Anmodning om 'SystemAdmin' er trukket tilbage.");
+    }
+
+    [Fact]
+    public void ConfirmingWithdraw_ServiceThrowsInvalidOperationException_ShowsErrorAndReloads()
+    {
+        var dto = CreateDto(RoleElevationStatus.Pending);
+        var service = RegisterFakes([dto]);
+        service.CancelRequestAsync(Arg.Any<string>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns<RoleElevationRequestDto>(_ => throw new InvalidOperationException(
+                "Anmodningen kan ikke trækkes tilbage, da den netop er behandlet af en anden bruger."));
+        var messages = new List<string>();
+
+        var cut = Render<JitElevationRequestForm>(p => p
+            .Add(x => x.OnStatusMessage, EventCallback.Factory.Create<string>(this, m => messages.Add(m)))
+            .AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("tbody tr button").Click();
+        cut.Find("button.btn-danger").Click();
+
+        cut.Markup.Should().Contain("netop er behandlet af en anden bruger");
+        messages.Should().NotContain(m => m.Contains("trukket tilbage"));
+        _ = service.Received(2).GetRequestsForUserAsync("user-1", Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public void ConfirmingWithdraw_ServiceThrowsUnexpectedException_ShowsGenericError()
+    {
+        var service = RegisterFakes([CreateDto(RoleElevationStatus.Pending)]);
+        service.CancelRequestAsync(Arg.Any<string>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>())
+            .Returns<RoleElevationRequestDto>(_ => throw new TimeoutException("intern-db-fejl"));
+
+        var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("tbody tr button").Click();
+        cut.Find("button.btn-danger").Click();
+
+        cut.Markup.Should().Contain("Handlingen kunne ikke gennemføres");
+        cut.Markup.Should().NotContain("intern-db-fejl");
+    }
+
+    [Fact]
+    public void RateLimited_ConfirmingWithdraw_DoesNotCallService_AndShowsErrorMessage()
+    {
+        var service = RegisterFakes([CreateDto(RoleElevationStatus.Pending)], rateLimiterPermits: false);
+
+        var cut = Render<JitElevationRequestForm>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("tbody tr button").Click();
+        cut.Find("button.btn-danger").Click();
+
+        _ = service.DidNotReceive().CancelRequestAsync(
+            Arg.Any<string>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        cut.ShouldShowRateLimitMessage();
+    }
 }

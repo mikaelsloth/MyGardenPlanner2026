@@ -9,8 +9,8 @@ using System.Globalization;
 
 /// <summary>
 /// Lader en autentificeret bruger anmode om midlertidig (JIT) forhøjelse til en af de
-/// fire admin-roller, og viser brugerens egne anmodninger. Selve anmodningen kræver IKKE
-/// step-up re-authentication (den giver ingen adgang i sig selv — det gør først en peer-
+/// fire admin-roller, og og viser brugerens egne anmodninger. Afventende anmodninger kan trækkes tilbage.
+/// Selve anmodningen kræver IKKE step-up re-authentication (den giver ingen adgang i sig selv — det gør først en peer-
 /// godkendelse, se JitElevationApprovalQueue), men er rate-limited via AdminActionGuard
 /// for at forhindre spam.
 /// </summary>
@@ -47,6 +47,7 @@ public partial class JitElevationRequestForm
     private string? errorMessage;
     private IReadOnlyList<RoleElevationRequestDto> myRequests = [];
     private bool showHistory;
+    private Guid? confirmingCancelId;
     private AdminActionGuard adminActionGuard = default!;
 
     private IEnumerable<RoleElevationRequestDto> VisibleRequests => showHistory
@@ -61,6 +62,12 @@ public partial class JitElevationRequestForm
 
     [LoggerMessage(EventId = 1140, Level = LogLevel.Error, Message = "Fejl ved indlæsning af brugerens JIT-anmodninger.")]
     static partial void JitElevationRequestsLoadFailed(ILogger logger, Exception ex);
+
+    [LoggerMessage(EventId = 1149, Level = LogLevel.Information, Message = "Tilbagetrækning af JIT-anmodning '{RequestId}' afvist: {Reason}")]
+    static partial void JitElevationRequestCancelFailed(ILogger logger, Guid RequestId, string Reason);
+
+    [LoggerMessage(EventId = 1150, Level = LogLevel.Error, Message = "Uventet fejl ved tilbagetrækning af JIT-anmodning '{RequestId}'.")]
+    static partial void JitElevationRequestCancelUnexpectedFailure(ILogger logger, Exception ex, Guid RequestId);
 
     protected override Task OnInitializedAsync()
     {
@@ -119,6 +126,49 @@ public partial class JitElevationRequestForm
         {
             errorMessage = UnexpectedFailureMessage;
             JitElevationRequestUnexpectedFailure(Logger, ex, selectedRole);
+        }
+    }
+
+    private void AskCancel(Guid requestId) => confirmingCancelId = requestId;
+
+    private void AbortCancel() => confirmingCancelId = null;
+
+    private async Task CancelRequestAsync(RoleElevationRequestDto request)
+    {
+        // Ryd en gammel succesbesked på siden, før et nyt forsøg.
+        await OnStatusMessage.InvokeAsync(string.Empty);
+        await adminActionGuard.RunAsync(
+            AuthenticationStateTask, () => CancelRequestCoreAsync(request), message => errorMessage = message);
+    }
+
+    private async Task CancelRequestCoreAsync(RoleElevationRequestDto request)
+    {
+        errorMessage = null;
+        confirmingCancelId = null;
+        try
+        {
+            var userId = await CurrentUserIdResolver.ResolveAsync(AuthenticationStateTask);
+            if (userId is null)
+            {
+                errorMessage = "Error: Kunne ikke bestemme den aktuelle bruger.";
+                return;
+            }
+
+            await JitElevationService.CancelRequestAsync(userId, request.Id);
+
+            await LoadRequestsAsync();
+            await OnStatusMessage.InvokeAsync($"Anmodning om '{request.RoleName}' er trukket tilbage.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+            JitElevationRequestCancelFailed(Logger, request.Id, ex.Message);
+            await LoadRequestsAsync(); // listen kan være forældet (fx behandlet af en godkender)
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            errorMessage = UnexpectedFailureMessage;
+            JitElevationRequestCancelUnexpectedFailure(Logger, ex, request.Id);
         }
     }
 

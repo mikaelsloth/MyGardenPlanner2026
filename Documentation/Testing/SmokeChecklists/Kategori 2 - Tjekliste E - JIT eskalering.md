@@ -7,6 +7,7 @@
 - [ ] Sæt `SweepIntervalMinutes` lavt midlertidigt → verificér at udløbne anmodninger får status `Expired`
 - [ ] Anmodning afvises, hvis ansøger allerede er medlem af rollen eller har en afventende/aktiv anmodning
 - [ ] Anmodning og godkendelse sender sikkerhedsalarm til admin-listen
+- [ ] Ansøger kan trække egen afventende anmodning tilbage
 
 ### Forudsætninger
 - A er en frisk AuditViewer; B i E2 er en frisk PolicyAdmin”. Erstat linjen “Rolleberettigelse ... tjekkes ikke ...” med: “Servicen afviser anmodning om en rolle, ansøger allerede har (E6). Godkend/Afvis kræver direkte medlemskab af rollen.
@@ -116,3 +117,20 @@
   b. mail med emne “...tildelt/aktiveret” og Bruger-ID, Godkender-ID, Rolle, Minutter
 - skærmbillede nej
 - filer SikkerhedsalarmTests.cs, SecurityAlerts.cs
+
+### E8 Ansøger kan trække egen afventende anmodning tilbage
+- route /admin/jit-requests (fanen “Anmod om adgang”)
+- bruger ny AuditViewer (A) og en anden ny AuditViewer (B), samt Admin (#1); 
+- handling 
+  a. B anmoder om SystemAdmin (kontrolrække)
+  b. A anmoder om SystemAdmin og trækker tilbage med bekræftelse
+  c. A kontrollerer listen med og uden “Vis afviste/udløbne/annullerede”
+  d. Admin åbner “Godkend anmodninger”
+  e. A anmoder igen om SystemAdmin
+- forventet 
+  a. besked “Anmodning om ‘SystemAdmin’ er trukket tilbage.”
+  b. rækken er skjult som standard og står som “Annulleret” uden knap
+  c. Admin ser B’s række, ikke A’s
+  d. den nye anmodning accepteres som “Afventer”
+- skærmbillede ja (375, 768, 1280)
+- filer TilbagetraekningTests.cs, JitRequestsPage.cs

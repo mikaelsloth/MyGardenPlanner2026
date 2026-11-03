@@ -824,6 +824,114 @@ public class JitElevationServiceTests : TestDbContext
             .Single().Status.Should().Be(RoleElevationStatus.Pending);
     }
 
+    [Fact]
+    public async Task CancelRequestAsync_OwnPendingRequest_SetsCancelled_AndSendsNoAlert()
+    {
+        var service = CreateService("SystemAdmin");
+        var request = await service.RequestElevationAsync("user-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
+        securityAlertService.ClearReceivedCalls();
+
+        var cancelled = await service.CancelRequestAsync("user-1", request.Id, TestContext.Current.CancellationToken);
+
+        cancelled.Status.Should().Be(RoleElevationStatus.Cancelled);
+        (await service.GetRequestsForUserAsync("user-1", TestContext.Current.CancellationToken))
+            .Single().Status.Should().Be(RoleElevationStatus.Cancelled);
+        securityAlertService.ReceivedCalls().Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task CancelRequestAsync_PendingOlderThanExpiry_StillCancels()
+    {
+        var timeProvider = new TestTimeProvider(new DateTimeOffset(2026, 8, 28, 10, 0, 0, TimeSpan.Zero));
+        var service = CreateServiceWithTimeProvider(timeProvider, "SystemAdmin");
+        var request = await service.RequestElevationAsync("user-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
+        timeProvider.Advance(PendingExpiry + TimeSpan.FromSeconds(1));
+
+        var cancelled = await service.CancelRequestAsync("user-1", request.Id, TestContext.Current.CancellationToken);
+
+        cancelled.Status.Should().Be(RoleElevationStatus.Cancelled);
+    }
+
+    [Fact]
+    public async Task CancelRequestAsync_OtherUsersRequest_Throws_AndRequestStaysPending()
+    {
+        var service = CreateService("SystemAdmin");
+        var request = await service.RequestElevationAsync("user-1", "SystemAdmin", 45, "Test.", TestContext.Current.CancellationToken);
+
+        var act = async () => await service.CancelRequestAsync("user-4", request.Id, TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Du kan kun trække dine egne anmodninger tilbage.");
+        (await service.GetRequestsForUserAsync("user-1", TestContext.Current.CancellationToken))
+            .Single().Status.Should().Be(RoleElevationStatus.Pending);
+    }
+
+    [Theory]
+    [InlineData(RoleElevationStatus.Approved)]
+    [InlineData(RoleElevationStatus.Rejected)]
+    [InlineData(RoleElevationStatus.Expired)]
+    public async Task CancelRequestAsync_NonPendingRequest_ThrowsStatusMessage(RoleElevationStatus status)
+    {
+        var service = CreateService("SystemAdmin");
+        var id = await SeedPendingRequestAsync(status);
+
+        var act = async () => await service.CancelRequestAsync("user-1", id, TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage($"Anmodningen kan ikke trækkes tilbage fra status '{status}'.");
+    }
+
+    [Fact]
+    public async Task CancelRequestAsync_AlreadyCancelled_ThrowsDanishMessage()
+    {
+        var service = CreateService("SystemAdmin");
+        var id = await SeedPendingRequestAsync(RoleElevationStatus.Cancelled);
+
+        var act = async () => await service.CancelRequestAsync("user-1", id, TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Anmodningen er allerede annulleret.");
+    }
+
+    [Fact]
+    public async Task CancelRequestAsync_UnknownRequest_ThrowsInvalidOperationException()
+    {
+        var service = CreateService("SystemAdmin");
+
+        var act = async () => await service.CancelRequestAsync("user-1", Guid.NewGuid(), TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task CancelRequestAsync_RequestApprovedConcurrently_ThrowsInvalidOperationException()
+    {
+        var id = await SeedPendingRequestAsync();
+        var service = CreateServiceWithSaveInterceptor(
+            () => ChangeStatusInOtherContextAsync(id, RoleElevationStatus.Approved, "user-3"));
+
+        var act = async () => await service.CancelRequestAsync("user-1", id, TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("Anmodningen kan ikke trækkes tilbage, da den netop er behandlet af en anden bruger.");
+
+        using var verify = CreateDbContext();
+        var stored = await verify.RoleElevationRequests.SingleAsync(r => r.Id == id, TestContext.Current.CancellationToken);
+        stored.Status.Should().Be(RoleElevationStatus.Approved);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public async Task CancelRequestAsync_MissingRequesterUserId_ThrowsArgumentException(string? userId)
+    {
+        var service = CreateService("SystemAdmin");
+
+        var act = async () => await service.CancelRequestAsync(userId!, Guid.NewGuid(), TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
+
     private async Task<Guid> SeedPendingRequestAsync(RoleElevationStatus status = RoleElevationStatus.Pending)
     {
         using var seed = CreateDbContext();

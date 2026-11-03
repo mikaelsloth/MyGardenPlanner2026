@@ -24,6 +24,7 @@ using MyGardenPlanner2026.Infrastructure.Services.Jit;
 /// til brug for driftsmæssig sporing (§4.2-relateret, om end ikke en sikkerhedsalarm i sig selv).
 /// - Ventende anmodninger udløber efter JitElevationPolicy.PendingExpiryHours: godkend/afvis afvises, de vises ikke
 ///   i køen og tæller ikke som åbne. Statusændringen til Cancelled udføres af RoleElevationExpirySweepService.
+/// - Ansøger kan trække en egen, afventende anmodning tilbage (Cancelled). Ingen sikkerhedsalarm.
 ///</summary>
 public sealed partial class JitElevationService(
     IAdminDbContextFactory contextFactory,
@@ -75,6 +76,12 @@ public sealed partial class JitElevationService(
 
     [LoggerMessage(EventId = 1145, Level = LogLevel.Information, Message = "Anmodning '{RequestId}' kunne ikke {Action}: den har været ventende længere end policyens udløbsgrænse.")]
     static partial void ElevationRequestExpired(ILogger logger, Guid RequestId, string Action);
+
+    [LoggerMessage(EventId = 1147, Level = LogLevel.Information, Message = "Bruger '{UserId}' trak anmodning '{RequestId}' om rollen '{RoleName}' tilbage.")]
+    static partial void ElevationCancelledByRequester(ILogger logger, string UserId, Guid RequestId, string RoleName);
+
+    [LoggerMessage(EventId = 1148, Level = LogLevel.Information, Message = "Bruger '{UserId}' forsøgte at trække anmodning '{RequestId}' tilbage, men er ikke ansøger.")]
+    static partial void ElevationCancelNotOwner(ILogger logger, string UserId, Guid RequestId);
 
     public async Task<RoleElevationRequestDto> RequestElevationAsync(
         string userId, string roleName, int minutes, string reason, CancellationToken cancellationToken = default)
@@ -183,6 +190,44 @@ public sealed partial class JitElevationService(
         await SaveDecisionAsync(context, logger, request.Id, approverUserId, "afvises", cancellationToken);
 
         ElevationRejected(logger, request.Id, request.RoleName, approverUserId);
+
+        return ToDto(request);
+    }
+
+    public async Task<RoleElevationRequestDto> CancelRequestAsync(
+    string requesterUserId, Guid requestId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(requesterUserId);
+
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+        var request = await context.RoleElevationRequests
+            .SingleOrDefaultAsync(r => r.Id == requestId, cancellationToken)
+            ?? throw new InvalidOperationException($"Ingen elevations-anmodning fundet med Id {requestId}.");
+
+        if (request.RequesterUserId != requesterUserId)
+        {
+            ElevationCancelNotOwner(logger, requesterUserId, requestId);
+            throw new InvalidOperationException("Du kan kun trække dine egne anmodninger tilbage.");
+        }
+
+        if (request.Status == RoleElevationStatus.Cancelled)
+        {
+            ElevationInvalidStatusForAction(logger, requestId, "trækkes tilbage", request.Status);
+            throw new InvalidOperationException("Anmodningen er allerede annulleret.");
+        }
+
+        if (request.Status != RoleElevationStatus.Pending)
+        {
+            ElevationInvalidStatusForAction(logger, requestId, "trækkes tilbage", request.Status);
+            throw new InvalidOperationException(
+                $"Anmodningen kan ikke trækkes tilbage fra status '{request.Status}'.");
+        }
+
+        request.Status = RoleElevationStatus.Cancelled;
+
+        await SaveDecisionAsync(context, logger, request.Id, requesterUserId, "trækkes tilbage", cancellationToken);
+
+        ElevationCancelledByRequester(logger, requesterUserId, request.Id, request.RoleName);
 
         return ToDto(request);
     }

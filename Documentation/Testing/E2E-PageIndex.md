@@ -122,6 +122,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
   - `GotoAsync(fixture, page)`: åbner siden i en allerede logget ind side.
   - `ApproveAsync/RejectAsync(page, godkender, årsag, rolle)`: fanehop til Godkend, venter på rækken, klikker (gentages til step-up modalen vises), `StepUpModal.CompleteAsync`, afventer beskeden og at rækken er væk. Kræver en frisk circuit (ingen re-auth i forvejen).
   - `RefreshRequestsAsync(page, showHistory?)`: genindlæser "Mine anmodninger" via fanehop Godkend → Anmod (ingen sideindlæsning). "Vis afviste/udløbne" nulstilles ved hop og krydses af igen med showHistory.
+  - WithdrawAsync(page, årsag, rolle): klikker “Træk tilbage” og “Ja, træk tilbage” i rækken og afventer beskeden. WithdrawButton/ConfirmWithdrawButton(page, årsag), CancelledLabel.
 - `PricingMatrix` (/pricing): `OpenAnonymousAsync(fixture, bredde)`, `SelectCycleAsync(page, cyklus)`, `ExpectPriceAsync(page, lag, kategori, beløb)`.
 - `PricingCalculatorPage` (/pricing): `WaitUntilInteractiveAsync(page)`, `CalculateAsync(page, lag, kategori, cyklus, aktive, arkiverede)`, `ExpectResultAsync(page, vægtet, rabat%, subtotal, tilkøb, total)`.
 - `PricingAddOns` (/pricing, tilkøbskort): `Cards(page)`, `Card/Price(page, navn, cyklus)`, `ExpectPriceAsync(page, navn, cyklus, beløb)`.
@@ -439,15 +440,17 @@ Tests: ManualSmoke/TjeklisteD/ForkertPasswordModalTests, ManualSmoke/TjeklisteD/
 Titel: JIT-adgang – MyGardenPlanner. h1: JIT-adgang. Brugere uden admin-rolle (Requester, Plain) kan ikke åbne siden. Det er tilsigtet: kun brugere med en admin-rolle kan anmode (R3.2).
 Faner: role=tab, valgt fane har klassen "active". "Anmod om adgang" (standard) og "Godkend anmodninger". Fanehop rydder statusbeskeden og genindlæser fanens komponent.
 Statusbesked ved godkend/afvis: .status-success[role=status] på siden.
-Sikkerhedsalarm (mail til Smtp:AdminSecurityEmails): ved anmodning (emne "...JIT-adgang anmodet"; Bruger-ID, Rolle, Minutter) og ved godkendelse (emne "...JIT-admin-rettighed tildelt/aktiveret"; Bruger-ID, Godkender-ID, Rolle, Minutter). Ingen alarm ved afvisning.
+Sikkerhedsalarm (mail til Smtp:AdminSecurityEmails): ved anmodning (emne "...JIT-adgang anmodet"; Bruger-ID, Rolle, Minutter) og ved godkendelse (emne "...JIT-admin-rettighed tildelt/aktiveret"; Bruger-ID, Godkender-ID, Rolle, Minutter). Ingen alarm ved afvisning. Ingen step-up og ingen sikkerhedsalarm ved tilbagetrækning.
 Anmod-fanen (JitElevationRequestForm):
   #jit-request-role (select, værdier = rollenavne, standard SystemAdmin), #jit-request-minutes (number, standard 30, @onchange), #jit-request-reason (@bind).
   Knap "Send anmodning": ikke idempotent; ved succes vises .status-success på siden: ‘Anmodning om ‘<rolle>‘ er sendt.’; årsagsfeltet ryddes. Ingen step-up ved anmodning.
   Checkbox #jit-request-show-history ("Vis afviste/udløbne/annullerede"): standard fra, så kun Afventer/Godkendt vises. Nulstilles ved fanehop.
-  Tabel "Mine anmodninger": Rolle, Minutter, Årsag, Status, Oprettet. Status-badges: "Afventer", "Godkendt", "Afvist", "Udløbet", "Annulleret".
+  Tabel "Mine anmodninger": Rolle, Minutter, Årsag, Status, Oprettet, Handling. Status-badges: "Afventer", "Godkendt", "Afvist", "Udløbet", "Annulleret".
   En udløbet Pending tæller ikke som åben anmodning (D1b).
+  “Træk tilbage” vises kun for Afventer. Klik viser “Træk anmodningen tilbage?” med “Ja, træk tilbage” og “Behold”. Ved succes: .status-success “Anmodning om ‘<rolle>‘ er trukket tilbage.” Rækken får status “Annulleret” (skjult som standard).
   Fejl: .status-danger[role=alert] "Error: <ex.Message>". Uden for grænserne: “<N> minutter ligger uden for grænsen. Antal minutter skal være mellem {min} og {max}.” Tom årsag: “Årsag skal udfyldes.”. Rate limit: "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen." Uventet fejl: "Error: Handlingen kunne ikke gennemføres. Prøv igen, eller kontakt en administrator." Indlæsningsfejl: "Error: Dine anmodninger kunne ikke indlæses. Prøv igen senere."
-  Fejl; Allerede medlem: "Error: Du er allerede medlem af rollen '<rolle>'." Åben anmodning: "Error: Du har allerede en afventende eller aktiv anmodning om rollen '<rolle>'." (“Aktiv” = Approved og ValidToUtc ≥ nu.)
+  Fejl: Allerede medlem: "Error: Du er allerede medlem af rollen '<rolle>'." Åben anmodning: "Error: Du har allerede en afventende eller aktiv anmodning om rollen '<rolle>'." (“Aktiv” = Approved og ValidToUtc ≥ nu.)
+  Fejl: "Error: Du kan kun trække dine egne anmodninger tilbage.", "Error: Anmodningen er allerede annulleret.", "Error: Anmodningen kan ikke trækkes tilbage fra status '<status>'." og ved samtidig behandling "Error: Anmodningen kan ikke trækkes tilbage, da den netop er behandlet af en anden bruger." Listen genindlæses.
 Godkend-fanen (JitElevationApprovalQueue):
   h3 "Anmodninger til godkendelse". Tabel: Ansøger (e-mail, bruger-ID i lille tekst under; slettet bruger vises som ‘<bruger-ID> (Slettet)’), Rolle, Minutter, Årsag, Anmodet, Handling.
   Knapper pr. række: "Godkend" og "Afvis" (AdminActionGuard → StepUpGuard → StepUpReAuthModal).
@@ -511,6 +514,7 @@ Eksportpanel (AuditLogExportPanel):
 | E5 | Sweep markerer udløbne som Expired | SweepUdloebTests | JIT_E5_Udloebet_`<bredde>` (3) | ikke kørt |
 | E6 | Anmodning afvises ved medlemskab/åben anmodning | AnmodningAfvisesTests | JIT_E6_Fejl_<bredde> (3) | ikke kørt |
 | E7 | JIT sender sikkerhedsalarm ved anmodning og godkendelse | SikkerhedsalarmTests | ingen | ikke kørt |
+| E8 | Ansøger trækker egen afventende anmodning tilbage | TilbagetraekningTests | JIT_E8_Annulleret_<bredde> (3) | ikke kørt |
 | F1 | Rediger basispris | RedigerBasisprisTests | Basispris_AdminSubscriptions_Gem, Basispris_Pricing_Efter (`<bredde>`) (4) | ikke kørt |
 | F2 | Rediger volumenrabat | RedigerVolumenrabatTests | Volumenrabat_AdminSubscriptions_Gem, Volumenrabat_Pricing_Efter (`<bredde>`) (4) | ikke kørt |
 | F3 | Tilkøb og duplikat | RedigerTilkoebTests | Tilkoeb_AdminSubscriptions_Gem, Tilkoeb_AdminSubscriptions_Duplikat, Tilkoeb_Pricing_Efter (`<bredde>`) (6) | ikke kørt |
@@ -563,7 +567,7 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 ~~- R3.6 Samtidige godkendelser af samme anmodning håndteres ikke (concurrency-token mangler, PR 2b).~~
 ~~- R3.7 Sweep rører kun Approved. Pending anmodninger udløber aldrig og forbliver i køen. (6a: policy og status leveret; 6b: sweep og godkendelse af udløbne)~~
 ~~- R3.8 Approve/Reject i JitElevationService tjekker ikke, at godkenderen er direkte medlem af rollen (kun køen filtrerer).~~
-- R3-backlog: Ansøger skal kunne trække egen anmodning tilbage (ny funktionalitet, uden for R3-scope).
+~~- R3-backlog: Ansøger skal kunne trække egen anmodning tilbage (ny funktionalitet, uden for R3-scope).~~
 
 ~~Filer til Upload: JitElevationService/IJitElevationService, JitElevationRequestForm, JitElevationApprovalQueue, RoleElevationExpirySweepService, AdminJitRequestsPage~~
 

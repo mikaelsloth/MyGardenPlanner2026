@@ -92,3 +92,7 @@ EventId | Fil | Metode |
 1144 | JitElevationService.cs | ElevationApproverNotRoleMember
 1145 | JitElevationService.cs | ElevationRequestExpired
 1146 | RoleElevationExpirySweepService.cs | JitPendingRequestsCancelled
+1147 | JitElevationService.cs | ElevationCancelledByRequester
+1148 | JitElevationService.cs | ElevationCancelNotOwner
+1149 | JitElevationRequestForm.razor.cs | JitElevationRequestCancelFailed
+1150 | JitElevationRequestForm.razor.cs | JitElevationRequestCancelUnexpectedFailure

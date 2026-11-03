@@ -62,6 +62,7 @@
                             <th scope="col">Årsag</th>
                             <th scope="col">Status</th>
                             <th scope="col">Oprettet</th>
+                            <th scope="col">Handling</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -73,6 +74,21 @@
                                 <td>@request.Reason</td>
                                 <td><span class="badge-role @StatusBadgeClass(request.Status)">@StatusLabel(request.Status)</span></td>
                                 <td>@request.CreatedAtUtc.ToLocalTime().ToString("g", DanishCulture)</td>
+                                <td class="btn-row">
+                                    @if (request.Status == RoleElevationStatus.Pending)
+                                    {
+                                        if (confirmingCancelId == request.Id)
+                                        {
+                                            <span>Træk anmodningen tilbage?</span>
+                                            <button type="button" class="btn btn-danger btn-sm" @onclick="() => CancelRequestAsync(request)">Ja, træk tilbage</button>
+                                            <button type="button" class="btn btn-secondary btn-sm" @onclick="AbortCancel">Behold</button>
+                                        }
+                                        else
+                                        {
+                                            <button type="button" class="btn btn-secondary btn-sm" @onclick="() => AskCancel(request.Id)">Træk tilbage</button>
+                                        }
+                                    }
+                                </td>
                             </tr>
                         }
                     </tbody>

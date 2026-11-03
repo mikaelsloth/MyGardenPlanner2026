@@ -21,6 +21,7 @@ public static class JitRequestsPage
     public const string PendingLabel = "Afventer";
     public const string ApprovedLabel = "Godkendt";
     public const string RejectedLabel = "Afvist";
+    public const string CancelledLabel = "Annulleret";
 
     private const string RequestHeadingText = "Anmod om midlertidig adgang";
     private const string QueueHeadingText = "Anmodninger til godkendelse";
@@ -109,6 +110,22 @@ public static class JitRequestsPage
         page.Locator(".jit-elevation-request-form tbody tr").Filter(new() { HasText = reason });
 
     public static ILocator StatusBadge(ILocator row) => row.Locator(".badge-role");
+
+    public static ILocator WithdrawButton(IPage page, string reason) =>
+    RequestRow(page, reason).GetByRole(AriaRole.Button, new() { Name = "Træk tilbage", Exact = true });
+
+    public static ILocator ConfirmWithdrawButton(IPage page, string reason) =>
+        RequestRow(page, reason).GetByRole(AriaRole.Button, new() { Name = "Ja, træk tilbage", Exact = true });
+
+    /// <summary>Trækker en afventende anmodning tilbage (bekræftelse i rækken) og venter på statusbeskeden.</summary>
+    public static async Task WithdrawAsync(IPage page, string reason, string role)
+    {
+        await WithdrawButton(page, reason).ClickAsync();
+        await ConfirmWithdrawButton(page, reason).ClickAsync();
+
+        await Assertions.Expect(StatusMessage(page))
+            .ToContainTextAsync($"Anmodning om '{role}' er trukket tilbage.");
+    }
 
     /// <summary>Udfylder formularen og klikker "Send anmodning" én gang. Venter ikke på resultatet.</summary>
     public static async Task SubmitRequestAsync(IPage page, string role, int minutes, string reason)

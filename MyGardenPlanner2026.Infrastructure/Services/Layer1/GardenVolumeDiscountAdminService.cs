@@ -46,6 +46,12 @@ public sealed partial class GardenVolumeDiscountAdminService(
 
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
+        if (await DuplicateMinGardensExistsAsync(context, upsert.MinGardens, upsert.Id, cancellationToken))
+        {
+            VolumeDiscountTierDuplicateMinGardens(logger, upsert.MinGardens);
+            throw new InvalidOperationException(DuplicateMessage(upsert.MinGardens));
+        }
+
         GardenVolumeDiscountTier? tier;
         var isNew = upsert.Id is null;
 
@@ -79,11 +85,15 @@ public sealed partial class GardenVolumeDiscountAdminService(
         {
             await context.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException ex)
         {
-            VolumeDiscountTierDuplicateMinGardens(logger, upsert.MinGardens);
-            throw new InvalidOperationException(
-                $"Der findes allerede en trappe der starter ved {upsert.MinGardens} haver.");
+            if (await DuplicateMinGardensExistsAsync(context, upsert.MinGardens, tier.Id, cancellationToken))
+            {
+                VolumeDiscountTierDuplicateMinGardens(logger, upsert.MinGardens);
+                throw new InvalidOperationException(DuplicateMessage(upsert.MinGardens), ex);
+            }
+
+            throw;
         }
 
         await RenumberDisplayOrderAsync(context, cancellationToken);
@@ -140,6 +150,14 @@ public sealed partial class GardenVolumeDiscountAdminService(
 
         await context.SaveChangesAsync(cancellationToken);
     }
+
+    private static Task<bool> DuplicateMinGardensExistsAsync(
+    PlannerDbContext context, int minGardens, Guid? excludeId, CancellationToken cancellationToken) =>
+    context.GardenVolumeDiscountTiers
+        .AnyAsync(t => t.MinGardens == minGardens && t.Id != (excludeId ?? Guid.Empty), cancellationToken);
+
+    private static string DuplicateMessage(int minGardens) =>
+        $"Der findes allerede en trappe der starter ved {minGardens} haver.";
 
     private static GardenVolumeDiscountTierDto ToDto(GardenVolumeDiscountTier tier) =>
         new(tier.Id, tier.MinGardens, tier.MaxGardens, tier.PriceMultiplier);

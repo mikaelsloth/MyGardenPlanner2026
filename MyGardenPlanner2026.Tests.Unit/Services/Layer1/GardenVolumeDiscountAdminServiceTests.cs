@@ -4,6 +4,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Core.Contracts.Layer1;
+using MyGardenPlanner2026.Core.Entities.Layer1;
 using MyGardenPlanner2026.Infrastructure.Data.Seed;
 using MyGardenPlanner2026.Infrastructure.Interceptors;
 using MyGardenPlanner2026.Infrastructure.Services;
@@ -155,5 +156,63 @@ public class GardenVolumeDiscountAdminServiceTests : CatalogTestDbContext
             .IgnoreQueryFilters()
             .CountAsync(t => t.IsDeleted, TestContext.Current.CancellationToken);
         deletedCount.Should().Be(7);
+    }
+
+    [Fact]
+    public async Task SaveAsync_UpdateToExistingMinGardens_ThrowsInvalidOperationException()
+    {
+        await SeedGardenVolumeDiscountsAsync();
+        var service = CreateService();
+
+        var existing = (await service.GetAllAsync(TestContext.Current.CancellationToken))
+            .Single(t => t.MinGardens == 1);
+
+        var act = async () => await service.SaveAsync(
+            new GardenVolumeDiscountTierUpsertDto(existing.Id, 2, 1, 0.90m),
+            TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*2 haver*");
+
+        var all = await service.GetAllAsync(TestContext.Current.CancellationToken);
+        all.Should().ContainSingle(t => t.Id == existing.Id && t.MinGardens == 1);
+    }
+
+    [Fact]
+    public async Task SaveAsync_NonDuplicateDbUpdateException_IsRethrownUnchanged()
+    {
+        await SeedGardenVolumeDiscountsAsync();
+        var service = new GardenVolumeDiscountAdminService(
+            CreateAdminDbContextFactoryWithInterceptors(new ThrowingSaveChangesInterceptor()),
+            new DefaultGardenVolumeDiscountCatalog(),
+            logger);
+
+        var act = async () => await service.SaveAsync(
+            new GardenVolumeDiscountTierUpsertDto(null, 501, null, 0.30m),
+            TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<DbUpdateException>();
+    }
+
+    [Fact]
+    public async Task SaveAsync_RaceOnMinGardens_ThrowsInvalidOperationException()
+    {
+        await SeedGardenVolumeDiscountsAsync();
+        var racer = new BeforeFirstSaveInterceptor(async () =>
+        {
+            using var other = CreateDbContext();
+            other.GardenVolumeDiscountTiers.Add(
+                new GardenVolumeDiscountTier { MinGardens = 501, MaxGardens = null, PriceMultiplier = 0.25m });
+            await other.SaveChangesAsync(TestContext.Current.CancellationToken);
+        });
+        var service = new GardenVolumeDiscountAdminService(
+            CreateAdminDbContextFactoryWithInterceptors(racer),
+            new DefaultGardenVolumeDiscountCatalog(),
+            logger);
+
+        var act = async () => await service.SaveAsync(
+            new GardenVolumeDiscountTierUpsertDto(null, 501, null, 0.30m),
+            TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*501 haver*");
     }
 }

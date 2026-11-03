@@ -47,10 +47,7 @@ public sealed partial class SubscriptionAddOnAdminService(
 
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
-        var duplicateTypeExists = await context.SubscriptionAddOns
-            .AnyAsync(a => a.Type == upsert.Type && a.Id != (upsert.Id ?? Guid.Empty), cancellationToken);
-
-        if (duplicateTypeExists)
+        if (await DuplicateTypeExistsAsync(context, upsert.Type, upsert.Id, cancellationToken))
         {
             AddOnDuplicateType(logger, upsert.Type);
             throw new InvalidOperationException($"Der findes allerede et tilkøb med typen '{upsert.Type}'.");
@@ -96,7 +93,20 @@ public sealed partial class SubscriptionAddOnAdminService(
             await context.SubscriptionAddOns.AddAsync(addOn, CancellationToken.None);
         }
 
-        await context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException ex)
+        {
+            if (await DuplicateTypeExistsAsync(context, upsert.Type, addOn.Id, cancellationToken))
+            {
+                AddOnDuplicateType(logger, upsert.Type);
+                throw new InvalidOperationException($"Der findes allerede et tilkøb med typen '{upsert.Type}'.", ex);
+            }
+
+            throw;
+        }
 
         AddOnSaved(logger, addOn.Id, addOn.Type, isNew ? "oprettet" : "opdateret");
 
@@ -134,6 +144,11 @@ public sealed partial class SubscriptionAddOnAdminService(
 
         AddOnsResetToDefault(logger);
     }
+
+    private static Task<bool> DuplicateTypeExistsAsync(
+    PlannerDbContext context, AddOnType type, Guid? excludeId, CancellationToken cancellationToken) =>
+    context.SubscriptionAddOns
+        .AnyAsync(a => a.Type == type && a.Id != (excludeId ?? Guid.Empty), cancellationToken);
 
     private static SubscriptionAddOnDto ToDto(SubscriptionAddOn addOn) =>
         new(addOn.Id, addOn.Type, addOn.Name, addOn.UnitDescription, addOn.AnnualPrice, addOn.MonthlyPrice, addOn.PerpetualPrice);

@@ -572,8 +572,8 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 ~~Filer til Upload: JitElevationService/IJitElevationService, JitElevationRequestForm, JitElevationApprovalQueue, RoleElevationExpirySweepService, AdminJitRequestsPage~~
 
 ### R4 – Abonnementsdata og admin-services (prioritet 4)
-- R4.1 `GardenVolumeDiscountTier` (og `SubscriptionAddOn.Type`): det unikke indeks på MinGardens har intet filter på IsDeleted. Et soft-slettet trin optager sit MinGardens, så et nyt trin med samme værdi afvises med "Der findes allerede en trappe der starter ved N haver", selvom ingen synlig række har den. Ikke testet; J2 bruger en tilfældig MinGardens.
-- R4.2 `GardenVolumeDiscountAdminService.SaveAsync`: DbUpdateException fanges som duplikat-fejl uanset årsag.
+~~- R4.1 `GardenVolumeDiscountTier` (og `SubscriptionAddOn.Type`): det unikke indeks på MinGardens har intet filter på IsDeleted. Et soft-slettet trin optager sit MinGardens, så et nyt trin med samme værdi afvises med "Der findes allerede en trappe der starter ved N haver", selvom ingen synlig række har den. Ikke testet; J2 bruger en tilfældig MinGardens.~~
+~~- R4.2 `GardenVolumeDiscountAdminService.SaveAsync`: DbUpdateException fanges som duplikat-fejl uanset årsag.~~
 - R4.3 Rabatopslaget bruger kun MinGardens; MaxGardens bruges ikke.
 
 Filer til Upload: GardenVolumeDiscountTier og SubscriptionAddOn med EF-konfiguration, GardenVolumeDiscountAdminService, migrationer

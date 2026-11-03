@@ -42,7 +42,9 @@ public partial class PlannerDbContext
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.Name).IsRequired().HasMaxLength(150);
             entity.Property(e => e.UnitDescription).IsRequired().HasMaxLength(200);
-            entity.HasIndex(e => e.Type).IsUnique();
+            entity.HasIndex(e => e.Type)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
         });
 
     private static void GardenVolumeDiscountTierConfig(ModelBuilder modelBuilder, bool useTemporalTables) => modelBuilder.Entity<GardenVolumeDiscountTier>(entity =>
@@ -60,7 +62,9 @@ public partial class PlannerDbContext
             });
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Id).ValueGeneratedNever();
-            entity.HasIndex(e => e.MinGardens).IsUnique();
+            entity.HasIndex(e => e.MinGardens)
+                .IsUnique()
+                .HasFilter("[IsDeleted] = 0");
         });
 
     private static void SubscriptionTierConfig(ModelBuilder modelBuilder, bool useTemporalTables) => modelBuilder.Entity<SubscriptionTier>(entity =>

@@ -26,6 +26,21 @@ public sealed partial class GardenVolumeDiscountAdminService(
     [LoggerMessage(EventId = 1059, Level = LogLevel.Information, Message = "Volumenrabat-trapper nulstillet til standardkatalog.")]
     static partial void VolumeDiscountsResetToDefault(ILogger logger);
 
+    [LoggerMessage(EventId = 1151, Level = LogLevel.Information, Message = "Volumenrabat-trappe afvist: max ({MaxGardens}) er mindre end min ({MinGardens}).")]
+    static partial void VolumeDiscountTierMaxBelowMin(ILogger logger, int MinGardens, int MaxGardens);
+
+    [LoggerMessage(EventId = 1152, Level = LogLevel.Information, Message = "Volumenrabat-trappe fra {MinGardens} haver afvist: overlapper med trappen der starter ved {OtherMinGardens}.")]
+    static partial void VolumeDiscountTierOverlap(ILogger logger, int MinGardens, int OtherMinGardens);
+
+    [LoggerMessage(EventId = 1153, Level = LogLevel.Information, Message = "Volumenrabat-trappe fra {MinGardens} haver afvist: åben øvre grænse er kun tilladt på øverste trin.")]
+    static partial void VolumeDiscountTierOpenNotTop(ILogger logger, int MinGardens);
+
+    [LoggerMessage(EventId = 1154, Level = LogLevel.Information, Message = "Volumenrabat-trappen fra {PreviousMinGardens} haver er lukket automatisk ved {NewMaxGardens} haver.")]
+    static partial void VolumeDiscountPreviousTopClosed(ILogger logger, int PreviousMinGardens, int NewMaxGardens);
+
+    [LoggerMessage(EventId = 1155, Level = LogLevel.Information, Message = "Volumenrabat-trappen fra {MinGardens} haver er genåbnet (ingen øvre grænse) efter sletning af øverste trin.")]
+    static partial void VolumeDiscountNewTopReopened(ILogger logger, int MinGardens);
+
     public async Task<IReadOnlyList<GardenVolumeDiscountTierDto>> GetAllAsync(
         CancellationToken cancellationToken = default)
     {
@@ -51,6 +66,8 @@ public sealed partial class GardenVolumeDiscountAdminService(
             VolumeDiscountTierDuplicateMinGardens(logger, upsert.MinGardens);
             throw new InvalidOperationException(DuplicateMessage(upsert.MinGardens));
         }
+
+        var closedPreviousTop = await ValidateRangeAndClosePreviousTopAsync(context, upsert, cancellationToken);
 
         GardenVolumeDiscountTier? tier;
         var isNew = upsert.Id is null;
@@ -96,6 +113,11 @@ public sealed partial class GardenVolumeDiscountAdminService(
             throw;
         }
 
+        if (closedPreviousTop is not null)
+        {
+            VolumeDiscountPreviousTopClosed(logger, closedPreviousTop.MinGardens, closedPreviousTop.MaxGardens!.Value);
+        }
+
         await RenumberDisplayOrderAsync(context, cancellationToken);
 
         VolumeDiscountTierSaved(logger, tier.Id, isNew ? "oprettet" : "opdateret", tier.MinGardens);
@@ -116,12 +138,32 @@ public sealed partial class GardenVolumeDiscountAdminService(
             throw new InvalidOperationException($"Ingen volumenrabat-trappe fundet med Id {id}.");
         }
 
+        var wasOpenTop = tier.MaxGardens is null
+            && !await context.GardenVolumeDiscountTiers
+                .AnyAsync(t => t.MinGardens > tier.MinGardens, cancellationToken);
+
+        GardenVolumeDiscountTier? reopened = null;
+        if (wasOpenTop)
+        {
+            reopened = await context.GardenVolumeDiscountTiers
+                .Where(t => t.Id != id)
+                .OrderByDescending(t => t.MinGardens)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            reopened?.MaxGardens = null;
+        }
+
         context.GardenVolumeDiscountTiers.Remove(tier);
         await context.SaveChangesAsync(cancellationToken);
 
         await RenumberDisplayOrderAsync(context, cancellationToken);
 
         VolumeDiscountTierDeleted(logger, id);
+
+        if (reopened is not null)
+        {
+            VolumeDiscountNewTopReopened(logger, reopened.MinGardens);
+        }
     }
 
     public async Task ResetToDefaultAsync(CancellationToken cancellationToken = default)
@@ -136,6 +178,68 @@ public sealed partial class GardenVolumeDiscountAdminService(
 
         VolumeDiscountsResetToDefault(logger);
     }
+
+    /// <summary>
+    /// Validerer min/max-intervallet mod øvrige aktive trin. Er det nye trin åbent (Max = null),
+    /// og er det forrige øverste trin også åbent, lukkes det (Max = nyMin - 1) i samme SaveChanges.
+    /// Returnerer det lukkede trin, ellers null.
+    /// </summary>
+    private async Task<GardenVolumeDiscountTier?> ValidateRangeAndClosePreviousTopAsync(
+        PlannerDbContext context, GardenVolumeDiscountTierUpsertDto upsert, CancellationToken cancellationToken)
+    {
+        if (upsert.MaxGardens is int max && max < upsert.MinGardens)
+        {
+            VolumeDiscountTierMaxBelowMin(logger, upsert.MinGardens, max);
+            throw new InvalidOperationException(
+                $"Max. haver ({max}) må ikke være mindre end min. haver ({upsert.MinGardens}).");
+        }
+
+        var others = await context.GardenVolumeDiscountTiers
+            .Where(t => t.Id != (upsert.Id ?? Guid.Empty))
+            .OrderBy(t => t.MinGardens)
+            .ToListAsync(cancellationToken);
+
+        GardenVolumeDiscountTier? previousTopToClose = null;
+
+        if (upsert.MaxGardens is null)
+        {
+            if (others.Any(o => o.MinGardens > upsert.MinGardens))
+            {
+                VolumeDiscountTierOpenNotTop(logger, upsert.MinGardens);
+                throw new InvalidOperationException(
+                    "Kun trinnet med højeste min. haver kan have åben øvre grænse (tom max.).");
+            }
+
+            var previousTop = others.LastOrDefault();
+            if (previousTop is { MaxGardens: null })
+            {
+                previousTopToClose = previousTop;
+            }
+        }
+
+        var newMax = upsert.MaxGardens ?? int.MaxValue;
+
+        foreach (var other in others)
+        {
+            var otherMax = ReferenceEquals(other, previousTopToClose)
+                ? upsert.MinGardens - 1
+                : other.MaxGardens ?? int.MaxValue;
+
+            if (upsert.MinGardens <= otherMax && other.MinGardens <= newMax)
+            {
+                VolumeDiscountTierOverlap(logger, upsert.MinGardens, other.MinGardens);
+                throw new InvalidOperationException(
+                    $"Trinnet {FormatRange(upsert.MinGardens, upsert.MaxGardens)} overlapper med eksisterende trin {FormatRange(other.MinGardens, other.MaxGardens)}.");
+            }
+        }
+
+        previousTopToClose?.MaxGardens = upsert.MinGardens - 1;
+
+        return previousTopToClose;
+    }
+
+    private static string FormatRange(int min, int? max) =>
+        max is null ? $"{min}+" : $"{min}-{max}";
 
     private static async Task RenumberDisplayOrderAsync(PlannerDbContext context, CancellationToken cancellationToken)
     {

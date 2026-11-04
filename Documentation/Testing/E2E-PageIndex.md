@@ -420,6 +420,8 @@ Adgang pr. persona (`AdminAccessMatrix`): Admin: Abonnementer, JIT-adgang. DataA
 Faner (role=tab): "Basispriser", "Volumen-rabatter", "Tilkøbsmoduler". Succesbesked .status-success (role=status). Fejl .status-danger.
 Basispriser: .base-price-matrix-editor, 12 rækker i tbody; inputs med labels "Årlig pris for <navn>", "Månedlig pris for <navn>", "Perpetual-pris for <navn>" (<navn> = "<lag> · <kategori>"); "Gem" pr. række (step-up).
 Volumen-rabatter: .volume-discount-editor, 7 rækker i tbody; inputs med id min-/max-/mult-<id> (labels er ens på alle rækker); "Gem" og "Slet" pr. række; "Tilføj trappe" (#add-tier); "Nulstil til standardkatalog" (+ "Ja, nulstil"). Succesbesked: "Volumenrabat-trappe fra <n> haver er opdateret."
+  Validering (GardenVolumeDiscountAdminService): Max ≥ Min, ingen overlap med andre aktive trin, åben øvre grænse (tom Max) kun på trinnet med højeste Min. Et nyt åbent øverste trin lukker det forrige åbne trin automatisk (Max = nyMin - 1). Huller mellem trin er tilladt. Fejl vises i .status-danger uden "Error:"-præfiks: "Max. haver (N) må ikke være mindre end min. haver (M).", "Kun trinnet med højeste min. haver kan have åben øvre grænse (tom max.).", "Trinnet A-B overlapper med eksisterende trin C-D."
+  Sletning af et åbent øverste trin (tom Max) genåbner det nye øverste trin (Max = tom). Sletning af et lukket øverste trin ændrer ikke de øvrige.
 Tilkøbsmoduler: .add-on-editor, 5 rækker i tbody (første kolonne = AddOnType); inputs med id name-/unit-/annual-/monthly-/perpetual-<id> (labels er ens); "Gem" og "Slet" pr. række; "Tilføj tilkøb" (#new-type, #new-name, …); "Nulstil til standardkatalog". Succesbesked "Tilkøb '<navn>' er opdateret."; duplikat-fejl "Der findes allerede et tilkøb med typen '<type>'." (.status-danger, uden "Error:").
 ```
 ```
@@ -574,9 +576,9 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 ### R4 – Abonnementsdata og admin-services (prioritet 4)
 ~~- R4.1 `GardenVolumeDiscountTier` (og `SubscriptionAddOn.Type`): det unikke indeks på MinGardens har intet filter på IsDeleted. Et soft-slettet trin optager sit MinGardens, så et nyt trin med samme værdi afvises med "Der findes allerede en trappe der starter ved N haver", selvom ingen synlig række har den. Ikke testet; J2 bruger en tilfældig MinGardens.~~
 ~~- R4.2 `GardenVolumeDiscountAdminService.SaveAsync`: DbUpdateException fanges som duplikat-fejl uanset årsag.~~
-- R4.3 Rabatopslaget bruger kun MinGardens; MaxGardens bruges ikke.
+~~- R4.3 Rabatopslaget bruger kun MinGardens; MaxGardens bruges ikke.~~
 
-Filer til Upload: GardenVolumeDiscountTier og SubscriptionAddOn med EF-konfiguration, GardenVolumeDiscountAdminService, migrationer
+~~Filer til Upload: GardenVolumeDiscountTier og SubscriptionAddOn med EF-konfiguration, GardenVolumeDiscountAdminService, migrationer~~
 
 ### R5 – AuditLog: korrekthed og volumen (prioritet 5)
 - R5.1 Datoer i filteret tolkes som UTC, men tabellen viser lokal tid (ToLocalTime), så rækker kort efter lokal midnat kan stå på en anden dag end filteret.

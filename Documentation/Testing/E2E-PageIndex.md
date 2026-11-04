@@ -477,6 +477,7 @@ Detaljemodal (AuditLogDetailModal):
   Rækker fra Blazor-handlinger har handlende bruger via CircuitUserCircuitHandler (AsyncLocal CircuitUserContext) og HttpContextCurrentUserAccessor. IP-adressen er klientens IP fra circuit-forbindelsen (R1.5).
   Tidspunkter (resultattabel, detaljemodal, jobliste) vises i UTC med suffikset " UTC" via AuditLogTimeFormatter (format "g", da-DK). Filterdatoer tolkes også som UTC.
 Filter: AuditLogFilterBar synkroniserer kun fra InitialFilter ved første OnParametersSet. AdminAuditLogPage renderer derfor først filterbaren, når præferencen er indlæst (filterReady). Datoer tolkes som UTC.
+  Datofelterne hedder "Fra (UTC)" og "Til (UTC)" (id #audit-filter-from / #audit-filter-to).
 Eksportpanel (AuditLogExportPanel):
   Panel: .audit-log-export-panel. Format: #export-format (værdier Csv/Json/Xlsx). Knapper: "Eksportér" og "Send til baggrundseksport" (begge bag step-up og rate limit).
   Eksportér åbner /admin/audit-log/export?format=…&token=…&entityName=…&userEmail=… via window.open(url, "_blank"). Filnavn audit-log-export-<yyyyMMdd-HHmmss>.<csv|json|xlsx>. Ugyldigt token: 403 med problem details "Eksport-token er ugyldig eller udløbet: …".

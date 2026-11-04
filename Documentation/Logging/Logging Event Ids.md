@@ -96,3 +96,8 @@ EventId | Fil | Metode |
 1148 | JitElevationService.cs | ElevationCancelNotOwner
 1149 | JitElevationRequestForm.razor.cs | JitElevationRequestCancelFailed
 1150 | JitElevationRequestForm.razor.cs | JitElevationRequestCancelUnexpectedFailure
+1151 | GardenVolumeDiscountAdminService.cs | VolumeDiscountTierMaxBelowMin
+1152 | GardenVolumeDiscountAdminService.cs | VolumeDiscountTierOverlap
+1153 | GardenVolumeDiscountAdminService.cs | VolumeDiscountTierOpenNotTop
+1154 | GardenVolumeDiscountAdminService.cs | VolumeDiscountPreviousTopClosed
+1155 | GardenVolumeDiscountAdminService.cs | VolumeDiscountNewTopReopened

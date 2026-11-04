@@ -4,6 +4,8 @@ using Bunit;
 using FluentAssertions;
 using MyGardenPlanner2026.Components.Domain.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
+using MyGardenPlanner2026.Core.Entities.Common;
+using System.Globalization;
 using Xunit;
 
 public class AuditLogDetailModalTests : BunitContext
@@ -106,5 +108,21 @@ public class AuditLogDetailModalTests : BunitContext
 
         cut.Find(".audit-log-detail-dialog").HasAttribute("blazor:onclick:stoppropagation").Should().BeTrue();
         closed.Should().BeFalse();
+    }
+
+    [Fact]
+    public void MetaLine_ShowsTimestampInUtcWithSuffix()
+    {
+        var entry = new AuditLogEntryDto(
+            1, "user-1", "user1@example.com", "127.0.0.1", AuditAction.Update,
+            "SubscriptionTier", "abc-123", null, null,
+            new DateTimeOffset(2026, 10, 16, 1, 30, 0, TimeSpan.FromHours(2)));
+
+        var cut = Render<AuditLogDetailModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.Entry, entry));
+
+        var expected = $"{new DateTime(2026, 10, 15, 23, 30, 0).ToString("g", new CultureInfo("da-DK"))} UTC";
+        cut.Find("p.meta").TextContent.Should().Contain(expected);
     }
 }

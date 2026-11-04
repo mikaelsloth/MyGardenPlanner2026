@@ -3,12 +3,9 @@ namespace MyGardenPlanner2026.Components.Domain.Admin;
 using Microsoft.AspNetCore.Components;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
-using System.Globalization;
 
 public partial class AuditLogResultsTable
 {
-    private static readonly CultureInfo DanishCulture = new("da-DK");
-
     [Parameter]
     public AuditLogQueryResultDto? Result { get; set; }
 

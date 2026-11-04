@@ -35,7 +35,7 @@
                     @foreach (var job in jobs)
                     {
                         <tr @key="job.Id">
-                            <td>@job.CreatedAtUtc.ToLocalTime().ToString("g", DanishCulture)</td>
+                            <td>@AuditLogTimeFormatter.Format(job.CreatedAtUtc)</td>
                             <td>@job.Format</td>
                             <td><span class="badge-role @StatusBadgeClass(job)">@StatusLabel(job)</span></td>
                             <td class="numeric">@(job.RowCount?.ToString(CultureInfo.InvariantCulture) ?? "–")</td>

@@ -81,7 +81,7 @@ public sealed class AuditLogDetailTests(PlaywrightAppFixture fixture)
 
         var meta = AuditLogPage.DetailDialog(page).Locator("p.meta");
         await Assertions.Expect(meta).ToContainTextAsync(
-            seed.TimestampOf(RowKind.Update).ToLocalTime().ToString("g", DanishCulture));
+            seed.TimestampOf(RowKind.Update).UtcDateTime.ToString("g", DanishCulture) + " UTC");
         await Assertions.Expect(meta).ToContainTextAsync(seed.Email);
         await Assertions.Expect(meta).ToContainTextAsync($"({seed.UserId})");
         await Assertions.Expect(meta).ToContainTextAsync(seed.Ip);

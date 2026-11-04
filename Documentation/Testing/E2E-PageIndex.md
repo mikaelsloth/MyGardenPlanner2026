@@ -470,11 +470,12 @@ Tests: ManualSmoke/TjeklisteE/.
 /admin/audit-log
 Detaljemodal (AuditLogDetailModal):
   Åbnes med knappen "Detaljer" på en række. Backdrop: .confirm-dialog-backdrop (klik lukker; dialogen stopper bobling). Dialog: .audit-log-detail-dialog, role=dialog, aria-labelledby → h2 "Detaljer — <entitet> (<id>)".
-  Metalinje: p.meta "<tidspunkt g da-DK, lokal tid> · <e-mail> (<bruger-id>) · <ip>".
+  Metalinje: p.meta "<tidspunkt g da-DK i UTC> UTC · <e-mail> (<bruger-id>) · <ip>".
   To kolonner (.audit-log-detail-column) med h3 "Tidligere værdier" / "Nye værdier" og pre.audit-log-detail-json. Side om side fra 940 px, under hinanden under (max-width 939.98px). Dialogen scroller (max-height + overflow-y: auto; JSON-blokke max 200 px under 940 px).
   Visning: gyldig JSON indrykket (2 mellemrum); null, tom eller whitespace → "(ingen data)"; ugyldig JSON → rå tekst. Knap "Luk" lukker.
   Tests: ManualSmoke/TjeklisteJ/AuditLogDetailTests.
-Rækker fra Blazor-handlinger har handlende bruger via CircuitUserCircuitHandler (AsyncLocal CircuitUserContext) og HttpContextCurrentUserAccessor. IP-adressen er klientens IP fra circuit-forbindelsen (R1.5).
+  Rækker fra Blazor-handlinger har handlende bruger via CircuitUserCircuitHandler (AsyncLocal CircuitUserContext) og HttpContextCurrentUserAccessor. IP-adressen er klientens IP fra circuit-forbindelsen (R1.5).
+  Tidspunkter (resultattabel, detaljemodal, jobliste) vises i UTC med suffikset " UTC" via AuditLogTimeFormatter (format "g", da-DK). Filterdatoer tolkes også som UTC.
 Filter: AuditLogFilterBar synkroniserer kun fra InitialFilter ved første OnParametersSet. AdminAuditLogPage renderer derfor først filterbaren, når præferencen er indlæst (filterReady). Datoer tolkes som UTC.
 Eksportpanel (AuditLogExportPanel):
   Panel: .audit-log-export-panel. Format: #export-format (værdier Csv/Json/Xlsx). Knapper: "Eksportér" og "Send til baggrundseksport" (begge bag step-up og rate limit).
@@ -581,7 +582,7 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 ~~Filer til Upload: GardenVolumeDiscountTier og SubscriptionAddOn med EF-konfiguration, GardenVolumeDiscountAdminService, migrationer~~
 
 ### R5 – AuditLog: korrekthed og volumen (prioritet 5)
-- R5.1 Datoer i filteret tolkes som UTC, men tabellen viser lokal tid (ToLocalTime), så rækker kort efter lokal midnat kan stå på en anden dag end filteret.
+~~- R5.1 Datoer i filteret tolkes som UTC, men tabellen viser lokal tid (ToLocalTime), så rækker kort efter lokal midnat kan stå på en anden dag end filteret.~~
 ~~- R5.2 Baggrundseksport: oprettelsen accepterer filtre over 250.000 rækker. Brugeren får først besked om afvisningen, når jobbet er behandlet (status Fejlet). Overvej at afvise ved oprettelse.~~
 - R5.3 `AuditLogExportService.ExportAsync` henter alle rækker i hukommelsen (SearchAsync med PageSize = totalCount). Ved 250.000 rækker som Excel (ClosedXML) kan det belaste appen kraftigt; ikke testet.
 

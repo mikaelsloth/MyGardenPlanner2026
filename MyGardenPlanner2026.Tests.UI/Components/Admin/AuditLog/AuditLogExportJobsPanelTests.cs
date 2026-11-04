@@ -7,6 +7,7 @@ using MyGardenPlanner2026.Components.Domain.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using NSubstitute;
+using System.Globalization;
 using Xunit;
 
 public class AuditLogExportJobsPanelTests : BunitContext
@@ -150,5 +151,21 @@ public class AuditLogExportJobsPanelTests : BunitContext
 
         cut.Markup.Should().Contain("Ingen baggrundseksporter");
         await jobService.DidNotReceive().GetJobsForUserAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public void CreatedAt_IsShownInUtcWithSuffix()
+    {
+        var job = new AuditLogExportJobDto(
+            Guid.NewGuid(), "user-1", AuditLogExportFormat.Csv, AuditLogExportJobStatus.Pending,
+            new DateTimeOffset(2026, 10, 16, 1, 30, 0, TimeSpan.FromHours(2)),
+            null, null, null, null, null, null, null);
+        jobService.GetJobsForUserAsync("user-1", Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<AuditLogExportJobDto>>([job]));
+
+        var cut = RenderPanel();
+
+        var expected = $"{new DateTime(2026, 10, 15, 23, 30, 0).ToString("g", new CultureInfo("da-DK"))} UTC";
+        cut.FindAll("tbody tr td")[0].TextContent.Trim().Should().Be(expected);
     }
 }

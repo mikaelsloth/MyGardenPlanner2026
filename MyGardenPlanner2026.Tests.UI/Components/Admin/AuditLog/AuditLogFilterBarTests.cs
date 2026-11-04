@@ -173,4 +173,15 @@ public class AuditLogFilterBarTests : BunitContext
 
         emitted!.ToUtc.Should().Be(endOfDay);
     }
+
+    [Fact]
+    public void DateFilterLabels_StateThatDatesAreUtc()
+    {
+        var cut = Render<AuditLogFilterBar>(p => p
+            .Add(x => x.InitialFilter, AuditLogTestData.EmptyFilter())
+            .Add(x => x.EntityNameOptions, []));
+
+        cut.Find("label[for='audit-filter-from']").TextContent.Should().Be("Fra (UTC)");
+        cut.Find("label[for='audit-filter-to']").TextContent.Should().Be("Til (UTC)");
+    }
 }

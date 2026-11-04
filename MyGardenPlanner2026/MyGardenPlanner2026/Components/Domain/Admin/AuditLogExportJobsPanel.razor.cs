@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Components.Authorization;
 using MyGardenPlanner2026.Components.Account.Shared;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
-using System.Globalization;
 
 /// <summary>
 /// Viser den aktuelle brugers egne AuditLog-baggrundseksportjobs (oprettes via
@@ -16,8 +15,6 @@ using System.Globalization;
 /// </summary>
 public partial class AuditLogExportJobsPanel
 {
-    private static readonly CultureInfo DanishCulture = new("da-DK");
-
     [Inject]
     private IAuditLogExportJobService JobService { get; set; } = default!;
 

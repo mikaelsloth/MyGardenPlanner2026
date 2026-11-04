@@ -2,7 +2,6 @@ namespace MyGardenPlanner2026.Components.Domain.Admin;
 
 using Microsoft.AspNetCore.Components;
 using MyGardenPlanner2026.Core.Contracts.Admin;
-using System.Globalization;
 using System.Text.Json;
 
 /// <summary>
@@ -13,7 +12,6 @@ using System.Text.Json;
 /// </summary>
 public partial class AuditLogDetailModal
 {
-    private static readonly CultureInfo DanishCulture = new("da-DK");
     private static readonly JsonSerializerOptions PrettyPrintOptions = new() { WriteIndented = true };
 
     [Parameter]

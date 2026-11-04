@@ -5,6 +5,7 @@ using FluentAssertions;
 using MyGardenPlanner2026.Components.Domain.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
+using System.Globalization;
 using Xunit;
 
 public class AuditLogResultsTableTests : BunitContext
@@ -118,5 +119,20 @@ public class AuditLogResultsTableTests : BunitContext
         cut.FindAll(".audit-log-pagination button")[0].Click();
 
         receivedPage.Should().Be(1);
+    }
+
+    [Fact]
+    public void Timestamp_IsShownInUtcWithSuffix()
+    {
+        var entry = new AuditLogEntryDto(
+            1, "user-1", "user1@example.com", "127.0.0.1", AuditAction.Update,
+            "SubscriptionTier", "abc", null, null,
+            new DateTimeOffset(2026, 10, 16, 1, 30, 0, TimeSpan.FromHours(2)));
+        var result = new AuditLogQueryResultDto([entry], 1, 1, 25);
+
+        var cut = Render<AuditLogResultsTable>(p => p.Add(x => x.Result, result));
+
+        var expected = $"{new DateTime(2026, 10, 15, 23, 30, 0).ToString("g", new CultureInfo("da-DK"))} UTC";
+        cut.FindAll("tbody tr td")[0].TextContent.Trim().Should().Be(expected);
     }
 }

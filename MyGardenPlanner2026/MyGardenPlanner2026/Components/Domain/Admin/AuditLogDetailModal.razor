@@ -13,7 +13,7 @@
 
             <div class="confirm-dialog-body stack-sm">
                 <p class="meta">
-                    @Entry.TimestampUtc.ToLocalTime().ToString("g", DanishCulture) ·
+                    @AuditLogTimeFormatter.Format(Entry.TimestampUtc) ·
                     @Entry.UserEmail (@Entry.UserId) · @Entry.IpAddress
                 </p>
 

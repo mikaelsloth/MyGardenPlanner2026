@@ -272,6 +272,10 @@ public sealed class AuditLogExportJobProcessorTests : TestDbContext
 
         public Task<IReadOnlyList<string>> GetDistinctEntityNamesAsync(CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
+
+        public Task<IReadOnlyList<AuditLogEntryDto>> GetBatchAsync(
+            AuditLogFilterDto filter, AuditLogCursor? after, int batchSize, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
     }
 
     private sealed class FakeExportService(Func<Stream, CancellationToken, Task>? behavior = null) : IAuditLogExportService

@@ -25,13 +25,84 @@ public sealed class AuditLogExportServiceTests
         "SubscriptionTier", "abc", oldValues ?? "{\"Name\":\"Old\"}", "{\"Name\":\"New\"}",
         new DateTimeOffset(2026, 1, 1, 12, 0, 0, TimeSpan.Zero));
 
-    private void SetupQueryResults(IReadOnlyList<AuditLogEntryDto> items)
+    private void SetupQueryResults(AuditLogEntryDto[] items)
     {
         queryService.CountAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(items.Count));
+            .Returns(Task.FromResult(items.Length));
 
-        queryService.SearchAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(new AuditLogQueryResultDto(items, items.Count, 1, Math.Max(items.Count, 1))));
+        var ids = items.Select(i => i.Id).ToList();
+
+        // Simulerer keyset: listen er allerede i visningsrækkefølge; cursoren peger på sidste leverede række.
+        queryService.GetBatchAsync(
+                Arg.Any<AuditLogFilterDto>(), Arg.Any<AuditLogCursor?>(), Arg.Any<int>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var cursor = call.ArgAt<AuditLogCursor?>(1);
+                var size = call.ArgAt<int>(2);
+                var skip = cursor is null ? 0 : ids.IndexOf(cursor.Id) + 1;
+
+                return Task.FromResult<IReadOnlyList<AuditLogEntryDto>>([.. items.Skip(skip).Take(size)]);
+            });
+    }
+
+    private static AuditLogEntryDto[] NewestFirstEntries(int total) =>
+    [.. Enumerable.Range(1, total).Select(i => Entry(total - i + 1))];
+
+    [Fact]
+    public async Task ExportAsync_CsvFormat_MoreRowsThanBatchSize_FetchesInBatchesAndExportsEveryRowOnceInOrder()
+    {
+        var total = (AuditLogExportService.BatchSize * 2) + 1;
+        SetupQueryResults(NewestFirstEntries(total));
+        using var stream = new MemoryStream();
+
+        await sut.ExportAsync(EmptyFilter, AuditLogExportFormat.Csv, stream, TestContext.Current.CancellationToken);
+
+        stream.Position = 0;
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        var content = await reader.ReadToEndAsync(TestContext.Current.CancellationToken);
+
+        var ids = content.Split('\n')
+            .Where(l => !string.IsNullOrWhiteSpace(l))
+            .Skip(1)
+            .Select(l => long.Parse(l.Split(',')[0], System.Globalization.CultureInfo.InvariantCulture))
+            .ToList();
+
+        ids.Should().Equal(Enumerable.Range(1, total).Select(i => (long)(total - i + 1)));
+        await queryService.Received(3).GetBatchAsync(
+            Arg.Any<AuditLogFilterDto>(), Arg.Any<AuditLogCursor?>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ExportAsync_JsonFormat_MoreRowsThanBatchSize_ExportsEveryRowOnceInOrder()
+    {
+        var total = AuditLogExportService.BatchSize + 1;
+        SetupQueryResults(NewestFirstEntries(total));
+        using var stream = new MemoryStream();
+
+        await sut.ExportAsync(EmptyFilter, AuditLogExportFormat.Json, stream, TestContext.Current.CancellationToken);
+
+        stream.Position = 0;
+        using var doc = await JsonDocument.ParseAsync(stream, default, TestContext.Current.CancellationToken);
+
+        var ids = doc.RootElement.EnumerateArray().Select(e => e.GetProperty("Id").GetInt64()).ToList();
+
+        ids.Should().Equal(Enumerable.Range(1, total).Select(i => (long)(total - i + 1)));
+        await queryService.Received(2).GetBatchAsync(
+            Arg.Any<AuditLogFilterDto>(), Arg.Any<AuditLogCursor?>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ExportAsync_JsonFormat_ZeroMatchingRows_ProducesEmptyArray()
+    {
+        SetupQueryResults([]);
+        using var stream = new MemoryStream();
+
+        await sut.ExportAsync(EmptyFilter, AuditLogExportFormat.Json, stream, TestContext.Current.CancellationToken);
+
+        stream.Position = 0;
+        using var doc = await JsonDocument.ParseAsync(stream, default, TestContext.Current.CancellationToken);
+
+        doc.RootElement.GetArrayLength().Should().Be(0);
     }
 
     [Fact]
@@ -121,7 +192,7 @@ public sealed class AuditLogExportServiceTests
     }
 
     [Fact]
-    public async Task ExportAsync_CountExceedsHardLimit_ThrowsInvalidOperationException_WithoutCallingSearchAsync()
+    public async Task ExportAsync_CountExceedsHardLimit_ThrowsInvalidOperationException_WithoutReadingRows()
     {
         queryService.CountAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(IAuditLogExportService.HardRowLimit + 1));
@@ -130,7 +201,8 @@ public sealed class AuditLogExportServiceTests
         var act = async () => await sut.ExportAsync(EmptyFilter, AuditLogExportFormat.Csv, stream);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
-        await queryService.DidNotReceive().SearchAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>());
+        await queryService.DidNotReceive().GetBatchAsync(
+            Arg.Any<AuditLogFilterDto>(), Arg.Any<AuditLogCursor?>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

@@ -64,6 +64,20 @@ public sealed class AuditLogQueryService(
             .ToListAsync(cancellationToken);
     }
 
+    public async Task<IReadOnlyList<AuditLogEntryDto>> GetBatchAsync(
+    AuditLogFilterDto filter, AuditLogCursor? after, int batchSize,
+    CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(filter);
+        ArgumentOutOfRangeException.ThrowIfLessThan(batchSize, 1);
+
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        return context.Database.IsSqlServer()
+            ? await GetBatchOnSqlServerAsync(context, filter, after, batchSize, cancellationToken)
+            : await GetBatchInMemoryAsync(context, filter, after, batchSize, cancellationToken);
+    }
+
     private static async Task<AuditLogQueryResultDto> SearchOnSqlServerAsync(
         PlannerDbContext context, AuditLogFilterDto filter, CancellationToken cancellationToken)
     {
@@ -102,6 +116,55 @@ public sealed class AuditLogQueryService(
             .ToList();
 
         return new AuditLogQueryResultDto(items, totalCount, filter.PageNumber, filter.PageSize);
+    }
+
+    private static async Task<IReadOnlyList<AuditLogEntryDto>> GetBatchOnSqlServerAsync(
+    PlannerDbContext context, AuditLogFilterDto filter, AuditLogCursor? after, int batchSize,
+    CancellationToken cancellationToken)
+    {
+        var query = ApplyFilter(context.AuditLogs.AsNoTracking(), filter);
+
+        if (after is not null)
+        {
+            var cursorTime = after.TimestampUtc;
+            var cursorId = after.Id;
+
+            query = filter.SortDescending
+                ? query.Where(a => a.TimestampUtc < cursorTime || (a.TimestampUtc == cursorTime && a.Id < cursorId))
+                : query.Where(a => a.TimestampUtc > cursorTime || (a.TimestampUtc == cursorTime && a.Id > cursorId));
+        }
+
+        var ordered = filter.SortDescending
+            ? query.OrderByDescending(a => a.TimestampUtc).ThenByDescending(a => a.Id)
+            : query.OrderBy(a => a.TimestampUtc).ThenBy(a => a.Id);
+
+        return await ordered
+            .Take(batchSize)
+            .Select(a => ToDto(a))
+            .ToListAsync(cancellationToken);
+    }
+
+    /// <summary>SQLite (test): materialiserer alt og keyset-filtrerer i hukommelsen (DateTimeOffset kan ikke sammenlignes i SQLite).</summary>
+    private static async Task<IReadOnlyList<AuditLogEntryDto>> GetBatchInMemoryAsync(
+        PlannerDbContext context, AuditLogFilterDto filter, AuditLogCursor? after, int batchSize,
+        CancellationToken cancellationToken)
+    {
+        var all = await context.AuditLogs.ToListAsync(cancellationToken);
+
+        var query = ApplyFilter(all, filter);
+
+        if (after is not null)
+        {
+            query = filter.SortDescending
+                ? query.Where(a => a.TimestampUtc < after.TimestampUtc || (a.TimestampUtc == after.TimestampUtc && a.Id < after.Id))
+                : query.Where(a => a.TimestampUtc > after.TimestampUtc || (a.TimestampUtc == after.TimestampUtc && a.Id > after.Id));
+        }
+
+        var ordered = filter.SortDescending
+            ? query.OrderByDescending(a => a.TimestampUtc).ThenByDescending(a => a.Id)
+            : query.OrderBy(a => a.TimestampUtc).ThenBy(a => a.Id);
+
+        return [.. ordered.Take(batchSize).Select(ToDto)];
     }
 
     /// <summary>SQL Server-sti — oversættes af EF Core til SQL (Expression-baseret).</summary>

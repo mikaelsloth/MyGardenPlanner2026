@@ -585,7 +585,7 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 ### R5 – AuditLog: korrekthed og volumen (prioritet 5)
 ~~- R5.1 Datoer i filteret tolkes som UTC, men tabellen viser lokal tid (ToLocalTime), så rækker kort efter lokal midnat kan stå på en anden dag end filteret.~~
 ~~- R5.2 Baggrundseksport: oprettelsen accepterer filtre over 250.000 rækker. Brugeren får først besked om afvisningen, når jobbet er behandlet (status Fejlet). Overvej at afvise ved oprettelse.~~
-- R5.3 `AuditLogExportService.ExportAsync` henter alle rækker i hukommelsen (SearchAsync med PageSize = totalCount). Ved 250.000 rækker som Excel (ClosedXML) kan det belaste appen kraftigt; ikke testet.
+- R5.3 `AuditLogExportService`: rækker hentes nu i bidder (keyset) og CSV/JSON streames (PR R5.3a). Tilbage: Excel (ClosedXML) bygger hele arbejdsbogen i hukommelsen; mål med volumentest ved 250.000 rækker og beslut derefter (lavere Xlsx-grænse eller streaming-writer). Processoren bygger stadig hele filen i en MemoryStream (+ ToArray-kopi), og størrelsesgrænsen (MaxFileSizeMegabytes) tjekkes først bagefter.
 
 Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, AuditLogExportJobProcessor
 

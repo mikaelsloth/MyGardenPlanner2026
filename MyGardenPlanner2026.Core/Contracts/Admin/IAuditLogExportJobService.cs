@@ -4,7 +4,8 @@ public interface IAuditLogExportJobService
 {
     /// <summary>
     /// Opretter et Pending-job med det angivne filter. Kaster InvalidOperationException,
-    /// hvis brugeren allerede har maks. antal aktive (Pending/Running) jobs.
+    /// hvis brugeren allerede har maks. antal aktive (Pending/Running) jobs, eller hvis
+    /// filteret matcher flere end IAuditLogExportService.HardRowLimit rækker (intet job oprettes).
     /// </summary>
     Task<AuditLogExportJobDto> EnqueueAsync(
         string userId, AuditLogFilterDto filter, AuditLogExportFormat format,

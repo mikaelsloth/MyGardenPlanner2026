@@ -482,7 +482,7 @@ Eksportpanel (AuditLogExportPanel):
   CSV-header: Id,UserId,UserEmail,IpAddress,Action,EntityName,EntityId,OldValues,NewValues,TimestampUtc. JSON: array af AuditLogEntryDto (Action som tekst). Excel: ark "AuditLog".
   Baggrundseksport: succes "Eksporten er sat i kø. …", job i .audit-log-export-jobs-panel (kolonner: Oprettet, Format, Status, Rækker, Handling; status Afventer/Kører/Klar/Fejlet). Listen genindlæses med "Opdater".
   Grænser: bekræftelse ved > 50.000 rækker ("Eksporten omfatter <n> rækker og kan tage et øjeblik. Fortsæt?", n uden tusindtalsseparator), afvisning ved > 250.000 ("Error: Eksporten omfatter <n> rækker, hvilket overstiger grænsen på 250000. Indsnævr filteret og prøv igen."). Endpointet afviser > 250.000 med 422 (problem details "detail").
-  Baggrundseksport tjekker ikke rækkeantallet ved oprettelse: AuditLogExportJobProcessor sætter jobbet til Fejlet ("Eksporten omfatter <n> rækker, hvilket overstiger grænsen på 250000. Indsnævr filteret."), vist som .meta i job-rækken.
+    Baggrundseksport afviser > 250.000 rækker ved oprettelse (AuditLogExportJobService): "Error: Eksporten omfatter <n> rækker, hvilket overstiger den tilladte grænse på 250000. Indsnævr filteret og prøv igen." vist i eksportpanelet (.status-danger). Intet job oprettes. AuditLogExportJobProcessor tjekker stadig grænsen som sikkerhedsnet (job → Fejlet, vist som .meta), hvis rækker tilføjes efter oprettelsen.
   Tests: ManualSmoke/TjeklisteJ/AuditLogEksportTests, AuditLogEksportVolumenTests.
 ```
 
@@ -582,7 +582,7 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 
 ### R5 – AuditLog: korrekthed og volumen (prioritet 5)
 - R5.1 Datoer i filteret tolkes som UTC, men tabellen viser lokal tid (ToLocalTime), så rækker kort efter lokal midnat kan stå på en anden dag end filteret.
-- R5.2 Baggrundseksport: oprettelsen accepterer filtre over 250.000 rækker. Brugeren får først besked om afvisningen, når jobbet er behandlet (status Fejlet). Overvej at afvise ved oprettelse.
+~~- R5.2 Baggrundseksport: oprettelsen accepterer filtre over 250.000 rækker. Brugeren får først besked om afvisningen, når jobbet er behandlet (status Fejlet). Overvej at afvise ved oprettelse.~~
 - R5.3 `AuditLogExportService.ExportAsync` henter alle rækker i hukommelsen (SearchAsync med PageSize = totalCount). Ved 250.000 rækker som Excel (ClosedXML) kan det belaste appen kraftigt; ikke testet.
 
 Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, AuditLogExportJobProcessor

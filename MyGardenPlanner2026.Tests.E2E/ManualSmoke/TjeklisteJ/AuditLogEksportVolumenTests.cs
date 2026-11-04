@@ -35,9 +35,6 @@ public sealed class AuditLogEksportVolumenTests(PlaywrightAppFixture fixture)
     private const float SearchTimeoutMs = 30_000;
     private const float FetchTimeoutMs = 180_000;
 
-    private static readonly TimeSpan JobTimeout = TimeSpan.FromSeconds(90);
-    private static readonly TimeSpan JobPoll = TimeSpan.FromSeconds(3);
-
     // Seedes én gang pr. app-instans (testene i klassen kører efter hinanden).
     private static readonly ConcurrentDictionary<string, Lazy<Task<Dataset>>> Datasets = new();
 
@@ -187,7 +184,7 @@ public sealed class AuditLogEksportVolumenTests(PlaywrightAppFixture fixture)
     // --- Baggrundseksport over grænsen ---
 
     [Fact]
-    public async Task Baggrundseksport_250001Raekker_EnderSomFejletMedFejltekst()
+    public async Task Baggrundseksport_250001Raekker_AfvisesVedOprettelseUdenJob()
     {
         var data = await EnsureDatasetAsync();
         var user = await NewAuditorAsync();
@@ -195,48 +192,13 @@ public sealed class AuditLogEksportVolumenTests(PlaywrightAppFixture fixture)
 
         await SearchAsync(page, data, from: null, to: null, Rows250001);
 
-        // Oprettelsen tjekker ikke rækkeantallet: jobbet afvises først, når baggrundstjenesten behandler det.
         await ClickWithStepUpAsync(
-            page, user, AuditLogPage.BackgroundExportButton(page), () => AuditLogPage.ExportSuccess(page).IsVisibleAsync());
+            page, user, AuditLogPage.BackgroundExportButton(page), () => AuditLogPage.ExportError(page).IsVisibleAsync());
 
-        await Assertions.Expect(AuditLogPage.ExportSuccess(page)).ToContainTextAsync("Eksporten er sat i kø");
-        await Assertions.Expect(AuditLogPage.JobRows(page)).ToHaveCountAsync(1);
-
-        var row = AuditLogPage.JobRows(page).Nth(0);
-        var refresh = page.Locator(".audit-log-export-jobs-panel")
-            .GetByRole(AriaRole.Button, new() { Name = "Opdater", Exact = true });
-
-        // Baggrundstjenesten poller hvert 10. sekund. Listen genindlæses med "Opdater".
-        string? status = null;
-        var failed = await BlazorInteraction.WaitUntilAsync(async () =>
-        {
-            await refresh.ClickAsync();
-
-            try
-            {
-                status = (await row.Locator(".badge-role").InnerTextAsync(new() { Timeout = 2000 })).Trim();
-            }
-            catch (PlaywrightException)
-            {
-                status = null; // listen er midlertidigt væk under genindlæsning
-            }
-
-            if (status == "Fejlet")
-            {
-                return true;
-            }
-
-            await Task.Delay(JobPoll, TestContext.Current.CancellationToken);
-            return false;
-        }, JobTimeout);
-
-        failed.Should().BeTrue($"jobbet skulle ende som 'Fejlet' inden for {JobTimeout}, men status var '{status}'");
-
-        await Assertions.Expect(AuditLogPage.Cell(row, 1)).ToHaveTextAsync("Csv");
-        await Assertions.Expect(row.Locator(".meta")).ToContainTextAsync("Eksporten omfatter 250001 rækker");
-        await Assertions.Expect(row.Locator(".meta")).ToContainTextAsync("grænsen på 250000");
-        await Assertions.Expect(row.GetByRole(AriaRole.Link, new() { Name = "Download", Exact = true }))
-            .ToHaveCountAsync(0);
+        await Assertions.Expect(AuditLogPage.ExportError(page)).ToContainTextAsync("Eksporten omfatter 250001 rækker");
+        await Assertions.Expect(AuditLogPage.ExportError(page)).ToContainTextAsync("grænse på 250000");
+        await Assertions.Expect(AuditLogPage.ExportSuccess(page)).ToHaveCountAsync(0);
+        await Assertions.Expect(AuditLogPage.JobRows(page)).ToHaveCountAsync(0);
     }
 
     // --- Skærmbilleder ---

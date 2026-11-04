@@ -8,6 +8,7 @@ using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Infrastructure.Services;
 using MyGardenPlanner2026.Infrastructure.Services.AuditLog.ExportJobs;
+using NSubstitute;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Xunit;
@@ -17,16 +18,21 @@ public sealed class AuditLogExportJobServiceTests : TestDbContext
     private const int DefaultMaxActive = 3;
     private static readonly DateTimeOffset Now = new(2026, 9, 28, 12, 0, 0, TimeSpan.Zero);
     private static readonly JsonSerializerOptions Options = new() { Converters = { new JsonStringEnumConverter() } };
+
+    private readonly IAuditLogQueryService queryService = Substitute.For<IAuditLogQueryService>();
     private readonly AuditLogExportJobService service;
 
     public AuditLogExportJobServiceTests()
     {
+        queryService.CountAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(0));
         service = CreateService();
     }
 
     private AuditLogExportJobService CreateService(AuditLogExportJobOptions? options = null) =>
         new(
             CreateAdminDbContextFactory(),
+            queryService,
             new TestTimeProvider(Now),
             new TestOptionsMonitor<AuditLogExportJobOptions>(options ?? new AuditLogExportJobOptions()),
             NullLogger<AuditLogExportJobService>.Instance);
@@ -141,6 +147,54 @@ public sealed class AuditLogExportJobServiceTests : TestDbContext
         var dto = await service.EnqueueAsync("user-2", Filter(), AuditLogExportFormat.Json, TestContext.Current.CancellationToken);
 
         dto.RequestedByUserId.Should().Be("user-2");
+    }
+
+    [Fact]
+    public async Task EnqueueAsync_RowCountAboveHardLimit_ThrowsAndPersistsNoJob()
+    {
+        queryService.CountAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(IAuditLogExportService.HardRowLimit + 1));
+
+        var act = () => service.EnqueueAsync("user-1", Filter(), AuditLogExportFormat.Csv);
+
+        var ex = await act.Should().ThrowAsync<InvalidOperationException>();
+        ex.Which.Message.Should().Contain("250001").And.Contain("250000");
+
+        await using var context = CreateDbContext();
+        (await context.AuditLogExportJobs.AnyAsync(TestContext.Current.CancellationToken)).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task EnqueueAsync_RowCountExactlyAtHardLimit_EnqueuesJob()
+    {
+        queryService.CountAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(IAuditLogExportService.HardRowLimit));
+
+        var dto = await service.EnqueueAsync("user-1", Filter(), AuditLogExportFormat.Csv, TestContext.Current.CancellationToken);
+
+        dto.Status.Should().Be(AuditLogExportJobStatus.Pending);
+    }
+
+    [Fact]
+    public async Task EnqueueAsync_CountsRowsUsingTheGivenFilter()
+    {
+        await service.EnqueueAsync("user-1", Filter("SubscriptionTier"), AuditLogExportFormat.Csv, TestContext.Current.CancellationToken);
+
+        await queryService.Received(1).CountAsync(
+            Arg.Is<AuditLogFilterDto>(f => f.EntityName == "SubscriptionTier"), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task EnqueueAsync_MaxActiveJobsReached_DoesNotCountRows()
+    {
+        var limitedService = CreateService(new AuditLogExportJobOptions { MaxActiveJobsPerUser = 1 });
+        await limitedService.EnqueueAsync("user-1", Filter(), AuditLogExportFormat.Csv, TestContext.Current.CancellationToken);
+        queryService.ClearReceivedCalls();
+
+        var act = () => limitedService.EnqueueAsync("user-1", Filter(), AuditLogExportFormat.Csv);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        await queryService.DidNotReceive().CountAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

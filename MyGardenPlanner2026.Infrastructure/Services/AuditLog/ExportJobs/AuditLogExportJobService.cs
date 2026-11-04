@@ -20,6 +20,7 @@ using System.Text.Json.Serialization;
 /// </summary>
 public sealed partial class AuditLogExportJobService(
     IAdminDbContextFactory contextFactory,
+    IAuditLogQueryService queryService,
     TimeProvider timeProvider,
     IOptionsMonitor<AuditLogExportJobOptions> optionsMonitor,
     ILogger<AuditLogExportJobService> logger) : IAuditLogExportJobService
@@ -41,6 +42,9 @@ public sealed partial class AuditLogExportJobService(
 
     [LoggerMessage(EventId = 1121, Level = LogLevel.Information, Message = "Oprettelse af AuditLog-eksportjob afvist for bruger '{UserId}': {Reason}")]
     static partial void EnqueueRejected(ILogger logger, string UserId, string Reason);
+
+    [LoggerMessage(EventId = 1156, Level = LogLevel.Warning, Message = "Oprettelse af AuditLog-eksportjob afvist for bruger '{UserId}': {Count} rækker overstiger grænsen på {Limit}.")]
+    static partial void EnqueueRowLimitExceeded(ILogger logger, string UserId, int Count, int Limit);
 
     public async Task<AuditLogExportJobDto> EnqueueAsync(
         string userId, AuditLogFilterDto filter, AuditLogExportFormat format,
@@ -68,6 +72,16 @@ public sealed partial class AuditLogExportJobService(
             EnqueueRejected(logger, userId, "maks. antal aktive eksportjobs nået");
             throw new InvalidOperationException(
                 $"Du har allerede {maxActive} igangværende eksporter. Vent til en af dem er færdig og prøv igen.");
+        }
+
+        var rowCount = await queryService.CountAsync(filter, cancellationToken);
+
+        if (rowCount > IAuditLogExportService.HardRowLimit)
+        {
+            EnqueueRowLimitExceeded(logger, userId, rowCount, IAuditLogExportService.HardRowLimit);
+            throw new InvalidOperationException(
+                $"Eksporten omfatter {rowCount} rækker, hvilket overstiger den tilladte " +
+                $"grænse på {IAuditLogExportService.HardRowLimit}. Indsnævr filteret og prøv igen.");
         }
 
         var job = new AuditLogExportJob

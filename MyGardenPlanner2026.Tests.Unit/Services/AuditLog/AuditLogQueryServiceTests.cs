@@ -1,6 +1,7 @@
 ﻿namespace MyGardenPlanner2026.Tests.Unit.Services.AuditLog;
 
 using FluentAssertions;
+using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Infrastructure.Services.AuditLog;
@@ -250,5 +251,108 @@ public sealed class AuditLogQueryServiceTests : TestDbContext
         var names = await sut.GetDistinctEntityNamesAsync(TestContext.Current.CancellationToken);
 
         names.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetBatchAsync_ReturnsAtMostBatchSize_NewestFirst()
+    {
+        var now = DateTimeOffset.UtcNow;
+        await SeedAsync(
+            Log(entityId: "old", timestampUtc: now.AddMinutes(-10)),
+            Log(entityId: "mid", timestampUtc: now.AddMinutes(-5)),
+            Log(entityId: "new", timestampUtc: now));
+
+        var batch = await sut.GetBatchAsync(EmptyFilter, null, 2, TestContext.Current.CancellationToken);
+
+        batch.Select(b => b.EntityId).Should().Equal("new", "mid");
+    }
+
+    [Fact]
+    public async Task GetBatchAsync_IgnoresPagingFieldsInFilter()
+    {
+        await SeedAsync(Log(), Log(), Log());
+
+        var batch = await sut.GetBatchAsync(
+            EmptyFilter with { PageNumber = 3, PageSize = 1 }, null, 10, TestContext.Current.CancellationToken);
+
+        batch.Should().HaveCount(3);
+    }
+
+    [Fact]
+    public async Task GetBatchAsync_WithCursor_ReturnsOnlyRowsStrictlyAfterCursor()
+    {
+        var now = DateTimeOffset.UtcNow;
+        await SeedAsync(
+            Log(entityId: "old", timestampUtc: now.AddMinutes(-10)),
+            Log(entityId: "mid", timestampUtc: now.AddMinutes(-5)),
+            Log(entityId: "new", timestampUtc: now));
+
+        var first = await sut.GetBatchAsync(EmptyFilter, null, 1, TestContext.Current.CancellationToken);
+        var cursor = new AuditLogCursor(first[0].TimestampUtc, first[0].Id);
+
+        var rest = await sut.GetBatchAsync(EmptyFilter, cursor, 10, TestContext.Current.CancellationToken);
+
+        first[0].EntityId.Should().Be("new");
+        rest.Select(b => b.EntityId).Should().Equal("mid", "old");
+    }
+
+    [Fact]
+    public async Task GetBatchAsync_IdenticalTimestamps_PagesWithoutSkippingOrDuplicating()
+    {
+        var timestamp = DateTimeOffset.UtcNow;
+        await SeedAsync(
+            Log(timestampUtc: timestamp), Log(timestampUtc: timestamp), Log(timestampUtc: timestamp),
+            Log(timestampUtc: timestamp), Log(timestampUtc: timestamp));
+
+        var all = await ReadAllBatchesAsync(sut, EmptyFilter, 2, TestContext.Current.CancellationToken);
+
+        all.Select(a => a.Id).Should().HaveCount(5).And.OnlyHaveUniqueItems().And.BeInDescendingOrder();
+    }
+
+    [Fact]
+    public async Task GetBatchAsync_SortAscending_ReturnsOldestFirstAcrossBatches()
+    {
+        var now = DateTimeOffset.UtcNow;
+        for (var i = 0; i < 5; i++)
+        {
+            await SeedAsync(Log(timestampUtc: now.AddMinutes(i)));
+        }
+
+        var all = await ReadAllBatchesAsync(
+            sut, EmptyFilter with { SortDescending = false }, 2, TestContext.Current.CancellationToken);
+
+        all.Select(a => a.Id).Should().HaveCount(5).And.OnlyHaveUniqueItems().And.BeInAscendingOrder();
+    }
+
+    [Fact]
+    public async Task GetBatchAsync_AppliesFilter()
+    {
+        await SeedAsync(
+            Log(entityName: "SubscriptionTier"),
+            Log(entityName: "SubscriptionAddOn"),
+            Log(entityName: "SubscriptionTier"));
+
+        var all = await ReadAllBatchesAsync(
+            sut, EmptyFilter with { EntityName = "SubscriptionTier" }, 1, TestContext.Current.CancellationToken);
+
+        all.Should().HaveCount(2).And.OnlyContain(a => a.EntityName == "SubscriptionTier");
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public async Task GetBatchAsync_BatchSizeLessThanOne_ThrowsArgumentOutOfRangeException(int batchSize)
+    {
+        var act = async () => await sut.GetBatchAsync(EmptyFilter, null, batchSize);
+
+        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public async Task GetBatchAsync_NullFilter_ThrowsArgumentNullException()
+    {
+        var act = async () => await sut.GetBatchAsync(null!, null, 10);
+
+        await act.Should().ThrowAsync<ArgumentNullException>();
     }
 }

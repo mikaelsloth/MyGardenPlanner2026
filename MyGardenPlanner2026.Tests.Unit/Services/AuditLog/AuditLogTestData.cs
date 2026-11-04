@@ -37,4 +37,26 @@ internal static class AuditLogTestData
         await context.AuditLogs.AddRangeAsync(logs);
         await context.SaveChangesAsync();
     }
+
+    /// <summary>Læser alle rækker via GetBatchAsync med keyset-cursor, som eksporten gør.</summary>
+    public static async Task<List<AuditLogEntryDto>> ReadAllBatchesAsync(
+        IAuditLogQueryService service, AuditLogFilterDto filter, int batchSize,
+        CancellationToken cancellationToken)
+    {
+        var all = new List<AuditLogEntryDto>();
+        AuditLogCursor? cursor = null;
+
+        while (true)
+        {
+            var batch = await service.GetBatchAsync(filter, cursor, batchSize, cancellationToken);
+            all.AddRange(batch);
+
+            if (batch.Count < batchSize)
+            {
+                return all;
+            }
+
+            cursor = new AuditLogCursor(batch[^1].TimestampUtc, batch[^1].Id);
+        }
+    }
 }

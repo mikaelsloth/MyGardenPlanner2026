@@ -89,4 +89,27 @@ public sealed class AuditLogQuerySqlServerTests : TestSqlExpressDbContext
 
         count.Should().Be(4);
     }
+
+    [Fact]
+    public async Task GetBatchAsync_OnSqlServer_IdenticalTimestamps_ReturnsEveryRowExactlyOnce()
+    {
+        var timestamp = DateTimeOffset.UtcNow;
+        await SeedAsync([.. Enumerable.Range(0, 7).Select(i => Log(entityId: i.ToString(), timestampUtc: timestamp))]);
+
+        var all = await ReadAllBatchesAsync(sut, EmptyFilter, 3, TestContext.Current.CancellationToken);
+
+        all.Select(a => a.Id).Should().HaveCount(7).And.OnlyHaveUniqueItems().And.BeInDescendingOrder();
+    }
+
+    [Fact]
+    public async Task GetBatchAsync_OnSqlServer_AscendingWithTieGroupsSplitAcrossBatches_ReturnsEveryRowOnce()
+    {
+        var now = DateTimeOffset.UtcNow;
+        await SeedAsync([.. Enumerable.Range(0, 6).Select(i => Log(entityId: i.ToString(), timestampUtc: now.AddMinutes(i / 2)))]);
+
+        var all = await ReadAllBatchesAsync(
+            sut, EmptyFilter with { SortDescending = false }, 3, TestContext.Current.CancellationToken);
+
+        all.Select(a => a.Id).Should().HaveCount(6).And.OnlyHaveUniqueItems().And.BeInAscendingOrder();
+    }
 }

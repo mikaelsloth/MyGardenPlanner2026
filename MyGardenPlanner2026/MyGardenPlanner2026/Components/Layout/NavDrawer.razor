@@ -8,6 +8,7 @@
 <nav class="nav-drawer @(IsOpen ? "open" : string.Empty)"
      aria-label="Mobilnavigation"
      tabindex="-1"
+     inert="@(!IsOpen)"
      @ref="drawerElement"
      @onkeydown="HandleKeyDownAsync">
     <ul class="list-unstyled d-flex flex-column gap-2 nav-drawer-list">

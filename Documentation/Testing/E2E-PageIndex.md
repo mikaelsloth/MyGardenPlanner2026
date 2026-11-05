@@ -261,6 +261,7 @@ Desktop-links: .public-header-links, vises fra 940 px.
 Synlighed af "Log ind"/"Opret bruger" under 940 px er ikke verificeret (PublicHeader.razor.css ikke læst).
 Drawer: nav.nav-drawer, klassen open når den er åben. Baggrund: .drawer-backdrop (kun når åben).
 Drawer har 4 links, fokus-trap via JS-modul (NavDrawer.razor.js, ikke læst). Esc lukker, og fokus returnerer til hamburger.
+  Lukket drawer har attributten inert (ikke fokuserbar, skjult for skærmlæsere). Åben drawer har den ikke.
 Breakpoint-stilarter ligger i PublicHeader.razor.css.
 Filer: Components/Layout/PublicHeader.razor (+ .razor.cs, .razor.css), NavDrawer.razor (+ .razor.cs)
 ```
@@ -596,7 +597,7 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, AuditLogExportJobProcessor
 
 ### R6 – Tilgængelighed (prioritet 6)
-- R6.1 Lukket NavDrawer er kun skubbet ud af skærmen med transform, så linkene i den kan nås med Tab.
+~~- R6.1 Lukket NavDrawer er kun skubbet ud af skærmen med transform, så linkene i den kan nås med Tab.~~
 - R6.2 aria-expanded renderes med stort begyndelsesbogstav ("True"/"False").
 - R6.3 `AuditLogDetailModal`: aria-modal="true", men markup'et har hverken Esc-håndtering, focus-trap eller returnering af fokus (jf. designets ConfirmDialog). Ikke testet i J3.
 

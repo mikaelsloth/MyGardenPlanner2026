@@ -12,7 +12,8 @@ public class NavDrawerTests : BunitContext
     [Fact]
     public void NavDrawer_WhenOpen_RendersOpenClassAndBackdrop()
     {
-        this.SetupNavDrawerModule(); var cut = Render<NavDrawer>(p => p.Add(x => x.IsOpen, true));
+        this.SetupNavDrawerModule();
+        var cut = Render<NavDrawer>(p => p.Add(x => x.IsOpen, true));
 
         cut.Find(".nav-drawer").ClassList.Should().Contain("open");
         cut.FindAll(".drawer-backdrop").Should().HaveCount(1);
@@ -80,5 +81,23 @@ public class NavDrawerTests : BunitContext
         cut.Find(".nav-drawer").KeyDown(new KeyboardEventArgs { Key = "Escape" });
 
         closeCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void NavDrawer_WhenClosed_IsInert()
+    {
+        this.SetupNavDrawerModule();
+        var cut = Render<NavDrawer>(p => p.Add(x => x.IsOpen, false));
+
+        cut.Find(".nav-drawer").HasAttribute("inert").Should().BeTrue();
+    }
+
+    [Fact]
+    public void NavDrawer_WhenOpen_IsNotInert()
+    {
+        this.SetupNavDrawerModule();
+        var cut = Render<NavDrawer>(p => p.Add(x => x.IsOpen, true));
+
+        cut.Find(".nav-drawer").HasAttribute("inert").Should().BeFalse();
     }
 }

@@ -346,4 +346,30 @@ public sealed class AuditLogExportJobProcessorTests : TestDbContext
 
         count.Should().Be(0);
     }
+
+    [Fact]
+    public async Task ProcessNextAsync_FileExceedsMaxSize_AbortsExportAtTheLimit()
+    {
+        var job = PendingJob();
+        await SeedAsync(job);
+        const int chunkSize = 512 * 1024;
+        var chunksWritten = 0;
+        var export = new FakeExportService(async (stream, cancellationToken) =>
+        {
+            for (var i = 0; i < 10; i++)
+            {
+                await stream.WriteAsync(new byte[chunkSize], cancellationToken);
+                chunksWritten++;
+            }
+        });
+
+        await CreateProcessor(export, options: new AuditLogExportJobOptions { MaxFileSizeMegabytes = 1 })
+            .ProcessNextAsync(TestContext.Current.CancellationToken);
+
+        chunksWritten.Should().Be(2, "1 MB rummer to bidder á 512 KB; den tredje afvises før skrivning");
+        var row = await LoadAsync(job.Id);
+        row.Status.Should().Be(AuditLogExportJobStatus.Failed);
+        row.ErrorMessage.Should().Contain("1 MB");
+        row.FileContent.Should().BeNull();
+    }
 }

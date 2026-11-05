@@ -63,6 +63,22 @@ public abstract class TestSqlExpressDbContext : IDisposable
         return context;
     }
 
+    /// <summary>
+    /// Factory oven på CreateDbContext() (én ny PlannerDbContext pr. kald, migreret én gang pr.
+    /// testinstans) til services, der kræver IDbContextFactory&lt;PlannerDbContext&gt;.
+    /// </summary>
+    protected IDbContextFactory<PlannerDbContext> CreateDbContextFactory() =>
+        new DelegatingDbContextFactory(CreateDbContext);
+
+    private sealed class DelegatingDbContextFactory(Func<PlannerDbContext> factory)
+        : IDbContextFactory<PlannerDbContext>
+    {
+        public PlannerDbContext CreateDbContext() => factory();
+
+        public Task<PlannerDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(factory());
+    }
+
     public void Dispose()
     {
         if (_databaseCreated)

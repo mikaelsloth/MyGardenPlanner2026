@@ -110,26 +110,25 @@ public static partial class AuditLogEndpointsExtension
                     statusCode: StatusCodes.Status422UnprocessableEntity);
             }
 
-            var memoryStream = new MemoryStream();
-            await using (memoryStream.ConfigureAwait(false))
+            var (contentType, fileExtension) = exportFormat switch
             {
-                await exportService.ExportAsync(filter, exportFormat, memoryStream, cancellationToken);
+                AuditLogExportFormat.Csv => ("text/csv", "csv"),
+                AuditLogExportFormat.Json => ("application/json", "json"),
+                AuditLogExportFormat.Xlsx =>
+                    ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx"),
+                _ => throw new ArgumentOutOfRangeException(nameof(format))
+            };
 
-                var (contentType, fileExtension) = exportFormat switch
+            var fileName = $"audit-log-export-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.{fileExtension}";
+
+            return Results.Stream(
+                async responseStream =>
                 {
-                    AuditLogExportFormat.Csv => ("text/csv", "csv"),
-                    AuditLogExportFormat.Json => ("application/json", "json"),
-                    AuditLogExportFormat.Xlsx =>
-                        ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "xlsx"),
-                    _ => throw new ArgumentOutOfRangeException(nameof(format))
-                };
-
-                var fileName = $"audit-log-export-{DateTimeOffset.UtcNow:yyyyMMdd-HHmmss}.{fileExtension}";
-
-                ExportEndpointSucceeded(exportLogger, currentUserId, totalCount, exportFormat);
-
-                return Results.File(memoryStream.ToArray(), contentType, fileName);
-            }
+                    await WriteExportAsync(exportService, filter, exportFormat, responseStream, cancellationToken);
+                    ExportEndpointSucceeded(exportLogger, currentUserId, totalCount, exportFormat);
+                },
+                contentType,
+                fileName);
         });
 
         group.MapGet("/export-jobs/{jobId:guid}/download", async (
@@ -181,5 +180,29 @@ public static partial class AuditLogEndpointsExtension
         });
 
         return endpoints;
+    }
+
+    /// <summary>
+    /// CSV og JSON streames direkte til svaret. Xlsx bygges i hukommelsen (ClosedXML) og kopieres
+    /// derefter asynkront: ClosedXML skriver synkront til en ikke-søgbar stream, og Kestrel tillader
+    /// ikke synkron IO på response body.
+    /// </summary>
+    private static async Task WriteExportAsync(
+        IAuditLogExportService exportService, AuditLogFilterDto filter, AuditLogExportFormat format,
+        Stream destination, CancellationToken cancellationToken)
+    {
+        if (format != AuditLogExportFormat.Xlsx)
+        {
+            await exportService.ExportAsync(filter, format, destination, cancellationToken);
+            return;
+        }
+
+        var buffer = new MemoryStream();
+        await using (buffer.ConfigureAwait(false))
+        {
+            await exportService.ExportAsync(filter, format, buffer, cancellationToken);
+            buffer.Position = 0;
+            await buffer.CopyToAsync(destination, cancellationToken);
+        }
     }
 }

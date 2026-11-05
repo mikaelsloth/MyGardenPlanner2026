@@ -83,20 +83,24 @@ public sealed partial class AuditLogExportJobProcessor(
                 return true;
             }
 
+            var maxMegabytes = Math.Max(1, optionsMonitor.CurrentValue.MaxFileSizeMegabytes);
+
             var stream = new MemoryStream();
             await using (stream.ConfigureAwait(false))
             {
-                await exportService.ExportAsync(filter, claimed.Format, stream, cancellationToken);
-                var content = stream.ToArray();
-
-                var maxMegabytes = Math.Max(1, optionsMonitor.CurrentValue.MaxFileSizeMegabytes);
-                if (content.Length > maxMegabytes * 1024L * 1024L)
+                try
+                {
+                    // Afbryder under skrivningen, så snart filen overstiger grænsen — ikke først bagefter.
+                    var limited = new SizeLimitedStream(stream, maxMegabytes * 1024L * 1024L);
+                    await exportService.ExportAsync(filter, claimed.Format, limited, cancellationToken);
+                }
+                catch (ExportSizeLimitExceededException)
                 {
                     await FailAsync(claimed.Id, $"Eksportfilen overstiger den tilladte størrelse på {maxMegabytes} MB. Indsnævr filteret.");
                     return true;
                 }
 
-                await CompleteAsync(claimed, rowCount, content);
+                await CompleteAsync(claimed, rowCount, stream.ToArray());
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

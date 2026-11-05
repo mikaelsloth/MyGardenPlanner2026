@@ -235,4 +235,61 @@ public sealed class AuditLogExportServiceTests
 
         await act.Should().ThrowAsync<ArgumentNullException>();
     }
+
+    /// <summary>Simulerer Kestrels response body (AllowSynchronousIO = false): synkron skrivning og flush kaster.</summary>
+    private sealed class AsynchronousOnlyStream : Stream
+    {
+        private readonly MemoryStream inner = new();
+
+        public byte[] Content => inner.ToArray();
+
+        public override bool CanRead => false;
+        public override bool CanSeek => false;
+        public override bool CanWrite => true;
+        public override long Length => throw new NotSupportedException();
+
+        public override long Position
+        {
+            get => throw new NotSupportedException();
+            set => throw new NotSupportedException();
+        }
+
+        public override void Flush() => throw SynchronousNotAllowed();
+
+        public override Task FlushAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+
+        public override void SetLength(long value) => throw new NotSupportedException();
+
+        public override void Write(byte[] buffer, int offset, int count) => throw SynchronousNotAllowed();
+
+        public override void Write(ReadOnlySpan<byte> buffer) => throw SynchronousNotAllowed();
+
+        public override void WriteByte(byte value) => throw SynchronousNotAllowed();
+
+        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
+            inner.WriteAsync(buffer.AsMemory(offset, count), cancellationToken).AsTask();
+
+        public override ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default) =>
+            inner.WriteAsync(buffer, cancellationToken);
+
+        private static InvalidOperationException SynchronousNotAllowed() =>
+            new("Synchronous operations are disallowed.");
+    }
+
+    [Theory]
+    [InlineData(AuditLogExportFormat.Csv)]
+    [InlineData(AuditLogExportFormat.Json)]
+    public async Task ExportAsync_StreamedFormats_NeverWriteSynchronouslyToDestination(AuditLogExportFormat format)
+    {
+        SetupQueryResults([Entry(1), Entry(2)]);
+        var destination = new AsynchronousOnlyStream();
+
+        await sut.ExportAsync(EmptyFilter, format, destination, TestContext.Current.CancellationToken);
+
+        destination.Content.Length.Should().BeGreaterThan(0);
+    }
 }

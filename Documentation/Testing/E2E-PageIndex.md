@@ -165,6 +165,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - `StatusMessage`: beskeder der starter med "Error" vises som danger (role=alert), ellers success (role=status). Præfikset skal forblive engelsk.
 - WebAuthn kræver et domænenavn som host: kør passkey-tests på `http://localhost:<port>` (`RootUri.Replace("127.0.0.1", "localhost")`).
 - Login.razor starter passkey-autofill (conditional mediation) ved sideload. Passkey-tests slår den fra med `AddInitScriptAsync("PublicKeyCredential.isConditionalMediationAvailable = async () => false;")`. Passkey-fejl vises som StatusMessage (role=alert) efter redirect ("Error: ...").
+- Streaming-download (Results.Stream): Kestrel tillader ikke synkron IO på response body (AllowSynchronousIO = false). Utf8JsonWriter over en Stream og JsonSerializer.Serialize(writer, …) flusher synkront og giver en afbrudt forbindelse efter 200-headerne (Playwright: "aborted"). Skriv i en intern buffer (ArrayBufferWriter) og send med WriteAsync. Xlsx (ClosedXML skriver synkront) bufferes i en MemoryStream og kopieres med CopyToAsync.
 
 ### Testdesign og delt data
 - Tests er hardcodede forventede værdier. De udledes ikke af produktionskoden.
@@ -481,6 +482,8 @@ Filter: AuditLogFilterBar synkroniserer kun fra InitialFilter ved første OnPara
 Eksportpanel (AuditLogExportPanel):
   Panel: .audit-log-export-panel. Format: #export-format (værdier Csv/Json/Xlsx). Knapper: "Eksportér" og "Send til baggrundseksport" (begge bag step-up og rate limit).
   Eksportér åbner /admin/audit-log/export?format=…&token=…&entityName=…&userEmail=… via window.open(url, "_blank"). Filnavn audit-log-export-<yyyyMMdd-HHmmss>.<csv|json|xlsx>. Ugyldigt token: 403 med problem details "Eksport-token er ugyldig eller udløbet: …".
+    Direkte download streames (Results.Stream, ingen Content-Length): CSV/JSON skrives løbende til svaret; Xlsx bygges i hukommelsen og kopieres derefter. Fejl midt i streamingen giver en afkortet fil (statuskoden er sendt). 422 ved > 250.000 rækker afgøres før streamingen.
+  Baggrundsjob afbrydes under skrivningen (SizeLimitedStream), så snart filen overstiger MaxFileSizeMegabytes: status Fejlet, "Eksportfilen overstiger den tilladte størrelse på <n> MB. Indsnævr filteret."
   CSV-header: Id,UserId,UserEmail,IpAddress,Action,EntityName,EntityId,OldValues,NewValues,TimestampUtc. JSON: array af AuditLogEntryDto (Action som tekst). Excel: ark "AuditLog".
   Baggrundseksport: succes "Eksporten er sat i kø. …", job i .audit-log-export-jobs-panel (kolonner: Oprettet, Format, Status, Rækker, Handling; status Afventer/Kører/Klar/Fejlet). Listen genindlæses med "Opdater".
   Grænser: bekræftelse ved > 50.000 rækker ("Eksporten omfatter <n> rækker og kan tage et øjeblik. Fortsæt?", n uden tusindtalsseparator), afvisning ved > 250.000 ("Error: Eksporten omfatter <n> rækker, hvilket overstiger grænsen på 250000. Indsnævr filteret og prøv igen."). Endpointet afviser > 250.000 med 422 (problem details "detail").
@@ -585,7 +588,8 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 ### R5 – AuditLog: korrekthed og volumen (prioritet 5)
 ~~- R5.1 Datoer i filteret tolkes som UTC, men tabellen viser lokal tid (ToLocalTime), så rækker kort efter lokal midnat kan stå på en anden dag end filteret.~~
 ~~- R5.2 Baggrundseksport: oprettelsen accepterer filtre over 250.000 rækker. Brugeren får først besked om afvisningen, når jobbet er behandlet (status Fejlet). Overvej at afvise ved oprettelse.~~
-- R5.3 `AuditLogExportService`: rækker hentes nu i bidder (keyset) og CSV/JSON streames (PR R5.3a). Tilbage: Excel (ClosedXML) bygger hele arbejdsbogen i hukommelsen; mål med volumentest ved 250.000 rækker og beslut derefter (lavere Xlsx-grænse eller streaming-writer). Processoren bygger stadig hele filen i en MemoryStream (+ ToArray-kopi), og størrelsesgrænsen (MaxFileSizeMegabytes) tjekkes først bagefter.
+- R5.3 Excel (ClosedXML) holder alle celler i hukommelsen: ca. 1,15 GB managed og ca. 16 s ved 250.000 rækker (målt, AdjustToContents begrænset til de første 100 rækker; uden begrænsning ca. 53 s). CSV/JSON er streamet (ca. 3,5 s). Tilbage: Xlsx-specifik rækkegrænse (PR 5, D2 = B).
+- R5.4 Baggrundsjobbets 50 MB-grænse (MaxFileSizeMegabytes) rammes ved ca. 66.000 CSV-rækker (300 tegn pr. Old/New-felt; større felter giver færre). Overvej gzip-komprimering af jobfiler (D1 = A + C).
 
 Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, AuditLogExportJobProcessor
 

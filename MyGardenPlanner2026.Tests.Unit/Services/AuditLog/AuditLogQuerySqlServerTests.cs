@@ -1,10 +1,8 @@
 ﻿namespace MyGardenPlanner2026.Tests.Unit.Services.AuditLog;
 
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
-using MyGardenPlanner2026.Infrastructure.Data;
 using MyGardenPlanner2026.Infrastructure.Services.AuditLog;
 using Xunit;
 using static MyGardenPlanner2026.Tests.Unit.Services.AuditLog.AuditLogTestData;
@@ -17,26 +15,11 @@ using static MyGardenPlanner2026.Tests.Unit.Services.AuditLog.AuditLogTestData;
 [Trait("Category", "SqlServerIntegration")]
 public sealed class AuditLogQuerySqlServerTests : TestSqlExpressDbContext
 {
-    /// <summary>
-    /// Test-lokal adapter: TestSqlExpressDbContext eksponerer kun CreateDbContext()
-    /// (én PlannerDbContext pr. kald, migreret én gang pr. testinstans). Denne
-    /// wrapper opfylder IDbContextFactory&lt;PlannerDbContext&gt;, som
-    /// AuditLogQueryService kræver — samme delegerings-mønster som AdminDbContextFactory.
-    /// </summary>
-    private sealed class DelegatingDbContextFactory(Func<PlannerDbContext> factory)
-        : IDbContextFactory<PlannerDbContext>
-    {
-        public PlannerDbContext CreateDbContext() => factory();
-
-        public Task<PlannerDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) =>
-            Task.FromResult(factory());
-    }
-
     private readonly AuditLogQueryService sut;
 
     public AuditLogQuerySqlServerTests()
     {
-        sut = new AuditLogQueryService(new DelegatingDbContextFactory(CreateDbContext));
+        sut = new AuditLogQueryService(CreateDbContextFactory());
     }
 
     private Task SeedAsync(params AuditLog[] logs) => AuditLogTestData.SeedAsync(CreateDbContext, logs);

@@ -1,5 +1,6 @@
 ﻿namespace MyGardenPlanner2026.Tests.E2E.ManualSmoke.TjeklisteA;
 
+using FluentAssertions;
 using Microsoft.Playwright;
 using MyGardenPlanner2026.Tests.E2E.Screenshots;
 using System.Text.RegularExpressions;
@@ -145,5 +146,32 @@ public sealed partial class MobilmenuTests(PlaywrightAppFixture fixture)
 
         await Assertions.Expect(OpenDrawer(page)).ToHaveCountAsync(0);
         await Assertions.Expect(Hamburger(page)).ToBeFocusedAsync();
+    }
+
+    [Theory]
+    [InlineData(Viewports.Mobile)]
+    [InlineData(Viewports.Tablet)]
+    [InlineData(Viewports.BelowBreakpoint)]
+    public async Task Drawer_NaarLukket_ErInertOgKanIkkeNaasMedTab(int width)
+    {
+        var page = await OpenLandingAsync(width);
+
+        await Assertions.Expect(page.Locator("nav.nav-drawer[inert]")).ToHaveCountAsync(1);
+
+        // Rigeligt til at gennemløbe alle fokuserbare elementer på forsiden.
+        const int presses = 25;
+
+        for (var i = 0; i < presses; i++)
+        {
+            await page.Keyboard.PressAsync("Tab");
+
+            var insideDrawer = await page.EvaluateAsync<bool>(
+                "() => !!document.activeElement?.closest('nav.nav-drawer')");
+            insideDrawer.Should().BeFalse("lukket drawer må ikke kunne få fokus (Tab nr. {0})", i + 1);
+        }
+
+        // Positiv kontrol: åben drawer er ikke inert.
+        await OpenDrawerAsync(page, () => Hamburger(page).ClickAsync());
+        await Assertions.Expect(page.Locator("nav.nav-drawer[inert]")).ToHaveCountAsync(0);
     }
 }

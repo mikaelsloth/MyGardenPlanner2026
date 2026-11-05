@@ -33,11 +33,18 @@ public sealed class AuditLogExportJobPolicyAdminService(
             throw new ArgumentOutOfRangeException(nameof(update), "MaxActiveJobsPerUser skal være mindst 1.");
         }
 
+        if (update.XlsxMaxRows is < 1 or > IAuditLogExportService.HardRowLimit)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(update), $"XlsxMaxRows skal være mellem 1 og {IAuditLogExportService.HardRowLimit}.");
+        }
+
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
         var settings = await LoadAsync(context, cancellationToken);
 
         settings.RetentionHours = update.RetentionHours;
         settings.MaxActiveJobsPerUser = update.MaxActiveJobsPerUser;
+        settings.XlsxMaxRows = update.XlsxMaxRows;
         await context.SaveChangesAsync(cancellationToken);
 
         changeSignal.TriggerChange<AuditLogExportJobOptions>();
@@ -53,5 +60,5 @@ public sealed class AuditLogExportJobPolicyAdminService(
             ?? throw new InvalidOperationException("AuditLog-eksportjob-policy er ikke seedet.");
 
     private static AuditLogExportJobPolicyDto ToDto(AuditLogExportJobPolicySettings settings) =>
-        new(settings.RetentionHours, settings.MaxActiveJobsPerUser);
+        new(settings.RetentionHours, settings.MaxActiveJobsPerUser, settings.XlsxMaxRows);
 }

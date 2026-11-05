@@ -6,7 +6,7 @@ using MyGardenPlanner2026.Infrastructure.Data;
 
 /// <summary>
 /// Se JitElevationPolicyOptionsConfigurator for det fælles registrerings-/fallback-mønster.
-/// Overskriver kun RetentionHours og MaxActiveJobsPerUser — øvrige AuditLogExportJobOptions-
+/// Overskriver kun RetentionHours, MaxActiveJobsPerUser og XlsxMaxRows — øvrige AuditLogExportJobOptions-
 /// felter er fortsat rene appsettings-defaults.
 /// </summary>
 public sealed class AuditLogExportJobOptionsConfigurator(IAdminDbContextFactory contextFactory)
@@ -24,5 +24,6 @@ public sealed class AuditLogExportJobOptionsConfigurator(IAdminDbContextFactory 
 
         options.RetentionHours = settings.RetentionHours;
         options.MaxActiveJobsPerUser = settings.MaxActiveJobsPerUser;
+        options.XlsxMaxRows = settings.XlsxMaxRows;
     }
 }

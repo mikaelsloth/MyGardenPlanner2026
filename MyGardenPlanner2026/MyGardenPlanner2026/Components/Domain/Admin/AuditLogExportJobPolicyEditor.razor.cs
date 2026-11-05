@@ -9,12 +9,14 @@ using MyGardenPlanner2026.Core.Contracts.Admin;
 using System.Globalization;
 
 /// <summary>
-/// Ændring af retention-/maks.-aktive-policyen for AuditLog-baggrundseksporter er en
+/// Ændring af retention-/maks.-aktive/Xlsx -policyen for AuditLog-baggrundseksporter er en
 /// følsom "core policy"-handling (§3.2) og kræver derfor step-up re-autentificering —
 /// håndhævet via StepUpGuard, samme mønster som de øvrige sikkerhedspolicy-editors.
 /// </summary>
 public partial class AuditLogExportJobPolicyEditor
 {
+    private const int MaxXlsxRows = IAuditLogExportService.HardRowLimit;
+
     [Inject]
     private IAuditLogExportJobPolicyAdminService AdminService { get; set; } = default!;
 
@@ -36,6 +38,7 @@ public partial class AuditLogExportJobPolicyEditor
     private AuditLogExportJobPolicyDto? settings;
     private int retentionHoursEdit;
     private int maxActiveEdit;
+    private int xlsxMaxRowsEdit;
     private string? errorMessage;
     private StepUpGuard stepUpGuard = default!;
     private AdminActionGuard adminActionGuard = default!;
@@ -55,6 +58,7 @@ public partial class AuditLogExportJobPolicyEditor
         settings = await AdminService.GetAsync();
         retentionHoursEdit = settings.RetentionHours;
         maxActiveEdit = settings.MaxActiveJobsPerUser;
+        xlsxMaxRowsEdit = settings.XlsxMaxRows;
     }
 
     private Task SaveAsync() =>
@@ -73,7 +77,8 @@ public partial class AuditLogExportJobPolicyEditor
                 return;
             }
 
-            await AdminService.UpdateAsync(new AuditLogExportJobPolicyDto(retentionHoursEdit, maxActiveEdit), userId);
+            await AdminService.UpdateAsync(
+                new AuditLogExportJobPolicyDto(retentionHoursEdit, maxActiveEdit, xlsxMaxRowsEdit), userId);
 
             await LoadAsync();
             await OnStatusMessage.InvokeAsync("AuditLog-eksportjob-policyen er opdateret og trådt i kraft.");

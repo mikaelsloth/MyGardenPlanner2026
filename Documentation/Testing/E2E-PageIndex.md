@@ -434,7 +434,8 @@ JIT-eskalering (JitElevationPolicyEditor): #jit-min, #jit-max, #jit-sweep (type=
   Adgang afgøres uafhængigt af Status: HasActiveElevationAsync tjekker ValidToUtc direkte.
 Step-up re-auth: #reauth-maxage (type=number, min=1, @onchange → blur). Fejl vises øverst i editoren (.security-policy-editor .status-danger[role=alert]); StepUpReAuthModal ligger i editoren. Succes: "Step-up re-auth-policyen er opdateret og trådt i kraft." (page-level, bliver stående mellem gem).
 Admin-API rate limit: #adminapi-permit, #adminapi-window, #adminapi-segments. Fejl: "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen." (AdminActionGuard.RateLimitedMessage).
-AuditLog-eksport: #exportjob-retention, #exportjob-maxactive (type=number). Succes: .status-success[role=status] "AuditLog-eksportjob-policyen er opdateret og trådt i kraft." (ryddes ved fanskift).
+AuditLog-eksport: #exportjob-retention, #exportjob-maxactive, #exportjob-xlsxmaxrows (type=number). Succes: .status-success[role=status] "AuditLog-eksportjob-policyen er opdateret og trådt i kraft." (ryddes ved fanskift).
+  Xlsx-grænsen: 1–250.000, standard 50.000. Fejl: ‘Error: XlsxMaxRows skal være mellem 1 og 250000.’
 Filer: AdminSecurityPolicyPage.razor (+ .cs), JitElevationPolicyEditor.razor (+ .cs), RoleElevationExpirySweepService.cs
 Tests: ManualSmoke/TjeklisteD/ForkertPasswordModalTests, ManualSmoke/TjeklisteD/KorrektStepUpTests.
 ```

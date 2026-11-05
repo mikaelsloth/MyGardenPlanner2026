@@ -372,4 +372,33 @@ public sealed class AuditLogExportJobProcessorTests : TestDbContext
         row.ErrorMessage.Should().Contain("1 MB");
         row.FileContent.Should().BeNull();
     }
+
+    [Fact]
+    public async Task ProcessNextAsync_XlsxRowCountAboveXlsxLimit_FailsWithoutExporting()
+    {
+        var job = PendingJob(AuditLogExportFormat.Xlsx);
+        await SeedAsync(job);
+        var export = new FakeExportService();
+
+        await CreateProcessor(export, new FakeQueryService(101), new AuditLogExportJobOptions { XlsxMaxRows = 100 })
+            .ProcessNextAsync(TestContext.Current.CancellationToken);
+
+        var row = await LoadAsync(job.Id);
+        row.Status.Should().Be(AuditLogExportJobStatus.Failed);
+        row.ErrorMessage.Should().Contain("Excel-eksporten omfatter 101 rækker").And.Contain("grænsen på 100");
+        export.Calls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ProcessNextAsync_CsvRowCountAboveXlsxLimit_Exports()
+    {
+        var job = PendingJob(AuditLogExportFormat.Csv);
+        await SeedAsync(job);
+        var export = new FakeExportService((stream, _) => stream.WriteAsync(new byte[] { 1 }, TestContext.Current.CancellationToken).AsTask());
+
+        await CreateProcessor(export, new FakeQueryService(101), new AuditLogExportJobOptions { XlsxMaxRows = 100 })
+            .ProcessNextAsync(TestContext.Current.CancellationToken);
+
+        (await LoadAsync(job.Id)).Status.Should().Be(AuditLogExportJobStatus.Completed);
+    }
 }

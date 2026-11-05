@@ -102,3 +102,6 @@ EventId | Fil | Metode |
 1154 | GardenVolumeDiscountAdminService.cs | VolumeDiscountPreviousTopClosed
 1155 | GardenVolumeDiscountAdminService.cs | VolumeDiscountNewTopReopened
 1156 | AuditLogExportJobService.cs | EnqueueRowLimitExceeded
+1157 | AuditLogExportPanel.razor.cs | ExportXlsxLimitExceeded
+1158 | AuditLogEndpointsExtension.cs | ExportEndpointXlsxLimitExceeded
+1159 | AuditLogExportJobService.cs | EnqueueXlsxLimitExceeded

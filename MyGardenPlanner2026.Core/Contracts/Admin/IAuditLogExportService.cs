@@ -11,6 +11,11 @@ public interface IAuditLogExportService
 {
     const int HardRowLimit = 250_000;
 
+    /// <summary>Fælles fejltekst, når en Xlsx-eksport overstiger den konfigurerede rækkegrænse (policy XlsxMaxRows).</summary>
+    static string XlsxRowLimitMessage(int rowCount, int xlsxMaxRows) =>
+        $"Excel-eksporten omfatter {rowCount} rækker, hvilket overstiger grænsen på {xlsxMaxRows}. " +
+        "Vælg CSV eller JSON, eller indsnævr filteret og prøv igen.";
+
     Task ExportAsync(
         AuditLogFilterDto filter,
         AuditLogExportFormat format,

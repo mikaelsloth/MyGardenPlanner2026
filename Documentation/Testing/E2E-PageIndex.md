@@ -489,6 +489,7 @@ Eksportpanel (AuditLogExportPanel):
   Baggrundseksport: succes "Eksporten er sat i kø. …", job i .audit-log-export-jobs-panel (kolonner: Oprettet, Format, Status, Rækker, Handling; status Afventer/Kører/Klar/Fejlet). Listen genindlæses med "Opdater".
   Grænser: bekræftelse ved > 50.000 rækker ("Eksporten omfatter <n> rækker og kan tage et øjeblik. Fortsæt?", n uden tusindtalsseparator), afvisning ved > 250.000 ("Error: Eksporten omfatter <n> rækker, hvilket overstiger grænsen på 250000. Indsnævr filteret og prøv igen."). Endpointet afviser > 250.000 med 422 (problem details "detail").
     Baggrundseksport afviser > 250.000 rækker ved oprettelse (AuditLogExportJobService): "Error: Eksporten omfatter <n> rækker, hvilket overstiger den tilladte grænse på 250000. Indsnævr filteret og prøv igen." vist i eksportpanelet (.status-danger). Intet job oprettes. AuditLogExportJobProcessor tjekker stadig grænsen som sikkerhedsnet (job → Fejlet, vist som .meta), hvis rækker tilføjes efter oprettelsen.
+    Excel (Xlsx) har egen rækkegrænse (policy XlsxMaxRows, standard 50.000, gyldig 1–250.000, sættes under /admin/security-policies, fanen AuditLog-eksport). Over grænsen: panelet viser "Error: Excel-eksporten omfatter <n> rækker, hvilket overstiger grænsen på <grænse>. Vælg CSV eller JSON, eller indsnævr filteret og prøv igen." (n uden tusindtalsseparator, ingen bekræftelse, intet download). Endpointet svarer 422 (problem details "detail", uden "Error:"). Baggrundseksport afvises ved oprettelse (intet job). AuditLogExportJobProcessor tjekker som sikkerhedsnet (job → Fejlet). CSV og JSON påvirkes ikke.
   Tests: ManualSmoke/TjeklisteJ/AuditLogEksportTests, AuditLogEksportVolumenTests.
 ```
 
@@ -589,7 +590,7 @@ Backlog grupperet i rettelsesgrupper i prioriteret rækkefølge. Én chat pr. gr
 ### R5 – AuditLog: korrekthed og volumen (prioritet 5)
 ~~- R5.1 Datoer i filteret tolkes som UTC, men tabellen viser lokal tid (ToLocalTime), så rækker kort efter lokal midnat kan stå på en anden dag end filteret.~~
 ~~- R5.2 Baggrundseksport: oprettelsen accepterer filtre over 250.000 rækker. Brugeren får først besked om afvisningen, når jobbet er behandlet (status Fejlet). Overvej at afvise ved oprettelse.~~
-- R5.3 Excel (ClosedXML) holder alle celler i hukommelsen: ca. 1,15 GB managed og ca. 16 s ved 250.000 rækker (målt, AdjustToContents begrænset til de første 100 rækker; uden begrænsning ca. 53 s). CSV/JSON er streamet (ca. 3,5 s). Tilbage: Xlsx-specifik rækkegrænse (PR 5, D2 = B).
+~~- R5.3 Excel (ClosedXML) holder alle celler i hukommelsen: ca. 1,15 GB managed og ca. 16 s ved 250.000 rækker (målt, AdjustToContents begrænset til de første 100 rækker; uden begrænsning ca. 53 s). CSV/JSON er streamet (ca. 3,5 s). Tilbage: Xlsx-specifik rækkegrænse (PR 5, D2 = B).~~
 - R5.4 Baggrundsjobbets 50 MB-grænse (MaxFileSizeMegabytes) rammes ved ca. 66.000 CSV-rækker (300 tegn pr. Old/New-felt; større felter giver færre). Overvej gzip-komprimering af jobfiler (D1 = A + C).
 
 Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, AuditLogExportJobProcessor

@@ -6,6 +6,7 @@ using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Infrastructure.Services.AuditLog;
 using MyGardenPlanner2026.Infrastructure.Services.AuditLog.Export;
+using MyGardenPlanner2026.Infrastructure.Services.AuditLog.ExportJobs;
 using System.Diagnostics;
 using System.Globalization;
 using Xunit;
@@ -39,7 +40,9 @@ public sealed class AuditLogExportVolumeMeasurementTests(ITestOutputHelper outpu
 
         await SeedAsync();
 
-        var sut = new AuditLogExportService(new AuditLogQueryService(CreateDbContextFactory()));
+        var options = new TestOptionsMonitor<AuditLogExportJobOptions>(
+            new AuditLogExportJobOptions { XlsxMaxRows = IAuditLogExportService.HardRowLimit });
+        var sut = new AuditLogExportService(new AuditLogQueryService(CreateDbContextFactory()), options);
 
         GC.Collect();
         GC.WaitForPendingFinalizers();

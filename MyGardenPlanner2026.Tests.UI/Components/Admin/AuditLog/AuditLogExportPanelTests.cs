@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Domain.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
+using MyGardenPlanner2026.Infrastructure.Services.AuditLog.ExportJobs;
 using MyGardenPlanner2026.Tests.UI;
 using NSubstitute;
 using System.Security.Claims;
@@ -26,6 +27,7 @@ public class AuditLogExportPanelTests : BunitContext
         Services.AddSingleton(queryService);
         Services.AddSingleton(tokenService);
         Services.AddSingleton(exportJobService);
+        Services.Configure<AuditLogExportJobOptions>(o => o.XlsxMaxRows = 50_000);
 
         var fakes = this.RegisterAdminStepUpFakes<AuditLogExportPanel>();
         authorizationService = fakes.AuthorizationService;
@@ -39,14 +41,14 @@ public class AuditLogExportPanelTests : BunitContext
     }
 
     private IRenderedComponent<AuditLogExportPanel> RenderPanel(EventCallback? onJobEnqueued = null) => Render<AuditLogExportPanel>(p =>
-                                                                                                             {
-                                                                                                                 p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync());
-                                                                                                                 p.Add(x => x.CurrentFilter, AuditLogTestData.EmptyFilter());
-                                                                                                                 if (onJobEnqueued is { } callback)
-                                                                                                                 {
-                                                                                                                     p.Add(x => x.OnJobEnqueued, callback);
-                                                                                                                 }
-                                                                                                             });
+        {
+            p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync());
+            p.Add(x => x.CurrentFilter, AuditLogTestData.EmptyFilter());
+            if (onJobEnqueued is { } callback)
+            {
+                p.Add(x => x.OnJobEnqueued, callback);
+            }
+        });
 
     [Fact]
     public void ReAuthValid_ClickingEksportér_TriggersDownload_WithoutOpeningModal()
@@ -250,5 +252,48 @@ public class AuditLogExportPanelTests : BunitContext
 
         cut.ShouldShowStepUpModal();
         await rateLimiter.DidNotReceive().TryAcquireAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public void XlsxSelected_CountAboveXlsxLimit_ShowsErrorWithoutConfirmOrDownload()
+    {
+        queryService.CountAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(60_000));
+        var cut = RenderPanel();
+        cut.Find("#export-format").Change(nameof(AuditLogExportFormat.Xlsx));
+
+        cut.Find("button.btn-primary").Click();
+
+        cut.Find(".status-message.status-danger").TextContent
+            .Should().Contain("Excel-eksporten omfatter 60000 rækker").And.Contain("grænsen på 50000");
+        cut.FindAll(".inline-confirm").Should().BeEmpty();
+        JSInterop.Invocations.Should().NotContain(i => i.InvocationMethodName == "open");
+    }
+
+    [Fact]
+    public void XlsxSelected_CountExactlyAtXlsxLimit_TriggersDownload()
+    {
+        queryService.CountAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(50_000));
+        var cut = RenderPanel();
+        cut.Find("#export-format").Change(nameof(AuditLogExportFormat.Xlsx));
+
+        cut.Find("button.btn-primary").Click();
+
+        JSInterop.Invocations["open"].Should().ContainSingle();
+    }
+
+    [Fact]
+    public void XlsxSelected_UsesConfiguredLimit()
+    {
+        Services.Configure<AuditLogExportJobOptions>(o => o.XlsxMaxRows = 1_000);
+        queryService.CountAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(1_001));
+        var cut = RenderPanel();
+        cut.Find("#export-format").Change(nameof(AuditLogExportFormat.Xlsx));
+
+        cut.Find("button.btn-primary").Click();
+
+        cut.Find(".status-message.status-danger").TextContent.Should().Contain("grænsen på 1000");
     }
 }

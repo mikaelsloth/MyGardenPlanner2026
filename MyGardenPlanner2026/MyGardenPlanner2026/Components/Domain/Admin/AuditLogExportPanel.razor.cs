@@ -3,10 +3,12 @@ namespace MyGardenPlanner2026.Components.Domain.Admin;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.Extensions.Options;
 using Microsoft.JSInterop;
 using MyGardenPlanner2026.Components.Account.Shared;
 using MyGardenPlanner2026.Configuration.Extensions;
 using MyGardenPlanner2026.Core.Contracts.Admin;
+using MyGardenPlanner2026.Infrastructure.Services.AuditLog.ExportJobs;
 
 /// <summary>
 /// Eksporterer det aktuelle søgeresultat (samme filter som visningen, uden paginering)
@@ -50,6 +52,9 @@ public partial class AuditLogExportPanel
     [Inject]
     private IAuditLogExportJobService JobService { get; set; } = default!;
 
+    [Inject]
+    private IOptionsMonitor<AuditLogExportJobOptions> OptionsMonitor { get; set; } = default!;
+
     [Parameter]
     public EventCallback OnJobEnqueued { get; set; }
 
@@ -81,6 +86,9 @@ public partial class AuditLogExportPanel
 
     [LoggerMessage(EventId = 1046, Level = LogLevel.Warning, Message = "Kunne ikke bestemme den aktuelle bruger ved AuditLog-eksport.")]
     static partial void ExportCurrentUserCouldNotBeResolved(ILogger logger);
+
+    [LoggerMessage(EventId = 1157, Level = LogLevel.Warning, Message = "AuditLog-eksport (Xlsx) afvist for bruger '{UserId}': {Count} rækker overstiger Excel-grænsen på {Limit}.")]
+    static partial void ExportXlsxLimitExceeded(ILogger logger, string UserId, int Count, int Limit);
 
     protected override void OnInitialized()
     {
@@ -115,6 +123,14 @@ public partial class AuditLogExportPanel
             errorMessage = $"Error: Eksporten omfatter {count} rækker, hvilket overstiger grænsen på " +
                 $"{IAuditLogExportService.HardRowLimit}. Indsnævr filteret og prøv igen.";
             ExportHardLimitExceeded(Logger, userId ?? "ukendt", count, IAuditLogExportService.HardRowLimit);
+            return;
+        }
+
+        var xlsxMaxRows = Math.Max(1, OptionsMonitor.CurrentValue.XlsxMaxRows);
+        if (selectedFormat == AuditLogExportFormat.Xlsx && count > xlsxMaxRows)
+        {
+            errorMessage = $"Error: {IAuditLogExportService.XlsxRowLimitMessage(count, xlsxMaxRows)}";
+            ExportXlsxLimitExceeded(Logger, userId ?? "ukendt", count, xlsxMaxRows);
             return;
         }
 

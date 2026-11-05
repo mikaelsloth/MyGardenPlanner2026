@@ -1,7 +1,9 @@
 ﻿namespace MyGardenPlanner2026.Infrastructure.Services.AuditLog.Export;
 
 using ClosedXML.Excel;
+using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Contracts.Admin;
+using MyGardenPlanner2026.Infrastructure.Services.AuditLog.ExportJobs;
 using System.Buffers;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -18,7 +20,8 @@ using System.Text.Json.Serialization;
 /// hårde grænse (IAuditLogExportService.HardRowLimit).
 /// </summary>
 public sealed class AuditLogExportService(
-    IAuditLogQueryService queryService) : IAuditLogExportService
+    IAuditLogQueryService queryService,
+    IOptionsMonitor<AuditLogExportJobOptions> optionsMonitor) : IAuditLogExportService
 {
     public const int BatchSize = 5_000;
 
@@ -52,6 +55,17 @@ public sealed class AuditLogExportService(
             throw new InvalidOperationException(
                 $"Eksporten omfatter {totalCount} rækker, hvilket overstiger den tilladte " +
                 $"grænse på {IAuditLogExportService.HardRowLimit}. Indsnævr filteret og prøv igen.");
+        }
+
+        if (format == AuditLogExportFormat.Xlsx)
+        {
+            var xlsxMaxRows = Math.Max(1, optionsMonitor.CurrentValue.XlsxMaxRows);
+
+            if (totalCount > xlsxMaxRows)
+            {
+                throw new InvalidOperationException(
+                    IAuditLogExportService.XlsxRowLimitMessage(totalCount, xlsxMaxRows));
+            }
         }
 
         var items = ReadAllAsync(filter, cancellationToken);

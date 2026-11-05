@@ -3,8 +3,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
+using MyGardenPlanner2026.Infrastructure.Services.AuditLog.ExportJobs;
 using System.Security.Claims;
 
 /// <summary>
@@ -39,6 +41,9 @@ public static partial class AuditLogEndpointsExtension
     [LoggerMessage(EventId = 1129, Level = LogLevel.Information, Message = "Bruger '{UserId}' markerede eksportjob '{JobId}' som set.")]
     static partial void ExportJobMarkedSeen(ILogger logger, string UserId, Guid JobId);
 
+    [LoggerMessage(EventId = 1158, Level = LogLevel.Warning, Message = "AuditLog-eksport (Xlsx) afvist for bruger '{UserId}': {Count} rækker overstiger Excel-grænsen på {Limit}.")]
+    static partial void ExportEndpointXlsxLimitExceeded(ILogger logger, string UserId, int Count, int Limit);
+
     public static IEndpointRouteBuilder MapAuditLogEndpoints(this IEndpointRouteBuilder endpoints)
     {
         ArgumentNullException.ThrowIfNull(endpoints);
@@ -55,6 +60,7 @@ public static partial class AuditLogEndpointsExtension
             [FromServices] IAuditLogExportService exportService,
             [FromServices] IAuditLogExportTokenService tokenService,
             [FromServices] IAdminActionRateLimiter rateLimiter,
+            [FromServices] IOptionsMonitor<AuditLogExportJobOptions> optionsMonitor,
             [FromQuery] string format,
             [FromQuery] string token,
             [FromQuery] string? entityName,
@@ -107,6 +113,15 @@ public static partial class AuditLogEndpointsExtension
                 return Results.Problem(
                     detail: $"Eksporten omfatter {totalCount} rækker, hvilket overstiger den " +
                         $"tilladte grænse på {IAuditLogExportService.HardRowLimit}. Indsnævr filteret og prøv igen.",
+                    statusCode: StatusCodes.Status422UnprocessableEntity);
+            }
+
+            var xlsxMaxRows = Math.Max(1, optionsMonitor.CurrentValue.XlsxMaxRows);
+            if (exportFormat == AuditLogExportFormat.Xlsx && totalCount > xlsxMaxRows)
+            {
+                ExportEndpointXlsxLimitExceeded(exportLogger, currentUserId, totalCount, xlsxMaxRows);
+                return Results.Problem(
+                    detail: IAuditLogExportService.XlsxRowLimitMessage(totalCount, xlsxMaxRows),
                     statusCode: StatusCodes.Status422UnprocessableEntity);
             }
 

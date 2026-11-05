@@ -2,6 +2,7 @@
 
 using FluentAssertions;
 using Microsoft.Playwright;
+using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Tests.E2E.Screenshots;
 using System.Collections.Concurrent;
@@ -17,7 +18,9 @@ using System.Web;
 /// Filtre (e-mail + datoer): D0-D0 = 50.000, D0-D1 = 50.001, D0-D2 = 250.000, ingen datoer = 250.001.
 ///
 /// 250.000 rækker downloades ikke (bekræftelsen verificeres og annulleres): selve download-flowet er dækket
-/// ved 50.000 og 50.001. Skærmbilleder: Auditlog_J4_Bekraeftelse og Auditlog_J4_Graense (&lt;bredde&gt;).
+/// ved 50.000 og 50.001. 
+/// Xlsx har egen grænse (policy XlsxMaxRows, standard 50.000): 50.000 tilladt, 50.001 afvist
+/// Skærmbilleder: Auditlog_J4_Bekraeftelse og Auditlog_J4_Graense (&lt;bredde&gt;).
 /// </summary>
 [Collection(PlaywrightVolumeAppCollection.Name)]
 [Trait(TestCategories.Category, TestCategories.ManualSmoke)]
@@ -197,6 +200,95 @@ public sealed class AuditLogEksportVolumenTests(PlaywrightAppFixture fixture)
 
         await Assertions.Expect(AuditLogPage.ExportError(page)).ToContainTextAsync("Eksporten omfatter 250001 rækker");
         await Assertions.Expect(AuditLogPage.ExportError(page)).ToContainTextAsync("grænse på 250000");
+        await Assertions.Expect(AuditLogPage.ExportSuccess(page)).ToHaveCountAsync(0);
+        await Assertions.Expect(AuditLogPage.JobRows(page)).ToHaveCountAsync(0);
+    }
+
+    // --- Xlsx-grænsen (policy XlsxMaxRows, standard 50.000) ---
+
+    [Fact]
+    public async Task Eksport_Xlsx50000Raekker_ErTilladtOgGiverFil()
+    {
+        var data = await EnsureDatasetAsync();
+        var user = await NewAuditorAsync();
+        var page = await AuditLogPage.OpenAsync(fixture, user, Viewports.Desktop);
+
+        await SearchAsync(page, data, data.Day(0), data.Day(0), Rows50000);
+        await AuditLogPage.SelectExportFormatAsync(page, AuditLogExportFormat.Xlsx);
+
+        var url = await ExportAsync(page, user);
+
+        await Assertions.Expect(AuditLogPage.ExportError(page)).ToHaveCountAsync(0);
+        var response = await AuditLogExport.FetchAsync(page, url, FetchTimeoutMs);
+
+        response.Status.Should().Be(200);
+        response.FileName.Should().EndWith(".xlsx");
+        AuditLogExport.XlsxRowCount(response.Body).Should().Be(Rows50000);
+    }
+
+    [Fact]
+    public async Task Eksport_Xlsx50001Raekker_AfvisesMedFejlUdenBekraeftelseOgDownload()
+    {
+        var data = await EnsureDatasetAsync();
+        var user = await NewAuditorAsync();
+        var page = await AuditLogPage.OpenAsync(fixture, user, Viewports.Desktop);
+
+        await SearchAsync(page, data, data.Day(0), data.Day(1), Rows50001);
+        await AuditLogPage.SelectExportFormatAsync(page, AuditLogExportFormat.Xlsx);
+
+        await ClickExportAsync(page, user, () => AuditLogPage.ExportError(page).IsVisibleAsync());
+
+        await Assertions.Expect(AuditLogPage.ExportError(page)).ToContainTextAsync(
+            "Error: Excel-eksporten omfatter 50001 rækker, hvilket overstiger grænsen på 50000. " +
+            "Vælg CSV eller JSON, eller indsnævr filteret og prøv igen.");
+        await Assertions.Expect(AuditLogPage.ThresholdConfirm(page)).ToHaveCountAsync(0);
+
+        var opened = await BlazorInteraction.WaitUntilAsync(
+            async () => (await AuditLogExport.OpenedUrlsAsync(page)).Count > 0, TimeSpan.FromSeconds(1));
+        opened.Should().BeFalse("en afvist Excel-eksport må ikke starte et download");
+    }
+
+    [Fact]
+    public async Task Endpoint_Xlsx50001Raekker_GiverUbehandlelig422MedForklaring()
+    {
+        var data = await EnsureDatasetAsync();
+        var user = await NewAuditorAsync();
+        var page = await AuditLogPage.OpenAsync(fixture, user, Viewports.Desktop);
+
+        // Et gyldigt token fås ved en CSV-eksport af 50.001 rækker (med bekræftelse). Derefter skiftes
+        // formatet til Xlsx i URL'en. UI'et ville aldrig udstede en sådan URL.
+        await SearchAsync(page, data, data.Day(0), data.Day(1), Rows50001);
+        await ClickExportAsync(page, user, () => AuditLogPage.ThresholdConfirm(page).IsVisibleAsync());
+        await AuditLogPage.ThresholdConfirmButton(page).ClickAsync();
+        var url = await AuditLogExport.WaitForNewUrlAsync(page, knownCount: 0);
+        url.Should().Contain("format=Csv");
+
+        var response = await AuditLogExport.FetchAsync(
+            page, url.Replace("format=Csv", "format=Xlsx", StringComparison.Ordinal), FetchTimeoutMs);
+
+        response.Status.Should().Be(422);
+        response.FileName.Should().BeNull();
+
+        using var problem = JsonDocument.Parse(response.Body);
+        var detail = problem.RootElement.GetProperty("detail").GetString();
+        detail.Should().Contain("Excel-eksporten omfatter 50001 rækker").And.Contain("grænsen på 50000");
+    }
+
+    [Fact]
+    public async Task Baggrundseksport_Xlsx50001Raekker_AfvisesVedOprettelseUdenJob()
+    {
+        var data = await EnsureDatasetAsync();
+        var user = await NewAuditorAsync();
+        var page = await AuditLogPage.OpenAsync(fixture, user, Viewports.Desktop);
+
+        await SearchAsync(page, data, data.Day(0), data.Day(1), Rows50001);
+        await AuditLogPage.SelectExportFormatAsync(page, AuditLogExportFormat.Xlsx);
+
+        await ClickWithStepUpAsync(
+            page, user, AuditLogPage.BackgroundExportButton(page), () => AuditLogPage.ExportError(page).IsVisibleAsync());
+
+        await Assertions.Expect(AuditLogPage.ExportError(page)).ToContainTextAsync("Excel-eksporten omfatter 50001 rækker");
+        await Assertions.Expect(AuditLogPage.ExportError(page)).ToContainTextAsync("grænsen på 50000");
         await Assertions.Expect(AuditLogPage.ExportSuccess(page)).ToHaveCountAsync(0);
         await Assertions.Expect(AuditLogPage.JobRows(page)).ToHaveCountAsync(0);
     }

@@ -83,6 +83,13 @@ public sealed partial class AuditLogExportJobProcessor(
                 return true;
             }
 
+            var xlsxMaxRows = Math.Max(1, optionsMonitor.CurrentValue.XlsxMaxRows);
+            if (claimed.Format == AuditLogExportFormat.Xlsx && rowCount > xlsxMaxRows)
+            {
+                await FailAsync(claimed.Id, IAuditLogExportService.XlsxRowLimitMessage(rowCount, xlsxMaxRows));
+                return true;
+            }
+
             var maxMegabytes = Math.Max(1, optionsMonitor.CurrentValue.MaxFileSizeMegabytes);
 
             var stream = new MemoryStream();

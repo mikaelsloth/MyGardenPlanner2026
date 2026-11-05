@@ -4,6 +4,7 @@ using FluentAssertions;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Infrastructure.Services.AuditLog.Export;
+using MyGardenPlanner2026.Infrastructure.Services.AuditLog.ExportJobs;
 using NSubstitute;
 using System.Text;
 using System.Text.Json;
@@ -14,10 +15,11 @@ public sealed class AuditLogExportServiceTests
 {
     private readonly IAuditLogQueryService queryService = Substitute.For<IAuditLogQueryService>();
     private readonly AuditLogExportService sut;
+    private readonly TestOptionsMonitor<AuditLogExportJobOptions> options = new(new AuditLogExportJobOptions());
 
     public AuditLogExportServiceTests()
     {
-        sut = new AuditLogExportService(queryService);
+        sut = new AuditLogExportService(queryService, options);
     }
 
     private static AuditLogEntryDto Entry(long id = 1, string? oldValues = null) => new(
@@ -291,5 +293,60 @@ public sealed class AuditLogExportServiceTests
         await sut.ExportAsync(EmptyFilter, format, destination, TestContext.Current.CancellationToken);
 
         destination.Content.Length.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task ExportAsync_XlsxRowCountAboveConfiguredLimit_ThrowsWithoutReadingRows()
+    {
+        SetupQueryResults([Entry(1), Entry(2)]);
+        options.Set(new AuditLogExportJobOptions { XlsxMaxRows = 1 });
+        using var stream = new MemoryStream();
+
+        var act = async () => await sut.ExportAsync(EmptyFilter, AuditLogExportFormat.Xlsx, stream);
+
+        var ex = await act.Should().ThrowAsync<InvalidOperationException>();
+        ex.Which.Message.Should().Contain("2 rækker").And.Contain("grænsen på 1");
+        await queryService.DidNotReceive().GetBatchAsync(
+            Arg.Any<AuditLogFilterDto>(), Arg.Any<AuditLogCursor?>(), Arg.Any<int>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ExportAsync_XlsxRowCountExactlyAtConfiguredLimit_Exports()
+    {
+        SetupQueryResults([Entry(1), Entry(2)]);
+        options.Set(new AuditLogExportJobOptions { XlsxMaxRows = 2 });
+        using var stream = new MemoryStream();
+
+        await sut.ExportAsync(EmptyFilter, AuditLogExportFormat.Xlsx, stream, TestContext.Current.CancellationToken);
+
+        stream.Length.Should().BeGreaterThan(0);
+    }
+
+    [Theory]
+    [InlineData(AuditLogExportFormat.Csv)]
+    [InlineData(AuditLogExportFormat.Json)]
+    public async Task ExportAsync_NonXlsxFormats_AreNotSubjectToXlsxLimit(AuditLogExportFormat format)
+    {
+        SetupQueryResults([Entry(1), Entry(2)]);
+        options.Set(new AuditLogExportJobOptions { XlsxMaxRows = 1 });
+        using var stream = new MemoryStream();
+
+        await sut.ExportAsync(EmptyFilter, format, stream, TestContext.Current.CancellationToken);
+
+        stream.Length.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task ExportAsync_XlsxLimitChangedAtRuntime_TakesEffectOnNextExport()
+    {
+        SetupQueryResults([Entry(1), Entry(2)]);
+        using var first = new MemoryStream();
+        await sut.ExportAsync(EmptyFilter, AuditLogExportFormat.Xlsx, first, TestContext.Current.CancellationToken);
+
+        options.Set(new AuditLogExportJobOptions { XlsxMaxRows = 1 });
+        using var second = new MemoryStream();
+        var act = async () => await sut.ExportAsync(EmptyFilter, AuditLogExportFormat.Xlsx, second);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
     }
 }

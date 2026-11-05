@@ -435,4 +435,45 @@ public sealed class AuditLogExportJobServiceTests : TestDbContext
 
         await act.Should().ThrowAsync<ArgumentException>();
     }
+
+    [Fact]
+    public async Task EnqueueAsync_XlsxAboveXlsxLimit_ThrowsAndPersistsNoJob()
+    {
+        var limited = CreateService(new AuditLogExportJobOptions { XlsxMaxRows = 100 });
+        queryService.CountAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(101));
+
+        var act = () => limited.EnqueueAsync("user-1", Filter(), AuditLogExportFormat.Xlsx);
+
+        var ex = await act.Should().ThrowAsync<InvalidOperationException>();
+        ex.Which.Message.Should().Contain("101 rækker").And.Contain("grænsen på 100");
+        await using var context = CreateDbContext();
+        (await context.AuditLogExportJobs.AnyAsync(TestContext.Current.CancellationToken)).Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task EnqueueAsync_XlsxExactlyAtXlsxLimit_EnqueuesJob()
+    {
+        var limited = CreateService(new AuditLogExportJobOptions { XlsxMaxRows = 100 });
+        queryService.CountAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(100));
+
+        var dto = await limited.EnqueueAsync("user-1", Filter(), AuditLogExportFormat.Xlsx, TestContext.Current.CancellationToken);
+
+        dto.Status.Should().Be(AuditLogExportJobStatus.Pending);
+    }
+
+    [Theory]
+    [InlineData(AuditLogExportFormat.Csv)]
+    [InlineData(AuditLogExportFormat.Json)]
+    public async Task EnqueueAsync_NonXlsxAboveXlsxLimit_EnqueuesJob(AuditLogExportFormat format)
+    {
+        var limited = CreateService(new AuditLogExportJobOptions { XlsxMaxRows = 100 });
+        queryService.CountAsync(Arg.Any<AuditLogFilterDto>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(101));
+
+        var dto = await limited.EnqueueAsync("user-1", Filter(), format, TestContext.Current.CancellationToken);
+
+        dto.Status.Should().Be(AuditLogExportJobStatus.Pending);
+    }
 }

@@ -5,6 +5,7 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Pages.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
+using MyGardenPlanner2026.Infrastructure.Services.AuditLog.ExportJobs;
 using MyGardenPlanner2026.Tests.UI;
 using NSubstitute;
 using Xunit;
@@ -22,6 +23,7 @@ public class AdminAuditLogPageTests : BunitContext
         Services.AddSingleton(preferenceService);
         Services.AddSingleton(tokenService);
         Services.AddSingleton(exportJobService);
+        Services.AddOptions<AuditLogExportJobOptions>();
         this.RegisterAdminStepUpFakes<AdminAuditLogPage>();
 
         exportJobService.GetJobsForUserAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())

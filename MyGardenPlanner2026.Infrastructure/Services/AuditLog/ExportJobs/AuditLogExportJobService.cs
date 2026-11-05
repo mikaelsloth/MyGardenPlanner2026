@@ -46,6 +46,9 @@ public sealed partial class AuditLogExportJobService(
     [LoggerMessage(EventId = 1156, Level = LogLevel.Warning, Message = "Oprettelse af AuditLog-eksportjob afvist for bruger '{UserId}': {Count} rækker overstiger grænsen på {Limit}.")]
     static partial void EnqueueRowLimitExceeded(ILogger logger, string UserId, int Count, int Limit);
 
+    [LoggerMessage(EventId = 1159, Level = LogLevel.Warning, Message = "Oprettelse af AuditLog-eksportjob (Xlsx) afvist for bruger '{UserId}': {Count} rækker overstiger Excel-grænsen på {Limit}.")]
+    static partial void EnqueueXlsxLimitExceeded(ILogger logger, string UserId, int Count, int Limit);
+
     public async Task<AuditLogExportJobDto> EnqueueAsync(
         string userId, AuditLogFilterDto filter, AuditLogExportFormat format,
         CancellationToken cancellationToken = default)
@@ -82,6 +85,18 @@ public sealed partial class AuditLogExportJobService(
             throw new InvalidOperationException(
                 $"Eksporten omfatter {rowCount} rækker, hvilket overstiger den tilladte " +
                 $"grænse på {IAuditLogExportService.HardRowLimit}. Indsnævr filteret og prøv igen.");
+        }
+
+        if (format == AuditLogExportFormat.Xlsx)
+        {
+            var xlsxMaxRows = Math.Max(1, optionsMonitor.CurrentValue.XlsxMaxRows);
+
+            if (rowCount > xlsxMaxRows)
+            {
+                EnqueueXlsxLimitExceeded(logger, userId, rowCount, xlsxMaxRows);
+                throw new InvalidOperationException(
+                    IAuditLogExportService.XlsxRowLimitMessage(rowCount, xlsxMaxRows));
+            }
         }
 
         var job = new AuditLogExportJob

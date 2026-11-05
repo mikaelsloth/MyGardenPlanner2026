@@ -27,7 +27,7 @@ public class AuditLogExportJobPolicyEditorTests : BunitContext
         rateLimiter = fakes.RateLimiter;
 
         adminService.GetAsync(Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(new AuditLogExportJobPolicyDto(24, 3)));
+            .Returns(Task.FromResult(new AuditLogExportJobPolicyDto(24, 3, 50_000)));
     }
 
     private IRenderedComponent<AuditLogExportJobPolicyEditor> RenderEditor() =>
@@ -49,11 +49,12 @@ public class AuditLogExportJobPolicyEditorTests : BunitContext
 
         await cut.Find("#exportjob-retention").ChangeAsync("72");
         await cut.Find("#exportjob-maxactive").ChangeAsync("10");
+        await cut.Find("#exportjob-xlsxmaxrows").ChangeAsync("75000");
         await cut.Find("button.btn-primary").ClickAsync();
 
         cut.ShouldNotShowStepUpModal();
         await adminService.Received().UpdateAsync(
-            Arg.Is<AuditLogExportJobPolicyDto>(d => d.RetentionHours == 72 && d.MaxActiveJobsPerUser == 10),
+            Arg.Is<AuditLogExportJobPolicyDto>(d => d.RetentionHours == 72 && d.MaxActiveJobsPerUser == 10 && d.XlsxMaxRows == 75000),
             "user-1", Arg.Any<CancellationToken>());
     }
 
@@ -61,7 +62,7 @@ public class AuditLogExportJobPolicyEditorTests : BunitContext
     public async Task ReAuthValid_ClickingGem_InvokesOnStatusMessage()
     {
         adminService.UpdateAsync(Arg.Any<AuditLogExportJobPolicyDto>(), "user-1", Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult(new AuditLogExportJobPolicyDto(72, 10)));
+            .Returns(Task.FromResult(new AuditLogExportJobPolicyDto(72, 10, 75_000)));
         string? statusMessage = null;
 
         var cut = Render<AuditLogExportJobPolicyEditor>(p => p

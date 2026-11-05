@@ -34,7 +34,7 @@ public class AdminSecurityPolicyPageTests : BunitContext
         Services.AddSingleton(loginService);
 
         var auditLogExportJobService = Substitute.For<IAuditLogExportJobPolicyAdminService>();
-        auditLogExportJobService.GetAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult(new AuditLogExportJobPolicyDto(24, 3)));
+        auditLogExportJobService.GetAsync(Arg.Any<CancellationToken>()).Returns(Task.FromResult(new AuditLogExportJobPolicyDto(24, 3, 50_000)));
         Services.AddSingleton(auditLogExportJobService);
 
         this.RegisterAdminStepUpFakes<AdminSecurityPolicyPage>();

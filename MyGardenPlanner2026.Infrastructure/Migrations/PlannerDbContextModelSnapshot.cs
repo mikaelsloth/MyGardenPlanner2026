@@ -365,6 +365,9 @@ namespace MyGardenPlanner2026.Infrastructure.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("ValidToUtc");
 
+                    b.Property<int>("XlsxMaxRows")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.ToTable("AuditLogExportJobPolicySettings", "admin");

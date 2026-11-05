@@ -67,6 +67,7 @@ public static class SecurityPolicyPage
         public const string ExportRetention = "exportjob-retention";
         public const string ExportMaxActive = "exportjob-maxactive";
         public const string JitPendingExpiry = "jit-pending-expiry";
+        public const string ExportXlsxMaxRows = "exportjob-xlsxmaxrows";
     }
 
     public static ILocator Field(IPage page, string id) => page.Locator($"#{id}");

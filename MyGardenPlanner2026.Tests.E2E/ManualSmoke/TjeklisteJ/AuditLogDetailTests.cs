@@ -12,6 +12,7 @@ using System.Text.Json;
 /// Tjekliste J3: detaljemodalen på /admin/audit-log. Hver test seeder 5 rækker med en unik entitet
 /// (create: Old null | update: kompakt JSON | delete: New null | invalid: ugyldig JSON | empty: tomme strenge),
 /// filtrerer på entiteten og bruger en frisk AuditViewer. Forventet JSON-formatering er hardcodet.
+/// Tastatur: Esc lukker, fokus fanges i dialogen og returneres til "Detaljer"-knappen (R6.3).
 /// Layout: to kolonner fra 940 px, under hinanden under 940 px. Skærmbilleder: Auditlog_J3_Detaljer (&lt;bredde&gt;).
 /// En rigtig række (J2b) dækkes af J2.
 /// </summary>
@@ -224,6 +225,55 @@ public sealed class AuditLogDetailTests(PlaywrightAppFixture fixture)
         await OpenDetailsAsync(page, seed, RowKind.Create);
         await AuditLogPage.DetailBackdrop(page).ClickAsync(new() { Position = new Position { X = 10, Y = 10 } });
         await Assertions.Expect(dialog).ToBeHiddenAsync();
+    }
+
+    // --- Tastatur og fokus (R6.3) ---
+
+    [Fact]
+    public async Task Escape_LukkerDialogenOgReturnererFokusTilDetaljerKnappen()
+    {
+        var seed = await SeedAsync();
+        var page = await OpenFilteredAsync(seed, Viewports.Desktop);
+        var row = AuditLogPage.Rows(page).Filter(new() { HasText = seed.Id(RowKind.Update) });
+        var detailsButton = AuditLogPage.DetailsButton(row);
+
+        await OpenDetailsAsync(page, seed, RowKind.Update);
+
+        // Initialt fokus er "Luk". Esc må først sendes, når fokus er flyttet ind i dialogen.
+        await Assertions.Expect(AuditLogPage.CloseButton(page)).ToBeFocusedAsync();
+
+        await page.Keyboard.PressAsync("Escape");
+
+        await Assertions.Expect(AuditLogPage.DetailDialog(page)).ToBeHiddenAsync();
+        // Klik fokuserer knappen i Chromium, så det er den, fokus skal returnere til.
+        await Assertions.Expect(detailsButton).ToBeFocusedAsync();
+    }
+
+    [Fact]
+    public async Task TabOgShiftTab_HolderFokusIDialogen()
+    {
+        var seed = await SeedAsync();
+        var page = await OpenFilteredAsync(seed, Viewports.Desktop);
+
+        await OpenDetailsAsync(page, seed, RowKind.Update);
+
+        var dialogWithFocus = page.Locator(".audit-log-detail-dialog:focus-within");
+        await Assertions.Expect(dialogWithFocus).ToHaveCountAsync(1);
+
+        // Dialogen har kun "Luk" som fokuserbart element; flere tryk end elementer sikrer, at fokus må krydse enderne.
+        const int presses = 4;
+
+        for (var i = 0; i < presses; i++)
+        {
+            await page.Keyboard.PressAsync("Tab");
+            await Assertions.Expect(dialogWithFocus).ToHaveCountAsync(1);
+        }
+
+        for (var i = 0; i < presses; i++)
+        {
+            await page.Keyboard.PressAsync("Shift+Tab");
+            await Assertions.Expect(dialogWithFocus).ToHaveCountAsync(1);
+        }
     }
 
     // --- Skærmbilleder ---

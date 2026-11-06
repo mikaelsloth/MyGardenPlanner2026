@@ -12,6 +12,8 @@ using Xunit;
 
 public class AdminAuditLogPageTests : BunitContext
 {
+    private readonly FakeFocusTrapService focusTrap;
+
     private readonly IAuditLogQueryService queryService = Substitute.For<IAuditLogQueryService>();
     private readonly IAuditLogViewerPreferenceService preferenceService = Substitute.For<IAuditLogViewerPreferenceService>();
     private readonly IAuditLogExportTokenService tokenService = Substitute.For<IAuditLogExportTokenService>();
@@ -25,6 +27,7 @@ public class AdminAuditLogPageTests : BunitContext
         Services.AddSingleton(exportJobService);
         Services.AddOptions<AuditLogExportJobOptions>();
         this.RegisterAdminStepUpFakes<AdminAuditLogPage>();
+        focusTrap = this.AddFakeFocusTrap();
 
         exportJobService.GetJobsForUserAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<AuditLogExportJobDto>>([]));

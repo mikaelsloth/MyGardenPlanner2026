@@ -8,6 +8,7 @@
 <nav class="nav-drawer @(IsOpen ? "open" : string.Empty)"
      aria-label="Brugermenu"
      tabindex="-1"
+     inert="@(!IsOpen)"
      @ref="drawerElement"
      @onkeydown="HandleKeyDownAsync">
     <div class="stack-md">

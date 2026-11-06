@@ -68,4 +68,20 @@ public sealed class AppNavDrawerTests : BunitContext
 
         callCount.Should().Be(1);
     }
+
+    [Fact]
+    public void WhenClosed_IsInert()
+    {
+        var cut = Render<AppNavDrawer>(p => p.Add(d => d.IsOpen, false));
+
+        cut.Find(".nav-drawer").HasAttribute("inert").Should().BeTrue();
+    }
+
+    [Fact]
+    public void WhenOpen_IsNotInert()
+    {
+        var cut = Render<AppNavDrawer>(p => p.Add(d => d.IsOpen, true));
+
+        cut.Find(".nav-drawer").HasAttribute("inert").Should().BeFalse();
+    }
 }

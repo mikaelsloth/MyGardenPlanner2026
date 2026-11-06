@@ -7,7 +7,7 @@
             <button type="button"
                     role="tab"
                     class="context-tab @(selectedCycle == cycle ? "active" : string.Empty)"
-                    aria-selected="@(selectedCycle == cycle)"
+                    aria-selected="@((selectedCycle == cycle).ToAriaValue())"
                     @onclick="() => SelectCycleAsync(cycle)">
                 @CycleLabel(cycle)
             </button>

@@ -18,27 +18,27 @@
 
     <div class="context-tabs" role="tablist" aria-label="Sikkerhedspolicy-områder">
         <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.JitElevation ? "active" : string.Empty)"
-                aria-selected="@(activeTab == AdminTab.JitElevation)" @onclick="() => SelectTab(AdminTab.JitElevation)">
+                aria-selected="@((activeTab == AdminTab.JitElevation).ToAriaValue())" @onclick="() => SelectTab(AdminTab.JitElevation)">
             JIT-eskalering
         </button>
         <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.ReAuthentication ? "active" : string.Empty)"
-                aria-selected="@(activeTab == AdminTab.ReAuthentication)" @onclick="() => SelectTab(AdminTab.ReAuthentication)">
+                aria-selected="@((activeTab == AdminTab.ReAuthentication).ToAriaValue())" @onclick="() => SelectTab(AdminTab.ReAuthentication)">
             Step-up re-auth
         </button>
         <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.ReAuthFailureTracker ? "active" : string.Empty)"
-                aria-selected="@(activeTab == AdminTab.ReAuthFailureTracker)" @onclick="() => SelectTab(AdminTab.ReAuthFailureTracker)">
+                aria-selected="@((activeTab == AdminTab.ReAuthFailureTracker).ToAriaValue())" @onclick="() => SelectTab(AdminTab.ReAuthFailureTracker)">
             Fejl-tracker
         </button>
         <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.AdminApiRateLimit ? "active" : string.Empty)"
-                aria-selected="@(activeTab == AdminTab.AdminApiRateLimit)" @onclick="() => SelectTab(AdminTab.AdminApiRateLimit)">
+                aria-selected="@((activeTab == AdminTab.AdminApiRateLimit).ToAriaValue())" @onclick="() => SelectTab(AdminTab.AdminApiRateLimit)">
             Admin-API rate limit
         </button>
         <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.LoginRateLimit ? "active" : string.Empty)"
-                aria-selected="@(activeTab == AdminTab.LoginRateLimit)" @onclick="() => SelectTab(AdminTab.LoginRateLimit)">
+                aria-selected="@((activeTab == AdminTab.LoginRateLimit).ToAriaValue())" @onclick="() => SelectTab(AdminTab.LoginRateLimit)">
             Login rate limit
         </button>
         <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.AuditLogExportJob ? "active" : string.Empty)"
-                aria-selected="@(activeTab == AdminTab.AuditLogExportJob)" @onclick="() => SelectTab(AdminTab.AuditLogExportJob)">
+                aria-selected="@((activeTab == AdminTab.AuditLogExportJob).ToAriaValue())" @onclick="() => SelectTab(AdminTab.AuditLogExportJob)">
             AuditLog-eksport
         </button>
     </div>

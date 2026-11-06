@@ -18,11 +18,11 @@
 
     <div class="context-tabs" role="tablist" aria-label="JIT-adgangsområder">
         <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.Request ? "active" : string.Empty)"
-                aria-selected="@(activeTab == AdminTab.Request)" @onclick="() => SelectTab(AdminTab.Request)">
+                aria-selected="@((activeTab == AdminTab.Request).ToAriaValue())" @onclick="() => SelectTab(AdminTab.Request)">
             Anmod om adgang
         </button>
         <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.Approve ? "active" : string.Empty)"
-                aria-selected="@(activeTab == AdminTab.Approve)" @onclick="() => SelectTab(AdminTab.Approve)">
+                aria-selected="@((activeTab == AdminTab.Approve).ToAriaValue())" @onclick="() => SelectTab(AdminTab.Approve)">
             Godkend anmodninger
         </button>
     </div>

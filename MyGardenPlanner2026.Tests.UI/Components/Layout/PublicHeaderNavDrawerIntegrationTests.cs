@@ -74,10 +74,10 @@ public class PublicHeaderNavDrawerIntegrationTests : BunitContext
         var cut = Render<PublicHeader>();
         var button = cut.Find("button[aria-label='Åbn menu']");
 
-        button.GetAttribute("aria-expanded").Should().Be("False");
+        button.GetAttribute("aria-expanded").Should().Be("false");
 
         button.Click();
 
-        cut.Find("button[aria-label='Åbn menu']").GetAttribute("aria-expanded").Should().Be("True");
+        cut.Find("button[aria-label='Åbn menu']").GetAttribute("aria-expanded").Should().Be("true");
     }
 }

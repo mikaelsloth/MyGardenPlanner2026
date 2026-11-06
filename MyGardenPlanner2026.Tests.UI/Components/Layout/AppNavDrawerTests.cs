@@ -2,6 +2,8 @@
 
 using Bunit;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
+using MyGardenPlanner2026.Components.Foundation;
 using MyGardenPlanner2026.Components.Layout;
 using Xunit;
 
@@ -10,6 +12,7 @@ public sealed class AppNavDrawerTests : BunitContext
     public AppNavDrawerTests()
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
+        Services.AddScoped<IFocusTrapService, FocusTrapService>();
         AddAuthorization().SetAuthorized("user1@example.com");
     }
 

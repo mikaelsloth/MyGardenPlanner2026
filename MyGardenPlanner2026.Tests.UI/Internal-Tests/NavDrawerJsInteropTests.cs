@@ -15,7 +15,7 @@ public sealed class NavDrawerJsInteropTests : BunitContext
         var runtime = Services.GetRequiredService<IJSRuntime>();
 
         await using var module = await runtime.InvokeAsync<IJSObjectReference>("import", NavDrawerJsInterop.ModulePath);
-        await module.InvokeVoidAsync("activate", "drawer");
+        await module.InvokeAsync<int>("activate", "drawer");
         await module.InvokeVoidAsync("deactivate");
 
         setup.VerifyInvoke("activate");

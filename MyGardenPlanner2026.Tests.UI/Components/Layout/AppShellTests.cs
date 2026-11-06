@@ -3,6 +3,7 @@
 using Bunit;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using MyGardenPlanner2026.Components.Foundation;
 using MyGardenPlanner2026.Components.Layout;
 using MyGardenPlanner2026.Core.Contracts.Onboarding;
 using NSubstitute;
@@ -16,6 +17,7 @@ public sealed class AppShellTests : BunitContext
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
         Services.AddSingleton(queryService);
+        Services.AddScoped<IFocusTrapService, FocusTrapService>();
 
         this.AuthorizeAs("user-1", "user1@example.com");
 

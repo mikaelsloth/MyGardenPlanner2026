@@ -2,23 +2,20 @@ namespace MyGardenPlanner2026.Components.Layout;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-using Microsoft.JSInterop;
+using MyGardenPlanner2026.Components.Foundation;
 
 /// <summary>
-/// Mobil off-canvas menu til AppShell (brand + bruger-e-mail + log ud). Genbruger
-/// NavDrawer.razor.js's fokus-trap-modul direkte — modulet er generisk (tager blot et
-/// element), så ingen sidespecifik JS-duplikering er nødvendig.
+/// Mobil off-canvas menu til AppShell (brand + bruger-e-mail + log ud). Bruger det delte
+/// fokus-trap (FocusTrapService), som også bruges af NavDrawer og dialoger.
 /// </summary>
 public partial class AppNavDrawer : IAsyncDisposable
 {
-    private const string ModulePath = "./Components/Layout/NavDrawer.razor.js";
-
     private ElementReference drawerElement;
     private bool wasOpen;
-    private IJSObjectReference? module;
+    private IAsyncDisposable? focusTrap;
 
     [Inject]
-    private IJSRuntime JS { get; set; } = default!;
+    private IFocusTrapService FocusTrapService { get; set; } = default!;
 
     [Parameter]
     public bool IsOpen { get; set; }
@@ -28,36 +25,41 @@ public partial class AppNavDrawer : IAsyncDisposable
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (IsOpen == wasOpen)
         {
-            module = await JS.InvokeAsync<IJSObjectReference>("import", ModulePath);
-        }
-
-        if (IsOpen && !wasOpen)
-        {
-            await ActivateFocusTrapAsync();
-        }
-        else if (!IsOpen && wasOpen)
-        {
-            await DeactivateFocusTrapAsync();
+            return;
         }
 
         wasOpen = IsOpen;
-    }
 
-    private async Task ActivateFocusTrapAsync()
-    {
-        if (module is not null)
+        if (IsOpen)
         {
-            await module.InvokeVoidAsync("activate", drawerElement);
+            var trap = await FocusTrapService.ActivateAsync(drawerElement);
+
+            // Lukket igen, mens aktiveringen afventede.
+            if (IsOpen)
+            {
+                focusTrap = trap;
+            }
+            else
+            {
+                await trap.DisposeAsync();
+            }
+        }
+        else
+        {
+            await ReleaseFocusTrapAsync();
         }
     }
 
-    private async Task DeactivateFocusTrapAsync()
+    private async Task ReleaseFocusTrapAsync()
     {
-        if (module is not null)
+        var trap = focusTrap;
+        focusTrap = null;
+
+        if (trap is not null)
         {
-            await module.InvokeVoidAsync("deactivate");
+            await trap.DisposeAsync();
         }
     }
 
@@ -73,24 +75,7 @@ public partial class AppNavDrawer : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (module is null)
-        {
-            return;
-        }
-
-        try
-        {
-            if (IsOpen)
-            {
-                await module.InvokeVoidAsync("deactivate");
-            }
-
-            await module.DisposeAsync();
-            GC.SuppressFinalize(this);
-        }
-        catch (JSDisconnectedException)
-        {
-            // Circuit allerede afbrudt.
-        }
+        await ReleaseFocusTrapAsync();
+        GC.SuppressFinalize(this);
     }
 }

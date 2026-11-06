@@ -2,18 +2,16 @@ namespace MyGardenPlanner2026.Components.Layout;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-using Microsoft.JSInterop;
+using MyGardenPlanner2026.Components.Foundation;
 
 public partial class NavDrawer : IAsyncDisposable
 {
-    private const string ModulePath = "./Components/Layout/NavDrawer.razor.js";
-
     private ElementReference drawerElement;
     private bool wasOpen;
-    private IJSObjectReference? module;
+    private IAsyncDisposable? focusTrap;
 
     [Inject]
-    private IJSRuntime JS { get; set; } = default!;
+    private IFocusTrapService FocusTrapService { get; set; } = default!;
 
     [Parameter]
     public bool IsOpen { get; set; }
@@ -23,36 +21,41 @@ public partial class NavDrawer : IAsyncDisposable
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (IsOpen == wasOpen)
         {
-            module = await JS.InvokeAsync<IJSObjectReference>("import", ModulePath);
-        }
-
-        if (IsOpen && !wasOpen)
-        {
-            await ActivateFocusTrapAsync();
-        }
-        else if (!IsOpen && wasOpen)
-        {
-            await DeactivateFocusTrapAsync();
+            return;
         }
 
         wasOpen = IsOpen;
-    }
 
-    private async Task ActivateFocusTrapAsync()
-    {
-        if (module is not null)
+        if (IsOpen)
         {
-            await module.InvokeVoidAsync("activate", drawerElement);
+            var trap = await FocusTrapService.ActivateAsync(drawerElement);
+
+            // Lukket igen, mens aktiveringen afventede.
+            if (IsOpen)
+            {
+                focusTrap = trap;
+            }
+            else
+            {
+                await trap.DisposeAsync();
+            }
+        }
+        else
+        {
+            await ReleaseFocusTrapAsync();
         }
     }
 
-    private async Task DeactivateFocusTrapAsync()
+    private async Task ReleaseFocusTrapAsync()
     {
-        if (module is not null)
+        var trap = focusTrap;
+        focusTrap = null;
+
+        if (trap is not null)
         {
-            await module.InvokeVoidAsync("deactivate");
+            await trap.DisposeAsync();
         }
     }
 
@@ -68,24 +71,7 @@ public partial class NavDrawer : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (module is null)
-        {
-            return;
-        }
-
-        try
-        {
-            if (IsOpen)
-            {
-                await module.InvokeVoidAsync("deactivate");
-            }
-
-            await module.DisposeAsync();
-            GC.SuppressFinalize(this);
-        }
-        catch (JSDisconnectedException)
-        {
-            // Circuit already disconnected — intet at rydde op på klientsiden.
-        }
+        await ReleaseFocusTrapAsync();
+        GC.SuppressFinalize(this);
     }
 }

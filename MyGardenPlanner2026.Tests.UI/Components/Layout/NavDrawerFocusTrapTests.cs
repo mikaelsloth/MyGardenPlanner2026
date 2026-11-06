@@ -8,13 +8,17 @@ using Xunit;
 public class NavDrawerFocusTrapTests : BunitContext
 {
     [Fact]
-    public void NavDrawer_OnFirstRender_ImportsFocusTrapModule()
+    public void NavDrawer_WhenFirstOpened_ImportsFocusTrapModule()
     {
         this.SetupNavDrawerModule();
 
-        Render<NavDrawer>(p => p.Add(x => x.IsOpen, false));
+        var cut = Render<NavDrawer>(p => p.Add(x => x.IsOpen, false));
+        JSInterop.Invocations.Should().NotContain(i => i.Identifier == "import");
 
-        JSInterop.Invocations.Should().Contain(i => i.Identifier == "import");
+        cut.Render(p => p.Add(x => x.IsOpen, true));
+
+        cut.WaitForAssertion(() =>
+            JSInterop.Invocations.Should().Contain(i => i.Identifier == "import"));
     }
 
     [Fact]

@@ -12,6 +12,13 @@ using Xunit;
 
 public sealed class AdminTestSupportTests : BunitContext
 {
+    private readonly FakeFocusTrapService focusTrap;
+
+    public AdminTestSupportTests()
+    {
+        focusTrap = this.AddFakeFocusTrap();
+    }
+
     [Fact]
     public async Task RegisterAdminStepUpFakes_ReAuthSucceeds_RecentAuthenticationPolicySucceeds()
     {

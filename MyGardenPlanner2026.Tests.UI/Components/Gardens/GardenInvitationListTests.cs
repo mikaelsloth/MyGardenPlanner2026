@@ -8,6 +8,13 @@ using Xunit;
 
 public sealed class GardenInvitationListTests : BunitContext
 {
+    private readonly FakeFocusTrapService focusTrap;
+
+    public GardenInvitationListTests()
+    {
+        focusTrap = this.AddFakeFocusTrap();
+    }
+
     [Fact]
     public void GroupsInvitationsIntoCorrectSections()
     {

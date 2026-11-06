@@ -18,15 +18,15 @@
 
     <div class="context-tabs" role="tablist" aria-label="Administrationsområder">
         <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.BasePrices ? "active" : string.Empty)"
-                aria-selected="@(activeTab == AdminTab.BasePrices)" @onclick="() => SelectTab(AdminTab.BasePrices)">
+                aria-selected="@((activeTab == AdminTab.BasePrices).ToAriaValue())" @onclick="() => SelectTab(AdminTab.BasePrices)">
             Basispriser
         </button>
         <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.VolumeDiscounts ? "active" : string.Empty)"
-                aria-selected="@(activeTab == AdminTab.VolumeDiscounts)" @onclick="() => SelectTab(AdminTab.VolumeDiscounts)">
+                aria-selected="@((activeTab == AdminTab.VolumeDiscounts).ToAriaValue())" @onclick="() => SelectTab(AdminTab.VolumeDiscounts)">
             Volumen-rabatter
         </button>
         <button type="button" role="tab" class="context-tab @(activeTab == AdminTab.AddOns ? "active" : string.Empty)"
-                aria-selected="@(activeTab == AdminTab.AddOns)" @onclick="() => SelectTab(AdminTab.AddOns)">
+                aria-selected="@((activeTab == AdminTab.AddOns).ToAriaValue())" @onclick="() => SelectTab(AdminTab.AddOns)">
             Tilkøbsmoduler
         </button>
     </div>

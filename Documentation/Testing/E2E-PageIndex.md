@@ -154,7 +154,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - Beløb vises med C2. Sammenlign cifrene (uden kultur, valutategn og separatorer) og divider med 100.
 - Vent på skeletons: `[class*='skeleton']` skal have antal 0 før skærmbillede og assertions.
 - Hver side har præcis én h1 (AccessDenied rettet i PR0; tjek med `SmokePageAssertions.ExpectPageAsync`).
-- Fane-knapper med `aria-selected="@bool"`: true renderes som en tom attribut, false udelades. Brug klassen "active" som valgt-signal.
+- Fane-knapper med aria-expanded og aria-selected renderes som "true"/"false" (ToAriaValue()). Valgt fane kan stadig genkendes på klassen "active".
 - Fanehop (SelectTab) rydder statusbeskeden og genindlæser editoren/komponenten: brug det til at bevise, at en ny besked stammer fra en ny gem.
 - Positiv kontrol før negativ assert: nav (eget link synligt før fravær/antal), JIT-godkendelseskøen (en anden række før count == 0; komponenten renderer først "Ingen ventende anmodninger …", så data) og audit-loggen. Ellers kan en negativ assert bestå, før siden er renderet.
 - Negativ assert på en Blazor-lukning (fx "klik inde i dialogen lukker ikke"): vent med `WaitUntilAsync` til en lukning ville være sket (fx 1 sek.) og assertér, at den ikke skete.
@@ -256,7 +256,7 @@ Verificeret: matrix + calculator (A2). Rabattabel og tilkøbskort: F2/F3 (ikke k
 ```
 PublicHeader og NavDrawer (offentlig navigation)
 Header: header.public-header med <a href="/account/login"> "Log ind" og <a href="/account/register"> "Opret bruger".
-Hamburger: button[aria-label='Åbn menu'], klasse public-header-menu-toggle, vises under 940 px.
+Hamburger: button[aria-label='Åbn menu'], aria-expanded="true|false", klasse public-header-menu-toggle, vises under 940 px.
 Desktop-links: .public-header-links, vises fra 940 px.
 Synlighed af "Log ind"/"Opret bruger" under 940 px er ikke verificeret (PublicHeader.razor.css ikke læst).
 Drawer: nav.nav-drawer, klassen open når den er åben. Baggrund: .drawer-backdrop (kun når åben).
@@ -443,7 +443,7 @@ Tests: ManualSmoke/TjeklisteD/ForkertPasswordModalTests, ManualSmoke/TjeklisteD/
 ```
 /admin/jit-requests
 Titel: JIT-adgang – MyGardenPlanner. h1: JIT-adgang. Brugere uden admin-rolle (Requester, Plain) kan ikke åbne siden. Det er tilsigtet: kun brugere med en admin-rolle kan anmode (R3.2).
-Faner: role=tab, valgt fane har klassen "active". "Anmod om adgang" (standard) og "Godkend anmodninger". Fanehop rydder statusbeskeden og genindlæser fanens komponent.
+Faner: role=tab, valgt fane har klassen "active", aria-selected="true|false" (tests: ManualSmoke/TjeklisteE/FaneAriaTests). "Anmod om adgang" (standard) og "Godkend anmodninger". Fanehop rydder statusbeskeden og genindlæser fanens komponent.
 Statusbesked ved godkend/afvis: .status-success[role=status] på siden.
 Sikkerhedsalarm (mail til Smtp:AdminSecurityEmails): ved anmodning (emne "...JIT-adgang anmodet"; Bruger-ID, Rolle, Minutter) og ved godkendelse (emne "...JIT-admin-rettighed tildelt/aktiveret"; Bruger-ID, Godkender-ID, Rolle, Minutter). Ingen alarm ved afvisning. Ingen step-up og ingen sikkerhedsalarm ved tilbagetrækning.
 Anmod-fanen (JitElevationRequestForm):
@@ -598,7 +598,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 
 ### R6 – Tilgængelighed (prioritet 6)
 ~~- R6.1 Lukket NavDrawer er kun skubbet ud af skærmen med transform, så linkene i den kan nås med Tab.~~
-- R6.2 aria-expanded renderes med stort begyndelsesbogstav ("True"/"False").
+~~- R6.2 aria-expanded renderes med stort begyndelsesbogstav ("True"/"False").~~
 - R6.3 `AuditLogDetailModal`: aria-modal="true", men markup'et har hverken Esc-håndtering, focus-trap eller returnering af fokus (jf. designets ConfirmDialog). Ikke testet i J3.
 
 Filer til Upload: NavDrawer (+.cs/.js/.css), AuditLogDetailModal, ConfirmDialog

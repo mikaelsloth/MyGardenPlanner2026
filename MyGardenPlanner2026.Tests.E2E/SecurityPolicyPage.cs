@@ -160,7 +160,7 @@ public static class SecurityPolicyPage
 
     /// <summary>
     /// Vælger en fane og gentager klikket, til fanen er aktiv (uden et forbundet kredsløb ignoreres klik).
-    /// Aktiv fane har klassen "active"; aria-selected er en bool-attribut uden værdi.
+    /// Aktiv fane har klassen "active" og aria-selected="true"; øvrige faner har aria-selected="false".
     /// </summary>
     public static Task SelectTabAsync(IPage page, string name)
     {

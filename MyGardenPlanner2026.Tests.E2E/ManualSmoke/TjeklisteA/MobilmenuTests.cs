@@ -16,10 +16,10 @@ public sealed partial class MobilmenuTests(PlaywrightAppFixture fixture)
     // Design: mobilvisning (hamburger + NavDrawer) under 940 px.
     private const int MobileBreakpoint = 940;
 
-    [GeneratedRegex("^true$", RegexOptions.IgnoreCase)]
+    [GeneratedRegex("^true$")]
     private static partial Regex TrueValue { get; }
 
-    [GeneratedRegex("^false$", RegexOptions.IgnoreCase)]
+    [GeneratedRegex("^false$")]
     private static partial Regex FalseValue { get; }
 
     private static ILocator Hamburger(IPage page) =>

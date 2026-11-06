@@ -137,7 +137,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - `AuditLogPage` (/admin/audit-log): `OpenAsync(fixture, bruger, bredde?)` (venter på interaktivitet via første rækkes "Detaljer"; kræver mindst én række), `ReloadAsync`
   - Filter: `SelectEntityAsync/SelectActionAsync/SelectPageSizeAsync`, `SetTextAsync`, `SetDateAsync`, `SearchAsync`
   - Resultater: `Rows/RowsFor(page, entitet)/Cell(række, kolonne)`, `EmptyState`, `PaginationInfo`, Forrige/Næste
-  - Modal: `DetailDialog`, `JsonBlock(page, 0|1)`, `CloseButton`, `DetailBackdrop`
+  - Modal: `DetailDialog`, `JsonBlock(page, 0|1)`, `CloseButton`, `DetailBackdrop`, `DetailsButton(række)`
   - Eksport: `ExportButton`, `BackgroundExportButton`, `ThresholdConfirm` (+Button/Cancel), `ExportError`, `ExportSuccess`; `JobRows`
 - `AuditLogExport`: window.open opsnappes (init-script, installeres af `AuditLogPage.OpenAsync`). Verificerer ikke selve browser-downloadet.
   - `WaitForNewUrlAsync(page, kendtAntal)`, `FetchAsync(page, url, timeoutMs?)` (standard 30 sek.) → `ExportResponse(Status, ContentType, ContentDisposition, Body, Text, FileName)`
@@ -475,6 +475,7 @@ Detaljemodal (AuditLogDetailModal):
   Åbnes med knappen "Detaljer" på en række. Backdrop: .confirm-dialog-backdrop (klik lukker; dialogen stopper bobling). Dialog: .audit-log-detail-dialog, role=dialog, aria-labelledby → h2 "Detaljer — <entitet> (<id>)".
   Metalinje: p.meta "<tidspunkt g da-DK i UTC> UTC · <e-mail> (<bruger-id>) · <ip>".
   To kolonner (.audit-log-detail-column) med h3 "Tidligere værdier" / "Nye værdier" og pre.audit-log-detail-json. Side om side fra 940 px, under hinanden under (max-width 939.98px). Dialogen scroller (max-height + overflow-y: auto; JSON-blokke max 200 px under 940 px).
+  Esc lukker. Fokus fanges i dialogen (FocusTrapService), "Luk" har initialt fokus, og fokus returneres til "Detaljer"-knappen ved lukning.
   Visning: gyldig JSON indrykket (2 mellemrum); null, tom eller whitespace → "(ingen data)"; ugyldig JSON → rå tekst. Knap "Luk" lukker.
   Tests: ManualSmoke/TjeklisteJ/AuditLogDetailTests.
   Rækker fra Blazor-handlinger har handlende bruger via CircuitUserCircuitHandler (AsyncLocal CircuitUserContext) og HttpContextCurrentUserAccessor. IP-adressen er klientens IP fra circuit-forbindelsen (R1.5).
@@ -599,9 +600,10 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ### R6 – Tilgængelighed (prioritet 6)
 ~~- R6.1 Lukket NavDrawer er kun skubbet ud af skærmen med transform, så linkene i den kan nås med Tab.~~
 ~~- R6.2 aria-expanded renderes med stort begyndelsesbogstav ("True"/"False").~~
-- R6.3 `AuditLogDetailModal`: aria-modal="true", men markup'et har hverken Esc-håndtering, focus-trap eller returnering af fokus (jf. designets ConfirmDialog). Ikke testet i J3.
+~~- R6.3 `AuditLogDetailModal`: aria-modal="true", men markup'et har hverken Esc-håndtering, focus-trap eller returnering af fokus (jf. designets ConfirmDialog). Ikke testet i J3.~~
+- R6.4 `StepUpReAuthModal`: aria-modal="true", men ingen Esc, focus-trap, returnering af fokus eller initialt fokus (password-feltet). Rettes i PR 6 (bruger FocusTrapService; Esc = Annullér, ikke under verificering).
 
-Filer til Upload: NavDrawer (+.cs/.css), AuditLogDetailModal, ConfirmDialog
+Filer til Upload: StepUpReAuthModal (+.cs)
 
 ### R7 – Admin-konfiguration, rate limit-UX og dokumentation (prioritet 7)
 - R7.1 Login-limiter: `OnRejected` skriver ingen body/besked, så brugeren ser blank side eller browserens egen 429-fejlside (ingen "lockout-besked"). Verificeres i H1.

@@ -1,6 +1,8 @@
 namespace MyGardenPlanner2026.Components.Domain.Admin;
 
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using MyGardenPlanner2026.Components.Foundation;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using System.Text.Json;
 
@@ -10,9 +12,16 @@ using System.Text.Json;
 /// AuditLogDetailModal.razor.css. Ugyldig/manglende JSON vises som rå tekst i
 /// stedet for at fejle.
 /// </summary>
-public partial class AuditLogDetailModal
+public partial class AuditLogDetailModal : IAsyncDisposable
 {
     private static readonly JsonSerializerOptions PrettyPrintOptions = new() { WriteIndented = true };
+
+    private ElementReference dialogElement;
+    private bool wasRendered;
+    private IAsyncDisposable? focusTrap;
+
+    [Inject]
+    private IFocusTrapService FocusTrapService { get; set; } = default!;
 
     [Parameter]
     public AuditLogEntryDto? Entry { get; set; }
@@ -44,5 +53,62 @@ public partial class AuditLogDetailModal
         {
             return json;
         }
+    }
+
+    // Dialogen renderes kun, når begge er sat (jf. @if i markup).
+    private bool IsRendered => IsOpen && Entry is not null;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (IsRendered == wasRendered)
+        {
+            return;
+        }
+
+        wasRendered = IsRendered;
+
+        if (IsRendered)
+        {
+            var trap = await FocusTrapService.ActivateAsync(dialogElement);
+
+            // Lukket igen, mens aktiveringen afventede.
+            if (IsRendered)
+            {
+                focusTrap = trap;
+            }
+            else
+            {
+                await trap.DisposeAsync();
+            }
+        }
+        else
+        {
+            await ReleaseFocusTrapAsync();
+        }
+    }
+
+    private async Task HandleKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            await HandleCloseAsync();
+        }
+    }
+
+    private async Task ReleaseFocusTrapAsync()
+    {
+        var trap = focusTrap;
+        focusTrap = null;
+
+        if (trap is not null)
+        {
+            await trap.DisposeAsync();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await ReleaseFocusTrapAsync();
+        GC.SuppressFinalize(this);
     }
 }

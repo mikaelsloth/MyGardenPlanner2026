@@ -2,6 +2,7 @@
 
 using Bunit;
 using FluentAssertions;
+using Microsoft.AspNetCore.Components.Web;
 using MyGardenPlanner2026.Components.Domain.Admin;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
@@ -10,6 +11,13 @@ using Xunit;
 
 public class AuditLogDetailModalTests : BunitContext
 {
+    private readonly FakeFocusTrapService focusTrap;
+
+    public AuditLogDetailModalTests()
+    {
+        focusTrap = this.AddFakeFocusTrap();
+    }
+
     private static AuditLogEntryDto Entry(string? oldValues = "{\"Name\":\"Old\"}", string? newValues = "{\"Name\":\"New\"}") =>
         AuditLogTestData.Entry(entityId: "abc-123", oldValues: oldValues, newValues: newValues);
 
@@ -124,5 +132,96 @@ public class AuditLogDetailModalTests : BunitContext
 
         var expected = $"{new DateTime(2026, 10, 15, 23, 30, 0).ToString("g", new CultureInfo("da-DK"))} UTC";
         cut.Find("p.meta").TextContent.Should().Contain(expected);
+    }
+
+    [Fact]
+    public void WhenOpenWithEntry_ActivatesFocusTrap()
+    {
+        Render<AuditLogDetailModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.Entry, Entry()));
+
+        focusTrap.ActivateCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void WhenClosed_DoesNotActivateFocusTrap()
+    {
+        Render<AuditLogDetailModal>(p => p
+            .Add(x => x.IsOpen, false)
+            .Add(x => x.Entry, Entry()));
+
+        focusTrap.ActivateCount.Should().Be(0);
+    }
+
+    [Fact]
+    public void WhenOpenWithoutEntry_DoesNotActivateFocusTrap()
+    {
+        Render<AuditLogDetailModal>(p => p.Add(x => x.IsOpen, true));
+
+        focusTrap.ActivateCount.Should().Be(0);
+    }
+
+    [Fact]
+    public void WhenClosedAfterOpen_ReleasesFocusTrap()
+    {
+        var cut = Render<AuditLogDetailModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.Entry, Entry()));
+
+        cut.Render(p => p.Add(x => x.IsOpen, false));
+
+        cut.WaitForAssertion(() => focusTrap.DisposedCount.Should().Be(1));
+    }
+
+    [Fact]
+    public async Task DisposedWhileOpen_ReleasesFocusTrap()
+    {
+        var cut = Render<AuditLogDetailModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.Entry, Entry()));
+
+        await cut.Instance.DisposeAsync();
+
+        focusTrap.DisposedCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void PressingEscape_InvokesOnClose()
+    {
+        var closed = false;
+        var cut = Render<AuditLogDetailModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.Entry, Entry())
+            .Add(x => x.OnClose, () => closed = true));
+
+        cut.Find(".audit-log-detail-dialog").KeyDown(new KeyboardEventArgs { Key = "Escape" });
+
+        closed.Should().BeTrue();
+    }
+
+    [Fact]
+    public void PressingOtherKey_DoesNotInvokeOnClose()
+    {
+        var closed = false;
+        var cut = Render<AuditLogDetailModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.Entry, Entry())
+            .Add(x => x.OnClose, () => closed = true));
+
+        cut.Find(".audit-log-detail-dialog").KeyDown(new KeyboardEventArgs { Key = "Enter" });
+
+        closed.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Dialog_IsProgrammaticallyFocusable_AndLukIsInitialFocus()
+    {
+        var cut = Render<AuditLogDetailModal>(p => p
+            .Add(x => x.IsOpen, true)
+            .Add(x => x.Entry, Entry()));
+
+        cut.Find(".audit-log-detail-dialog").GetAttribute("tabindex").Should().Be("-1");
+        cut.Find("[data-autofocus]").TextContent.Should().Be("Luk");
     }
 }

@@ -144,8 +144,10 @@ public static class AuditLogPage
     /// <summary>0 = Tidligere værdier, 1 = Nye værdier.</summary>
     public static ILocator JsonBlock(IPage page, int index) => DetailDialog(page).Locator(".audit-log-detail-json").Nth(index);
 
-    public static Task OpenDetailsAsync(ILocator row) =>
-        row.GetByRole(AriaRole.Button, new() { Name = "Detaljer", Exact = true }).ClickAsync();
+    public static ILocator DetailsButton(ILocator row) =>
+        row.GetByRole(AriaRole.Button, new() { Name = "Detaljer", Exact = true });
+
+    public static Task OpenDetailsAsync(ILocator row) => DetailsButton(row).ClickAsync();
 
     // --- Eksportpanel ---
 

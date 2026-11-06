@@ -4,7 +4,8 @@
 {
     <div class="confirm-dialog-backdrop" @onclick="HandleCloseAsync">
         <div class="confirm-dialog audit-log-detail-dialog" role="dialog" aria-modal="true"
-             aria-labelledby="audit-log-detail-title" @onclick:stopPropagation="true">
+             aria-labelledby="audit-log-detail-title" tabindex="-1" @ref="dialogElement"
+             @onkeydown="HandleKeyDownAsync" @onclick:stopPropagation="true">
             <div class="confirm-dialog-header">
                 <h2 id="audit-log-detail-title" class="confirm-dialog-title">
                     Detaljer — @Entry.EntityName (@Entry.EntityId)
@@ -30,7 +31,7 @@
             </div>
 
             <div class="confirm-dialog-actions">
-                <button type="button" class="btn btn-secondary" @onclick="HandleCloseAsync">Luk</button>
+                <button type="button" class="btn btn-secondary" data-autofocus="true" @onclick="HandleCloseAsync">Luk</button>
             </div>
         </div>
     </div>

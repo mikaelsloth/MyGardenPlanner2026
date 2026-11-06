@@ -13,6 +13,8 @@ using Xunit;
 
 public sealed class GardenAccessManagementPageTests : BunitContext
 {
+    private readonly FakeFocusTrapService focusTrap;
+
     private readonly IGardenAccessQueryService queryService = Substitute.For<IGardenAccessQueryService>();
     private readonly IOnboardingService onboardingService = Substitute.For<IOnboardingService>();
     private readonly BunitAuthorizationContext authContext;
@@ -21,6 +23,7 @@ public sealed class GardenAccessManagementPageTests : BunitContext
     {
         Services.AddSingleton(queryService);
         Services.AddSingleton(onboardingService);
+        focusTrap = this.AddFakeFocusTrap();
 
         authContext = this.AuthorizeAs("user-1");
     }

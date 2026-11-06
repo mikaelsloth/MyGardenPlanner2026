@@ -3,7 +3,8 @@
 @if (IsOpen)
 {
     <div class="confirm-dialog-backdrop" @onclick="HandleBackdropClickAsync">
-        <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="@titleId" @onclick:stopPropagation="true">
+        <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="@titleId"
+             tabindex="-1" @ref="dialogElement" @onkeydown="HandleKeyDownAsync" @onclick:stopPropagation="true">
             <div class="confirm-dialog-header">
                 <h2 id="@titleId" class="confirm-dialog-title">@Title</h2>
             </div>
@@ -15,7 +16,8 @@
                 }
             </div>
             <div class="confirm-dialog-actions">
-                <button type="button" class="btn btn-secondary" disabled="@IsSubmitting" @onclick="HandleCancelAsync">
+                <button type="button" class="btn btn-secondary" disabled="@IsSubmitting"
+                        data-autofocus="@(IsDangerous ? "true" : null)" @onclick="HandleCancelAsync">
                     @CancelLabel
                 </button>
                 <button type="button" class="btn @(IsDangerous ? "btn-danger" : "btn-primary")" disabled="@IsSubmitting" @onclick="HandleConfirmAsync">

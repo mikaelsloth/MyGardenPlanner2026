@@ -442,7 +442,8 @@ Fejl i editor: .status-danger[role=alert] (fx rate limit, ArgumentOutOfRange). S
 JIT-eskalering (JitElevationPolicyEditor): #jit-min, #jit-max, #jit-sweep (type=number, @onchange → blur), #jit-pending-expiry. Succes: "JIT-eskaleringspolicyen er opdateret og trådt i kraft." Standard (JitElevationPolicy): Min 30, Max 90, Sweep 5 minutter, PendingExpiryHours 48 timer (grænser 1–720).
   Sweep (RoleElevationExpirySweepService): Approved med ValidToUtc < nu → Expired. Pending med CreatedAtUtc + PendingExpiryHours < nu → Cancelled (dækket af xUnit, ikke E2E). Rejected, Expired og Cancelled røres aldrig. Interval er mindst 1 minut. En ændret policy afbryder ventetiden, og sweep kører med det samme.
   Adgang afgøres uafhængigt af Status: HasActiveElevationAsync tjekker ValidToUtc direkte.
-Step-up re-auth: #reauth-maxage (type=number, min=1, @onchange → blur). Fejl vises øverst i editoren (.security-policy-editor .status-danger[role=alert]); StepUpReAuthModal ligger i editoren. Succes: "Step-up re-auth-policyen er opdateret og trådt i kraft." (page-level, bliver stående mellem gem).
+Step-up re-auth: #reauth-maxage (type=number, min=1, max=60, @onchange → blur). Fejl vises øverst i editoren (.security-policy-editor .status-danger[role=alert]); StepUpReAuthModal ligger i editoren. Succes: "Step-up re-auth-policyen er opdateret og trådt i kraft." (page-level, bliver stående mellem gem).
+  Grænse: 1–60 minutter (IReAuthenticationPolicyAdminService.MaxAllowedAgeMinutes). Servicen afviser over 60 med "Error: MaxAgeMinutes skal være mellem 1 og 60. (Parameter 'update')"
 Admin-API rate limit: #adminapi-permit, #adminapi-window, #adminapi-segments. Fejl: "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen." (AdminActionGuard.RateLimitedMessage).
 AuditLog-eksport: #exportjob-retention, #exportjob-maxactive, #exportjob-xlsxmaxrows (type=number). Succes: .status-success[role=status] "AuditLog-eksportjob-policyen er opdateret og trådt i kraft." (ryddes ved fanskift).
   Xlsx-grænsen: 1–250.000, standard 50.000. Fejl: ‘Error: XlsxMaxRows skal være mellem 1 og 250000.’
@@ -618,7 +619,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ### R7 – Admin-konfiguration, rate limit-UX og dokumentation (prioritet 7)
 - R7.1 Login-limiter: `OnRejected` skriver ingen body/besked, så brugeren ser blank side eller browserens egen 429-fejlside (ingen "lockout-besked"). Verificeres i H1.
 - R7.2 Policy-editors: Gem-knappen er ikke disabled under gem, og der er ingen unik succesbesked pr. gem.
-- R7.3 `ReAuthenticationPolicyEditor`: valideringsgrænser for MaxAge ligger i servicen (min=1 i markup, intet max i UI).
+~~- R7.3 `ReAuthenticationPolicyEditor`: valideringsgrænser for MaxAge ligger i servicen (min=1 i markup, intet max i UI).~~
 ~~- R7.4 `AuthorizationServicesExtensions`: `RequireGlobalAdminPolicy` er registreret to gange (første, RequireRole(SystemAdmin), er død kode). Fjern den første.~~
 ~~- R7.5 `AuthorizationServicesExtensions`: `RequireDataAdminPolicy` bruges ikke af nogen side eller af AdminNavMenu. DataAdmin har kun JIT-adgang som side.~~
 ~~- R7.6 Login/AccessDenied-stier er kun implicitte (ingen LoginPath/AccessDeniedPath i cookie-opsætningen). Sæt dem eksplicit.~~

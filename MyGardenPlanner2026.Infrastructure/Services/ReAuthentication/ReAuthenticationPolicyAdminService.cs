@@ -23,9 +23,11 @@ public sealed class ReAuthenticationPolicyAdminService(
         ArgumentNullException.ThrowIfNull(update);
         ArgumentException.ThrowIfNullOrWhiteSpace(updatedByUserId);
 
-        if (update.MaxAgeMinutes < 1)
+        if (update.MaxAgeMinutes is < 1 or > IReAuthenticationPolicyAdminService.MaxAllowedAgeMinutes)
         {
-            throw new ArgumentOutOfRangeException(nameof(update), "MaxAgeMinutes skal være positiv.");
+            throw new ArgumentOutOfRangeException(
+                nameof(update),
+                $"MaxAgeMinutes skal være mellem 1 og {IReAuthenticationPolicyAdminService.MaxAllowedAgeMinutes}.");
         }
 
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);

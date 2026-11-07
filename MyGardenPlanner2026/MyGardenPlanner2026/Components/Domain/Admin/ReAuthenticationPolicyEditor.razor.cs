@@ -37,6 +37,7 @@ public partial class ReAuthenticationPolicyEditor
     private string? errorMessage;
     private StepUpGuard stepUpGuard = default!;
     private AdminActionGuard adminActionGuard = default!;
+    private const int MaxAgeMinutes = IReAuthenticationPolicyAdminService.MaxAllowedAgeMinutes;
 
     [LoggerMessage(EventId = 1074, Level = LogLevel.Information, Message = "Opdatering af step-up re-auth-policy afvist: {Reason}")]
     static partial void ReAuthPolicySaveFailed(ILogger logger, string Reason);

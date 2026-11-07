@@ -57,4 +57,44 @@ public class ReAuthenticationPolicyAdminServiceTests : TestDbContext
 
         await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
     }
+
+    [Fact]
+    public async Task UpdateAsync_ValueEqualToMax_Persists()
+    {
+        await SeedAsync();
+        var (service, signal, _) = CreateService();
+
+        var result = await service.UpdateAsync(new ReAuthenticationPolicyDto(60), "user-1", TestContext.Current.CancellationToken);
+
+        result.MaxAgeMinutes.Should().Be(60);
+        signal.Received(1).TriggerChange<ReAuthenticationPolicyOptions>();
+    }
+
+    [Theory]
+    [InlineData(61)]
+    [InlineData(1000)]
+    public async Task UpdateAsync_ValueAboveMax_ThrowsAndDoesNotSignalOrAlert(int value)
+    {
+        await SeedAsync();
+        var (service, signal, alertService) = CreateService();
+
+        var act = async () => await service.UpdateAsync(new ReAuthenticationPolicyDto(value), "user-1", TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+        signal.DidNotReceive().TriggerChange<ReAuthenticationPolicyOptions>();
+        await alertService.DidNotReceive().AlertPolicyChangedAsync(
+            Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ValueAboveMax_DoesNotChangeStoredValue()
+    {
+        await SeedAsync();
+        var (service, _, _) = CreateService();
+
+        var act = async () => await service.UpdateAsync(new ReAuthenticationPolicyDto(61), "user-1", TestContext.Current.CancellationToken);
+        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+
+        (await service.GetAsync(TestContext.Current.CancellationToken)).MaxAgeMinutes.Should().Be(15);
+    }
 }

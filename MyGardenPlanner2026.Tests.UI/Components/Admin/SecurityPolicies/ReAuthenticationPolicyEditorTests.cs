@@ -102,4 +102,27 @@ public class ReAuthenticationPolicyEditorTests : BunitContext
         _ = service.DidNotReceive().UpdateAsync(Arg.Any<ReAuthenticationPolicyDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
         cut.ShouldShowRateLimitMessage();
     }
+
+    [Fact]
+    public void ReAuthenticationPolicyEditor_RendersSeededValue_WithMinAndMaxAttributes()
+    {
+        RegisterFakes(reAuthSucceeds: true);
+
+        var cut = Render<ReAuthenticationPolicyEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+
+        var input = cut.Find("#reauth-maxage");
+        input.GetAttribute("value").Should().Be("15");
+        input.GetAttribute("min").Should().Be("1");
+        input.GetAttribute("max").Should().Be("60");
+    }
+
+    [Fact]
+    public void ReAuthenticationPolicyEditor_HelpText_StatesAllowedRange()
+    {
+        RegisterFakes(reAuthSucceeds: true);
+
+        var cut = Render<ReAuthenticationPolicyEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+
+        cut.Find(".help").TextContent.Should().Contain("1–60 minutter");
+    }
 }

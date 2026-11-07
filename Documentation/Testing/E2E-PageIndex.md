@@ -615,8 +615,8 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 - R7.1 Login-limiter: `OnRejected` skriver ingen body/besked, så brugeren ser blank side eller browserens egen 429-fejlside (ingen "lockout-besked"). Verificeres i H1.
 - R7.2 Policy-editors: Gem-knappen er ikke disabled under gem, og der er ingen unik succesbesked pr. gem.
 - R7.3 `ReAuthenticationPolicyEditor`: valideringsgrænser for MaxAge ligger i servicen (min=1 i markup, intet max i UI).
-- R7.4 `AuthorizationServicesExtensions`: `RequireGlobalAdminPolicy` er registreret to gange (første, RequireRole(SystemAdmin), er død kode). Fjern den første.
-- R7.5 `AuthorizationServicesExtensions`: `RequireDataAdminPolicy` bruges ikke af nogen side eller af AdminNavMenu. DataAdmin har kun JIT-adgang som side.
+~~- R7.4 `AuthorizationServicesExtensions`: `RequireGlobalAdminPolicy` er registreret to gange (første, RequireRole(SystemAdmin), er død kode). Fjern den første.~~
+~~- R7.5 `AuthorizationServicesExtensions`: `RequireDataAdminPolicy` bruges ikke af nogen side eller af AdminNavMenu. DataAdmin har kun JIT-adgang som side.~~
 - R7.6 Login/AccessDenied-stier er kun implicitte (ingen LoginPath/AccessDeniedPath i cookie-opsætningen). Sæt dem eksplicit.
 - R7.7 To redirect-veje til login med forskellig ReturnUrl: auth-middleware (relativ, "ReturnUrl") og `RedirectToLogin` (absolut, "returnUrl"). `LoginRedirect.ReturnPath` accepterer begge.
 - R7.8 AdminNavMenu er statisk: linkene opdateres først ved ny sideindlæsning efter ændret adgang (fx godkendt JIT).

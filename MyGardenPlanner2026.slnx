@@ -14,6 +14,11 @@
   <Folder Name="/Documentation/Logging/">
     <File Path="Documentation/Logging/Logging Event Ids.md" />
   </Folder>
+  <Folder Name="/Documentation/Specifications/">
+    <File Path="Documentation/Specifications/Adgangsrettigheder.md" />
+    <File Path="Documentation/Specifications/HavePlanner2026 - Adgang og abonnement.md" />
+    <File Path="Documentation/Specifications/Prismatrix.md" />
+  </Folder>
   <Folder Name="/Documentation/Testing/">
     <File Path="Documentation/Testing/E2E-PageIndex.md" />
   </Folder>

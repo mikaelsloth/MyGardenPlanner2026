@@ -24,6 +24,13 @@ public static class IdentityServicesExtensions
         })
             .AddIdentityCookies();
 
+        services.ConfigureApplicationCookie(options =>
+        {
+            options.LoginPath = "/Account/Login";
+            options.AccessDeniedPath = "/Account/AccessDenied";
+            options.ReturnUrlParameter = "ReturnUrl";
+        });
+
         services.AddIdentityCore<ApplicationUser>(options =>
         {
             options.SignIn.RequireConfirmedAccount = true;

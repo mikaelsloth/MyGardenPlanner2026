@@ -6,13 +6,12 @@ using MyGardenPlanner2026.Components.Foundation;
 
 /// <summary>
 /// Mobil off-canvas menu til AppShell (brand + bruger-e-mail + log ud). Bruger det delte
-/// fokus-trap (FocusTrapService), som også bruges af NavDrawer og dialoger.
+/// fokus-trap (FocusTrapScope/FocusTrapService), som også bruges af NavDrawer og dialoger.
 /// </summary>
 public partial class AppNavDrawer : IAsyncDisposable
 {
     private ElementReference drawerElement;
-    private bool wasOpen;
-    private IAsyncDisposable? focusTrap;
+    private FocusTrapScope? focusTrapScope;
 
     [Inject]
     private IFocusTrapService FocusTrapService { get; set; } = default!;
@@ -23,45 +22,10 @@ public partial class AppNavDrawer : IAsyncDisposable
     [Parameter]
     public EventCallback OnClose { get; set; }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (IsOpen == wasOpen)
-        {
-            return;
-        }
+    private FocusTrapScope FocusTrap => focusTrapScope ??= new FocusTrapScope(FocusTrapService);
 
-        wasOpen = IsOpen;
-
-        if (IsOpen)
-        {
-            var trap = await FocusTrapService.ActivateAsync(drawerElement);
-
-            // Lukket igen, mens aktiveringen afventede.
-            if (IsOpen)
-            {
-                focusTrap = trap;
-            }
-            else
-            {
-                await trap.DisposeAsync();
-            }
-        }
-        else
-        {
-            await ReleaseFocusTrapAsync();
-        }
-    }
-
-    private async Task ReleaseFocusTrapAsync()
-    {
-        var trap = focusTrap;
-        focusTrap = null;
-
-        if (trap is not null)
-        {
-            await trap.DisposeAsync();
-        }
-    }
+    protected override Task OnAfterRenderAsync(bool firstRender) =>
+        FocusTrap.SyncAsync(IsOpen, drawerElement);
 
     private Task HandleCloseAsync() => OnClose.InvokeAsync();
 
@@ -75,7 +39,11 @@ public partial class AppNavDrawer : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        await ReleaseFocusTrapAsync();
+        if (focusTrapScope is not null)
+        {
+            await focusTrapScope.DisposeAsync();
+        }
+
         GC.SuppressFinalize(this);
     }
 }

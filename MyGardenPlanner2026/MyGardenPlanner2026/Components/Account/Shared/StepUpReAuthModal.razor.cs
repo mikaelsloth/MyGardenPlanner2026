@@ -67,8 +67,9 @@ public partial class StepUpReAuthModal : IAsyncDisposable
     private bool requiresTwoFactor;
     private bool wasOpen;
     private ElementReference dialogElement;
-    private bool focusTrapWasOpen;
-    private IAsyncDisposable? focusTrap;
+    private FocusTrapScope? focusTrapScope;
+
+    private FocusTrapScope FocusTrap => focusTrapScope ??= new FocusTrapScope(FocusTrapService);
 
     protected override async Task OnParametersSetAsync()
     {
@@ -181,33 +182,17 @@ public partial class StepUpReAuthModal : IAsyncDisposable
         errorMessage = null;
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override Task OnAfterRenderAsync(bool firstRender) =>
+        FocusTrap.SyncAsync(IsOpen, dialogElement);
+
+    public async ValueTask DisposeAsync()
     {
-        if (IsOpen == focusTrapWasOpen)
+        if (focusTrapScope is not null)
         {
-            return;
+            await focusTrapScope.DisposeAsync();
         }
 
-        focusTrapWasOpen = IsOpen;
-
-        if (IsOpen)
-        {
-            var trap = await FocusTrapService.ActivateAsync(dialogElement);
-
-            // Lukket igen, mens aktiveringen afventede.
-            if (IsOpen)
-            {
-                focusTrap = trap;
-            }
-            else
-            {
-                await trap.DisposeAsync();
-            }
-        }
-        else
-        {
-            await ReleaseFocusTrapAsync();
-        }
+        GC.SuppressFinalize(this);
     }
 
     private async Task HandleKeyDownAsync(KeyboardEventArgs e)
@@ -216,23 +201,6 @@ public partial class StepUpReAuthModal : IAsyncDisposable
         {
             await CancelAsync();
         }
-    }
-
-    private async Task ReleaseFocusTrapAsync()
-    {
-        var trap = focusTrap;
-        focusTrap = null;
-
-        if (trap is not null)
-        {
-            await trap.DisposeAsync();
-        }
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await ReleaseFocusTrapAsync();
-        GC.SuppressFinalize(this);
     }
 
     private sealed class InputModel

@@ -66,7 +66,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
   - `VerifyAsync(page, key)`: indtaster TOTP, klikker "Verify", returnerer gendannelseskoderne
   - `EnableAsync(page, rootUri, user)`: giver `TwoFactorEnrollment(User med nøgle, RecoveryCodes)`
 - `VirtualAuthenticator.AddAsync(page)`: WebAuthn virtual authenticator (Chromium, CDP). `CountCredentialsAsync()`. Skal tilføjes før passkey-handlinger.
-- `LoginRedirect.ReturnPath(url)`: stien i ReturnUrl fra en login-URL (relativ "ReturnUrl" fra middleware og absolut "returnUrl" fra RedirectToLogin).
+- `LoginRedirect.ReturnPath(url)`: stien i ReturnUrl fra en login-URL (relativ "ReturnUrl", både fra middleware og RedirectToLogin).
 
 ### 2.3 Mail (SMTP-sink)
 
@@ -407,7 +407,11 @@ Filer: DeletePersonalData.razor (+ .cs), AccountDeletionService.cs, IAccountDele
 Fælles for alle admin-sider:
 - Layout: AdminLayout (_Imports i Pages/Admin) → MainLayout. Ingen h1 i layoutet (hver side har sin egen). Filer: AdminLayout.razor (+ .css), AdminNavMenu.razor (+ .cs, .css).
 - Alle sider er rolle- og 2FA-beskyttede (MfaRequirement). Siden kræver ikke "recent auth". Direkte rolle eller aktiv JIT giver adgang.
-- Uden 2FA: redirect til /Account/Manage/EnableAuthenticator. Uden admin-rolle: /Account/AccessDenied. Anonym: redirect til /Account/Login med ReturnUrl til den forespurgte side (auth-middleware sender relativ "ReturnUrl", RedirectToLogin sender absolut "returnUrl"). Der er ingen eksplicit LoginPath/AccessDeniedPath (cookie-standarder). Sidens h1 og AdminNavMenu vises ikke på login- eller AccessDenied-siden. Filer: Routes.razor (+ .cs), RedirectToLogin.razor(.cs), RedirectToAccessDenied.razor(.cs), AccessDenied.razor (+ .cs). Tests: ManualSmoke/TjeklisteI/AdminDirektUrlTests.
+- Uden 2FA: redirect til /Account/Manage/EnableAuthenticator. Uden admin-rolle: /Account/AccessDenied. 
+- Anonym: redirect til /Account/Login med relativ ReturnUrl (auth-middleware og RedirectToLogin ens). 
+  LoginPath/AccessDeniedPath er sat eksplicit i IdentityServicesExtensions.
+  Sidens h1 og AdminNavMenu vises ikke på login- eller AccessDenied-siden. 
+  Filer: Routes.razor (+ .cs), RedirectToLogin.razor(.cs), RedirectToAccessDenied.razor(.cs), AccessDenied.razor (+ .cs). Tests: ManualSmoke/TjeklisteI/AdminDirektUrlTests.
 - Step-up: `StepUpGuard.RunAsync` omkring følsomme handlinger → `StepUpReAuthModal` (role=dialog, "Bekræft din identitet"). Vises ved første handling i en frisk circuit (se afsnit 3). MaxAgeMinutes default 15, E2E-appen kører med 1. Selektorer: se `StepUpModal` i 2.5.
   Esc annullerer (ikke under verificering). Fokus fanges i modalen (FocusTrapService), adgangskodefeltet har initialt fokus, og fokus returneres til udløseren. Ingen lukning ved klik på baggrunden (tilsigtet).
   Tests: ManualSmoke/TjeklisteD/StepUpModalTastaturTests.
@@ -617,8 +621,8 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 - R7.3 `ReAuthenticationPolicyEditor`: valideringsgrænser for MaxAge ligger i servicen (min=1 i markup, intet max i UI).
 ~~- R7.4 `AuthorizationServicesExtensions`: `RequireGlobalAdminPolicy` er registreret to gange (første, RequireRole(SystemAdmin), er død kode). Fjern den første.~~
 ~~- R7.5 `AuthorizationServicesExtensions`: `RequireDataAdminPolicy` bruges ikke af nogen side eller af AdminNavMenu. DataAdmin har kun JIT-adgang som side.~~
-- R7.6 Login/AccessDenied-stier er kun implicitte (ingen LoginPath/AccessDeniedPath i cookie-opsætningen). Sæt dem eksplicit.
-- R7.7 To redirect-veje til login med forskellig ReturnUrl: auth-middleware (relativ, "ReturnUrl") og `RedirectToLogin` (absolut, "returnUrl"). `LoginRedirect.ReturnPath` accepterer begge.
+~~- R7.6 Login/AccessDenied-stier er kun implicitte (ingen LoginPath/AccessDeniedPath i cookie-opsætningen). Sæt dem eksplicit.~~
+~~- R7.7 To redirect-veje til login med forskellig ReturnUrl: auth-middleware (relativ, "ReturnUrl") og `RedirectToLogin` (absolut, "returnUrl"). `LoginRedirect.ReturnPath` accepterer begge.~~
 - R7.8 AdminNavMenu er statisk: linkene opdateres først ved ny sideindlæsning efter ændret adgang (fx godkendt JIT).
 - R7.9 Adgangsrettigheder.md er ikke opdateret med admin-siderne (/admin/subscriptions, /admin/security-policies, /admin/jit-requests, /admin/audit-log).
 

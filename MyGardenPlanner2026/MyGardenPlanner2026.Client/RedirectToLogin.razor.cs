@@ -5,5 +5,9 @@ using System;
 
 public partial class RedirectToLogin
 {
-    protected override void OnInitialized() => NavigationManager.NavigateTo($"Account/Login?returnUrl={Uri.EscapeDataString(NavigationManager.Uri)}", forceLoad: true);
+    protected override void OnInitialized()
+    {
+        var returnUrl = new Uri(NavigationManager.Uri).PathAndQuery;
+        NavigationManager.NavigateTo($"Account/Login?ReturnUrl={Uri.EscapeDataString(returnUrl)}", forceLoad: true);
+    }
 }

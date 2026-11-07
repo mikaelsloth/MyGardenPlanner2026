@@ -1,7 +1,8 @@
 ﻿@if (IsOpen)
 {
     <div class="confirm-dialog-backdrop">
-        <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="step-up-reauth-title">
+        <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="step-up-reauth-title"
+             tabindex="-1" @ref="dialogElement" @onkeydown="HandleKeyDownAsync">
             <div class="confirm-dialog-header">
                 <h2 id="step-up-reauth-title" class="confirm-dialog-title">Bekræft din identitet</h2>
             </div>
@@ -14,7 +15,7 @@
 
                 <div class="field">
                     <label class="field-label" for="step-up-password">Adgangskode</label>
-                    <InputText type="password" @bind-Value="Input.Password" id="step-up-password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="Din adgangskode" />
+                    <InputText type="password" @bind-Value="Input.Password" id="step-up-password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="Din adgangskode" data-autofocus="true" />
                     <ValidationMessage For="() => Input.Password" class="field-message" />
                 </div>
 

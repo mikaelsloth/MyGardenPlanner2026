@@ -2,7 +2,9 @@ namespace MyGardenPlanner2026.Components.Account.Shared;
 
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Identity;
+using MyGardenPlanner2026.Components.Foundation;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Entities;
@@ -14,8 +16,11 @@ using System.ComponentModel.DataAnnotations;
 /// static-to-interactive boundary-reglen). Bruger AuthenticationState (ikke HttpContext),
 /// da HttpContext ikke er pålideligt tilgængeligt inde i en etableret circuit.
 /// </summary>
-public partial class StepUpReAuthModal
+public partial class StepUpReAuthModal : IAsyncDisposable
 {
+    [Inject]
+    private IFocusTrapService FocusTrapService { get; set; } = default!;
+
     [Inject]
     private UserManager<ApplicationUser> UserManager { get; set; } = default!;
 
@@ -61,6 +66,9 @@ public partial class StepUpReAuthModal
     private bool isVerifying;
     private bool requiresTwoFactor;
     private bool wasOpen;
+    private ElementReference dialogElement;
+    private bool focusTrapWasOpen;
+    private IAsyncDisposable? focusTrap;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -171,6 +179,60 @@ public partial class StepUpReAuthModal
     {
         Input = new InputModel();
         errorMessage = null;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (IsOpen == focusTrapWasOpen)
+        {
+            return;
+        }
+
+        focusTrapWasOpen = IsOpen;
+
+        if (IsOpen)
+        {
+            var trap = await FocusTrapService.ActivateAsync(dialogElement);
+
+            // Lukket igen, mens aktiveringen afventede.
+            if (IsOpen)
+            {
+                focusTrap = trap;
+            }
+            else
+            {
+                await trap.DisposeAsync();
+            }
+        }
+        else
+        {
+            await ReleaseFocusTrapAsync();
+        }
+    }
+
+    private async Task HandleKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape" && !isVerifying)
+        {
+            await CancelAsync();
+        }
+    }
+
+    private async Task ReleaseFocusTrapAsync()
+    {
+        var trap = focusTrap;
+        focusTrap = null;
+
+        if (trap is not null)
+        {
+            await trap.DisposeAsync();
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await ReleaseFocusTrapAsync();
+        GC.SuppressFinalize(this);
     }
 
     private sealed class InputModel

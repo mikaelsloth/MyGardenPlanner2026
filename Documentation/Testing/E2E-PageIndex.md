@@ -149,7 +149,6 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - Playwright-regex understøtter kun IgnoreCase og Multiline. Andre flag giver ArgumentException.
 - Interaktive Blazor Server-sider ignorerer klik og input, til kredsløbet er forbundet, og prerendering kan nulstille indtastninger. Brug `ActUntilAsync`, og indtast først, når siden har reageret.
 - `@bind` og `@onchange` på inputfelter udløses ved blur. Efter `FillAsync` kaldes `BlurAsync()`.
-- aria-expanded renderes som "True"/"False". Brug case-insensitiv sammenligning.
 - `GetByLabel` skal bruge `Exact = true`, hvis et label er en delstreng af et andet (fx "Email" i "New email").
 - Beløb vises med C2. Sammenlign cifrene (uden kultur, valutategn og separatorer) og divider med 100.
 - Vent på skeletons: `[class*='skeleton']` skal have antal 0 før skærmbillede og assertions.
@@ -166,6 +165,9 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - WebAuthn kræver et domænenavn som host: kør passkey-tests på `http://localhost:<port>` (`RootUri.Replace("127.0.0.1", "localhost")`).
 - Login.razor starter passkey-autofill (conditional mediation) ved sideload. Passkey-tests slår den fra med `AddInitScriptAsync("PublicKeyCredential.isConditionalMediationAvailable = async () => false;")`. Passkey-fejl vises som StatusMessage (role=alert) efter redirect ("Error: ...").
 - Streaming-download (Results.Stream): Kestrel tillader ikke synkron IO på response body (AllowSynchronousIO = false). Utf8JsonWriter over en Stream og JsonSerializer.Serialize(writer, …) flusher synkront og giver en afbrudt forbindelse efter 200-headerne (Playwright: "aborted"). Skriv i en intern buffer (ArrayBufferWriter) og send med WriteAsync. Xlsx (ClosedXML skriver synkront) bufferes i en MemoryStream og kopieres med CopyToAsync.
+- aria-expanded, aria-selected og aria-pressed skal renderes med ToAriaValue() (“true”/”false”). bool.ToString() giver “True”, og en bool-binding giver tom eller udeladt attribut.
+- Fokus-trap: delt FocusTrapService (wwwroot/js/focus-trap.js), id-baseret, fordi dialoger fjernes fra DOM, før trap’et frigives. Esc i en dialog kræver, at fokus først er flyttet ind. Vent på ToBeFocusedAsync på det forventede element, før Esc sendes.
+- bUnit: FakeFocusTrapService (AddFakeFocusTrap, idempotent, registreret af RegisterReAuthFakes). NavDrawer-tests bruger den rigtige service med modulopsætning (SetupNavDrawerModule).
 
 ### Testdesign og delt data
 - Tests er hardcodede forventede værdier. De udledes ikke af produktionskoden.
@@ -406,6 +408,8 @@ Fælles for alle admin-sider:
 - Alle sider er rolle- og 2FA-beskyttede (MfaRequirement). Siden kræver ikke "recent auth". Direkte rolle eller aktiv JIT giver adgang.
 - Uden 2FA: redirect til /Account/Manage/EnableAuthenticator. Uden admin-rolle: /Account/AccessDenied. Anonym: redirect til /Account/Login med ReturnUrl til den forespurgte side (auth-middleware sender relativ "ReturnUrl", RedirectToLogin sender absolut "returnUrl"). Der er ingen eksplicit LoginPath/AccessDeniedPath (cookie-standarder). Sidens h1 og AdminNavMenu vises ikke på login- eller AccessDenied-siden. Filer: Routes.razor (+ .cs), RedirectToLogin.razor(.cs), RedirectToAccessDenied.razor(.cs), AccessDenied.razor (+ .cs). Tests: ManualSmoke/TjeklisteI/AdminDirektUrlTests.
 - Step-up: `StepUpGuard.RunAsync` omkring følsomme handlinger → `StepUpReAuthModal` (role=dialog, "Bekræft din identitet"). Vises ved første handling i en frisk circuit (se afsnit 3). MaxAgeMinutes default 15, E2E-appen kører med 1. Selektorer: se `StepUpModal` i 2.5.
+  Esc annullerer (ikke under verificering). Fokus fanges i modalen (FocusTrapService), adgangskodefeltet har initialt fokus, og fokus returneres til udløseren. Ingen lukning ved klik på baggrunden (tilsigtet).
+  Tests: ManualSmoke/TjeklisteD/StepUpModalTastaturTests.
 - AdminNavMenu: nav.admin-nav-menu[aria-label='Administration'], ét `<li><a>` pr. tilladt link, href relativ ("admin/subscriptions"). Aktuel side har klassen "active". AuditLog-linket får .nav-badge[aria-label] med antal nye eksportfiler, når der er ulæste. Filer: AuthorizationServicesExtensions.cs, AnyAdminRoleAuthorizationHandler.cs, JitRoleAuthorizationHandler.cs. Tests: ManualSmoke/TjeklisteI/AdminNavigationTests.
 
 | Rute | Overskrift | Nav-link | Policy | Persona |
@@ -516,6 +520,7 @@ Eksportpanel (AuditLogExportPanel):
 | C2 | Skift password | SkiftPasswordTests | SkiftPassword_ChangePassword_`<bredde>` (5), SkiftPassword_ChangePasswordEfterSkift_`<bredde>` (5) | ikke kørt |
 | C3 | Download/slet personlige data | PersonligeDataTests | PersonligeData_PersonalData_`<bredde>` (5), PersonligeData_DeletePersonalData_`<bredde>` (5) | ikke kørt |
 | D1 | Modal vises ved beskyttet handling (+ AccessDenied for Requester) | ModalVisesTests | StepUp_`<Side>`_Side (20), StepUp_`<Side>`_Modal (15), StepUp_AccessDenied_`<bredde>` (5) | grøn |
+| D1b | Step-up-modal: Esc, fokus-trap, fokus-returnering, ingen baggrundslukning | StepUpModalTastaturTests | ingen | ikke kørt |
 | D2 | Forkert password/TOTP i modal + alarm ved 5. fejl | ForkertPasswordModalTests | StepUp_AdminSecurityPolicies_ForkertPassword_`<bredde>` (5) | grøn |
 | D3 | Korrekt step-up, vindue og udløb, NoMfa | KorrektStepUpTests | StepUp_AdminSecurityPolicies_Foer, StepUp_AdminSecurityPolicies_Efter (`<bredde>`) (6) | ikke kørt |
 | E1 | Anmodning uden for policy-grænser | AnmodningUdenForGraenserTests | JIT_E1_Fejl_`<bredde>` (3) | ikke kørt |
@@ -601,9 +606,9 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ~~- R6.1 Lukket NavDrawer er kun skubbet ud af skærmen med transform, så linkene i den kan nås med Tab.~~
 ~~- R6.2 aria-expanded renderes med stort begyndelsesbogstav ("True"/"False").~~
 ~~- R6.3 `AuditLogDetailModal`: aria-modal="true", men markup'et har hverken Esc-håndtering, focus-trap eller returnering af fokus (jf. designets ConfirmDialog). Ikke testet i J3.~~
-- R6.4 `StepUpReAuthModal`: aria-modal="true", men ingen Esc, focus-trap, returnering af fokus eller initialt fokus (password-feltet). Rettes i PR 6 (bruger FocusTrapService; Esc = Annullér, ikke under verificering).
+~~- R6.4 `StepUpReAuthModal`: aria-modal="true", men ingen Esc, focus-trap, returnering af fokus eller initialt fokus (password-feltet). Rettes i PR 6 (bruger FocusTrapService; Esc = Annullér, ikke under verificering).~~
 
-Filer til Upload: StepUpReAuthModal (+.cs)
+~~Filer til Upload: StepUpReAuthModal (+.cs)~~
 
 ### R7 – Admin-konfiguration, rate limit-UX og dokumentation (prioritet 7)
 - R7.1 Login-limiter: `OnRejected` skriver ingen body/besked, så brugeren ser blank side eller browserens egen 429-fejlside (ingen "lockout-besked"). Verificeres i H1.

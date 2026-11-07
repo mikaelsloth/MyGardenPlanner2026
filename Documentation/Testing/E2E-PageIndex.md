@@ -167,6 +167,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - Streaming-download (Results.Stream): Kestrel tillader ikke synkron IO på response body (AllowSynchronousIO = false). Utf8JsonWriter over en Stream og JsonSerializer.Serialize(writer, …) flusher synkront og giver en afbrudt forbindelse efter 200-headerne (Playwright: "aborted"). Skriv i en intern buffer (ArrayBufferWriter) og send med WriteAsync. Xlsx (ClosedXML skriver synkront) bufferes i en MemoryStream og kopieres med CopyToAsync.
 - aria-expanded, aria-selected og aria-pressed skal renderes med ToAriaValue() (“true”/”false”). bool.ToString() giver “True”, og en bool-binding giver tom eller udeladt attribut.
 - Fokus-trap: delt FocusTrapService (wwwroot/js/focus-trap.js), id-baseret, fordi dialoger fjernes fra DOM, før trap’et frigives. Esc i en dialog kræver, at fokus først er flyttet ind. Vent på ToBeFocusedAsync på det forventede element, før Esc sendes.
+  Komponenter ejer et FocusTrapScope (SyncAsync fra OnAfterRenderAsync, DisposeAsync fra komponentens DisposeAsync). Ny dialog/drawer: følg samme mønster, og tilføj data-autofocus på det element, der skal have initialt fokus.
 - bUnit: FakeFocusTrapService (AddFakeFocusTrap, idempotent, registreret af RegisterReAuthFakes). NavDrawer-tests bruger den rigtige service med modulopsætning (SetupNavDrawerModule).
 
 ### Testdesign og delt data
@@ -265,7 +266,7 @@ Drawer: nav.nav-drawer, klassen open når den er åben. Baggrund: .drawer-backdr
 Drawer har 4 links, fokus-trap via delt modul wwwroot/js/focus-trap.js (FocusTrapService, stack af traps, data-autofocus). Esc lukker, og fokus returnerer til hamburger.
   Lukket drawer har attributten inert (ikke fokuserbar, skjult for skærmlæsere). Åben drawer har den ikke.
 Breakpoint-stilarter ligger i PublicHeader.razor.css.
-Filer: Components/Layout/PublicHeader.razor (+ .razor.cs, .razor.css), NavDrawer.razor (+ .razor.cs)
+Filer: Components/Layout/PublicHeader.razor (+ .razor.cs, .razor.css), NavDrawer.razor (+ .razor.cs), Components/Foundation/FocusTrapScope.cs
 ```
 
 ### 4.2 Registrering og login

@@ -10,8 +10,9 @@ public partial class ConfirmDialog : IAsyncDisposable
     private readonly string titleId = $"confirm-dialog-title-{Guid.NewGuid():N}";
 
     private ElementReference dialogElement;
-    private bool wasOpen;
-    private IAsyncDisposable? focusTrap;
+    private FocusTrapScope? focusTrapScope;
+
+    private FocusTrapScope FocusTrap => focusTrapScope ??= new FocusTrapScope(FocusTrapService);
 
     [Inject]
     private IFocusTrapService FocusTrapService { get; set; } = default!;
@@ -51,33 +52,17 @@ public partial class ConfirmDialog : IAsyncDisposable
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override Task OnAfterRenderAsync(bool firstRender) =>
+        FocusTrap.SyncAsync(IsOpen, dialogElement);
+
+    public async ValueTask DisposeAsync()
     {
-        if (IsOpen == wasOpen)
+        if (focusTrapScope is not null)
         {
-            return;
+            await focusTrapScope.DisposeAsync();
         }
 
-        wasOpen = IsOpen;
-
-        if (IsOpen)
-        {
-            var trap = await FocusTrapService.ActivateAsync(dialogElement);
-
-            // Lukket igen, mens aktiveringen afventede.
-            if (IsOpen)
-            {
-                focusTrap = trap;
-            }
-            else
-            {
-                await trap.DisposeAsync();
-            }
-        }
-        else
-        {
-            await ReleaseFocusTrapAsync();
-        }
+        GC.SuppressFinalize(this);
     }
 
     private async Task HandleKeyDownAsync(KeyboardEventArgs e)
@@ -86,22 +71,5 @@ public partial class ConfirmDialog : IAsyncDisposable
         {
             await HandleCancelAsync();
         }
-    }
-
-    private async Task ReleaseFocusTrapAsync()
-    {
-        var trap = focusTrap;
-        focusTrap = null;
-
-        if (trap is not null)
-        {
-            await trap.DisposeAsync();
-        }
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await ReleaseFocusTrapAsync();
-        GC.SuppressFinalize(this);
     }
 }

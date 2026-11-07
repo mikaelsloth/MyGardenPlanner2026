@@ -17,8 +17,9 @@ public partial class AuditLogDetailModal : IAsyncDisposable
     private static readonly JsonSerializerOptions PrettyPrintOptions = new() { WriteIndented = true };
 
     private ElementReference dialogElement;
-    private bool wasRendered;
-    private IAsyncDisposable? focusTrap;
+    private FocusTrapScope? focusTrapScope;
+
+    private FocusTrapScope FocusTrap => focusTrapScope ??= new FocusTrapScope(FocusTrapService);
 
     [Inject]
     private IFocusTrapService FocusTrapService { get; set; } = default!;
@@ -58,33 +59,17 @@ public partial class AuditLogDetailModal : IAsyncDisposable
     // Dialogen renderes kun, når begge er sat (jf. @if i markup).
     private bool IsRendered => IsOpen && Entry is not null;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override Task OnAfterRenderAsync(bool firstRender) =>
+        FocusTrap.SyncAsync(IsRendered, dialogElement);
+
+    public async ValueTask DisposeAsync()
     {
-        if (IsRendered == wasRendered)
+        if (focusTrapScope is not null)
         {
-            return;
+            await focusTrapScope.DisposeAsync();
         }
 
-        wasRendered = IsRendered;
-
-        if (IsRendered)
-        {
-            var trap = await FocusTrapService.ActivateAsync(dialogElement);
-
-            // Lukket igen, mens aktiveringen afventede.
-            if (IsRendered)
-            {
-                focusTrap = trap;
-            }
-            else
-            {
-                await trap.DisposeAsync();
-            }
-        }
-        else
-        {
-            await ReleaseFocusTrapAsync();
-        }
+        GC.SuppressFinalize(this);
     }
 
     private async Task HandleKeyDownAsync(KeyboardEventArgs e)
@@ -93,22 +78,5 @@ public partial class AuditLogDetailModal : IAsyncDisposable
         {
             await HandleCloseAsync();
         }
-    }
-
-    private async Task ReleaseFocusTrapAsync()
-    {
-        var trap = focusTrap;
-        focusTrap = null;
-
-        if (trap is not null)
-        {
-            await trap.DisposeAsync();
-        }
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await ReleaseFocusTrapAsync();
-        GC.SuppressFinalize(this);
     }
 }

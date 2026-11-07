@@ -74,6 +74,10 @@ dotnet_style_prefer_simplified_interpolation = true
 
 # Field preferences
 dotnet_style_readonly_field = true
+dotnet_diagnostic.IDE0032.severity = suggestion
+
+# Foretræk auto-properties
+dotnet_style_prefer_auto_properties = true:suggestion
 
 # Parameter preferences
 dotnet_code_quality_unused_parameters = all

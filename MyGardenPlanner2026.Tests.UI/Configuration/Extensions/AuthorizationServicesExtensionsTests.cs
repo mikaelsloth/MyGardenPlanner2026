@@ -2,6 +2,7 @@
 
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Configuration.Authorization;
 using MyGardenPlanner2026.Configuration.Extensions;
@@ -160,5 +161,19 @@ public class AuthorizationServicesExtensionsTests
         var policy = await policyProvider.GetPolicyAsync(AuthorizationServicesExtensions.RequireAnyAdminRolePolicy);
 
         policy!.Requirements.OfType<MfaRequirement>().Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task AddAuthorizationServices_RequireGlobalAdminPolicy_HasNoPlainRoleRequirement()
+    {
+        var services = new ServiceCollection();
+        services.AddAuthorizationServices();
+
+        await using var provider = services.BuildServiceProvider();
+        var policyProvider = provider.GetRequiredService<IAuthorizationPolicyProvider>();
+
+        var policy = await policyProvider.GetPolicyAsync(AuthorizationServicesExtensions.RequireGlobalAdminPolicy);
+
+        policy!.Requirements.OfType<RolesAuthorizationRequirement>().Should().BeEmpty();
     }
 }

@@ -7,6 +7,10 @@ using MyGardenPlanner2026.Core.Entities.Common;
 public static class AuthorizationServicesExtensions
 {
     public const string RequireGlobalAdminPolicy = "RequireGlobalAdmin";
+    /// <summary>
+    /// Reserveret til kommende stamdata-admin-sider (Layer 1). Ingen side bruger den endnu;
+    /// DataAdmin har i dag kun adgang til JIT-siden via <see cref="RequireAnyAdminRolePolicy"/>.
+    /// </summary>
     public const string RequireDataAdminPolicy = "RequireDataAdmin";
     public const string RequirePolicyAdminPolicy = "RequirePolicyAdmin";
     public const string RequireAuditViewerPolicy = "RequireAuditViewer";
@@ -32,7 +36,6 @@ public static class AuthorizationServicesExtensions
         services.AddScoped<IAuthorizationHandler, GardenMemberAuthorizationHandler>();
 
         services.AddAuthorizationBuilder()
-            .AddPolicy(RequireGlobalAdminPolicy, policy => policy.RequireRole(SystemAdminRole))
             .AddPolicy(RequireGlobalAdminPolicy, policy => policy.RequireJitRole(SystemAdminRole).AddRequirements(new MfaRequirement()))
             .AddPolicy(RequireDataAdminPolicy, policy => policy.RequireJitRole(DataAdminRole).AddRequirements(new MfaRequirement()))
             .AddPolicy(RequirePolicyAdminPolicy, policy => policy.RequireJitRole(PolicyAdminRole).AddRequirements(new MfaRequirement()))

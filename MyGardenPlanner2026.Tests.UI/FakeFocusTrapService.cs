@@ -37,9 +37,21 @@ public sealed class FakeFocusTrapService : IFocusTrapService
 
 public static class FocusTrapTestExtensions
 {
-    /// <summary>Registrerer en FakeFocusTrapService og returnerer den, så tests kan aflæse tællerne.</summary>
+    /// <summary>
+    /// Registrerer en FakeFocusTrapService og returnerer den, så tests kan aflæse tællerne.
+    /// Idempotent: et nyt kald returnerer den allerede registrerede instans.
+    /// </summary>
     public static FakeFocusTrapService AddFakeFocusTrap(this BunitContext context)
     {
+        var existing = context.Services
+            .FirstOrDefault(d => d.ServiceType == typeof(IFocusTrapService))?
+            .ImplementationInstance as FakeFocusTrapService;
+
+        if (existing is not null)
+        {
+            return existing;
+        }
+
         var fake = new FakeFocusTrapService();
         context.Services.AddSingleton<IFocusTrapService>(fake);
         return fake;

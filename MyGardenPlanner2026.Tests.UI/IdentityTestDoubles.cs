@@ -49,12 +49,13 @@ public static class IdentityTestDoubles
 
     /// <summary>
     /// Registrerer de fakes, som re-auth-flowet i login- og step-up-komponenter kræver:
-    /// IReAuthenticationService, IReAuthFailureTracker, ICurrentUserAccessor (127.0.0.1) og ILogger&lt;T&gt;.
+    /// IReAuthenticationService, IReAuthFailureTracker, ICurrentUserAccessor (127.0.0.1), ILogger<T> og FakeFocusTrapService (StepUpReAuthModal bruger IFocusTrapService)
     /// </summary>
     /// <typeparam name="TComponent">Komponenten, hvis logger-kategori registreres.</typeparam>
     /// <returns>IReAuthenticationService-fakeen, så tests kan verificere kald.</returns>
     public static IReAuthenticationService RegisterReAuthFakes<TComponent>(this BunitContext context)
     {
+        context.AddFakeFocusTrap();
         var reAuthenticationService = Substitute.For<IReAuthenticationService>();
 
         var currentUserAccessor = Substitute.For<ICurrentUserAccessor>();

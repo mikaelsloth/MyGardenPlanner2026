@@ -103,4 +103,22 @@ public class LoginRateLimitEditorTests : BunitContext
         _ = service.DidNotReceive().UpdateAsync(Arg.Any<LoginRateLimitPolicyDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
         cut.ShouldShowRateLimitMessage();
     }
+
+    [Fact]
+    public void GemButton_IsDisabled_WhileSaveIsPending_AndEnabledAfterwards()
+    {
+        var service = RegisterFakes(reAuthSucceeds: true);
+        var pending = new TaskCompletionSource<LoginRateLimitPolicyDto>();
+        service.UpdateAsync(Arg.Any<LoginRateLimitPolicyDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(pending.Task);
+
+        var cut = Render<LoginRateLimitEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("button.btn-primary").Click();
+
+        cut.ShouldHaveGemDisabled();
+
+        pending.SetResult(default!);
+
+        cut.WaitForAssertion(() => cut.ShouldHaveGemEnabled());
+    }
 }

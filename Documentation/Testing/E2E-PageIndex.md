@@ -169,6 +169,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - Fokus-trap: delt FocusTrapService (wwwroot/js/focus-trap.js), id-baseret, fordi dialoger fjernes fra DOM, før trap’et frigives. Esc i en dialog kræver, at fokus først er flyttet ind. Vent på ToBeFocusedAsync på det forventede element, før Esc sendes.
   Komponenter ejer et FocusTrapScope (SyncAsync fra OnAfterRenderAsync, DisposeAsync fra komponentens DisposeAsync). Ny dialog/drawer: følg samme mønster, og tilføj data-autofocus på det element, der skal have initialt fokus.
 - bUnit: FakeFocusTrapService (AddFakeFocusTrap, idempotent, registreret af RegisterReAuthFakes). NavDrawer-tests bruger den rigtige service med modulopsætning (SetupNavDrawerModule).
+- En udløser (fx "Gem"), der åbner en modal, må ikke få native disabled: Chromium flytter fokus til body, og fokus kan ikke returneres til udløseren (StepUpModalTastaturTests.Escape). Brug aria-disabled.
 
 ### Testdesign og delt data
 - Tests er hardcodede forventede værdier. De udledes ikke af produktionskoden.
@@ -179,7 +180,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - Admin-handlinger i AuditLog findes ved indhold (overgangen Old → New i detaljemodalen) blandt de nyeste rækker, ikke ved position. Antal nye rækker pr. handling afhænger af servicen (fx renummerering af DisplayOrder): assertér delta ≥ forventet, medmindre servicen er gennemgået. Åbn auditloggen EFTER handlingerne (entitetsdropdownen populeres ved indlæsning).
 - Datofilter: "Til" er inklusiv (hele dagen).
 - Eksporten bruger sidst SØGTE filter (`CurrentFilter`), ikke de aktuelle feltværdier. `Results.Problem` skriver ikke-ASCII som \u-escapes i den rå tekst: parse JSON og læs "detail".
-- Policy-editors har ingen unik succesbesked pr. gem og ingen disabled-knap: bekræft hvert gem via alarm-mailen "Policy: <navn>". Afvent mailen før næste indtastning (editoren genindlæser efter gem).
+- Policy-editors: "Gem" er deaktiveret (aria-disabled="true" + klassen "disabled", ikke disabled-attributten) under gem og mens step-up-modalen er åben. Succesbeskeden slutter med " Gemt kl. HH:mm:ss UTC." (sekundopløsning). Afvent aktiv knap (ToBeEnabledAsync) før næste indtastning; alarm-mailen bekræfter hvert gem.
 - En blokeret bruger kan ikke gendanne selv: åbn en ny PolicyAdmin FØR ændringen og brug den til gendannelse.
 
 ### Step-up, re-auth og sikkerhedsalarm
@@ -447,6 +448,7 @@ Step-up re-auth: #reauth-maxage (type=number, min=1, max=60, @onchange → blur)
 Admin-API rate limit: #adminapi-permit, #adminapi-window, #adminapi-segments. Fejl: "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen." (AdminActionGuard.RateLimitedMessage).
 AuditLog-eksport: #exportjob-retention, #exportjob-maxactive, #exportjob-xlsxmaxrows (type=number). Succes: .status-success[role=status] "AuditLog-eksportjob-policyen er opdateret og trådt i kraft." (ryddes ved fanskift).
   Xlsx-grænsen: 1–250.000, standard 50.000. Fejl: ‘Error: XlsxMaxRows skal være mellem 1 og 250000.’
+Alle succesbeskeder efterfølges af " Gemt kl. HH:mm:ss UTC.".
 Filer: AdminSecurityPolicyPage.razor (+ .cs), JitElevationPolicyEditor.razor (+ .cs), RoleElevationExpirySweepService.cs, PolicyEditorBase.cs (fælles load/gem-flow for alle seks editors)
 Tests: ManualSmoke/TjeklisteD/ForkertPasswordModalTests, ManualSmoke/TjeklisteD/KorrektStepUpTests.
 ```
@@ -618,7 +620,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 
 ### R7 – Admin-konfiguration, rate limit-UX og dokumentation (prioritet 7)
 ~~- R7.1 Login-limiter: `OnRejected` skriver ingen body/besked, så brugeren ser blank side eller browserens egen 429-fejlside (ingen "lockout-besked"). Verificeres i H1.~~
-- R7.2 Policy-editors: Gem-knappen er ikke disabled under gem, og der er ingen unik succesbesked pr. gem.
+~~- R7.2 Policy-editors: Gem-knappen er ikke disabled under gem, og der er ingen unik succesbesked pr. gem.~~
 ~~- R7.3 `ReAuthenticationPolicyEditor`: valideringsgrænser for MaxAge ligger i servicen (min=1 i markup, intet max i UI).~~
 ~~- R7.4 `AuthorizationServicesExtensions`: `RequireGlobalAdminPolicy` er registreret to gange (første, RequireRole(SystemAdmin), er død kode). Fjern den første.~~
 ~~- R7.5 `AuthorizationServicesExtensions`: `RequireDataAdminPolicy` bruges ikke af nogen side eller af AdminNavMenu. DataAdmin har kun JIT-adgang som side.~~

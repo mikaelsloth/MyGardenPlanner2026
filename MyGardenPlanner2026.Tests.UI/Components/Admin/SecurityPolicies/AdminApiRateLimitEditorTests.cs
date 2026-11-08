@@ -104,4 +104,22 @@ public class AdminApiRateLimitEditorTests : BunitContext
         _ = service.DidNotReceive().UpdateAsync(Arg.Any<AdminApiRateLimitPolicyDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
         cut.ShouldShowRateLimitMessage();
     }
+
+    [Fact]
+    public void GemButton_IsDisabled_WhileSaveIsPending_AndEnabledAfterwards()
+    {
+        var service = RegisterFakes(reAuthSucceeds: true);
+        var pending = new TaskCompletionSource<AdminApiRateLimitPolicyDto>();
+        service.UpdateAsync(Arg.Any<AdminApiRateLimitPolicyDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(pending.Task);
+
+        var cut = Render<AdminApiRateLimitEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("button.btn-primary").Click();
+
+        cut.ShouldHaveGemDisabled();
+
+        pending.SetResult(default!);
+
+        cut.WaitForAssertion(() => cut.ShouldHaveGemEnabled());
+    }
 }

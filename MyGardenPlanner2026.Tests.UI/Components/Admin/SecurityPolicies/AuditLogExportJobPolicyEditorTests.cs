@@ -183,4 +183,22 @@ public class AuditLogExportJobPolicyEditorTests : BunitContext
         await adminService.DidNotReceive().UpdateAsync(
             Arg.Any<AuditLogExportJobPolicyDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public void GemButton_IsDisabled_WhileSaveIsPending_AndEnabledAfterwards()
+    {
+        var service = adminService;
+        var pending = new TaskCompletionSource<AuditLogExportJobPolicyDto>();
+        service.UpdateAsync(Arg.Any<AuditLogExportJobPolicyDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(pending.Task);
+
+        var cut = Render<AuditLogExportJobPolicyEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("button.btn-primary").Click();
+
+        cut.ShouldHaveGemDisabled();
+
+        pending.SetResult(default!);
+
+        cut.WaitForAssertion(() => cut.ShouldHaveGemEnabled());
+    }
 }

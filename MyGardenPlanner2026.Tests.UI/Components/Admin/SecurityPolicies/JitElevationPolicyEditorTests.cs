@@ -134,6 +134,109 @@ public class JitElevationPolicyEditorTests : BunitContext
         cut.Find("button.btn-primary").Click();
 
         cut.Find(".status-danger[role=alert]").TextContent.Should().Contain("Error: Ugyldig værdi");
+        cut.ShouldHaveGemEnabled();
         receivedMessage.Should().BeNull();
+    }
+
+    [Fact]
+    public void GemButton_IsDisabled_WhileSaveIsPending_AndEnabledAfterwards()
+    {
+        var service = RegisterFakes(reAuthSucceeds: true);
+        var pending = new TaskCompletionSource<JitElevationPolicyDto>();
+        service.UpdateAsync(Arg.Any<JitElevationPolicyDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(pending.Task);
+
+        var cut = Render<JitElevationPolicyEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("button.btn-primary").Click();
+
+        cut.ShouldHaveGemDisabled();
+
+        pending.SetResult(default!);
+
+        cut.WaitForAssertion(() => cut.ShouldHaveGemEnabled());
+    }
+
+    [Fact]
+    public void ReAuthExpired_ModalOpen_GemIsDisabled_AndEnabledAgainAfterCancel()
+    {
+        RegisterFakes(reAuthSucceeds: false);
+
+        var cut = Render<JitElevationPolicyEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("button.btn-primary").Click();
+
+        cut.ShouldShowStepUpModal();
+        cut.ShouldHaveGemDisabled();
+
+        cut.Find(".confirm-dialog button.btn-secondary").Click();
+
+        cut.ShouldNotShowStepUpModal();
+        cut.ShouldHaveGemEnabled();
+    }
+
+    [Fact]
+    public void RateLimited_ClickingGem_ReEnablesGem()
+    {
+        RegisterFakes(reAuthSucceeds: true, rateLimiterPermits: false);
+
+        var cut = Render<JitElevationPolicyEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("button.btn-primary").Click();
+
+        cut.ShouldShowRateLimitMessage();
+        cut.ShouldHaveGemEnabled();
+    }
+
+    [Fact]
+    public void ReAuthValid_ClickingGem_AppendsUtcTimestampToStatusMessage()
+    {
+        RegisterFakes(reAuthSucceeds: true);
+        Services.AddSingleton<TimeProvider>(new FixedTimeProvider(new DateTimeOffset(2026, 11, 8, 14, 32, 7, TimeSpan.Zero)));
+        string? receivedMessage = null;
+
+        var cut = Render<JitElevationPolicyEditor>(p => p
+            .Add(x => x.OnStatusMessage, EventCallback.Factory.Create<string>(this, m => receivedMessage = m))
+            .AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("button.btn-primary").Click();
+
+        receivedMessage.Should().Be("JIT-eskaleringspolicyen er opdateret og trådt i kraft. Gemt kl. 14:32:07 UTC.");
+    }
+
+    [Fact]
+    public void ReAuthValid_TwoSavesAtDifferentTimes_GiveDifferentMessages()
+    {
+        RegisterFakes(reAuthSucceeds: true);
+        var clock = new FixedTimeProvider(new DateTimeOffset(2026, 11, 8, 14, 32, 7, TimeSpan.Zero));
+        Services.AddSingleton<TimeProvider>(clock);
+        var messages = new List<string>();
+
+        var cut = Render<JitElevationPolicyEditor>(p => p
+            .Add(x => x.OnStatusMessage, EventCallback.Factory.Create<string>(this, m => messages.Add(m)))
+            .AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+
+        cut.Find("button.btn-primary").Click();
+        clock.UtcNow = clock.UtcNow.AddSeconds(5);
+        cut.Find("button.btn-primary").Click();
+
+        messages.Should().HaveCount(2);
+        messages[0].Should().EndWith("Gemt kl. 14:32:07 UTC.");
+        messages[1].Should().EndWith("Gemt kl. 14:32:12 UTC.");
+    }
+
+    [Fact]
+    public void GemClickedWhileSavePending_DoesNotStartSecondSave()
+    {
+        var service = RegisterFakes(reAuthSucceeds: true);
+        var pending = new TaskCompletionSource<JitElevationPolicyDto>();
+        service.UpdateAsync(Arg.Any<JitElevationPolicyDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(pending.Task);
+
+        var cut = Render<JitElevationPolicyEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("button.btn-primary").Click();
+        cut.Find("button.btn-primary").Click(); // tastatur kan aktivere en aria-disabled knap
+
+        _ = service.Received(1).UpdateAsync(
+            Arg.Any<JitElevationPolicyDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>());
+
+        pending.SetResult(default!);
+        cut.WaitForAssertion(() => cut.ShouldHaveGemEnabled());
     }
 }

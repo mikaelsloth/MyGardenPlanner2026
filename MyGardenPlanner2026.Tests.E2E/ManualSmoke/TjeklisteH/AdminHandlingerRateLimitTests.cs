@@ -70,6 +70,7 @@ public sealed class AdminHandlingerRateLimitTests(PlaywrightAppFixture fixture)
                 // Mailen er eneste unikke signal pr. gem, og afventningen undgår, at editorens
                 // genindlæsning efter gem overskriver næste indtastning.
                 await ExpectReAuthMailCountAsync(pageA, userAId, i + 1);
+                await Assertions.Expect(SecurityPolicyPage.SaveButton(pageA)).ToBeEnabledAsync();
             }
 
             await Assertions.Expect(StepUpModal.Dialog(pageA)).ToHaveCountAsync(0);

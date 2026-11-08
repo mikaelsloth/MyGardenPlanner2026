@@ -21,12 +21,21 @@ public abstract class PolicyEditorBase : ComponentBase
     [Inject]
     protected IAdminActionRateLimiter RateLimiter { get; set; } = default!;
 
+    [Inject]
+    protected IServiceProvider ServiceProvider { get; set; } = default!;
+
     [CascadingParameter]
     protected Task<AuthenticationState>? AuthenticationStateTask { get; set; }
 
     [Parameter]
     public EventCallback<string> OnStatusMessage { get; set; }
 
+    protected bool IsSaving { get; private set; }
+
+    /// <summary>Gem er deaktiveret, mens gemningen kører og mens step-up-modalen er åben.</summary>
+    protected bool SaveDisabled => IsSaving || StepUpGuard.ShowModal;
+
+    private TimeProvider Clock => ServiceProvider.GetService<TimeProvider>() ?? TimeProvider.System;
     protected string? ErrorMessage { get; private set; }
 
     protected StepUpGuard StepUpGuard { get; private set; } = default!;
@@ -52,9 +61,40 @@ public abstract class PolicyEditorBase : ComponentBase
         return LoadAsync();
     }
 
-    protected Task SaveAsync() =>
-        StepUpGuard.RunAsync(AuthenticationStateTask, () =>
-            adminActionGuard.RunAsync(AuthenticationStateTask, SaveCoreAsync, message => ErrorMessage = message));
+    protected async Task SaveAsync()
+    {
+        if (SaveDisabled)
+        {
+            return;
+        }
+
+        IsSaving = true;
+        try
+        {
+            await StepUpGuard.RunAsync(AuthenticationStateTask, SaveGuardedAsync);
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    // Kører også som den udskudte handling, når step-up-modalen er gennemført.
+    private async Task SaveGuardedAsync()
+    {
+        IsSaving = true;
+        try
+        {
+            await adminActionGuard.RunAsync(AuthenticationStateTask, SaveCoreAsync, message => ErrorMessage = message);
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private string BuildStatusMessage() =>
+        $"{SavedMessage} Gemt kl. {Clock.GetUtcNow().ToString("HH:mm:ss", CultureInfo.InvariantCulture)} UTC.";
 
     private async Task SaveCoreAsync()
     {
@@ -71,7 +111,7 @@ public abstract class PolicyEditorBase : ComponentBase
             await UpdateAsync(userId);
 
             await LoadAsync();
-            await OnStatusMessage.InvokeAsync(SavedMessage);
+            await OnStatusMessage.InvokeAsync(BuildStatusMessage());
         }
         catch (ArgumentOutOfRangeException ex)
         {

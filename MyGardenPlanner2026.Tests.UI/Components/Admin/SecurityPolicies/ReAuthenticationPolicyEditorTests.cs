@@ -125,4 +125,22 @@ public class ReAuthenticationPolicyEditorTests : BunitContext
 
         cut.Find(".help").TextContent.Should().Contain("1–60 minutter");
     }
+
+    [Fact]
+    public void GemButton_IsDisabled_WhileSaveIsPending_AndEnabledAfterwards()
+    {
+        var service = RegisterFakes(reAuthSucceeds: true);
+        var pending = new TaskCompletionSource<ReAuthenticationPolicyDto>();
+        service.UpdateAsync(Arg.Any<ReAuthenticationPolicyDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(pending.Task);
+
+        var cut = Render<ReAuthenticationPolicyEditor>(p => p.AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("button.btn-primary").Click();
+
+        cut.ShouldHaveGemDisabled();
+
+        pending.SetResult(default!);
+
+        cut.WaitForAssertion(() => cut.ShouldHaveGemEnabled());
+    }
 }

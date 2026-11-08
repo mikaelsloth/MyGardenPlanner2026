@@ -135,6 +135,7 @@ public static class SecurityPolicyPage
         await StepUpModal.CompleteAsync(page, user);
 
         await Assertions.Expect(Success(page)).ToContainTextAsync(savedText);
+        await Assertions.Expect(SaveButton(page)).ToBeEnabledAsync();
     }
 
     public static Task<int> ReadFieldAsync(IPage page, string id) =>

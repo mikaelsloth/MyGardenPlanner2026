@@ -1,13 +1,14 @@
 ﻿@namespace MyGardenPlanner2026.Components.Domain.Admin
 
 @using MyGardenPlanner2026.Components.Account.Shared
+@inherits PolicyEditorBase
 
 <div class="security-policy-editor card card-entity" data-density="default">
-    @if (errorMessage is not null)
+    @if (ErrorMessage is not null)
     {
         <div class="status-message status-danger status-section" role="alert">
             <span class="status-dot" aria-hidden="true"></span>
-            <div class="status-message-text"><p>@errorMessage</p></div>
+            <div class="status-message-text"><p>@ErrorMessage</p></div>
         </div>
     }
 
@@ -34,5 +35,5 @@
         </div>
     }
 
-    <StepUpReAuthModal IsOpen="stepUpGuard.ShowModal" OnReAuthenticated="stepUpGuard.ExecutePendingActionAsync" OnCancel="stepUpGuard.Cancel" />
+    <StepUpReAuthModal IsOpen="StepUpGuard.ShowModal" OnReAuthenticated="StepUpGuard.ExecutePendingActionAsync" OnCancel="StepUpGuard.Cancel" />
 </div>

@@ -118,4 +118,22 @@ public class JitElevationPolicyEditorTests : BunitContext
         _ = service.Received().UpdateAsync(
             Arg.Is<JitElevationPolicyDto>(d => d.PendingExpiryHours == 72), "user-1", Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public void ServiceRejectsValue_ShowsErrorMessage_AndDoesNotInvokeOnStatusMessage()
+    {
+        var service = RegisterFakes(reAuthSucceeds: true);
+        service.UpdateAsync(Arg.Any<JitElevationPolicyDto>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromException<JitElevationPolicyDto>(
+                new ArgumentOutOfRangeException("update", "Ugyldig værdi")));
+        string? receivedMessage = null;
+
+        var cut = Render<JitElevationPolicyEditor>(p => p
+            .Add(x => x.OnStatusMessage, EventCallback.Factory.Create<string>(this, m => receivedMessage = m))
+            .AddCascadingValue(TestPrincipals.CreateAuthStateAsync()));
+        cut.Find("button.btn-primary").Click();
+
+        cut.Find(".status-danger[role=alert]").TextContent.Should().Contain("Error: Ugyldig værdi");
+        receivedMessage.Should().BeNull();
+    }
 }

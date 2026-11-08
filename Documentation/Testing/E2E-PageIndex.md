@@ -447,7 +447,7 @@ Step-up re-auth: #reauth-maxage (type=number, min=1, max=60, @onchange → blur)
 Admin-API rate limit: #adminapi-permit, #adminapi-window, #adminapi-segments. Fejl: "Error: For mange handlinger på kort tid. Vent et øjeblik og prøv igen." (AdminActionGuard.RateLimitedMessage).
 AuditLog-eksport: #exportjob-retention, #exportjob-maxactive, #exportjob-xlsxmaxrows (type=number). Succes: .status-success[role=status] "AuditLog-eksportjob-policyen er opdateret og trådt i kraft." (ryddes ved fanskift).
   Xlsx-grænsen: 1–250.000, standard 50.000. Fejl: ‘Error: XlsxMaxRows skal være mellem 1 og 250000.’
-Filer: AdminSecurityPolicyPage.razor (+ .cs), JitElevationPolicyEditor.razor (+ .cs), RoleElevationExpirySweepService.cs
+Filer: AdminSecurityPolicyPage.razor (+ .cs), JitElevationPolicyEditor.razor (+ .cs), RoleElevationExpirySweepService.cs, PolicyEditorBase.cs (fælles load/gem-flow for alle seks editors)
 Tests: ManualSmoke/TjeklisteD/ForkertPasswordModalTests, ManualSmoke/TjeklisteD/KorrektStepUpTests.
 ```
 ```

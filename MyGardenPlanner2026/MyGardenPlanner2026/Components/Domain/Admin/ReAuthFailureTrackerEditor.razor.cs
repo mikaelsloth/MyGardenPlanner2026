@@ -1,16 +1,11 @@
 namespace MyGardenPlanner2026.Components.Domain.Admin;
 
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Components.Authorization;
-using MyGardenPlanner2026.Components.Account.Shared;
-using MyGardenPlanner2026.Configuration.Extensions;
 using MyGardenPlanner2026.Core.Contracts.Admin;
-using System.Globalization;
 
 /// <summary>
 /// Ændring af fejl-tracker-policyen er en følsom "core policy"-handling (§3.2) og
-/// kræver derfor step-up re-autentificering — håndhævet via StepUpGuard.
+/// kræver step-up re-autentificering (se <see cref="PolicyEditorBase"/>).
 /// </summary>
 public partial class ReAuthFailureTrackerEditor
 {
@@ -18,72 +13,26 @@ public partial class ReAuthFailureTrackerEditor
     private IReAuthFailureTrackerPolicyAdminService AdminService { get; set; } = default!;
 
     [Inject]
-    private IAuthorizationService AuthorizationService { get; set; } = default!;
-
-    [Inject]
-    private IAdminActionRateLimiter RateLimiter { get; set; } = default!;
-
-    [Inject]
     private ILogger<ReAuthFailureTrackerEditor> Logger { get; set; } = default!;
-
-    [CascadingParameter]
-    private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
-
-    [Parameter]
-    public EventCallback<string> OnStatusMessage { get; set; }
 
     private ReAuthFailureTrackerPolicyDto? settings;
     private int thresholdEdit;
     private int windowDaysEdit;
-    private string? errorMessage;
-    private StepUpGuard stepUpGuard = default!;
-    private AdminActionGuard adminActionGuard = default!;
+
+    protected override string SavedMessage => "Fejl-tracker-policyen er opdateret og trådt i kraft.";
 
     [LoggerMessage(EventId = 1075, Level = LogLevel.Information, Message = "Opdatering af fejl-tracker-policy afvist: {Reason}")]
     static partial void ReAuthFailureTrackerPolicySaveFailed(ILogger logger, string Reason);
 
-    protected override Task OnInitializedAsync()
-    {
-        stepUpGuard = new StepUpGuard(AuthorizationService, AuthorizationServicesExtensions.RequireRecentAuthenticationPolicy);
-        adminActionGuard = new AdminActionGuard(RateLimiter);
-        return LoadAsync();
-    }
+    protected override void LogSaveRejected(string reason) => ReAuthFailureTrackerPolicySaveFailed(Logger, reason);
 
-    private async Task LoadAsync()
+    protected override async Task LoadAsync()
     {
         settings = await AdminService.GetAsync();
         thresholdEdit = settings.Threshold;
         windowDaysEdit = settings.WindowDays;
     }
 
-    private Task SaveAsync() =>
-        stepUpGuard.RunAsync(AuthenticationStateTask, () =>
-            adminActionGuard.RunAsync(AuthenticationStateTask, SaveCoreAsync, message => errorMessage = message));
-
-    private async Task SaveCoreAsync()
-    {
-        errorMessage = null;
-        try
-        {
-            var userId = await CurrentUserIdResolver.ResolveAsync(AuthenticationStateTask);
-            if (userId is null)
-            {
-                errorMessage = "Error: Kunne ikke bestemme den aktuelle bruger.";
-                return;
-            }
-
-            await AdminService.UpdateAsync(new ReAuthFailureTrackerPolicyDto(thresholdEdit, windowDaysEdit), userId);
-
-            await LoadAsync();
-            await OnStatusMessage.InvokeAsync("Fejl-tracker-policyen er opdateret og trådt i kraft.");
-        }
-        catch (ArgumentOutOfRangeException ex)
-        {
-            errorMessage = $"Error: {ex.Message}";
-            ReAuthFailureTrackerPolicySaveFailed(Logger, ex.Message);
-        }
-    }
-
-    private static int ParseInt(object? value) =>
-        int.TryParse(Convert.ToString(value, CultureInfo.InvariantCulture), out var result) ? result : 0;
+    protected override Task UpdateAsync(string userId) =>
+        AdminService.UpdateAsync(new ReAuthFailureTrackerPolicyDto(thresholdEdit, windowDaysEdit), userId);
 }

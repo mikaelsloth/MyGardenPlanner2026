@@ -56,7 +56,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 
 - `LoginFlow`: `LoginAsync` = `SubmitPasswordAsync` + (hvis 2FA) `SubmitTwoFactorCodeAsync`. Bruger labels "E-mail" og "Adgangskode", knappen "Log ind" og "Godkendelseskode".
   - `FillCredentialsAsync(page, email, password)`, `LoginButton(page)`
-  - `AttemptStatusAsync(page, rootUri, user)`: ryd cookies, åbn login, send formularen (ingen 2FA) og returnér HTTP-statussen på POST'en. Til tests, hvor svaret kan være 429.
+  - AttemptAsync(page, rootUri, user): ryd cookies, åbn login, send formularen (ingen 2FA) og returnér LoginAttemptResponse(Status, Body, RetryAfter) for POST’en (Body kun ved status ≥ 400). AttemptStatusAsync returnerer kun statussen. Til tests, hvor svaret kan være 429.
 - `PublicNavigation.ClickRegisterAsync(page)`: klikker "Opret bruger" i headeren, eller åbner NavDrawer, hvis linket er skjult.
 - `RegisteredUserFlow` (nye brugere via UI, adgangskode = `SmokeTestDataSeeder.SharedPassword`, e-mail e2e-`<guid>`@test.dk):
   - `NewEmail()`, `RegisterAsync(page, email?)` (fra /Account/Register til RegisterConfirmation), `ConfirmAsync(page)` (følger bekræftelseslinket), `RegisterAndConfirmAsync(page, rootUri)`
@@ -194,7 +194,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 
 ### Rate limiting
 - Admin-API-limiter (`AdminActionRateLimiter`): sliding window pr. bruger (singleton, 60 sek., 6 segmenter), genopbygges kun ved ændring af `AdminApiRateLimitOptions` (ny kvote). Forbruges efter step-up og før service-validering, så et afvist gem giver rate-limit-teksten uanset værdi. Et afvist forsøg bruger ingen permit.
-- Login-limiter (`ReloadableLoginRateLimiter`): fixed window pr. IP, kun beskyttede auth-POST'er, genopbygges (tæller nulstilles) ved policyændring. 429 uden body (OnRejected logger kun).
+- Login-limiter (`ReloadableLoginRateLimiter`): fixed window pr. IP, kun beskyttede auth-POST'er, genopbygges (tæller nulstilles) ved policyændring. 429 med dansk klartekst-body ("For mange loginforsøg. Vent et øjeblik og prøv igen.") og Retry-After (OnRejected logger også).
 - G2e bruger ugyldige JIT-anmodninger (minutter under grænsen) til at forbruge permits: et permit bruges før service-validering, og der oprettes ingen rækker.
 
 ### Identity-sider
@@ -300,7 +300,7 @@ Fejl ved forkert login: StatusMessage "Error: Invalid login attempt." (engelsk).
 Login bruger lockoutOnFailure: false. Redirect til /Account/Lockout sker kun for en allerede låst bruger. Et login-forsøg på en låst bruger registreres også i ReAuthFailureTracker.
 Forkert password kalder ReAuthFailureTracker.RecordFailureAsync. Ved 5, 10, 15 … forsøg (multipla af Threshold) sendes sikkerhedsalarm (ISecurityAlertService) til Smtp:AdminSecurityEmails.
   Emne: "[MyGardenPlanner] Sikkerhedsalarm: Gentagne fejlede login-/re-auth-forsøg". Krop: "Bruger-ID: <id>" og "IP-adresse: <ip>".
-Login rate limit: fixed window pr. IP, kun beskyttede auth-POST'er (AdminAuthPathMatcher). Ved overskridelse svarer serveren 429 uden body.
+Login rate limit: fixed window pr. IP, kun beskyttede auth-POST'er (AdminAuthPathMatcher). Ved overskridelse svarer serveren 429 med dansk klartekst-body og Retry-After.
 Filer: ReloadableLoginRateLimiter.cs, RateLimitingServicesExtensions.cs, Login.razor (+ .cs), ReAuthFailureTracker.cs, ReAuthFailureTrackerOptions.cs
 ```
 ```
@@ -547,7 +547,7 @@ Eksportpanel (AuditLogExportPanel):
 | G2d | ReAuth-policy træder i kraft | ReAuthPolicyIKraftTests | ingen | ikke kørt |
 | G2e | Admin-API-ratelimit træder i kraft | AdminApiPolicyIKraftTests | ingen | ikke kørt |
 | G2f | Login-ratelimit træder i kraft | LoginPolicyIKraftTests | ingen | ikke kørt |
-| H1 | 6. hurtige login-forsøg → 429 | LoginRateLimitTests | RateLimiting_H1_`<bredde>` (2) | ikke kørt |
+| H1 | 6. hurtige login-forsøg → 429 med besked og Retry-After | LoginRateLimitTests | RateLimiting_H1_`<bredde>` (2) | ikke kørt |
 | H2 | Gem-spam i policy-editor → rate-limit-fejl | AdminHandlingerRateLimitTests | RateLimiting_H2_`<bredde>` (2) | ikke kørt |
 | I1 | AdminNavMenu viser kun tilladte links (+ JIT-eskalering) | AdminNavigationTests | Adgangskontrol_I1_`<Persona>`_`<bredde>` (8), Adgangskontrol_I1d_`<bredde>` (2) | grøn |
 | I2 | Direkte URL uden rolle (anonym → login, krydsadgang → AccessDenied) | AdminDirektUrlTests | Adgangskontrol_I2_Anonym_`<Side>`_`<bredde>` (8), Adgangskontrol_I2_AccessDenied_`<Persona>`_`<Side>`_`<bredde>` (18) | grøn |
@@ -617,7 +617,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ~~Filer til Upload: StepUpReAuthModal (+.cs)~~
 
 ### R7 – Admin-konfiguration, rate limit-UX og dokumentation (prioritet 7)
-- R7.1 Login-limiter: `OnRejected` skriver ingen body/besked, så brugeren ser blank side eller browserens egen 429-fejlside (ingen "lockout-besked"). Verificeres i H1.
+~~- R7.1 Login-limiter: `OnRejected` skriver ingen body/besked, så brugeren ser blank side eller browserens egen 429-fejlside (ingen "lockout-besked"). Verificeres i H1.~~
 - R7.2 Policy-editors: Gem-knappen er ikke disabled under gem, og der er ingen unik succesbesked pr. gem.
 ~~- R7.3 `ReAuthenticationPolicyEditor`: valideringsgrænser for MaxAge ligger i servicen (min=1 i markup, intet max i UI).~~
 ~~- R7.4 `AuthorizationServicesExtensions`: `RequireGlobalAdminPolicy` er registreret to gange (første, RequireRole(SystemAdmin), er død kode). Fjern den første.~~

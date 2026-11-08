@@ -5,11 +5,15 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Configuration.RateLimiting;
+using System.Globalization;
+using System.Threading.RateLimiting;
 
 public static partial class RateLimitingServicesExtensions
 {
     /// <summary>Label brugt i logs — IKKE en navngivet policy, se PR-beskrivelse for begrundelse.</summary>
     public const string AdminAuthPolicyName = "AdminAuthPolicy";
+    /// <summary>Brugerrettet besked ved overskredet login rate limit (429).</summary>
+    public const string LoginRateLimitedMessage = "For mange loginforsøg. Vent et øjeblik og prøv igen.";
 
     [LoggerMessage(EventId = 1023, Level = LogLevel.Warning, Message = "{Policy}: rate limit overskredet for IP {IpAddress} på {Path}.")]
     static partial void RateLimitExceeded(ILogger logger, string Policy, string IpAddress, string Path);
@@ -22,17 +26,24 @@ public static partial class RateLimitingServicesExtensions
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
-            options.OnRejected = (context, cancellationToken) =>
+            options.OnRejected = async (context, cancellationToken) =>
             {
-                var loggerFactory = context.HttpContext.RequestServices
-                    .GetRequiredService<ILoggerFactory>();
+                var httpContext = context.HttpContext;
+                var loggerFactory = httpContext.RequestServices.GetRequiredService<ILoggerFactory>();
                 var logger = loggerFactory.CreateLogger("MyGardenPlanner2026.RateLimiting");
 
-                var ipAddress = context.HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                var ipAddress = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-                RateLimitExceeded(logger, AdminAuthPolicyName, ipAddress, context.HttpContext.Request.Path.Value ?? string.Empty);
+                RateLimitExceeded(logger, AdminAuthPolicyName, ipAddress, httpContext.Request.Path.Value ?? string.Empty);
 
-                return ValueTask.CompletedTask;
+                if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+                {
+                    httpContext.Response.Headers.RetryAfter =
+                        Math.Ceiling(retryAfter.TotalSeconds).ToString(CultureInfo.InvariantCulture);
+                }
+
+                httpContext.Response.ContentType = "text/plain; charset=utf-8";
+                await httpContext.Response.WriteAsync(LoginRateLimitedMessage, cancellationToken);
             };
         });
 

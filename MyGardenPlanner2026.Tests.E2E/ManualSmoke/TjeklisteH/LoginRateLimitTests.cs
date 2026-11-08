@@ -4,14 +4,14 @@ using FluentAssertions;
 using Microsoft.Playwright;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Tests.E2E.Screenshots;
+using System.Globalization;
 using Ids = MyGardenPlanner2026.Tests.E2E.SecurityPolicyPage.FieldIds;
 
 /// <summary>
 /// Tjekliste H1: 6 hurtige loginforsøg med standardgrænsen 5 giver 429 ved 6. Login-limiteren er et fixed
 /// window pr. IP og tæller kun beskyttede auth-POST'er. E2E-seed er 1000, så en ny PolicyAdmin sætter
 /// PermitLimit = 5 (step-up). Ny bruger A (uden 2FA, oprettet før ændringen) logger ind 6 gange med korrekt
-/// password (ryd cookies mellem forsøgene), og HTTP-statussen på hver POST læses. OnRejected skriver ingen
-/// body, så skærmbilledet dokumenterer, hvad brugeren faktisk ser ved 429 (efter 6. forsøg, FØR assertions).
+/// password (ryd cookies mellem forsøgene), og HTTP-statussen på hver POST læses. OnRejected skriver en dansk klartekst-besked og Retry-After; skærmbilledet dokumenterer, hvad brugeren faktisk ser ved 429
 /// Gendannelsen sker straks i en ny circuit i PolicyAdmins eksisterende context (intet login, så den kan ikke
 /// blokeres), og limiteren genopbygges, så A kan logge ind igen umiddelbart efter.
 /// Skærmbilleder: RateLimiting_H1_&lt;bredde&gt;. Se også G2f (grænse 2), som dækker mekanismen.
@@ -29,6 +29,7 @@ public sealed class LoginRateLimitTests(PlaywrightAppFixture fixture)
     private const int ChangedPermit = 5;
     private const int Attempts = 6;
     private const int TooManyRequests = 429;
+    private const string RateLimitedText = "For mange loginforsøg. Vent et øjeblik og prøv igen.";
 
     [Theory]
     [InlineData(Viewports.Tablet)]
@@ -51,11 +52,13 @@ public sealed class LoginRateLimitTests(PlaywrightAppFixture fixture)
                 policyPage, policyAdmin, Ids.LoginPermit, ChangedPermit,
                 SecurityPolicyPage.LoginRateLimit.SavedText);
 
-            var statuses = new List<int>();
+            var responses = new List<LoginAttemptResponse>();
             for (var attempt = 1; attempt <= Attempts; attempt++)
             {
-                statuses.Add(await LoginFlow.AttemptStatusAsync(page, fixture.RootUri, user));
+                responses.Add(await LoginFlow.AttemptAsync(page, fixture.RootUri, user));
             }
+
+            var statuses = responses.Select(r => r.Status).ToList();
 
             // Skærmbilledet tages før assertions, så det også findes, hvis forventningen ikke holder.
             await page.WaitForLoadStateAsync(LoadState.Load);
@@ -67,6 +70,17 @@ public sealed class LoginRateLimitTests(PlaywrightAppFixture fixture)
             statuses[^1].Should().Be(
                 TooManyRequests, "6. forsøg overskrider grænsen ({0}). Statusser: {1}",
                 ChangedPermit, string.Join(", ", statuses));
+
+            var rejected = responses[^1];
+
+            rejected.Body.Should().Be(RateLimitedText, "den afviste POST skal svare med den danske besked");
+
+            var parsed = int.TryParse(
+                rejected.RetryAfter, NumberStyles.None, CultureInfo.InvariantCulture, out var retryAfterSeconds);
+            parsed.Should().BeTrue("Retry-After skal være et helt antal sekunder, men var '{0}'", rejected.RetryAfter);
+            retryAfterSeconds.Should().BeGreaterThan(0);
+
+            await Assertions.Expect(page.Locator("body")).ToContainTextAsync(RateLimitedText);
         }
         finally
         {

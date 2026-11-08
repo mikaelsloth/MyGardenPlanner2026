@@ -417,6 +417,7 @@ Fælles for alle admin-sider:
   Esc annullerer (ikke under verificering). Fokus fanges i modalen (FocusTrapService), adgangskodefeltet har initialt fokus, og fokus returneres til udløseren. Ingen lukning ved klik på baggrunden (tilsigtet).
   Tests: ManualSmoke/TjeklisteD/StepUpModalTastaturTests.
 - AdminNavMenu: nav.admin-nav-menu[aria-label='Administration'], ét `<li><a>` pr. tilladt link, href relativ ("admin/subscriptions"). Aktuel side har klassen "active". AuditLog-linket får .nav-badge[aria-label] med antal nye eksportfiler, når der er ulæste. Filer: AuthorizationServicesExtensions.cs, AnyAdminRoleAuthorizationHandler.cs, JitRoleAuthorizationHandler.cs. Tests: ManualSmoke/TjeklisteI/AdminNavigationTests.
+- Adgangsregler: Documentation/Specifications/Adgangsrettigheder.md (sektionen "Adgangsmatrix admin-området").
 
 | Rute | Overskrift | Nav-link | Policy | Persona |
 | ------ | ------ | ------ | ------ | ------ |
@@ -626,10 +627,10 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ~~- R7.5 `AuthorizationServicesExtensions`: `RequireDataAdminPolicy` bruges ikke af nogen side eller af AdminNavMenu. DataAdmin har kun JIT-adgang som side.~~
 ~~- R7.6 Login/AccessDenied-stier er kun implicitte (ingen LoginPath/AccessDeniedPath i cookie-opsætningen). Sæt dem eksplicit.~~
 ~~- R7.7 To redirect-veje til login med forskellig ReturnUrl: auth-middleware (relativ, "ReturnUrl") og `RedirectToLogin` (absolut, "returnUrl"). `LoginRedirect.ReturnPath` accepterer begge.~~
-- R7.8 AdminNavMenu er statisk: linkene opdateres først ved ny sideindlæsning efter ændret adgang (fx godkendt JIT).
-- R7.9 Adgangsrettigheder.md er ikke opdateret med admin-siderne (/admin/subscriptions, /admin/security-policies, /admin/jit-requests, /admin/audit-log).
+~~- R7.8 AdminNavMenu er statisk: linkene opdateres først ved ny sideindlæsning efter ændret adgang (fx godkendt JIT).~~
+~~- R7.9 Adgangsrettigheder.md er ikke opdateret med admin-siderne (/admin/subscriptions, /admin/security-policies, /admin/jit-requests, /admin/audit-log).~~
 
-Filer til Upload: ReloadableLoginRateLimiter, RateLimitingServicesExtensions, policy-editors, AuthorizationServicesExtensions, cookie-opsætning, Adgangsrettigheder.md
+~~Filer til Upload: ReloadableLoginRateLimiter, RateLimitingServicesExtensions, policy-editors, AuthorizationServicesExtensions, cookie-opsætning, Adgangsrettigheder.md~~
 
 ### R8 – Lokalisering (prioritet 8, efter R1–R3)
 - R8.1 `Register.razor.cs`: valideringsbeskeder (StringLength, Compare) og Display-navne er på engelsk.

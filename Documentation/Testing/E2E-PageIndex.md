@@ -278,6 +278,7 @@ Titel: Opret bruger – MyGardenPlanner. h1: Opret bruger (AuthPageShell: h1 = T
 Labels: "E-mail", "Adgangskode" (Exact = true), "Bekræft adgangskode". Knap: "Opret bruger" (role button; headerens "Opret bruger" er et link).
 Succes: redirect til /Account/RegisterConfirmation?email=... (kræver RequireConfirmedAccount; ellers logges brugeren ind og sendes til ReturnUrl).
 Fejl: ValidationSummary (.text-danger) og StatusMessage "Error: ...".
+  Valideringsbeskeder (dansk): "Adgangskoden skal være mindst 6 og højst 100 tegn.", "Adgangskoden og bekræftelsen er ikke ens." + e-mailbeskederne som på Login. Identity-fejl (fx dublet-e-mail) kommer fra DanishIdentityErrorDescriber.
 Filer: Register.razor (+ .cs)
 ```
 ```
@@ -297,7 +298,7 @@ Filer: ConfirmEmail.razor (+ .cs)
 /Account/Login
 Titel: Log ind – MyGardenPlanner. h1: Log ind. Layout: PublicLayout.
 Labels: "E-mail", "Adgangskode" (Exact = true), "Husk mig". Knap: "Log ind" (Exact = true; passkey-knappen hedder "Log ind med en passkey": PasskeySubmit, Request, e-mailfeltet sendes som username; tomt felt giver discoverable credential).
-Fejl ved forkert login: StatusMessage "Error: Invalid login attempt." (engelsk).
+Fejl ved forkert login: StatusMessage "Error: Ugyldigt loginforsøg." Valideringsbeskeder (tom/ugyldig e-mail, tom adgangskode) er på dansk: "Feltet 'E-mail' er påkrævet.", "Angiv en gyldig e-mailadresse.", "Feltet 'Adgangskode' er påkrævet." (AccountMessages.cs).
 Login bruger lockoutOnFailure: false. Redirect til /Account/Lockout sker kun for en allerede låst bruger. Et login-forsøg på en låst bruger registreres også i ReAuthFailureTracker.
 Forkert password kalder ReAuthFailureTracker.RecordFailureAsync. Ved 5, 10, 15 … forsøg (multipla af Threshold) sendes sikkerhedsalarm (ISecurityAlertService) til Smtp:AdminSecurityEmails.
   Emne: "[MyGardenPlanner] Sikkerhedsalarm: Gentagne fejlede login-/re-auth-forsøg". Krop: "Bruger-ID: <id>" og "IP-adresse: <ip>".
@@ -633,11 +634,11 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ~~Filer til Upload: ReloadableLoginRateLimiter, RateLimitingServicesExtensions, policy-editors, AuthorizationServicesExtensions, cookie-opsætning, Adgangsrettigheder.md~~
 
 ### R8 – Lokalisering (prioritet 8, efter R1–R3)
-- R8.1 `Register.razor.cs`: valideringsbeskeder (StringLength, Compare) og Display-navne er på engelsk.
-- R8.2 `Login.razor.cs`: fejlbeskeden "Error: Invalid login attempt." er på engelsk.
+~~- R8.1 `Register.razor.cs`: valideringsbeskeder (StringLength, Compare) og Display-navne er på engelsk.~~
+~~- R8.2 `Login.razor.cs`: fejlbeskeden "Error: Invalid login attempt." er på engelsk.~~
 - R8.3 Manage-siderne (TwoFactorAuthentication, EnableAuthenticator, Passkeys, RenamePasskey) og StatusMessage-teksterne er på engelsk. Login-siderne er på dansk.
 - R8.4 `RenamePasskey.razor` har ingen PageTitle.
-- R8.5 ChangePassword: fejlbeskeder fra Identity-password-politikken (fx "Error: Passwords must have at least one digit") er engelske og ikke dækket af test, da politikken ikke er i konteksten.
+~~- R8.5 ChangePassword: fejlbeskeder fra Identity-password-politikken (fx "Error: Passwords must have at least one digit") er engelske og ikke dækket af test, da politikken ikke er i konteksten.~~
 - R8.6 `StatusMessage` skelner danger/success på præfikset "Error" (afsnit 3). Ved lokalisering skal præfikset bevares, eller konventionen ændres.
 - R8.7 Alle hardcodede forventede tekster i E2E-testene (A–J) og afsnit 4 skal opdateres sammen med tekstændringerne.
 

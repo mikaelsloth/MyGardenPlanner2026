@@ -79,7 +79,7 @@ public partial class Login
         else
         {
             await TrackReAuthOutcomeAsync(succeeded: false);
-            errorMessage = "Error: Invalid login attempt.";
+            errorMessage = AccountMessages.InvalidLoginAttempt;
         }
     }
 
@@ -120,15 +120,17 @@ public partial class Login
 
     private sealed class InputModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = AccountMessages.FieldRequired)]
+        [EmailAddress(ErrorMessage = AccountMessages.InvalidEmail)]
+        [Display(Name = "E-mail")]
         public string Email { get; set; } = "";
 
-        [Required]
+        [Required(ErrorMessage = AccountMessages.FieldRequired)]
         [DataType(DataType.Password)]
+        [Display(Name = "Adgangskode")]
         public string Password { get; set; } = "";
 
-        [Display(Name = "Remember me?")]
+        [Display(Name = "Husk mig")]
         public bool RememberMe { get; set; }
 
         public PasskeyInputModel? Passkey { get; set; }

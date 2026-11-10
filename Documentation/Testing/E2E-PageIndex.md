@@ -359,14 +359,14 @@ Filer: EnableAuthenticator.razor (+ .cs), Shared\ShowRecoveryCodes.razor (+ .cs)
 ```
 ```
 /Account/Manage/Passkeys
-Titel: Manage your passkeys. h3 "Manage your passkeys".
-Tom: "No passkeys are registered." Knap "Add a new passkey" (PasskeySubmit, Create). Liste: tabel med navn ("Unnamed passkey" uden navn) og knapperne "Rename"/"Delete".
+Titel: Administrer dine passkeys – MyGardenPlanner. h3 "Administrer dine passkeys".
+Tom: "Der er ikke registreret nogen passkeys." Knap "Tilføj en ny passkey" (PasskeySubmit, Create). Liste: tabel med navn ("Passkey uden navn" uden navn) og knapperne "Omdøb"/"Slet"
 Filer: Passkeys.razor (+ .cs), Shared\PasskeySubmit.razor (+ .razor.js)
 ```
 ```
 /Account/Manage/RenamePasskey/{id}
-Ingen PageTitle. h4 "Enter a name for your passkey" (uden navn). Label "Passkey name", knap "Continue".
-Succes: redirect til Passkeys med "Passkey updated successfully."
+Titel: Omdøb passkey – MyGardenPlanner. h4 "Angiv et navn til din passkey" (uden navn). Label "Passkey-navn", knap "Fortsæt".
+Succes: redirect til Passkeys med "Passkeyen er opdateret."
 Filer: RenamePasskey.razor (+ .cs)
 ```
 ```
@@ -637,7 +637,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ~~- R8.1 `Register.razor.cs`: valideringsbeskeder (StringLength, Compare) og Display-navne er på engelsk.~~
 ~~- R8.2 `Login.razor.cs`: fejlbeskeden "Error: Invalid login attempt." er på engelsk.~~
 - R8.3 Manage-siderne (TwoFactorAuthentication, EnableAuthenticator, Passkeys, RenamePasskey) og StatusMessage-teksterne er på engelsk. Login-siderne er på dansk.
-- R8.4 `RenamePasskey.razor` har ingen PageTitle.
+~~- R8.4 `RenamePasskey.razor` har ingen PageTitle.~~
 ~~- R8.5 ChangePassword: fejlbeskeder fra Identity-password-politikken (fx "Error: Passwords must have at least one digit") er engelske og ikke dækket af test, da politikken ikke er i konteksten.~~
 ~~- R8.6 `StatusMessage` skelner danger/success på præfikset "Error" (afsnit 3). Ved lokalisering skal præfikset bevares, eller konventionen ændres.~~
 - R8.7 Alle hardcodede forventede tekster i E2E-testene (A–J) og afsnit 4 skal opdateres sammen med tekstændringerne.

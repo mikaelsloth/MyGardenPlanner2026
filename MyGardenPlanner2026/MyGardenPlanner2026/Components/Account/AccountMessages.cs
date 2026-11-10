@@ -28,4 +28,29 @@ internal static class AccountMessages
     public const string TwoFactorHasBeenDisabled = "2FA er deaktiveret. Du kan aktivere 2FA igen, når du opsætter en authenticator-app.";
     public const string NewRecoveryCodesGenerated = "Du har genereret nye gendannelseskoder.";
     public const string BrowserWasForgotten = "Denne browser er glemt. Næste gang du logger ind fra den, bliver du bedt om din 2FA-kode.";
+    public const string PasskeyNameTooLong = "Passkey-navnet må højst være {1} tegn.";
+
+    // Passkeys (fejl skal starte med "Error")
+    public const string InvalidPasskeyId = "Error: Det angivne passkey-ID har et ugyldigt format.";
+    public const string PasskeyBrowserDidNotProvide = "Error: Browseren leverede ikke en passkey.";
+    public const string PasskeyLimitReached = "Error: Du har nået det maksimale antal tilladte passkeys.";
+    public const string PasskeyNotAddedToAccount = "Error: Passkeyen kunne ikke føjes til din konto.";
+    public const string PasskeyDeleteFailed = "Error: Passkeyen kunne ikke slettes.";
+    public const string PasskeyNotFound = "Error: Den angivne passkey blev ikke fundet.";
+    public const string PasskeyUpdateFailed = "Error: Passkeyen kunne ikke opdateres.";
+    public const string PasskeyDeleted = "Passkeyen er slettet.";
+    public const string PasskeyUpdated = "Passkeyen er opdateret.";
+
+    // Eksterne logins
+    public const string ExternalLoginRemoveFailed = "Error: Det eksterne login blev ikke fjernet.";
+    public const string ExternalLoginInfoNotLoaded = "Error: Kunne ikke indlæse oplysninger om eksternt login.";
+    public const string ExternalLoginNotAdded = "Error: Det eksterne login blev ikke tilføjet. Eksterne logins kan kun knyttes til én konto.";
+    public const string ExternalLoginRemoved = "Det eksterne login er fjernet.";
+    public const string ExternalLoginAdded = "Det eksterne login er tilføjet.";
+
+    public static string PasskeyNotAdded(string? detail) =>
+        $"Error: Passkeyen kunne ikke tilføjes: {detail}";
+
+    public static string UnknownAction(string? action) =>
+        $"Error: Ukendt handling '{action}'.";
 }

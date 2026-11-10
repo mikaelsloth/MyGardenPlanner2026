@@ -40,14 +40,14 @@ public partial class RenamePasskey
         }
         catch (FormatException)
         {
-            RedirectManager.RedirectToWithStatus("Account/Manage/Passkeys", "Error: The specified passkey ID had an invalid format.", HttpContext);
+            RedirectManager.RedirectToWithStatus("Account/Manage/Passkeys", AccountMessages.InvalidPasskeyId, HttpContext);
             return;
         }
 
         passkey = await UserManager.GetPasskeyAsync(user, credentialId);
         if (passkey is null)
         {
-            RedirectManager.RedirectToWithStatus("Account/Manage/Passkeys", "Error: The specified passkey could not be found.", HttpContext);
+            RedirectManager.RedirectToWithStatus("Account/Manage/Passkeys", AccountMessages.PasskeyNotFound, HttpContext);
             return;
         }
     }
@@ -58,17 +58,18 @@ public partial class RenamePasskey
         var result = await UserManager.AddOrUpdatePasskeyAsync(user!, passkey);
         if (!result.Succeeded)
         {
-            RedirectManager.RedirectToWithStatus("Account/Manage/Passkeys", "Error: The passkey could not be updated.", HttpContext);
+            RedirectManager.RedirectToWithStatus("Account/Manage/Passkeys", AccountMessages.PasskeyUpdateFailed, HttpContext);
             return;
         }
 
-        RedirectManager.RedirectToWithStatus("Account/Manage/Passkeys", "Passkey updated successfully.", HttpContext);
+        RedirectManager.RedirectToWithStatus("Account/Manage/Passkeys", AccountMessages.PasskeyUpdated, HttpContext);
     }
 
     private sealed class InputModel
     {
-        [Required]
-        [StringLength(200, ErrorMessage = "Passkey names must be no longer than {1} characters.")]
+        [Required(ErrorMessage = AccountMessages.FieldRequired)]
+        [StringLength(200, ErrorMessage = AccountMessages.PasskeyNameTooLong)]
+        [Display(Name = "Passkey-navn")]
         public string Name { get; set; } = "";
     }
 }

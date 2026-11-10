@@ -56,27 +56,28 @@ public partial class Passkeys
 
         if (string.IsNullOrEmpty(Input.CredentialJson))
         {
-            RedirectManager.RedirectToCurrentPageWithStatus("Error: The browser did not provide a passkey.", HttpContext);
+            RedirectManager.RedirectToCurrentPageWithStatus(AccountMessages.PasskeyBrowserDidNotProvide, HttpContext);
             return;
         }
 
         if (currentPasskeys!.Count >= MaxPasskeyCount)
         {
-            RedirectManager.RedirectToCurrentPageWithStatus($"Error: You have reached the maximum number of allowed passkeys.", HttpContext);
+            RedirectManager.RedirectToCurrentPageWithStatus(AccountMessages.PasskeyLimitReached, HttpContext);
             return;
         }
 
         var attestationResult = await SignInManager.PerformPasskeyAttestationAsync(Input.CredentialJson);
         if (!attestationResult.Succeeded)
         {
-            RedirectManager.RedirectToCurrentPageWithStatus($"Error: Could not add the passkey: {attestationResult.Failure.Message}", HttpContext);
+            RedirectManager.RedirectToCurrentPageWithStatus(
+                AccountMessages.PasskeyNotAdded(attestationResult.Failure.Message), HttpContext);
             return;
         }
 
         var addPasskeyResult = await UserManager.AddOrUpdatePasskeyAsync(user, attestationResult.Passkey);
         if (!addPasskeyResult.Succeeded)
         {
-            RedirectManager.RedirectToCurrentPageWithStatus("Error: The passkey could not be added to your account.", HttpContext);
+            RedirectManager.RedirectToCurrentPageWithStatus(AccountMessages.PasskeyNotAddedToAccount, HttpContext);
             return;
         }
 
@@ -116,17 +117,17 @@ public partial class Passkeys
         }
         catch (FormatException)
         {
-            RedirectManager.RedirectToCurrentPageWithStatus("Error: The specified passkey ID had an invalid format.", HttpContext);
+            RedirectManager.RedirectToCurrentPageWithStatus(AccountMessages.InvalidPasskeyId, HttpContext);
             return;
         }
 
         var result = await UserManager.RemovePasskeyAsync(user, credentialId);
         if (!result.Succeeded)
         {
-            RedirectManager.RedirectToCurrentPageWithStatus("Error: The passkey could not be deleted.", HttpContext);
+            RedirectManager.RedirectToCurrentPageWithStatus(AccountMessages.PasskeyDeleteFailed, HttpContext);
             return;
         }
 
-        RedirectManager.RedirectToCurrentPageWithStatus("Passkey deleted successfully.", HttpContext);
+        RedirectManager.RedirectToCurrentPageWithStatus(AccountMessages.PasskeyDeleted, HttpContext);
     }
 }

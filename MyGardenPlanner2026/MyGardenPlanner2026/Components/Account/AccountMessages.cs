@@ -18,4 +18,14 @@ internal static class AccountMessages
 
     public static string UserNotLoaded(string? userId) =>
         $"Error: Brugeren med ID '{userId}' kunne ikke indlæses.";
+
+    public const string FieldLengthBetween = "{0} skal være mellem {2} og {1} tegn.";
+
+    public const string InvalidVerificationCode = "Error: Bekræftelseskoden er ugyldig.";
+
+    public const string AuthenticatorVerified = "Din authenticator-app er bekræftet.";
+    public const string AuthenticatorKeyWasReset = "Din authenticator-nøgle er nulstillet. Du skal konfigurere din authenticator-app med den nye nøgle.";
+    public const string TwoFactorHasBeenDisabled = "2FA er deaktiveret. Du kan aktivere 2FA igen, når du opsætter en authenticator-app.";
+    public const string NewRecoveryCodesGenerated = "Du har genereret nye gendannelseskoder.";
+    public const string BrowserWasForgotten = "Denne browser er glemt. Næste gang du logger ind fra den, bliver du bedt om din 2FA-kode.";
 }

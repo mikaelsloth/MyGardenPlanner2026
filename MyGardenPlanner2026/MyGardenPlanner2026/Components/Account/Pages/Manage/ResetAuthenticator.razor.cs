@@ -27,7 +27,7 @@ public partial class ResetAuthenticator
 
         RedirectManager.RedirectToWithStatus(
             "Account/Manage/EnableAuthenticator",
-            "Your authenticator app key has been reset, you will need to configure your authenticator app using the new key.",
+            AccountMessages.AuthenticatorKeyWasReset,
             HttpContext);
     }
 }

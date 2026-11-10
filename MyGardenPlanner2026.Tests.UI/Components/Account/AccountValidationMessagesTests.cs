@@ -3,6 +3,7 @@
 using FluentAssertions;
 using MyGardenPlanner2026.Components.Account;
 using MyGardenPlanner2026.Components.Account.Pages;
+using MyGardenPlanner2026.Components.Account.Pages.Manage;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using Xunit;
@@ -107,5 +108,56 @@ public class AccountValidationMessagesTests
 
         message.Should().StartWith("Error");
         message.Should().Contain("abc-123");
+    }
+
+    [Fact]
+    public void EnableAuthenticator_EmptyCode_GivesDanishMessages()
+    {
+        var messages = Validate(typeof(EnableAuthenticator));
+
+        messages.Should().Contain("Feltet 'Bekræftelseskode' er påkrævet.");
+    }
+
+    [Theory]
+    [InlineData("123")]
+    [InlineData("12345678")]
+    public void EnableAuthenticator_WrongLength_GivesDanishLengthMessage(string code)
+    {
+        var messages = Validate(typeof(EnableAuthenticator), ("Code", code));
+
+        messages.Should().ContainSingle()
+            .Which.Should().Be("Bekræftelseskode skal være mellem 6 og 7 tegn.");
+    }
+
+    [Theory]
+    [InlineData("123456")]
+    [InlineData("123 456")]
+    public void EnableAuthenticator_ValidCode_GivesNoMessages(string code)
+    {
+        Validate(typeof(EnableAuthenticator), ("Code", code)).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void InvalidVerificationCode_IsDanish_AndKeepsEnglishErrorPrefix()
+    {
+        AccountMessages.InvalidVerificationCode.Should().Be("Error: Bekræftelseskoden er ugyldig.");
+    }
+
+    [Fact]
+    public void SuccessStatusMessages_DoNotStartWithError()
+    {
+        string[] messages =
+        [
+            AccountMessages.AuthenticatorVerified,
+            AccountMessages.AuthenticatorKeyWasReset,
+            AccountMessages.TwoFactorHasBeenDisabled,
+            AccountMessages.NewRecoveryCodesGenerated,
+            AccountMessages.BrowserWasForgotten,
+        ];
+
+        foreach (var message in messages)
+        {
+            message.Should().NotBeNullOrWhiteSpace().And.NotStartWith("Error");
+        }
     }
 }

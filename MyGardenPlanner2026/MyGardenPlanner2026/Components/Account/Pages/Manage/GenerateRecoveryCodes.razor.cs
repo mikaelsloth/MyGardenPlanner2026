@@ -44,7 +44,7 @@ public partial class GenerateRecoveryCodes
 
         var userId = await UserManager.GetUserIdAsync(user);
         recoveryCodes = await UserManager.GenerateNewTwoFactorRecoveryCodesAsync(user, 10);
-        message = "You have generated new recovery codes.";
+        message = AccountMessages.NewRecoveryCodesGenerated;
 
         RecoveryCodesGenerated(Logger, userId);
     }

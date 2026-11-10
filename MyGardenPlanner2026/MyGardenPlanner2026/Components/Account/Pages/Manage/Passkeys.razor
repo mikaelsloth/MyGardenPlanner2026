@@ -8,9 +8,9 @@
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Manage your passkeys</PageTitle>
+<PageTitle>Administrer dine passkeys – MyGardenPlanner</PageTitle>
 
-<h3>Manage your passkeys</h3>
+<h3>Administrer dine passkeys</h3>
 
 <StatusMessage />
 
@@ -21,7 +21,7 @@
             @foreach (var passkey in currentPasskeys)
             {
                 <tr>
-                    <td>@(passkey.Name ?? "Unnamed passkey")</td>
+                    <td>@(passkey.Name ?? "Passkey uden navn")</td>
                     <td>
                         @{
                             var credentialId = Base64Url.EncodeToString(passkey.CredentialId);
@@ -30,8 +30,8 @@
                             <AntiforgeryToken />
                             <div>
                                 <input type="hidden" name="CredentialId" value="@credentialId" />
-                                <button type="submit" name="Action" value="rename" class="btn btn-primary" title="Rename this passkey">Rename</button>
-                                <button type="submit" name="Action" value="delete" class="btn btn-danger" title="Remove this passkey from your account">Delete</button>
+                                <button type="submit" name="Action" value="rename" class="btn btn-primary" title="Omdøb denne passkey">Omdøb</button>
+                                <button type="submit" name="Action" value="delete" class="btn btn-danger" title="Fjern denne passkey fra din konto">Slet</button>
                             </div>
                         </form>
                     </td>
@@ -42,18 +42,18 @@
 }
 else
 {
-    <p>No passkeys are registered.</p>
+    <p>Der er ikke registreret nogen passkeys.</p>
 }
 
 <form @formname="add-passkey" @onsubmit="AddPasskeyAsync" method="post">
     <AntiforgeryToken />
     @if (currentPasskeys is { Count: >= MaxPasskeyCount })
     {
-        <p class="text-danger">You have reached the maximum number of allowed passkeys. Please delete one before adding a new one.</p>
+        <p class="text-danger">Du har nået det maksimale antal tilladte passkeys. Slet en, før du tilføjer en ny.</p>
     }
     else
     {
-        <PasskeySubmit Operation="PasskeyOperation.Create" Name="Input" class="btn btn-primary">Add a new passkey</PasskeySubmit>
+        <PasskeySubmit Operation="PasskeyOperation.Create" Name="Input" class="btn btn-primary">Tilføj en ny passkey</PasskeySubmit>
     }
 
 </form>

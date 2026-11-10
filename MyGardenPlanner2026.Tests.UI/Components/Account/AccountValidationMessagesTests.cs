@@ -132,16 +132,10 @@ public class AccountValidationMessagesTests
     [Theory]
     [InlineData("123456")]
     [InlineData("123 456")]
-    public void EnableAuthenticator_ValidCode_GivesNoMessages(string code)
-    {
-        Validate(typeof(EnableAuthenticator), ("Code", code)).Should().BeEmpty();
-    }
+    public void EnableAuthenticator_ValidCode_GivesNoMessages(string code) => Validate(typeof(EnableAuthenticator), ("Code", code)).Should().BeEmpty();
 
     [Fact]
-    public void InvalidVerificationCode_IsDanish_AndKeepsEnglishErrorPrefix()
-    {
-        AccountMessages.InvalidVerificationCode.Should().Be("Error: Bekræftelseskoden er ugyldig.");
-    }
+    public void InvalidVerificationCode_IsDanish_AndKeepsEnglishErrorPrefix() => AccountMessages.InvalidVerificationCode.Should().Be("Error: Bekræftelseskoden er ugyldig.");
 
     [Fact]
     public void SuccessStatusMessages_DoNotStartWithError()
@@ -160,4 +154,85 @@ public class AccountValidationMessagesTests
             message.Should().NotBeNullOrWhiteSpace().And.NotStartWith("Error");
         }
     }
+
+    [Fact]
+    public void RenamePasskey_EmptyName_GivesDanishRequiredMessage()
+    {
+        var messages = Validate(typeof(RenamePasskey));
+
+        messages.Should().ContainSingle().Which.Should().Be("Feltet 'Passkey-navn' er påkrævet.");
+    }
+
+    [Fact]
+    public void RenamePasskey_TooLongName_GivesDanishLengthMessage()
+    {
+        var messages = Validate(typeof(RenamePasskey), ("Name", new string('x', 201)));
+
+        messages.Should().ContainSingle().Which.Should().Be("Passkey-navnet må højst være 200 tegn.");
+    }
+
+    [Fact]
+    public void RenamePasskey_ValidName_GivesNoMessages() => Validate(typeof(RenamePasskey), ("Name", "Min telefon")).Should().BeEmpty();
+
+    [Fact]
+    public void ExternalLogin_EmptyEmail_GivesDanishRequiredMessage()
+    {
+        var messages = Validate(typeof(ExternalLogin));
+
+        messages.Should().ContainSingle().Which.Should().Be("Feltet 'E-mail' er påkrævet.");
+    }
+
+    [Fact]
+    public void ExternalLogin_InvalidEmail_GivesDanishMessage()
+    {
+        var messages = Validate(typeof(ExternalLogin), ("Email", "abc"));
+
+        messages.Should().ContainSingle().Which.Should().Be("Angiv en gyldig e-mailadresse.");
+    }
+
+    [Fact]
+    public void PasskeyAndExternalLoginErrorMessages_StartWithEnglishErrorPrefix()
+    {
+        string[] errors =
+        [
+            AccountMessages.InvalidPasskeyId,
+            AccountMessages.PasskeyBrowserDidNotProvide,
+            AccountMessages.PasskeyLimitReached,
+            AccountMessages.PasskeyNotAddedToAccount,
+            AccountMessages.PasskeyDeleteFailed,
+            AccountMessages.PasskeyNotFound,
+            AccountMessages.PasskeyUpdateFailed,
+            AccountMessages.ExternalLoginRemoveFailed,
+            AccountMessages.ExternalLoginInfoNotLoaded,
+            AccountMessages.ExternalLoginNotAdded,
+            AccountMessages.PasskeyNotAdded("detalje"),
+            AccountMessages.UnknownAction("x"),
+        ];
+
+        foreach (var message in errors)
+        {
+            message.Should().StartWith("Error: ");
+        }
+    }
+
+    [Fact]
+    public void PasskeyAndExternalLoginSuccessMessages_DoNotStartWithError()
+    {
+        string[] successes =
+        [
+            AccountMessages.PasskeyDeleted,
+            AccountMessages.PasskeyUpdated,
+            AccountMessages.ExternalLoginRemoved,
+            AccountMessages.ExternalLoginAdded,
+        ];
+
+        foreach (var message in successes)
+        {
+            message.Should().NotBeNullOrWhiteSpace().And.NotStartWith("Error");
+        }
+    }
+
+    [Fact]
+    public void PasskeyNotAdded_IncludesFrameworkDetail() => AccountMessages.PasskeyNotAdded("Ugyldig attestation").Should()
+            .Be("Error: Passkeyen kunne ikke tilføjes: Ugyldig attestation");
 }

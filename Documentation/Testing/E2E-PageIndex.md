@@ -161,7 +161,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - Modaler skal kunne scrolle på lave viewports: en Playwright-fejl "element is outside of the viewport" efter scroll betyder, at elementet ikke kan nås for en rigtig bruger. Test at lukkeknappen kan klikkes ved 375×812 og 939×900.
 - Komponenter, der kun synkroniserer fra en parameter ved første OnParametersSet, må ikke renderes, før forælderen har indlæst parameterens endelige værdi (Blazor renderer ved første await i OnInitializedAsync).
 - Singleton-services (fx EF-interceptors) når circuit-brugeren via `CircuitUserContext` (AsyncLocal sat af `CircuitHandler.CreateInboundActivityHandler`), ikke via `IHttpContextAccessor`.
-- `StatusMessage`: beskeder der starter med "Error" vises som danger (role=alert), ellers success (role=status). Præfikset skal forblive engelsk.
+- `StatusMessage`: beskeder der starter med "Error" vises som danger (role=alert), ellers success (role=status). Præfikset skal forblive engelsk. Konventionen er låst af StatusMessageTests (bUnit).
 - WebAuthn kræver et domænenavn som host: kør passkey-tests på `http://localhost:<port>` (`RootUri.Replace("127.0.0.1", "localhost")`).
 - Login.razor starter passkey-autofill (conditional mediation) ved sideload. Passkey-tests slår den fra med `AddInitScriptAsync("PublicKeyCredential.isConditionalMediationAvailable = async () => false;")`. Passkey-fejl vises som StatusMessage (role=alert) efter redirect ("Error: ...").
 - Streaming-download (Results.Stream): Kestrel tillader ikke synkron IO på response body (AllowSynchronousIO = false). Utf8JsonWriter over en Stream og JsonSerializer.Serialize(writer, …) flusher synkront og giver en afbrudt forbindelse efter 200-headerne (Playwright: "aborted"). Skriv i en intern buffer (ArrayBufferWriter) og send med WriteAsync. Xlsx (ClosedXML skriver synkront) bufferes i en MemoryStream og kopieres med CopyToAsync.
@@ -348,13 +348,13 @@ Fælles: ManageLayout (h1 "Manage your account"). Titler og tekster er på engel
 
 ```
 /Account/Manage/TwoFactorAuthentication
-Titel: Two-factor authentication (2FA). Uden 2FA: link "Add authenticator app". Med 2FA: "Disable 2FA", "Reset recovery codes" (+ advarsel ved højst 3 koder tilbage).
+Titel: Totrinsbekræftelse (2FA) – MyGardenPlanner. h3 "Totrinsbekræftelse (2FA)". Uden 2FA: link "Tilføj authenticator-app". Med 2FA: "Deaktivér 2FA", "Nulstil gendannelseskoder" (+ advarsel ved højst 3 koder tilbage).
 Filer: TwoFactorAuthentication.razor (+ .cs)
 ```
 ```
 /Account/Manage/EnableAuthenticator
-Titel: Configure authenticator app. Nøglen vises i <kbd> (små bogstaver, grupper á 4). Label "Verification Code", knap "Verify".
-Fejl: "Error: Verification code is invalid." Succes (ingen koder i forvejen): ShowRecoveryCodes på samme URL med "Your authenticator app has been verified.", h3 "Gendannelseskoder" og 10 x code.recovery-code.
+Titel: Konfigurer authenticator-app – MyGardenPlanner. Nøglen vises i <kbd> (små bogstaver, grupper á 4). Label "Bekræftelseskode", knap "Bekræft".
+Fejl: "Error: Bekræftelseskoden er ugyldig." Succes (ingen koder i forvejen): ShowRecoveryCodes på samme URL med "Din authenticator-app er bekræftet.", h3 "Gendannelseskoder" og 10 x code.recovery-code.
 Filer: EnableAuthenticator.razor (+ .cs), Shared\ShowRecoveryCodes.razor (+ .cs)
 ```
 ```
@@ -639,7 +639,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 - R8.3 Manage-siderne (TwoFactorAuthentication, EnableAuthenticator, Passkeys, RenamePasskey) og StatusMessage-teksterne er på engelsk. Login-siderne er på dansk.
 - R8.4 `RenamePasskey.razor` har ingen PageTitle.
 ~~- R8.5 ChangePassword: fejlbeskeder fra Identity-password-politikken (fx "Error: Passwords must have at least one digit") er engelske og ikke dækket af test, da politikken ikke er i konteksten.~~
-- R8.6 `StatusMessage` skelner danger/success på præfikset "Error" (afsnit 3). Ved lokalisering skal præfikset bevares, eller konventionen ændres.
+~~- R8.6 `StatusMessage` skelner danger/success på præfikset "Error" (afsnit 3). Ved lokalisering skal præfikset bevares, eller konventionen ændres.~~
 - R8.7 Alle hardcodede forventede tekster i E2E-testene (A–J) og afsnit 4 skal opdateres sammen med tekstændringerne.
 
 Filer til Upload: de berørte sider, StatusMessage
@@ -664,3 +664,6 @@ Filer til Upload: de berørte E2E-filer
 - R10.5 Kontosider på engelsk (blokeringsbesked mv.) lokaliseres i R8.
 
 Filer til Upload: AccountDeletionService, DeletePersonalData, Garden-entiteterne
+
+### Backlog (ikke tildelt gruppe)
+- B1 `EnableAuthenticator.razor.cs`: issuer i otpauth-URI'en er "Microsoft.AspNetCore.Identity.UI" og vises som kontonavn i authenticator-apps. Overvej "MyGardenPlanner". Ændrer ikke nøglen, men eksisterende poster i brugernes apps beholder det gamle navn. Tjek E2E-hjælpere, der læser URI'en.

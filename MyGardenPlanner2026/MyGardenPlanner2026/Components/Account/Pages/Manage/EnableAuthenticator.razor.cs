@@ -61,7 +61,7 @@ public partial class EnableAuthenticator
 
         if (!is2faTokenValid)
         {
-            message = "Error: Verification code is invalid.";
+            message = AccountMessages.InvalidVerificationCode;
             return;
         }
 
@@ -69,7 +69,7 @@ public partial class EnableAuthenticator
         var userId = await UserManager.GetUserIdAsync(user);
         TwoFactorEnabled(Logger, userId);
 
-        message = "Your authenticator app has been verified.";
+        message = AccountMessages.AuthenticatorVerified;
 
         if (await UserManager.CountRecoveryCodesAsync(user) == 0)
         {
@@ -124,10 +124,10 @@ public partial class EnableAuthenticator
 
     private sealed class InputModel
     {
-        [Required]
-        [StringLength(7, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [Required(ErrorMessage = AccountMessages.FieldRequired)]
+        [StringLength(7, ErrorMessage = AccountMessages.FieldLengthBetween, MinimumLength = 6)]
         [DataType(DataType.Text)]
-        [Display(Name = "Verification Code")]
+        [Display(Name = "Bekræftelseskode")]
         public string Code { get; set; } = "";
     }
 }

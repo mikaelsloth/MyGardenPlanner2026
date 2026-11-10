@@ -8,23 +8,23 @@
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<ResetAuthenticator> Logger
 
-<PageTitle>Reset authenticator key</PageTitle>
+<PageTitle>Nulstil authenticator-nøgle – MyGardenPlanner</PageTitle>
 
 <StatusMessage />
-<h3>Reset authenticator key</h3>
+<h3>Nulstil authenticator-nøgle</h3>
 <div class="alert alert-warning" role="alert">
     <p>
         <span class="glyphicon glyphicon-warning-sign"></span>
-        <strong>If you reset your authenticator key your authenticator app will not work until you reconfigure it.</strong>
+        <strong>Hvis du nulstiller din authenticator-nøgle, virker din authenticator-app ikke, før du har konfigureret den igen.</strong>
     </p>
     <p>
-        This process disables 2FA until you verify your authenticator app.
-        If you do not complete your authenticator app configuration you may lose access to your account.
+        Handlingen deaktiverer 2FA, indtil du har bekræftet din authenticator-app.
+        Hvis du ikke gennemfører konfigurationen, kan du miste adgangen til din konto.
     </p>
 </div>
 <div>
     <form @formname="reset-authenticator" @onsubmit="OnSubmitAsync" method="post">
         <AntiforgeryToken />
-        <button class="btn btn-danger" type="submit">Reset authenticator key</button>
+        <button class="btn btn-danger" type="submit">Nulstil authenticator-nøgle</button>
     </form>
 </div>

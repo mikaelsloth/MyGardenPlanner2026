@@ -344,7 +344,7 @@ Filer: ConfirmEmailChange.razor (+ .cs)
 
 ### 4.3 Manage (kontosider efter login)
 
-Fælles: ManageLayout (h1 "Manage your account"). Titler og tekster er på engelsk, og titlerne har ikke "– MyGardenPlanner".
+Fælles: ManageLayout (h1 "Administrer din konto", h2 "Skift dine kontoindstillinger"). Titler og tekster er på dansk, og titlerne har suffikset "– MyGardenPlanner". ManageNavMenu-links: Profil, E-mail, Adgangskode, Eksterne logins (kun med eksterne udbydere), Totrinsbekræftelse, Passkeys, Personlige data.
 
 ```
 /Account/Manage/TwoFactorAuthentication

@@ -204,7 +204,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - Email.razor RegisterConfirmation viser links til e-mailskift på siden, når EmailSender er IdentityNoOpEmailSender og Identity:ShowEmailLinks er true (E2E-fixturen sætter flaget). Uden det kan skiftet ikke bekræftes i E2E.
 - ConfirmEmailChange: forkert token eller ugyldigt Base64Url-format i code giver "Error: Der opstod en fejl ved skift af e-mail." (status 200).
 - ChangePassword: succes redirecter til samme side (`RedirectToCurrentPageWithStatus`) med "Din adgangskode er ændret.". Man forbliver logget ind (`RefreshSignInAsync`). Labels i markup og Display-navne er ens ("Nuværende adgangskode", "Ny adgangskode", "Bekræft ny adgangskode").
-- PersonalData: "Download" er en almindelig POST-formular (ikke enhanced) til /Account/Manage/DownloadPersonalData. Brug `page.RunAndWaitForDownloadAsync` og læs filen via `download.PathAsync()`. "Delete" er et link (`<a>`), ikke en knap.
+- PersonalData: "Download" er en almindelig POST-formular (ikke enhanced) til /Account/Manage/DownloadPersonalData. Brug `page.RunAndWaitForDownloadAsync` og læs filen via `download.PathAsync()`. "Slet" er et link (`<a>`), ikke en knap.
 - DeletePersonalData: succes sletter først brugerens data (AccountDeletionService), derefter brugeren (DeleteAsync + SignOutAsync) og redirecter til forsiden. Efterfølgende tjek er, at login afvises. Slet-knappen vises ikke længere.
 
 ### Admin-navigation
@@ -391,16 +391,17 @@ Filer: ChangePassword.razor (+ .cs)
 ```
 ```
 /Account/Manage/PersonalData
-Titel: Personal Data. h3 "Personal Data". Static SSR.
-Knap "Download" (POST til /Account/Manage/DownloadPersonalData, kræver login). Link "Delete" til /Account/Manage/DeletePersonalData.
+Titel: Personlige data – MyGardenPlanner. h3 "Personlige data". Static SSR.
+Knap "Download" (POST til /Account/Manage/DownloadPersonalData, kræver login). Link "Slet" til /Account/Manage/DeletePersonalData.
+Ukendt bruger ved Download giver 404 med teksten "Brugeren med ID '…' kunne ikke indlæses.".
 Filen PersonalData.json: nøgler fra [PersonalData]-felterne (fx "Email") samt eksterne login-nøgler. "Authenticator Key" eksporteres ikke.
 Filer: PersonalData.razor (+ .cs), IdentityComponentsEndpointRouteBuilderExtensions.cs, PersonalDataExporter.cs
 ```
 ```
 /Account/Manage/DeletePersonalData
-Titel: Delete Personal Data. h3 "Delete Personal Data".
-Felt "Password" (kun hvis brugeren har password), knap "Delete data and close my account".
-Forkert password: "Error: Incorrect password.". Eneste ejer i have med andre medlemmer: "Error: You are the only owner of gardens shared with other members: <haver>. Ownership must be transferred before your account can be deleted." Fejlet DeleteAsync: "Error: Your account could not be deleted. Please try again." Succes: data og konto slettes, bruger logges ud, redirect til forsiden.
+Titel: Slet personlige data – MyGardenPlanner. h3 "Slet personlige data".
+Felt "Adgangskode" (kun hvis brugeren har password), knap "Slet data og luk min konto".
+Forkert password: "Error: Adgangskoden er forkert.". Eneste ejer i have med andre medlemmer: "Error: Du er eneste ejer af haver, der deles med andre medlemmer: <haver>. Ejerskabet skal overdrages, før din konto kan slettes." Fejlet DeleteAsync: "Error: Din konto kunne ikke slettes. Prøv igen." Succes: data og konto slettes, bruger logges ud, redirect til forsiden.
 Filer: DeletePersonalData.razor (+ .cs), AccountDeletionService.cs, IAccountDeletionService.cs
 ```
 
@@ -636,7 +637,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ### R8 – Lokalisering (prioritet 8, efter R1–R3)
 ~~- R8.1 `Register.razor.cs`: valideringsbeskeder (StringLength, Compare) og Display-navne er på engelsk.~~
 ~~- R8.2 `Login.razor.cs`: fejlbeskeden "Error: Invalid login attempt." er på engelsk.~~
-- R8.3 Manage-siderne (TwoFactorAuthentication, EnableAuthenticator, Passkeys, RenamePasskey) og StatusMessage-teksterne er på engelsk. Login-siderne er på dansk.
+~~- R8.3 Manage-siderne (TwoFactorAuthentication, EnableAuthenticator, Passkeys, RenamePasskey) og StatusMessage-teksterne er på engelsk. Login-siderne er på dansk.~~
 ~~- R8.4 `RenamePasskey.razor` har ingen PageTitle.~~
 ~~- R8.5 ChangePassword: fejlbeskeder fra Identity-password-politikken (fx "Error: Passwords must have at least one digit") er engelske og ikke dækket af test, da politikken ikke er i konteksten.~~
 ~~- R8.6 `StatusMessage` skelner danger/success på præfikset "Error" (afsnit 3). Ved lokalisering skal præfikset bevares, eller konventionen ændres.~~
@@ -661,7 +662,7 @@ Filer til Upload: de berørte E2E-filer
 - R10.2 Tilbyd en backup-fil af brugerens data, som kun kan bruges, hvis brugeren vender tilbage.
 - R10.3 Layer 2/3-data (bede, planer m.m.) skal medtages i AccountDeletionService (eller kaskade), når de bygges.
 - R10.4 AccountDeletionService bruger ExecuteDelete og skriver derfor ingen AuditLog-rækker. Overvej en eksplicit audit-post som dokumentation.
-- R10.5 Kontosider på engelsk (blokeringsbesked mv.) lokaliseres i R8.
+~~- R10.5 Kontosider på engelsk (blokeringsbesked mv.) lokaliseres i R8.~~
 
 Filer til Upload: AccountDeletionService, DeletePersonalData, Garden-entiteterne
 

@@ -345,4 +345,34 @@ public class AccountValidationMessagesTests
             message.Should().NotBeNullOrWhiteSpace().And.NotStartWith("Error");
         }
     }
+
+    [Fact]
+    public void IncorrectPassword_KeepsErrorPrefix_AndMatchesIdentityDescriberText()
+    {
+        var describerText = new DanishIdentityErrorDescriber().PasswordMismatch().Description;
+
+        AccountMessages.IncorrectPasswords.Should().Be($"Error: {describerText}");
+    }
+
+    [Fact]
+    public void AccountNotDeleted_IsDanish_AndKeepsErrorPrefix() => AccountMessages.AccountNotDeleted.Should().Be("Error: Din konto kunne ikke slettes. Prøv igen.");
+
+    [Fact]
+    public void AccountDeletionBlocked_ListsGardens_AndKeepsErrorPrefix()
+    {
+        var message = AccountMessages.AccountDeletionBlocked(["Rosenhaven", "Køkkenhaven"]);
+
+        message.Should().Be(
+            "Error: Du er eneste ejer af haver, der deles med andre medlemmer: Rosenhaven, Køkkenhaven. " +
+            "Ejerskabet skal overdrages, før din konto kan slettes.");
+    }
+
+    [Fact]
+    public void UserNotLoaded_Variants_HaveSameDetail_AndOnlyStatusVariantHasErrorPrefix()
+    {
+        AccountMessages.UserNotLoadedDetail("abc-123")
+            .Should().Be("Brugeren med ID 'abc-123' kunne ikke indlæses.");
+        AccountMessages.UserNotLoaded("abc-123")
+            .Should().Be("Error: Brugeren med ID 'abc-123' kunne ikke indlæses.");
+    }
 }

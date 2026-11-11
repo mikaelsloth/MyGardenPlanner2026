@@ -53,4 +53,15 @@ internal static class AccountMessages
 
     public static string UnknownAction(string? action) =>
         $"Error: Ukendt handling '{action}'.";
+
+    public const string InvalidPhone = "Angiv et gyldigt telefonnummer.";
+
+    public const string PhoneNumberNotSaved = "Error: Telefonnummeret kunne ikke gemmes.";
+
+    public const string ProfileUpdated = "Din profil er opdateret.";
+    public const string PasswordsWasChanged = "Din adgangskode er ændret.";
+    public const string PasswordsWasSet = "Din adgangskode er angivet.";
+    public const string EmailUnchanged = "Din e-mail er uændret.";
+    public const string EmailChangeConfirmationSent = "Bekræftelseslink til skift af e-mail er sendt. Tjek din e-mail.";
+    public const string EmailVerificationSent = "Bekræftelses-e-mail er sendt. Tjek din e-mail.";
 }

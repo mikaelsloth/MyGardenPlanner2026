@@ -7,6 +7,7 @@ using MyGardenPlanner2026.Components.Account.Pages.Manage;
 using System.ComponentModel.DataAnnotations;
 using System.Reflection;
 using Xunit;
+using ProfileIndex = MyGardenPlanner2026.Components.Account.Pages.Manage.Index;
 
 public class AccountValidationMessagesTests
 {
@@ -235,4 +236,113 @@ public class AccountValidationMessagesTests
     [Fact]
     public void PasskeyNotAdded_IncludesFrameworkDetail() => AccountMessages.PasskeyNotAdded("Ugyldig attestation").Should()
             .Be("Error: Passkeyen kunne ikke tilføjes: Ugyldig attestation");
+
+    [Fact]
+    public void ManageEmail_EmptyNewEmail_GivesDanishRequiredMessage()
+    {
+        var messages = Validate(typeof(Email));
+
+        messages.Should().ContainSingle().Which.Should().Be("Feltet 'Ny e-mail' er påkrævet.");
+    }
+
+    [Fact]
+    public void ManageEmail_InvalidNewEmail_GivesDanishMessage()
+    {
+        var messages = Validate(typeof(Email), ("NewEmail", "abc"));
+
+        messages.Should().ContainSingle().Which.Should().Be("Angiv en gyldig e-mailadresse.");
+    }
+
+    [Fact]
+    public void ManageEmail_ValidNewEmail_GivesNoMessages() => Validate(typeof(Email), ("NewEmail", "ny@test.dk")).Should().BeEmpty();
+
+    [Fact]
+    public void ChangePassword_EmptyFields_GiveDanishRequiredMessages()
+    {
+        var messages = Validate(typeof(ChangePassword));
+
+        messages.Should().Contain("Feltet 'Nuværende adgangskode' er påkrævet.");
+        messages.Should().Contain("Feltet 'Ny adgangskode' er påkrævet.");
+    }
+
+    [Fact]
+    public void ChangePassword_ShortNewPassword_GivesDanishLengthMessage()
+    {
+        var messages = Validate(typeof(ChangePassword),
+            ("OldPassword", "x"), ("NewPassword", "abc"), ("ConfirmPassword", "abc"));
+
+        messages.Should().ContainSingle()
+            .Which.Should().Be("Adgangskoden skal være mindst 6 og højst 100 tegn.");
+    }
+
+    [Fact]
+    public void ChangePassword_Mismatch_GivesDanishMessage()
+    {
+        var messages = Validate(typeof(ChangePassword),
+            ("OldPassword", "x"), ("NewPassword", "Abcdef1"), ("ConfirmPassword", "Abcdef2"));
+
+        messages.Should().ContainSingle()
+            .Which.Should().Be("Adgangskoden og bekræftelsen er ikke ens.");
+    }
+
+    [Fact]
+    public void ChangePassword_ValidInput_GivesNoMessages() => Validate(typeof(ChangePassword),
+            ("OldPassword", "x"), ("NewPassword", "Abcdef1"), ("ConfirmPassword", "Abcdef1"))
+            .Should().BeEmpty();
+
+    [Fact]
+    public void SetPassword_EmptyNewPassword_GivesDanishRequiredMessage()
+    {
+        var messages = Validate(typeof(SetPassword));
+
+        messages.Should().ContainSingle().Which.Should().Be("Feltet 'Ny adgangskode' er påkrævet.");
+    }
+
+    [Fact]
+    public void SetPassword_Mismatch_GivesDanishMessage()
+    {
+        var messages = Validate(typeof(SetPassword),
+            ("NewPassword", "Abcdef1"), ("ConfirmPassword", "Abcdef2"));
+
+        messages.Should().ContainSingle()
+            .Which.Should().Be("Adgangskoden og bekræftelsen er ikke ens.");
+    }
+
+    [Fact]
+    public void SetPassword_ValidInput_GivesNoMessages() => Validate(typeof(SetPassword), ("NewPassword", "Abcdef1"), ("ConfirmPassword", "Abcdef1"))
+            .Should().BeEmpty();
+
+    [Fact]
+    public void Profile_InvalidPhoneNumber_GivesDanishMessage()
+    {
+        var messages = Validate(typeof(ProfileIndex), ("PhoneNumber", "abc"));
+
+        messages.Should().ContainSingle().Which.Should().Be("Angiv et gyldigt telefonnummer.");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("12345678")]
+    public void Profile_ValidOrEmptyPhoneNumber_GivesNoMessages(string? phoneNumber) => Validate(typeof(ProfileIndex), ("PhoneNumber", phoneNumber)).Should().BeEmpty();
+
+    [Fact]
+    public void AccountPageStatusMessages_FollowErrorPrefixConvention()
+    {
+        AccountMessages.PhoneNumberNotSaved.Should().StartWith("Error: ");
+
+        string[] successes =
+        [
+            AccountMessages.ProfileUpdated,
+            AccountMessages.PasswordsWasChanged,
+            AccountMessages.PasswordsWasSet,
+            AccountMessages.EmailUnchanged,
+            AccountMessages.EmailChangeConfirmationSent,
+            AccountMessages.EmailVerificationSent,
+        ];
+
+        foreach (var message in successes)
+        {
+            message.Should().NotBeNullOrWhiteSpace().And.NotStartWith("Error");
+        }
+    }
 }

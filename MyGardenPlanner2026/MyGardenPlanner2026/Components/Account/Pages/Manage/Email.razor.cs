@@ -48,7 +48,7 @@ public partial class Email
     {
         if (Input.NewEmail is null || Input.NewEmail == email)
         {
-            message = "Your email is unchanged.";
+            message = AccountMessages.EmailUnchanged;
             return;
         }
 
@@ -73,7 +73,7 @@ public partial class Email
             emailChangeConfirmationLink = callbackUrl;
         }
 
-        message = "Confirmation link to change email sent. Please check your email.";
+        message = AccountMessages.EmailChangeConfirmationSent;
     }
 
     private async Task OnSendEmailVerificationAsync()
@@ -103,14 +103,14 @@ public partial class Email
             verificationLink = callbackUrl;
         }
 
-        message = "Verification email sent. Please check your email.";
+        message = AccountMessages.EmailVerificationSent;
     }
 
     private sealed class InputModel
     {
-        [Required]
-        [EmailAddress]
-        [Display(Name = "New email")]
+        [Required(ErrorMessage = AccountMessages.FieldRequired)]
+        [EmailAddress(ErrorMessage = AccountMessages.InvalidEmail)]
+        [Display(Name = "Ny e-mail")]
         public string? NewEmail { get; set; }
     }
 }

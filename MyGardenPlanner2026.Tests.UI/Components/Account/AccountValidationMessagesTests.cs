@@ -375,4 +375,78 @@ public class AccountValidationMessagesTests
         AccountMessages.UserNotLoaded("abc-123")
             .Should().Be("Error: Brugeren med ID 'abc-123' kunne ikke indlæses.");
     }
+
+    [Theory]
+    [InlineData(typeof(ForgotPassword))]
+    [InlineData(typeof(ResendEmailConfirmation))]
+    public void EmailOnlyPages_EmptyEmail_GivesDanishRequiredMessage(Type pageType) => Validate(pageType).Should().ContainSingle()
+            .Which.Should().Be("Feltet 'E-mail' er påkrævet.");
+
+    [Theory]
+    [InlineData(typeof(ForgotPassword))]
+    [InlineData(typeof(ResendEmailConfirmation))]
+    public void EmailOnlyPages_InvalidEmail_GivesDanishMessage(Type pageType) => Validate(pageType, ("Email", "abc")).Should().ContainSingle()
+            .Which.Should().Be("Angiv en gyldig e-mailadresse.");
+
+    [Theory]
+    [InlineData(typeof(ForgotPassword))]
+    [InlineData(typeof(ResendEmailConfirmation))]
+    public void EmailOnlyPages_ValidEmail_GivesNoMessages(Type pageType) => Validate(pageType, ("Email", "a@test.dk")).Should().BeEmpty();
+
+    [Fact]
+    public void ResetPassword_EmptyFields_GiveDanishRequiredMessages()
+    {
+        var messages = Validate(typeof(ResetPassword));
+
+        messages.Should().Contain("Feltet 'E-mail' er påkrævet.");
+        messages.Should().Contain("Feltet 'Adgangskode' er påkrævet.");
+        messages.Should().Contain("Feltet 'Nulstillingskode' er påkrævet.");
+    }
+
+    [Fact]
+    public void ResetPassword_ShortPassword_GivesDanishLengthMessage()
+    {
+        var messages = Validate(typeof(ResetPassword),
+            ("Email", "a@test.dk"), ("Password", "abc"), ("ConfirmPassword", "abc"), ("Code", "x"));
+
+        messages.Should().ContainSingle()
+            .Which.Should().Be("Adgangskoden skal være mindst 6 og højst 100 tegn.");
+    }
+
+    [Fact]
+    public void ResetPassword_Mismatch_GivesDanishMessage()
+    {
+        var messages = Validate(typeof(ResetPassword),
+            ("Email", "a@test.dk"), ("Password", "Abcdef1"), ("ConfirmPassword", "Abcdef2"), ("Code", "x"));
+
+        messages.Should().ContainSingle()
+            .Which.Should().Be("Adgangskoden og bekræftelsen er ikke ens.");
+    }
+
+    [Fact]
+    public void ResetPassword_ValidInput_GivesNoMessages() => Validate(typeof(ResetPassword),
+            ("Email", "a@test.dk"), ("Password", "Abcdef1"), ("ConfirmPassword", "Abcdef1"), ("Code", "x"))
+            .Should().BeEmpty();
+
+    [Fact]
+    public void LoginWith2fa_EmptyCode_GivesDanishRequiredMessage() => Validate(typeof(LoginWith2fa)).Should().ContainSingle()
+            .Which.Should().Be("Feltet 'Godkendelseskode' er påkrævet.");
+
+    [Theory]
+    [InlineData("123")]
+    [InlineData("12345678")]
+    public void LoginWith2fa_WrongLength_GivesDanishLengthMessage(string code) => Validate(typeof(LoginWith2fa), ("TwoFactorCode", code)).Should().ContainSingle()
+            .Which.Should().Be("Godkendelseskode skal være mellem 6 og 7 tegn.");
+
+    [Theory]
+    [InlineData("123456")]
+    [InlineData("123 456")]
+    public void LoginWith2fa_ValidCode_GivesNoMessages(string code) => Validate(typeof(LoginWith2fa), ("TwoFactorCode", code)).Should().BeEmpty();
+
+    [Fact]
+    public void LoginWithRecoveryCode_EmptyCode_GivesDanishRequiredMessage() => Validate(typeof(LoginWithRecoveryCode)).Should().ContainSingle()
+            .Which.Should().Be("Feltet 'Gendannelseskode' er påkrævet.");
+
+    [Fact]
+    public void LoginWithRecoveryCode_ValidCode_GivesNoMessages() => Validate(typeof(LoginWithRecoveryCode), ("RecoveryCode", "ABCDE-12345")).Should().BeEmpty();
 }

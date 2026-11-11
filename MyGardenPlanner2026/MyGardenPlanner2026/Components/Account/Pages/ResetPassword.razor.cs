@@ -52,21 +52,24 @@ public partial class ResetPassword
 
     private sealed class InputModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = AccountMessages.FieldRequired)]
+        [EmailAddress(ErrorMessage = AccountMessages.InvalidEmail)]
+        [Display(Name = "E-mail")]
         public string Email { get; set; } = "";
 
-        [Required]
-        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [Required(ErrorMessage = AccountMessages.FieldRequired)]
+        [StringLength(100, ErrorMessage = AccountMessages.PasswordsLength, MinimumLength = 6)]
         [DataType(DataType.Password)]
+        [Display(Name = "Adgangskode")]
         public string Password { get; set; } = "";
 
         [DataType(DataType.Password)]
-        [Display(Name = "Confirm password")]
-        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+        [Display(Name = "Bekræft adgangskode")]
+        [Compare(nameof(Password), ErrorMessage = AccountMessages.PasswordsDoNotMatch)]
         public string ConfirmPassword { get; set; } = "";
 
-        [Required]
+        [Required(ErrorMessage = AccountMessages.FieldRequired)]
+        [Display(Name = "Nulstillingskode")]
         public string Code { get; set; } = "";
     }
 }

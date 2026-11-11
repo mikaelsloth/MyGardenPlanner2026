@@ -37,8 +37,9 @@ public partial class ResendEmailConfirmation
 
     private sealed class InputModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = AccountMessages.FieldRequired)]
+        [EmailAddress(ErrorMessage = AccountMessages.InvalidEmail)]
+        [Display(Name = "E-mail")]
         public string Email { get; set; } = "";
     }
 }

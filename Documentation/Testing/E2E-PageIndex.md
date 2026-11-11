@@ -323,6 +323,7 @@ Filer: AccessDenied.razor (+ .cs)
 Titel: Totrinsbekræftelse – MyGardenPlanner. h1: Totrinsbekræftelse.
 Label: "Godkendelseskode", checkbox "Husk denne enhed", knap "Log ind" (Exact). Link "logge ind med en gendannelseskode".
 Forkert kode: "Error: Ugyldig godkendelseskode." og et fejlforsøg registreres i ReAuthFailureTracker.
+Valideringsbeskeder (dansk): "Feltet 'Godkendelseskode' er påkrævet.", "Godkendelseskode skal være mellem 6 og 7 tegn." (kode med mellemrum eller bindestreg tæller med i længden).
 Et forsøg på en låst bruger registreres også som fejlforsøg.
 Filer: LoginWith2fa.razor (+ .cs)
 ```
@@ -332,6 +333,7 @@ Titel: Gendannelseskode – MyGardenPlanner. h1: Bekræft med gendannelseskode.
 Label: "Gendannelseskode" (Exact), knap "Log ind". Nås fra LoginWith2fa via linket "logge ind med en gendannelseskode" (kræver password-login først).
 Gyldig kode: login, redirect til forsiden. Brugt/forkert kode: "Error: Ugyldig gendannelseskode indtastet." og et fejlforsøg registreres i ReAuthFailureTracker (5 forkerte udløser sikkerhedsalarm). Ingen lockout-tælling i koden.
 Et forsøg på en låst bruger registreres også som fejlforsøg.
+Tom kode: "Feltet 'Gendannelseskode' er påkrævet.".
 Filer: LoginWithRecoveryCode.razor (+ .cs)
 ```
 ```

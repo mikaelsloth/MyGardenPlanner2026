@@ -71,9 +71,9 @@ public partial class LoginWithRecoveryCode
 
     private sealed class InputModel
     {
-        [Required]
+        [Required(ErrorMessage = AccountMessages.FieldRequired)]
         [DataType(DataType.Text)]
-        [Display(Name = "Recovery Code")]
+        [Display(Name = "Gendannelseskode")]
         public string RecoveryCode { get; set; } = "";
     }
 }

@@ -203,7 +203,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - Ingen log ud-knap i PublicLayout/ManageLayout: log ud i E2E = `page.Context.ClearCookiesAsync()`.
 - Email.razor RegisterConfirmation viser links til e-mailskift på siden, når EmailSender er IdentityNoOpEmailSender og Identity:ShowEmailLinks er true (E2E-fixturen sætter flaget). Uden det kan skiftet ikke bekræftes i E2E.
 - ConfirmEmailChange: forkert token eller ugyldigt Base64Url-format i code giver "Error: Der opstod en fejl ved skift af e-mail." (status 200).
-- ChangePassword: succes redirecter til samme side (`RedirectToCurrentPageWithStatus`) med "Your password has been changed". Man forbliver logget ind (`RefreshSignInAsync`). Labels i markup ("Old password", "New password", "Confirm password") afviger fra Display-navnene i valideringsbeskeder ("Current password", "New password", "Confirm new password").
+- ChangePassword: succes redirecter til samme side (`RedirectToCurrentPageWithStatus`) med "Din adgangskode er ændret.". Man forbliver logget ind (`RefreshSignInAsync`). Labels i markup og Display-navne er ens ("Nuværende adgangskode", "Ny adgangskode", "Bekræft ny adgangskode").
 - PersonalData: "Download" er en almindelig POST-formular (ikke enhanced) til /Account/Manage/DownloadPersonalData. Brug `page.RunAndWaitForDownloadAsync` og læs filen via `download.PathAsync()`. "Delete" er et link (`<a>`), ikke en knap.
 - DeletePersonalData: succes sletter først brugerens data (AccountDeletionService), derefter brugeren (DeleteAsync + SignOutAsync) og redirecter til forsiden. Efterfølgende tjek er, at login afvises. Slet-knappen vises ikke længere.
 
@@ -371,21 +371,21 @@ Filer: RenamePasskey.razor (+ .cs)
 ```
 ```
 /Account/Manage/Email
-Titel: Manage email. h3 "Manage email". Static SSR.
-Labels: "New email" (Exact = true, forudfyldt med nuværende e-mail), deaktiveret felt "Email". Knap: "Change email".
-Besked: "Confirmation link to change email sent. Please check your email." (success), "Your email is unchanged." ved uændret e-mail.
-Link "Click here to confirm your new email" vises kun med IdentityNoOpEmailSender og Identity:ShowEmailLinks = true.
-Ugyldig e-mail: ValidationMessage (.validation-message).
-Ubekræftet e-mail: knappen "Send verification email" giver "Verification email sent. Please check your email." og (samme betingelser) linket "Click here to verify your email". Ikke dækket af E2E: brugere med ubekræftet e-mail kan ikke logge ind (RequireConfirmedAccount), så kun bUnit dækker det.
+Titel: Administrer e-mail – MyGardenPlanner. h3 "Administrer e-mail". Static SSR.
+Labels: "Ny e-mail" (Exact = true, forudfyldt med nuværende e-mail), deaktiveret felt "E-mail". Knap: "Skift e-mail".
+Besked: "Bekræftelseslink til skift af e-mail er sendt. Tjek din e-mail." (success), "Din e-mail er uændret." ved uændret e-mail.
+Link "Klik her for at bekræfte din nye e-mail" vises kun med IdentityNoOpEmailSender og Identity:ShowEmailLinks = true.
+Ugyldig e-mail: ValidationMessage (.validation-message) "Angiv en gyldig e-mailadresse.".
+Ubekræftet e-mail: knappen "Send bekræftelses-e-mail" giver "Bekræftelses-e-mail er sendt. Tjek din e-mail." og (samme betingelser) linket "Klik her for at bekræfte din e-mail". Ikke dækket af E2E: brugere med ubekræftet e-mail kan ikke logge ind (RequireConfirmedAccount), så kun bUnit dækker det.
 Filer: Email.razor (+ .cs)
 ```
 ```
 /Account/Manage/ChangePassword
-Titel: Change password. h3 "Change password". Static SSR.
-Labels (Exact = true): "Old password", "New password", "Confirm password". Knap: "Update password".
-Succes: redirect til samme side, besked "Your password has been changed".
-Forkert nuværende password: "Error: Incorrect password." (Identity-standardtekst).
-Valideringsfejl (.validation-message): "The New password must be at least 6 and at max 100 characters long." og "The new password and confirmation password do not match.".
+Titel: Skift adgangskode – MyGardenPlanner. h3 "Skift adgangskode". Static SSR.
+Labels (Exact = true): "Nuværende adgangskode", "Ny adgangskode", "Bekræft ny adgangskode". Knap: "Opdater adgangskode".
+Succes: redirect til samme side, besked "Din adgangskode er ændret."
+Forkert nuværende password: "Error: Adgangskoden er forkert." (DanishIdentityErrorDescriber).
+Valideringsfejl (.validation-message): "Adgangskoden skal være mindst 6 og højst 100 tegn." og "Adgangskoden og bekræftelsen er ikke ens.".
 Brugere uden lokalt password redirectes til Account/Manage/SetPassword.
 Filer: ChangePassword.razor (+ .cs)
 ```
@@ -667,3 +667,5 @@ Filer til Upload: AccountDeletionService, DeletePersonalData, Garden-entiteterne
 
 ### Backlog (ikke tildelt gruppe)
 - B1 `EnableAuthenticator.razor.cs`: issuer i otpauth-URI'en er "Microsoft.AspNetCore.Identity.UI" og vises som kontonavn i authenticator-apps. Overvej "MyGardenPlanner". Ændrer ikke nøglen, men eksisterende poster i brugernes apps beholder det gamle navn. Tjek E2E-hjælpere, der læser URI'en.
+- B2 `AccessDenied.razor.cs`: statusbeskeden til brugere uden 2FA ("Adgang til denne funktion kræver, at du har totrinsbekræftelse aktiveret på din konto.") har ikke "Error"-præfiks og vises derfor som success (grøn) i StatusMessage. Overvej "Error: "-præfiks. Det er en adfærdsændring: opdatér NoMfa-assert (D3, KorrektStepUpTests) og afsnit 4.2.
+ 

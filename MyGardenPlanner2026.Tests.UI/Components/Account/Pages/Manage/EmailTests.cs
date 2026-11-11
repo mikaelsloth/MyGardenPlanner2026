@@ -23,10 +23,9 @@ public class EmailTests : BunitContext
 
     private const string ChangeEmailForm = "form:not(#send-verification-form)";
     private const string ConfirmationLink = "a[href*='ConfirmEmailChange']";
-    private const string SentMessage = "Confirmation link to change email sent. Please check your email.";
-
+    private const string SentMessage = "Bekræftelseslink til skift af e-mail er sendt. Tjek din e-mail.";
     private const string VerificationLink = "a[href*='Account/ConfirmEmail?']";
-    private const string VerificationSentMessage = "Verification email sent. Please check your email.";
+    private const string VerificationSentMessage = "Bekræftelses-e-mail er sendt. Tjek din e-mail.";
     private const string SendVerificationForm = "#send-verification-form";
 
     private void RegisterEmailLinkOptions(bool showEmailLinks) =>
@@ -48,7 +47,7 @@ public class EmailTests : BunitContext
         cut.Markup.Should().Contain(SentMessage);
 
         var link = cut.Find(ConfirmationLink);
-        link.TextContent.Should().Contain("Click here to confirm your new email");
+        link.TextContent.Should().Contain("Klik her for at bekræfte din nye e-mail");
 
         var href = link.GetAttribute("href");
         href.Should().Contain("Account/ConfirmEmailChange");
@@ -93,7 +92,7 @@ public class EmailTests : BunitContext
         // Feltet "New email" er forudfyldt med den nuværende e-mail.
         await cut.Find(ChangeEmailForm).SubmitAsync();
 
-        cut.Markup.Should().Contain("Your email is unchanged.");
+        cut.Markup.Should().Contain("Din e-mail er uændret.");
         cut.FindAll(ConfirmationLink).Should().BeEmpty();
         await userManager.DidNotReceive().GenerateChangeEmailTokenAsync(
             Arg.Any<ApplicationUser>(), Arg.Any<string>());
@@ -130,7 +129,7 @@ public class EmailTests : BunitContext
 
         cut.Markup.Should().Contain(VerificationSentMessage);
         var link = cut.Find(VerificationLink);
-        link.TextContent.Should().Contain("Click here to verify your email");
+        link.TextContent.Should().Contain("Klik her for at bekræfte din e-mail");
 
         var href = link.GetAttribute("href");
         href.Should().Contain("userId=user-1");

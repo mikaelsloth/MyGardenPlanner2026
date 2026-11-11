@@ -16,9 +16,11 @@ internal static class AccountMessages
     // Statusbeskeder (skal starte med "Error")
     public const string InvalidLoginAttempt = "Error: Ugyldigt loginforsøg.";
 
-    public static string UserNotLoaded(string? userId) =>
-        $"Error: Brugeren med ID '{userId}' kunne ikke indlæses.";
+    public static string UserNotLoadedDetail(string? userId) =>
+        $"Brugeren med ID '{userId}' kunne ikke indlæses.";
 
+    public static string UserNotLoaded(string? userId) =>
+        $"Error: {UserNotLoadedDetail(userId)}";
     public const string FieldLengthBetween = "{0} skal være mellem {2} og {1} tegn.";
 
     public const string InvalidVerificationCode = "Error: Bekræftelseskoden er ugyldig.";
@@ -64,4 +66,11 @@ internal static class AccountMessages
     public const string EmailUnchanged = "Din e-mail er uændret.";
     public const string EmailChangeConfirmationSent = "Bekræftelseslink til skift af e-mail er sendt. Tjek din e-mail.";
     public const string EmailVerificationSent = "Bekræftelses-e-mail er sendt. Tjek din e-mail.";
+
+    public const string IncorrectPasswords = "Error: Adgangskoden er forkert.";
+    public const string AccountNotDeleted = "Error: Din konto kunne ikke slettes. Prøv igen.";
+
+    public static string AccountDeletionBlocked(IEnumerable<string> gardenNames) =>
+        $"Error: Du er eneste ejer af haver, der deles med andre medlemmer: {string.Join(", ", gardenNames)}. " +
+        "Ejerskabet skal overdrages, før din konto kan slettes.";
 }

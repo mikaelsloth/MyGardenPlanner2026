@@ -50,20 +50,20 @@ public partial class SetPassword
         }
 
         await SignInManager.RefreshSignInAsync(user);
-        RedirectManager.RedirectToCurrentPageWithStatus("Your password has been set.", HttpContext);
+        RedirectManager.RedirectToCurrentPageWithStatus(AccountMessages.PasswordsWasSet, HttpContext);
     }
 
     private sealed class InputModel
     {
-        [Required]
-        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [Required(ErrorMessage = AccountMessages.FieldRequired)]
+        [StringLength(100, ErrorMessage = AccountMessages.PasswordsLength, MinimumLength = 6)]
         [DataType(DataType.Password)]
-        [Display(Name = "New password")]
+        [Display(Name = "Ny adgangskode")]
         public string? NewPassword { get; set; }
 
         [DataType(DataType.Password)]
-        [Display(Name = "Confirm new password")]
-        [Compare("NewPassword", ErrorMessage = "The new password and confirmation password do not match.")]
+        [Display(Name = "Bekræft ny adgangskode")]
+        [Compare(nameof(NewPassword), ErrorMessage = AccountMessages.PasswordsDoNotMatch)]
         public string? ConfirmPassword { get; set; }
     }
 }

@@ -39,7 +39,9 @@ public static class IdentityServicesExtensions
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<PlannerDbContext>()
             .AddSignInManager()
-            .AddDefaultTokenProviders();
+            .AddDefaultTokenProviders()
+            .AddErrorDescriber<DanishIdentityErrorDescriber>();
+        ;
 
         services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 

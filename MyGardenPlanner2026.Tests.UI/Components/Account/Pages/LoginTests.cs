@@ -54,7 +54,7 @@ public class LoginTests : BunitContext
         cut.Find("#Input\\.Password").Change("forkert-adgangskode");
         cut.Find("form").Submit();
 
-        cut.Markup.Should().Contain("Error: Invalid login attempt.");
+        cut.Markup.Should().Contain("Error: Ugyldigt loginforsøg.");
     }
 
     [Fact]

@@ -49,8 +49,9 @@ public sealed partial class GendannelseskodeTests(PlaywrightAppFixture fixture)
         await Assertions.Expect(page).Not.ToHaveURLAsync(RecoveryCodeUrl);
 
         await page.GotoAsync($"{fixture.RootUri}{E2ERoutes.TwoFactorAuthentication}");
-        await SmokePageAssertions.ExpectPageAsync(page, "Two-factor authentication (2FA)", "Manage your account");
-        await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = "Disable 2FA", Exact = true }))
+        await SmokePageAssertions.ExpectPageAsync(
+            page, "Totrinsbekræftelse (2FA) – MyGardenPlanner", "Administrer din konto");
+        await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = "Deaktivér 2FA", Exact = true }))
             .ToBeVisibleAsync();
 
         // Samme kode i en ny session afvises (engangskode).

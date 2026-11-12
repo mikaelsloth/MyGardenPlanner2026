@@ -20,17 +20,17 @@ public sealed partial class PersonligeDataTests(PlaywrightAppFixture fixture)
     private const string Checklist = "Tjekliste C";
     private const string TestName = "PersonligeData";
 
-    // Manage-siderne er ikke oversat endnu (engelske titler/tekster) og ligger i ManageLayout (h1).
-    private const string PersonalDataTitle = "Personal Data";
-    private const string DeleteTitle = "Delete Personal Data";
-    private const string ManageHeading = "Manage your account";
+    // Manage-siderne ligger i ManageLayout (h1) og har titlen "<side> – MyGardenPlanner".
+    private const string PersonalDataTitle = "Personlige data – MyGardenPlanner";
+    private const string DeleteTitle = "Slet personlige data – MyGardenPlanner";
+    private const string ManageHeading = "Administrer din konto";
 
     private const string DownloadFileName = "PersonalData.json";
-    private const string DeleteButtonName = "Delete data and close my account";
-    private const string IncorrectPasswordText = "Incorrect password";
+    private const string DeleteButtonName = "Slet data og luk min konto";
+    private const string IncorrectPasswordText = "Adgangskoden er forkert";
 
-    // Login.razor.cs: "Error: Invalid login attempt." (engelsk, ikke oversat endnu).
-    private const string InvalidLoginText = "Invalid login attempt";
+    // Login.razor.cs: "Error: Ugyldigt loginforsøg."
+    private const string InvalidLoginText = "Ugyldigt loginforsøg";
 
     private const string WrongPassword = "Forkert-Adgangskode1!";
 
@@ -74,7 +74,7 @@ public sealed partial class PersonligeDataTests(PlaywrightAppFixture fixture)
         var (page, user) = await LoginNewUserOnPersonalDataPageAsync();
         await OpenDeletePageAsync(page);
 
-        await page.GetByLabel("Password", new() { Exact = true }).FillAsync(user.Password);
+        await page.GetByLabel("Adgangskode", new() { Exact = true }).FillAsync(user.Password);
         await page.GetByRole(AriaRole.Button, new() { Name = DeleteButtonName, Exact = true }).ClickAsync();
 
         // D4-2: efter sletning redirectes til forsiden, og brugeren er logget ud.
@@ -94,7 +94,7 @@ public sealed partial class PersonligeDataTests(PlaywrightAppFixture fixture)
         var (page, user) = await LoginNewUserOnPersonalDataPageAsync();
         await OpenDeletePageAsync(page);
 
-        await page.GetByLabel("Password", new() { Exact = true }).FillAsync(WrongPassword);
+        await page.GetByLabel("Adgangskode", new() { Exact = true }).FillAsync(WrongPassword);
         await page.GetByRole(AriaRole.Button, new() { Name = DeleteButtonName, Exact = true }).ClickAsync();
 
         await Assertions.Expect(page.GetByText(IncorrectPasswordText)).ToBeVisibleAsync();
@@ -136,7 +136,7 @@ public sealed partial class PersonligeDataTests(PlaywrightAppFixture fixture)
     /// <summary>Fra PersonalData via linket "Delete" til DeletePersonalData.</summary>
     private static async Task OpenDeletePageAsync(IPage page)
     {
-        await page.GetByRole(AriaRole.Link, new() { Name = "Delete", Exact = true }).ClickAsync();
+        await page.GetByRole(AriaRole.Link, new() { Name = "Slet", Exact = true }).ClickAsync();
 
         await Assertions.Expect(page).ToHaveURLAsync(DeleteUrl);
         await SmokePageAssertions.ExpectPageAsync(page, DeleteTitle, ManageHeading);

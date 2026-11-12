@@ -58,25 +58,25 @@ public partial class ChangePassword
         var userId = await UserManager.GetUserIdAsync(user);
         PasswordChanged(Logger, userId);
 
-        RedirectManager.RedirectToCurrentPageWithStatus("Your password has been changed", HttpContext);
+        RedirectManager.RedirectToCurrentPageWithStatus(AccountMessages.PasswordsWasChanged, HttpContext);
     }
 
     private sealed class InputModel
     {
-        [Required]
+        [Required(ErrorMessage = AccountMessages.FieldRequired)]
         [DataType(DataType.Password)]
-        [Display(Name = "Current password")]
+        [Display(Name = "Nuværende adgangskode")]
         public string OldPassword { get; set; } = "";
 
-        [Required]
-        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [Required(ErrorMessage = AccountMessages.FieldRequired)]
+        [StringLength(100, ErrorMessage = AccountMessages.PasswordsLength, MinimumLength = 6)]
         [DataType(DataType.Password)]
-        [Display(Name = "New password")]
+        [Display(Name = "Ny adgangskode")]
         public string NewPassword { get; set; } = "";
 
         [DataType(DataType.Password)]
-        [Display(Name = "Confirm new password")]
-        [Compare("NewPassword", ErrorMessage = "The new password and confirmation password do not match.")]
+        [Display(Name = "Bekræft ny adgangskode")]
+        [Compare(nameof(NewPassword), ErrorMessage = AccountMessages.PasswordsDoNotMatch)]
         public string ConfirmPassword { get; set; } = "";
     }
 }

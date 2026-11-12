@@ -48,19 +48,19 @@ public partial class Index
             var setPhoneResult = await UserManager.SetPhoneNumberAsync(user, Input.PhoneNumber);
             if (!setPhoneResult.Succeeded)
             {
-                RedirectManager.RedirectToCurrentPageWithStatus("Error: Failed to set phone number.", HttpContext);
+                RedirectManager.RedirectToCurrentPageWithStatus(AccountMessages.PhoneNumberNotSaved, HttpContext);
                 return;
             }
         }
 
         await SignInManager.RefreshSignInAsync(user);
-        RedirectManager.RedirectToCurrentPageWithStatus("Your profile has been updated", HttpContext);
+        RedirectManager.RedirectToCurrentPageWithStatus(AccountMessages.ProfileUpdated, HttpContext);
     }
 
     private sealed class InputModel
     {
-        [Phone]
-        [Display(Name = "Phone number")]
+        [Phone(ErrorMessage = AccountMessages.InvalidPhone)]
+        [Display(Name = "Telefonnummer")]
         public string? PhoneNumber { get; set; }
     }
 }

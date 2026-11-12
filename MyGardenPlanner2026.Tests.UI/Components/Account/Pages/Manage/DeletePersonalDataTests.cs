@@ -67,7 +67,7 @@ public class DeletePersonalDataTests : BunitContext
         await cut.Find("#Input\\.Password").ChangeAsync("forkert");
         await cut.Find("form").SubmitAsync();
 
-        cut.Markup.Should().Contain("Error: Incorrect password.");
+        cut.Markup.Should().Contain("Error: Adgangskoden er forkert.");
         await accountDeletion.DidNotReceive().DeleteUserDataAsync(Arg.Any<string>(), Arg.Any<string?>(), Arg.Any<CancellationToken>());
         await userManager.DidNotReceive().DeleteAsync(Arg.Any<ApplicationUser>());
         await signInManager.DidNotReceive().SignOutAsync();
@@ -86,7 +86,7 @@ public class DeletePersonalDataTests : BunitContext
         await cut.Find("#Input\\.Password").ChangeAsync(Password);
         await cut.Find("form").SubmitAsync();
 
-        cut.Markup.Should().Contain("Error: You are the only owner of gardens shared with other members: Have A, Have B.");
+        cut.Markup.Should().Contain("Error: Du er eneste ejer af haver, der deles med andre medlemmer:");
         await userManager.DidNotReceive().DeleteAsync(Arg.Any<ApplicationUser>());
         await signInManager.DidNotReceive().SignOutAsync();
     }
@@ -105,7 +105,7 @@ public class DeletePersonalDataTests : BunitContext
         await cut.Find("#Input\\.Password").ChangeAsync(Password);
         await cut.Find("form").SubmitAsync();
 
-        cut.Markup.Should().Contain("Error: Your account could not be deleted. Please try again.");
+        cut.Markup.Should().Contain("Error: Din konto kunne ikke slettes. Prøv igen.");
         await signInManager.DidNotReceive().SignOutAsync();
     }
 

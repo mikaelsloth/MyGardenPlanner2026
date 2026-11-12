@@ -19,12 +19,12 @@ public sealed class SkiftEmailTests(PlaywrightAppFixture fixture)
     private const string Checklist = "Tjekliste C";
     private const string TestName = "SkiftEmail";
 
-    // Manage-siderne er ikke oversat endnu (engelske titler/tekster) og ligger i ManageLayout (h1).
-    private const string ManageTitle = "Manage email";
-    private const string ManageHeading = "Manage your account";
-    private const string ChangeSentText = "Confirmation link to change email sent. Please check your email.";
-    private const string UnchangedText = "Your email is unchanged.";
-    private const string ConfirmLinkText = "Click here to confirm your new email";
+    // Manage-siderne ligger i ManageLayout (h1) og har titlen "<side> – MyGardenPlanner".
+    private const string ManageTitle = "Administrer e-mail – MyGardenPlanner";
+    private const string ManageHeading = "Administrer din konto";
+    private const string ChangeSentText = "Bekræftelseslink til skift af e-mail er sendt. Tjek din e-mail.";
+    private const string UnchangedText = "Din e-mail er uændret.";
+    private const string ConfirmLinkText = "Klik her for at bekræfte din nye e-mail";
 
     // ConfirmEmailChange er oversat og ligger i PublicLayout (AuthPageShell: h1 = Title).
     private const string ConfirmTitle = "Bekræft e-mailskift – MyGardenPlanner";
@@ -32,8 +32,8 @@ public sealed class SkiftEmailTests(PlaywrightAppFixture fixture)
     private const string ConfirmedText = "Tak, fordi du bekræftede skiftet af din e-mail.";
     private const string ConfirmFailedText = "Error: Der opstod en fejl ved skift af e-mail.";
 
-    // Login.razor.cs: "Error: Invalid login attempt." (engelsk, ikke oversat endnu).
-    private const string InvalidLoginText = "Invalid login attempt";
+    // Login.razor.cs: "Error: Ugyldigt loginforsøg."
+    private const string InvalidLoginText = "Ugyldigt loginforsøg";
 
     public static TheoryData<int> Widths()
     {
@@ -91,8 +91,8 @@ public sealed class SkiftEmailTests(PlaywrightAppFixture fixture)
     {
         var (page, _) = await LoginNewUserOnEmailPageAsync();
 
-        // Feltet "New email" er forudfyldt med den nuværende e-mail.
-        await page.GetByRole(AriaRole.Button, new() { Name = "Change email", Exact = true }).ClickAsync();
+        // Feltet "Ny e-mail" er forudfyldt med den nuværende e-mail.
+        await page.GetByRole(AriaRole.Button, new() { Name = "Skift e-mail", Exact = true }).ClickAsync();
 
         await Assertions.Expect(page.GetByText(UnchangedText)).ToBeVisibleAsync();
         await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = ConfirmLinkText })).ToHaveCountAsync(0);
@@ -105,7 +105,8 @@ public sealed class SkiftEmailTests(PlaywrightAppFixture fixture)
 
         await SubmitNewEmailAsync(page, "ikke-en-email");
 
-        await Assertions.Expect(page.Locator(".validation-message")).ToContainTextAsync("New email");
+        await Assertions.Expect(page.Locator(".validation-message"))
+            .ToContainTextAsync("Angiv en gyldig e-mailadresse.");
         await Assertions.Expect(page.GetByText(ChangeSentText)).ToHaveCountAsync(0);
         await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = ConfirmLinkText })).ToHaveCountAsync(0);
     }
@@ -178,9 +179,9 @@ public sealed class SkiftEmailTests(PlaywrightAppFixture fixture)
 
     private static async Task SubmitNewEmailAsync(IPage page, string newEmail)
     {
-        // Exact = true: label "Email" (det deaktiverede felt) er en delstreng af "New email".
-        await page.GetByLabel("New email", new() { Exact = true }).FillAsync(newEmail);
-        await page.GetByRole(AriaRole.Button, new() { Name = "Change email", Exact = true }).ClickAsync();
+        // Exact = true: label "E-mail" (det deaktiverede felt) er en delstreng af "Ny e-mail".
+        await page.GetByLabel("Ny e-mail", new() { Exact = true }).FillAsync(newEmail);
+        await page.GetByRole(AriaRole.Button, new() { Name = "Skift e-mail", Exact = true }).ClickAsync();
     }
 
     /// <summary>Log ud (ingen log ud-knap i layoutet: ryd cookies) og åbn login-siden.</summary>

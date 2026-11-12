@@ -15,10 +15,10 @@ public partial class StatusMessage
 
     private string? DisplayMessage => Message ?? messageFromCookie;
 
-    // OBS: "Error"-præfikset i selve beskeden skal forblive på engelsk —
-    // StartsWith("Error") styrer danger/success. Se memory-noter.
+    // OBS: "Error"-præfikset i selve beskeden skal forblive engelsk —
+    // StartsWith("Error") styrer danger/success. Se AccountMessages og E2E-PageIndex afsnit 3.
     private string StatusVariant =>
-        DisplayMessage is not null && DisplayMessage.StartsWith("Error") ? "danger" : "success";
+    DisplayMessage is not null && DisplayMessage.StartsWith("Error") ? "danger" : "success";
 
     protected override void OnInitialized()
     {

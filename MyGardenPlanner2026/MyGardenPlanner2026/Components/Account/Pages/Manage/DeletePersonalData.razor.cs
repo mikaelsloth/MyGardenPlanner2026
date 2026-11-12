@@ -48,7 +48,7 @@ public partial class DeletePersonalData
 
         if (requirePassword && !await UserManager.CheckPasswordAsync(user, Input.Password))
         {
-            message = "Error: Incorrect password.";
+            message = AccountMessages.IncorrectPasswords;
             return;
         }
 
@@ -58,9 +58,7 @@ public partial class DeletePersonalData
         var dataResult = await AccountDeletionService.DeleteUserDataAsync(userId, email, CancellationToken.None);
         if (dataResult.IsBlocked)
         {
-            message = "Error: You are the only owner of gardens shared with other members: "
-                + string.Join(", ", dataResult.BlockingGardenNames)
-                + ". Ownership must be transferred before your account can be deleted.";
+            message = AccountMessages.AccountDeletionBlocked(dataResult.BlockingGardenNames);
             return;
         }
 
@@ -68,7 +66,7 @@ public partial class DeletePersonalData
         if (!result.Succeeded)
         {
             UserDeleteFailed(Logger, userId, string.Join(", ", result.Errors.Select(e => e.Code)));
-            message = "Error: Your account could not be deleted. Please try again.";
+            message = AccountMessages.AccountNotDeleted;
             return;
         }
 

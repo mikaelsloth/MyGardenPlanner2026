@@ -38,8 +38,6 @@ public partial class TwoFactorAuthentication
     {
         await SignInManager.ForgetTwoFactorClientAsync();
 
-        RedirectManager.RedirectToCurrentPageWithStatus(
-            "The current browser has been forgotten. When you login again from this browser you will be prompted for your 2fa code.",
-            HttpContext);
+        RedirectManager.RedirectToCurrentPageWithStatus(AccountMessages.BrowserWasForgotten, HttpContext);
     }
 }

@@ -24,11 +24,11 @@ public static class TwoFactorSetup
     public static string NormalizeKey(string formattedKey) =>
         string.Concat(formattedKey.Where(c => !char.IsWhiteSpace(c))).ToUpperInvariant();
 
-    /// <summary>Indtaster en gyldig kode, klikker "Verify" og returnerer de viste gendannelseskoder.</summary>
+    /// <summary>Indtaster en gyldig kode, klikker "Bekræft" og returnerer de viste gendannelseskoder.</summary>
     public static async Task<IReadOnlyList<string>> VerifyAsync(IPage page, string key)
     {
-        await page.GetByLabel("Verification Code").FillAsync(TotpHelper.GenerateCode(key));
-        await page.GetByRole(AriaRole.Button, new() { Name = "Verify", Exact = true }).ClickAsync();
+        await page.GetByLabel("Bekræftelseskode").FillAsync(TotpHelper.GenerateCode(key));
+        await page.GetByRole(AriaRole.Button, new() { Name = "Bekræft", Exact = true }).ClickAsync();
 
         try
         {

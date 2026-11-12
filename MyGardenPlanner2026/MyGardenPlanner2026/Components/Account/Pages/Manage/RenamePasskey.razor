@@ -6,24 +6,26 @@
 @inject UserManager<ApplicationUser> UserManager
 @inject IdentityRedirectManager RedirectManager
 
+<PageTitle>Omdøb passkey – MyGardenPlanner</PageTitle>
+
 <EditForm Model="Input" OnValidSubmit="RenameAsync" FormName="rename-passkey" method="post">
     <DataAnnotationsValidator />
     @if (passkey?.Name is { } name)
     {
-        <h4>Enter a new name for your "@name" passkey</h4>
+        <h4>Angiv et nyt navn til din passkey "@name"</h4>
     }
     else
     {
-        <h4>Enter a name for your passkey</h4>
+        <h4>Angiv et navn til din passkey</h4>
     }
     <hr />
     <ValidationSummary class="text-danger" role="alert" />
     <div class="form-floating mb-3">
-        <InputText @bind-Value="Input.Name" id="Input.Name" class="form-control" aria-required="true" placeholder="My passkey" />
-        <label for="Input.Name" class="form-label">Passkey name</label>
+        <InputText @bind-Value="Input.Name" id="Input.Name" class="form-control" aria-required="true" placeholder="Min passkey" />
+        <label for="Input.Name" class="form-label">Passkey-navn</label>
         <ValidationMessage For="() => Input.Name" class="text-danger" />
     </div>
     <div>
-        <button type="submit" class="w-100 btn btn-lg btn-primary">Continue</button>
+        <button type="submit" class="w-100 btn btn-lg btn-primary">Fortsæt</button>
     </div>
 </EditForm>

@@ -161,7 +161,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - Modaler skal kunne scrolle på lave viewports: en Playwright-fejl "element is outside of the viewport" efter scroll betyder, at elementet ikke kan nås for en rigtig bruger. Test at lukkeknappen kan klikkes ved 375×812 og 939×900.
 - Komponenter, der kun synkroniserer fra en parameter ved første OnParametersSet, må ikke renderes, før forælderen har indlæst parameterens endelige værdi (Blazor renderer ved første await i OnInitializedAsync).
 - Singleton-services (fx EF-interceptors) når circuit-brugeren via `CircuitUserContext` (AsyncLocal sat af `CircuitHandler.CreateInboundActivityHandler`), ikke via `IHttpContextAccessor`.
-- `StatusMessage`: beskeder der starter med "Error" vises som danger (role=alert), ellers success (role=status). Præfikset skal forblive engelsk.
+- `StatusMessage`: beskeder der starter med "Error" vises som danger (role=alert), ellers success (role=status). Præfikset skal forblive engelsk. Konventionen er låst af StatusMessageTests (bUnit).
 - WebAuthn kræver et domænenavn som host: kør passkey-tests på `http://localhost:<port>` (`RootUri.Replace("127.0.0.1", "localhost")`).
 - Login.razor starter passkey-autofill (conditional mediation) ved sideload. Passkey-tests slår den fra med `AddInitScriptAsync("PublicKeyCredential.isConditionalMediationAvailable = async () => false;")`. Passkey-fejl vises som StatusMessage (role=alert) efter redirect ("Error: ...").
 - Streaming-download (Results.Stream): Kestrel tillader ikke synkron IO på response body (AllowSynchronousIO = false). Utf8JsonWriter over en Stream og JsonSerializer.Serialize(writer, …) flusher synkront og giver en afbrudt forbindelse efter 200-headerne (Playwright: "aborted"). Skriv i en intern buffer (ArrayBufferWriter) og send med WriteAsync. Xlsx (ClosedXML skriver synkront) bufferes i en MemoryStream og kopieres med CopyToAsync.
@@ -203,8 +203,8 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - Ingen log ud-knap i PublicLayout/ManageLayout: log ud i E2E = `page.Context.ClearCookiesAsync()`.
 - Email.razor RegisterConfirmation viser links til e-mailskift på siden, når EmailSender er IdentityNoOpEmailSender og Identity:ShowEmailLinks er true (E2E-fixturen sætter flaget). Uden det kan skiftet ikke bekræftes i E2E.
 - ConfirmEmailChange: forkert token eller ugyldigt Base64Url-format i code giver "Error: Der opstod en fejl ved skift af e-mail." (status 200).
-- ChangePassword: succes redirecter til samme side (`RedirectToCurrentPageWithStatus`) med "Your password has been changed". Man forbliver logget ind (`RefreshSignInAsync`). Labels i markup ("Old password", "New password", "Confirm password") afviger fra Display-navnene i valideringsbeskeder ("Current password", "New password", "Confirm new password").
-- PersonalData: "Download" er en almindelig POST-formular (ikke enhanced) til /Account/Manage/DownloadPersonalData. Brug `page.RunAndWaitForDownloadAsync` og læs filen via `download.PathAsync()`. "Delete" er et link (`<a>`), ikke en knap.
+- ChangePassword: succes redirecter til samme side (`RedirectToCurrentPageWithStatus`) med "Din adgangskode er ændret.". Man forbliver logget ind (`RefreshSignInAsync`). Labels i markup og Display-navne er ens ("Nuværende adgangskode", "Ny adgangskode", "Bekræft ny adgangskode").
+- PersonalData: "Download" er en almindelig POST-formular (ikke enhanced) til /Account/Manage/DownloadPersonalData. Brug `page.RunAndWaitForDownloadAsync` og læs filen via `download.PathAsync()`. "Slet" er et link (`<a>`), ikke en knap.
 - DeletePersonalData: succes sletter først brugerens data (AccountDeletionService), derefter brugeren (DeleteAsync + SignOutAsync) og redirecter til forsiden. Efterfølgende tjek er, at login afvises. Slet-knappen vises ikke længere.
 
 ### Admin-navigation
@@ -278,6 +278,7 @@ Titel: Opret bruger – MyGardenPlanner. h1: Opret bruger (AuthPageShell: h1 = T
 Labels: "E-mail", "Adgangskode" (Exact = true), "Bekræft adgangskode". Knap: "Opret bruger" (role button; headerens "Opret bruger" er et link).
 Succes: redirect til /Account/RegisterConfirmation?email=... (kræver RequireConfirmedAccount; ellers logges brugeren ind og sendes til ReturnUrl).
 Fejl: ValidationSummary (.text-danger) og StatusMessage "Error: ...".
+  Valideringsbeskeder (dansk): "Adgangskoden skal være mindst 6 og højst 100 tegn.", "Adgangskoden og bekræftelsen er ikke ens." + e-mailbeskederne som på Login. Identity-fejl (fx dublet-e-mail) kommer fra DanishIdentityErrorDescriber.
 Filer: Register.razor (+ .cs)
 ```
 ```
@@ -297,7 +298,7 @@ Filer: ConfirmEmail.razor (+ .cs)
 /Account/Login
 Titel: Log ind – MyGardenPlanner. h1: Log ind. Layout: PublicLayout.
 Labels: "E-mail", "Adgangskode" (Exact = true), "Husk mig". Knap: "Log ind" (Exact = true; passkey-knappen hedder "Log ind med en passkey": PasskeySubmit, Request, e-mailfeltet sendes som username; tomt felt giver discoverable credential).
-Fejl ved forkert login: StatusMessage "Error: Invalid login attempt." (engelsk).
+Fejl ved forkert login: StatusMessage "Error: Ugyldigt loginforsøg." Valideringsbeskeder (tom/ugyldig e-mail, tom adgangskode) er på dansk: "Feltet 'E-mail' er påkrævet.", "Angiv en gyldig e-mailadresse.", "Feltet 'Adgangskode' er påkrævet." (AccountMessages.cs).
 Login bruger lockoutOnFailure: false. Redirect til /Account/Lockout sker kun for en allerede låst bruger. Et login-forsøg på en låst bruger registreres også i ReAuthFailureTracker.
 Forkert password kalder ReAuthFailureTracker.RecordFailureAsync. Ved 5, 10, 15 … forsøg (multipla af Threshold) sendes sikkerhedsalarm (ISecurityAlertService) til Smtp:AdminSecurityEmails.
   Emne: "[MyGardenPlanner] Sikkerhedsalarm: Gentagne fejlede login-/re-auth-forsøg". Krop: "Bruger-ID: <id>" og "IP-adresse: <ip>".
@@ -322,6 +323,7 @@ Filer: AccessDenied.razor (+ .cs)
 Titel: Totrinsbekræftelse – MyGardenPlanner. h1: Totrinsbekræftelse.
 Label: "Godkendelseskode", checkbox "Husk denne enhed", knap "Log ind" (Exact). Link "logge ind med en gendannelseskode".
 Forkert kode: "Error: Ugyldig godkendelseskode." og et fejlforsøg registreres i ReAuthFailureTracker.
+Valideringsbeskeder (dansk): "Feltet 'Godkendelseskode' er påkrævet.", "Godkendelseskode skal være mellem 6 og 7 tegn." (kode med mellemrum eller bindestreg tæller med i længden).
 Et forsøg på en låst bruger registreres også som fejlforsøg.
 Filer: LoginWith2fa.razor (+ .cs)
 ```
@@ -331,6 +333,7 @@ Titel: Gendannelseskode – MyGardenPlanner. h1: Bekræft med gendannelseskode.
 Label: "Gendannelseskode" (Exact), knap "Log ind". Nås fra LoginWith2fa via linket "logge ind med en gendannelseskode" (kræver password-login først).
 Gyldig kode: login, redirect til forsiden. Brugt/forkert kode: "Error: Ugyldig gendannelseskode indtastet." og et fejlforsøg registreres i ReAuthFailureTracker (5 forkerte udløser sikkerhedsalarm). Ingen lockout-tælling i koden.
 Et forsøg på en låst bruger registreres også som fejlforsøg.
+Tom kode: "Feltet 'Gendannelseskode' er påkrævet.".
 Filer: LoginWithRecoveryCode.razor (+ .cs)
 ```
 ```
@@ -343,63 +346,64 @@ Filer: ConfirmEmailChange.razor (+ .cs)
 
 ### 4.3 Manage (kontosider efter login)
 
-Fælles: ManageLayout (h1 "Manage your account"). Titler og tekster er på engelsk, og titlerne har ikke "– MyGardenPlanner".
+Fælles: ManageLayout (h1 "Administrer din konto", h2 "Skift dine kontoindstillinger"). Titler og tekster er på dansk, og titlerne har suffikset "– MyGardenPlanner". ManageNavMenu-links: Profil, E-mail, Adgangskode, Eksterne logins (kun med eksterne udbydere), Totrinsbekræftelse, Passkeys, Personlige data.
 
 ```
 /Account/Manage/TwoFactorAuthentication
-Titel: Two-factor authentication (2FA). Uden 2FA: link "Add authenticator app". Med 2FA: "Disable 2FA", "Reset recovery codes" (+ advarsel ved højst 3 koder tilbage).
+Titel: Totrinsbekræftelse (2FA) – MyGardenPlanner. h3 "Totrinsbekræftelse (2FA)". Uden 2FA: link "Tilføj authenticator-app". Med 2FA: "Deaktivér 2FA", "Nulstil gendannelseskoder" (+ advarsel ved højst 3 koder tilbage).
 Filer: TwoFactorAuthentication.razor (+ .cs)
 ```
 ```
 /Account/Manage/EnableAuthenticator
-Titel: Configure authenticator app. Nøglen vises i <kbd> (små bogstaver, grupper á 4). Label "Verification Code", knap "Verify".
-Fejl: "Error: Verification code is invalid." Succes (ingen koder i forvejen): ShowRecoveryCodes på samme URL med "Your authenticator app has been verified.", h3 "Gendannelseskoder" og 10 x code.recovery-code.
+Titel: Konfigurer authenticator-app – MyGardenPlanner. Nøglen vises i <kbd> (små bogstaver, grupper á 4). Label "Bekræftelseskode", knap "Bekræft".
+Fejl: "Error: Bekræftelseskoden er ugyldig." Succes (ingen koder i forvejen): ShowRecoveryCodes på samme URL med "Din authenticator-app er bekræftet.", h3 "Gendannelseskoder" og 10 x code.recovery-code.
 Filer: EnableAuthenticator.razor (+ .cs), Shared\ShowRecoveryCodes.razor (+ .cs)
 ```
 ```
 /Account/Manage/Passkeys
-Titel: Manage your passkeys. h3 "Manage your passkeys".
-Tom: "No passkeys are registered." Knap "Add a new passkey" (PasskeySubmit, Create). Liste: tabel med navn ("Unnamed passkey" uden navn) og knapperne "Rename"/"Delete".
+Titel: Administrer dine passkeys – MyGardenPlanner. h3 "Administrer dine passkeys".
+Tom: "Der er ikke registreret nogen passkeys." Knap "Tilføj en ny passkey" (PasskeySubmit, Create). Liste: tabel med navn ("Passkey uden navn" uden navn) og knapperne "Omdøb"/"Slet"
 Filer: Passkeys.razor (+ .cs), Shared\PasskeySubmit.razor (+ .razor.js)
 ```
 ```
 /Account/Manage/RenamePasskey/{id}
-Ingen PageTitle. h4 "Enter a name for your passkey" (uden navn). Label "Passkey name", knap "Continue".
-Succes: redirect til Passkeys med "Passkey updated successfully."
+Titel: Omdøb passkey – MyGardenPlanner. h4 "Angiv et navn til din passkey" (uden navn). Label "Passkey-navn", knap "Fortsæt".
+Succes: redirect til Passkeys med "Passkeyen er opdateret."
 Filer: RenamePasskey.razor (+ .cs)
 ```
 ```
 /Account/Manage/Email
-Titel: Manage email. h3 "Manage email". Static SSR.
-Labels: "New email" (Exact = true, forudfyldt med nuværende e-mail), deaktiveret felt "Email". Knap: "Change email".
-Besked: "Confirmation link to change email sent. Please check your email." (success), "Your email is unchanged." ved uændret e-mail.
-Link "Click here to confirm your new email" vises kun med IdentityNoOpEmailSender og Identity:ShowEmailLinks = true.
-Ugyldig e-mail: ValidationMessage (.validation-message).
-Ubekræftet e-mail: knappen "Send verification email" giver "Verification email sent. Please check your email." og (samme betingelser) linket "Click here to verify your email". Ikke dækket af E2E: brugere med ubekræftet e-mail kan ikke logge ind (RequireConfirmedAccount), så kun bUnit dækker det.
+Titel: Administrer e-mail – MyGardenPlanner. h3 "Administrer e-mail". Static SSR.
+Labels: "Ny e-mail" (Exact = true, forudfyldt med nuværende e-mail), deaktiveret felt "E-mail". Knap: "Skift e-mail".
+Besked: "Bekræftelseslink til skift af e-mail er sendt. Tjek din e-mail." (success), "Din e-mail er uændret." ved uændret e-mail.
+Link "Klik her for at bekræfte din nye e-mail" vises kun med IdentityNoOpEmailSender og Identity:ShowEmailLinks = true.
+Ugyldig e-mail: ValidationMessage (.validation-message) "Angiv en gyldig e-mailadresse.".
+Ubekræftet e-mail: knappen "Send bekræftelses-e-mail" giver "Bekræftelses-e-mail er sendt. Tjek din e-mail." og (samme betingelser) linket "Klik her for at bekræfte din e-mail". Ikke dækket af E2E: brugere med ubekræftet e-mail kan ikke logge ind (RequireConfirmedAccount), så kun bUnit dækker det.
 Filer: Email.razor (+ .cs)
 ```
 ```
 /Account/Manage/ChangePassword
-Titel: Change password. h3 "Change password". Static SSR.
-Labels (Exact = true): "Old password", "New password", "Confirm password". Knap: "Update password".
-Succes: redirect til samme side, besked "Your password has been changed".
-Forkert nuværende password: "Error: Incorrect password." (Identity-standardtekst).
-Valideringsfejl (.validation-message): "The New password must be at least 6 and at max 100 characters long." og "The new password and confirmation password do not match.".
+Titel: Skift adgangskode – MyGardenPlanner. h3 "Skift adgangskode". Static SSR.
+Labels (Exact = true): "Nuværende adgangskode", "Ny adgangskode", "Bekræft ny adgangskode". Knap: "Opdater adgangskode".
+Succes: redirect til samme side, besked "Din adgangskode er ændret."
+Forkert nuværende password: "Error: Adgangskoden er forkert." (DanishIdentityErrorDescriber).
+Valideringsfejl (.validation-message): "Adgangskoden skal være mindst 6 og højst 100 tegn." og "Adgangskoden og bekræftelsen er ikke ens.".
 Brugere uden lokalt password redirectes til Account/Manage/SetPassword.
 Filer: ChangePassword.razor (+ .cs)
 ```
 ```
 /Account/Manage/PersonalData
-Titel: Personal Data. h3 "Personal Data". Static SSR.
-Knap "Download" (POST til /Account/Manage/DownloadPersonalData, kræver login). Link "Delete" til /Account/Manage/DeletePersonalData.
+Titel: Personlige data – MyGardenPlanner. h3 "Personlige data". Static SSR.
+Knap "Download" (POST til /Account/Manage/DownloadPersonalData, kræver login). Link "Slet" til /Account/Manage/DeletePersonalData.
+Ukendt bruger ved Download giver 404 med teksten "Brugeren med ID '…' kunne ikke indlæses.".
 Filen PersonalData.json: nøgler fra [PersonalData]-felterne (fx "Email") samt eksterne login-nøgler. "Authenticator Key" eksporteres ikke.
 Filer: PersonalData.razor (+ .cs), IdentityComponentsEndpointRouteBuilderExtensions.cs, PersonalDataExporter.cs
 ```
 ```
 /Account/Manage/DeletePersonalData
-Titel: Delete Personal Data. h3 "Delete Personal Data".
-Felt "Password" (kun hvis brugeren har password), knap "Delete data and close my account".
-Forkert password: "Error: Incorrect password.". Eneste ejer i have med andre medlemmer: "Error: You are the only owner of gardens shared with other members: <haver>. Ownership must be transferred before your account can be deleted." Fejlet DeleteAsync: "Error: Your account could not be deleted. Please try again." Succes: data og konto slettes, bruger logges ud, redirect til forsiden.
+Titel: Slet personlige data – MyGardenPlanner. h3 "Slet personlige data".
+Felt "Adgangskode" (kun hvis brugeren har password), knap "Slet data og luk min konto".
+Forkert password: "Error: Adgangskoden er forkert.". Eneste ejer i have med andre medlemmer: "Error: Du er eneste ejer af haver, der deles med andre medlemmer: <haver>. Ejerskabet skal overdrages, før din konto kan slettes." Fejlet DeleteAsync: "Error: Din konto kunne ikke slettes. Prøv igen." Succes: data og konto slettes, bruger logges ud, redirect til forsiden.
 Filer: DeletePersonalData.razor (+ .cs), AccountDeletionService.cs, IAccountDeletionService.cs
 ```
 
@@ -633,15 +637,15 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ~~Filer til Upload: ReloadableLoginRateLimiter, RateLimitingServicesExtensions, policy-editors, AuthorizationServicesExtensions, cookie-opsætning, Adgangsrettigheder.md~~
 
 ### R8 – Lokalisering (prioritet 8, efter R1–R3)
-- R8.1 `Register.razor.cs`: valideringsbeskeder (StringLength, Compare) og Display-navne er på engelsk.
-- R8.2 `Login.razor.cs`: fejlbeskeden "Error: Invalid login attempt." er på engelsk.
-- R8.3 Manage-siderne (TwoFactorAuthentication, EnableAuthenticator, Passkeys, RenamePasskey) og StatusMessage-teksterne er på engelsk. Login-siderne er på dansk.
-- R8.4 `RenamePasskey.razor` har ingen PageTitle.
-- R8.5 ChangePassword: fejlbeskeder fra Identity-password-politikken (fx "Error: Passwords must have at least one digit") er engelske og ikke dækket af test, da politikken ikke er i konteksten.
-- R8.6 `StatusMessage` skelner danger/success på præfikset "Error" (afsnit 3). Ved lokalisering skal præfikset bevares, eller konventionen ændres.
-- R8.7 Alle hardcodede forventede tekster i E2E-testene (A–J) og afsnit 4 skal opdateres sammen med tekstændringerne.
+~~- R8.1 `Register.razor.cs`: valideringsbeskeder (StringLength, Compare) og Display-navne er på engelsk.~~
+~~- R8.2 `Login.razor.cs`: fejlbeskeden "Error: Invalid login attempt." er på engelsk.~~
+~~- R8.3 Manage-siderne (TwoFactorAuthentication, EnableAuthenticator, Passkeys, RenamePasskey) og StatusMessage-teksterne er på engelsk. Login-siderne er på dansk.~~
+~~- R8.4 `RenamePasskey.razor` har ingen PageTitle.~~
+~~- R8.5 ChangePassword: fejlbeskeder fra Identity-password-politikken (fx "Error: Passwords must have at least one digit") er engelske og ikke dækket af test, da politikken ikke er i konteksten.~~
+~~- R8.6 `StatusMessage` skelner danger/success på præfikset "Error" (afsnit 3). Ved lokalisering skal præfikset bevares, eller konventionen ændres.~~
+~~- R8.7 Alle hardcodede forventede tekster i E2E-testene (A–J) og afsnit 4 skal opdateres sammen med tekstændringerne.~~
 
-Filer til Upload: de berørte sider, StatusMessage
+~~Filer til Upload: de berørte sider, StatusMessage~~
 
 ### R9 – Test-oprydning (prioritet 9, sidst)
 - R9.1 Dedup: `TabNavigation.SelectAsync` dubleres af `JitRequestsPage.SelectTabAsync` og `SecurityPolicyPage.SelectTabAsync`. `AmountParser` dubleres af `PricingCalculatorTests.ParseAmount`.
@@ -660,6 +664,11 @@ Filer til Upload: de berørte E2E-filer
 - R10.2 Tilbyd en backup-fil af brugerens data, som kun kan bruges, hvis brugeren vender tilbage.
 - R10.3 Layer 2/3-data (bede, planer m.m.) skal medtages i AccountDeletionService (eller kaskade), når de bygges.
 - R10.4 AccountDeletionService bruger ExecuteDelete og skriver derfor ingen AuditLog-rækker. Overvej en eksplicit audit-post som dokumentation.
-- R10.5 Kontosider på engelsk (blokeringsbesked mv.) lokaliseres i R8.
+~~- R10.5 Kontosider på engelsk (blokeringsbesked mv.) lokaliseres i R8.~~
 
 Filer til Upload: AccountDeletionService, DeletePersonalData, Garden-entiteterne
+
+### Backlog (ikke tildelt gruppe)
+- B1 `EnableAuthenticator.razor.cs`: issuer i otpauth-URI'en er "Microsoft.AspNetCore.Identity.UI" og vises som kontonavn i authenticator-apps. Overvej "MyGardenPlanner". Ændrer ikke nøglen, men eksisterende poster i brugernes apps beholder det gamle navn. Tjek E2E-hjælpere, der læser URI'en.
+- B2 `AccessDenied.razor.cs`: statusbeskeden til brugere uden 2FA ("Adgang til denne funktion kræver, at du har totrinsbekræftelse aktiveret på din konto.") har ikke "Error"-præfiks og vises derfor som success (grøn) i StatusMessage. Overvej "Error: "-præfiks. Det er en adfærdsændring: opdatér NoMfa-assert (D3, KorrektStepUpTests) og afsnit 4.2.
+ 

@@ -62,7 +62,7 @@ internal static partial class IdentityComponentsEndpointRouteBuilderExtensions
             var user = await userManager.GetUserAsync(context.User);
             if (user is null)
             {
-                return Results.NotFound($"Unable to load user with ID '{userManager.GetUserId(context.User)}'.");
+                return Results.NotFound(AccountMessages.UserNotLoadedDetail(userManager.GetUserId(context.User)));
             }
 
             var userId = await userManager.GetUserIdAsync(user);
@@ -120,7 +120,7 @@ internal static partial class IdentityComponentsEndpointRouteBuilderExtensions
             var user = await userManager.GetUserAsync(context.User);
             if (user is null)
             {
-                return Results.NotFound($"Unable to load user with ID '{userManager.GetUserId(context.User)}'.");
+                return Results.NotFound(AccountMessages.UserNotLoadedDetail(userManager.GetUserId(context.User)));
             }
 
             var userId = await userManager.GetUserIdAsync(user);

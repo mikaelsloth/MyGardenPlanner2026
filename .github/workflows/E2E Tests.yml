@@ -85,11 +85,11 @@ jobs:
 
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pwsh MyGardenPlanner2026.Tests.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+        run: pwsh MyGardenPlanner2026.Tests.E2E/bin/Release/net11.0/playwright.ps1 install --with-deps chromium
 
       - name: Install Playwright system dependencies
         if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: pwsh MyGardenPlanner2026.Tests.E2E/bin/Release/net10.0/playwright.ps1 install-deps chromium
+        run: pwsh MyGardenPlanner2026.Tests.E2E/bin/Release/net11.0/playwright.ps1 install-deps chromium
 
       - name: Run E2E tests
         run: dotnet test MyGardenPlanner2026.Tests.E2E/MyGardenPlanner2026.Tests.E2E.csproj --configuration Release --no-build

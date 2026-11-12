@@ -132,7 +132,7 @@ public sealed partial class OnboardingService(
             Layer = request.Layer,
             Category = request.Category,
             BillingCycle = request.BillingCycle,
-            AddOnQuantities = new Dictionary<Guid, int>(request.AddOnQuantities),
+            AddOnQuantities = [with(request.AddOnQuantities)],
             CreatedAtUtc = now,
             ExpiresUtc = now.Add(CheckoutDraftLifetime)
         };

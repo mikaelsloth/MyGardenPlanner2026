@@ -49,7 +49,8 @@ public partial class Login
         }
         else
         {
-            if (!editContext.Validate())
+            bool validate = await editContext.ValidateAsync(HttpContext.RequestAborted);
+            if (!validate)
             {
                 return;
             }

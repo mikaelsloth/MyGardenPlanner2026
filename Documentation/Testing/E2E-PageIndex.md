@@ -643,9 +643,9 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ~~- R8.4 `RenamePasskey.razor` har ingen PageTitle.~~
 ~~- R8.5 ChangePassword: fejlbeskeder fra Identity-password-politikken (fx "Error: Passwords must have at least one digit") er engelske og ikke dækket af test, da politikken ikke er i konteksten.~~
 ~~- R8.6 `StatusMessage` skelner danger/success på præfikset "Error" (afsnit 3). Ved lokalisering skal præfikset bevares, eller konventionen ændres.~~
-- R8.7 Alle hardcodede forventede tekster i E2E-testene (A–J) og afsnit 4 skal opdateres sammen med tekstændringerne.
+~~- R8.7 Alle hardcodede forventede tekster i E2E-testene (A–J) og afsnit 4 skal opdateres sammen med tekstændringerne.~~
 
-Filer til Upload: de berørte sider, StatusMessage
+~~Filer til Upload: de berørte sider, StatusMessage~~
 
 ### R9 – Test-oprydning (prioritet 9, sidst)
 - R9.1 Dedup: `TabNavigation.SelectAsync` dubleres af `JitRequestsPage.SelectTabAsync` og `SecurityPolicyPage.SelectTabAsync`. `AmountParser` dubleres af `PricingCalculatorTests.ParseAmount`.

@@ -118,7 +118,7 @@ public sealed partial class KorrektStepUpTests(PlaywrightAppFixture fixture)
         var page = await fixture.LoginAndGotoAsync(SmokeTestPersonas.NoMfa, route);
 
         await Assertions.Expect(page).ToHaveURLAsync(EnableAuthenticatorUrl);
-        await SmokePageAssertions.ExpectPageAsync(page, "Configure authenticator app", "Manage your account");
+        await SmokePageAssertions.ExpectPageAsync(page, "Konfigurer authenticator-app – MyGardenPlanner", "Administrer din konto");
         await Assertions.Expect(StepUpModal.Dialog(page)).ToHaveCountAsync(0);
     }
 

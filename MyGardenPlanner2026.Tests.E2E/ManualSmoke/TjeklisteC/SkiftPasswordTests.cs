@@ -20,14 +20,14 @@ public sealed partial class SkiftPasswordTests(PlaywrightAppFixture fixture)
     private const string Checklist = "Tjekliste C";
     private const string TestName = "SkiftPassword";
 
-    // Manage-siderne er ikke oversat endnu (engelske titler/tekster) og ligger i ManageLayout (h1).
-    private const string PageTitle = "Change password";
-    private const string ManageHeading = "Manage your account";
-    private const string ChangedText = "Your password has been changed";
-    private const string WrongCurrentText = "Incorrect password";
+    // Manage-siderne ligger i ManageLayout (h1) og har titlen "<side> – MyGardenPlanner".
+    private const string PageTitle = "Skift adgangskode – MyGardenPlanner";
+    private const string ManageHeading = "Administrer din konto";
+    private const string ChangedText = "Din adgangskode er ændret.";
+    private const string WrongCurrentText = "Adgangskoden er forkert";
 
-    // Login.razor.cs: "Error: Invalid login attempt." (engelsk, ikke oversat endnu).
-    private const string InvalidLoginText = "Invalid login attempt";
+    // Login.razor.cs: "Error: Ugyldigt loginforsøg."
+    private const string InvalidLoginText = "Ugyldigt loginforsøg";
 
     private const string NewPassword = "NyAdgangskode456!";
     private const string WrongPassword = "Forkert-Adgangskode1!";
@@ -99,8 +99,8 @@ public sealed partial class SkiftPasswordTests(PlaywrightAppFixture fixture)
     }
 
     [Theory]
-    [InlineData("Ab1!", "Ab1!", "at least 6")]
-    [InlineData(NewPassword, "AndenAdgangskode789!", "do not match")]
+    [InlineData("Ab1!", "Ab1!", "mindst 6 og højst 100 tegn")]
+    [InlineData(NewPassword, "AndenAdgangskode789!", "ikke ens")]
     public async Task SkiftPassword_UgyldigtNytPassword_ViserValideringsfejl(
         string newPassword, string confirmPassword, string expectedError)
     {
@@ -131,10 +131,10 @@ public sealed partial class SkiftPasswordTests(PlaywrightAppFixture fixture)
     private static async Task SubmitPasswordFormAsync(
         IPage page, string oldPassword, string newPassword, string confirmPassword)
     {
-        await page.GetByLabel("Old password", new() { Exact = true }).FillAsync(oldPassword);
-        await page.GetByLabel("New password", new() { Exact = true }).FillAsync(newPassword);
-        await page.GetByLabel("Confirm password", new() { Exact = true }).FillAsync(confirmPassword);
-        await page.GetByRole(AriaRole.Button, new() { Name = "Update password", Exact = true }).ClickAsync();
+        await page.GetByLabel("Nuværende adgangskode", new() { Exact = true }).FillAsync(oldPassword);
+        await page.GetByLabel("Ny adgangskode", new() { Exact = true }).FillAsync(newPassword);
+        await page.GetByLabel("Bekræft ny adgangskode", new() { Exact = true }).FillAsync(confirmPassword);
+        await page.GetByRole(AriaRole.Button, new() { Name = "Opdater adgangskode", Exact = true }).ClickAsync();
     }
 
     /// <summary>Log ud (ingen log ud-knap i layoutet: ryd cookies) og åbn login-siden.</summary>

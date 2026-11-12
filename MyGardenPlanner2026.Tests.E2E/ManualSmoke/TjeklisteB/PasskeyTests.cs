@@ -19,10 +19,11 @@ public sealed partial class PasskeyTests(PlaywrightAppFixture fixture)
     private const string Checklist = "Tjekliste B";
     private const string TestName = "Passkey";
 
-    // Manage-siderne er ikke oversat endnu (engelske tekster) og ligger i ManageLayout (h1).
-    private const string ManageHeading = "Manage your account";
+    // Manage-siderne ligger i ManageLayout (h1) og har titlen "<side> – MyGardenPlanner".
+    private const string ManageHeading = "Administrer din konto";
+    private const string PasskeysTitle = "Administrer dine passkeys – MyGardenPlanner";
+    private const string RenameTitle = "Omdøb passkey – MyGardenPlanner";
     private const string PasskeyName = "E2E-nøgle";
-
     private const string DisableConditionalMediation =
         "PublicKeyCredential.isConditionalMediationAvailable = async () => false;";
 
@@ -55,25 +56,25 @@ public sealed partial class PasskeyTests(PlaywrightAppFixture fixture)
 
         // Opret passkey.
         await page.GotoAsync($"{LocalhostUri}{E2ERoutes.Passkeys}");
-        await SmokePageAssertions.ExpectPageAsync(page, "Manage your passkeys", ManageHeading);
-        await Assertions.Expect(page.GetByText("No passkeys are registered.")).ToBeVisibleAsync();
+        await SmokePageAssertions.ExpectPageAsync(page, PasskeysTitle, ManageHeading);
+        await Assertions.Expect(page.GetByText("Der er ikke registreret nogen passkeys.")).ToBeVisibleAsync();
 
-        await page.GetByRole(AriaRole.Button, new() { Name = "Add a new passkey", Exact = true }).ClickAsync();
+        await page.GetByRole(AriaRole.Button, new() { Name = "Tilføj en ny passkey", Exact = true }).ClickAsync();
         await ExpectAsync(page, "Oprettelse af passkey", () =>
             Assertions.Expect(page).ToHaveURLAsync(RenamePasskeyUrl, new() { Timeout = 10000 }));
 
-        // Navngiv passkey (RenamePasskey har ingen PageTitle, så titlen tjekkes ikke).
-        await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync(ManageHeading);
-        await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Enter a name for your passkey" }))
+        // Navngiv passkey.
+        await SmokePageAssertions.ExpectPageAsync(page, RenameTitle, ManageHeading);
+        await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Name = "Angiv et navn til din passkey" }))
             .ToBeVisibleAsync();
         await ScreenshotRecorder.CaptureAsync(page, Chapter, Checklist, TestName, "RenamePasskey");
 
-        await page.GetByLabel("Passkey name").FillAsync(PasskeyName);
-        await page.GetByRole(AriaRole.Button, new() { Name = "Continue", Exact = true }).ClickAsync();
+        await page.GetByLabel("Passkey-navn").FillAsync(PasskeyName);
+        await page.GetByRole(AriaRole.Button, new() { Name = "Fortsæt", Exact = true }).ClickAsync();
 
         await ExpectAsync(page, "Navngivning af passkey", () =>
             Assertions.Expect(page).ToHaveURLAsync(PasskeysUrl, new() { Timeout = 10000 }));
-        await Assertions.Expect(page.GetByText("Passkey updated successfully.")).ToBeVisibleAsync();
+        await Assertions.Expect(page.GetByText("Passkeyen er opdateret.")).ToBeVisibleAsync();
         await Assertions.Expect(page.GetByRole(AriaRole.Cell, new() { Name = PasskeyName, Exact = true }))
             .ToBeVisibleAsync();
         (await authenticator.CountCredentialsAsync()).Should().Be(1);
@@ -91,7 +92,7 @@ public sealed partial class PasskeyTests(PlaywrightAppFixture fixture)
 
         // Logget ind: Passkeys-siden kræver login og viser den navngivne passkey.
         await page.GotoAsync($"{LocalhostUri}{E2ERoutes.Passkeys}");
-        await SmokePageAssertions.ExpectPageAsync(page, "Manage your passkeys", ManageHeading);
+        await SmokePageAssertions.ExpectPageAsync(page, PasskeysTitle, ManageHeading);
         await Assertions.Expect(page.GetByRole(AriaRole.Cell, new() { Name = PasskeyName, Exact = true }))
             .ToBeVisibleAsync();
     }

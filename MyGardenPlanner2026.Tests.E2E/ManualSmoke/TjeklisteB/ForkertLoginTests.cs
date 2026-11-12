@@ -22,8 +22,8 @@ public sealed partial class ForkertLoginTests(PlaywrightAppFixture fixture)
     private const int WrongAttempts = 5;
     private const string WrongPassword = "Forkert-Adgangskode1!";
 
-    // Login.razor.cs: "Error: Invalid login attempt." (engelsk, ikke oversat endnu).
-    private const string InvalidLoginText = "Invalid login attempt";
+    // Login.razor.cs: "Error: Ugyldigt loginforsøg."
+    private const string InvalidLoginText = "Ugyldigt loginforsøg";
     private const string AlertSubject = "[MyGardenPlanner] Sikkerhedsalarm: Gentagne fejlede login-/re-auth-forsøg";
 
     [GeneratedRegex("/account/lockout$", RegexOptions.IgnoreCase)]

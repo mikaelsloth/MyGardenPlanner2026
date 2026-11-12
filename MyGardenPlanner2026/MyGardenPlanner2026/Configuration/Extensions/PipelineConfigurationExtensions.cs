@@ -8,7 +8,6 @@ public static class PipelineConfigurationExtensions
 
         if (app.Environment.IsDevelopment())
         {
-            app.UseWebAssemblyDebugging();
             app.UseMigrationsEndPoint();
         }
         else

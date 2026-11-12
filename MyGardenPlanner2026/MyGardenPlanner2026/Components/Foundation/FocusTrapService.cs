@@ -13,6 +13,7 @@ public sealed class FocusTrapService(IJSRuntime js) : IFocusTrapService, IAsyncD
     private readonly SemaphoreSlim moduleLock = new(1, 1);
     private IJSObjectReference? module;
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "BL0016:Unguarded JS interop call", Justification = "<Pending>")]
     public async ValueTask<IAsyncDisposable> ActivateAsync(ElementReference container)
     {
         var jsModule = await GetModuleAsync();
@@ -21,6 +22,7 @@ public sealed class FocusTrapService(IJSRuntime js) : IFocusTrapService, IAsyncD
         return new Handle(jsModule, id);
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "BL0016:Unguarded JS interop call", Justification = "<Pending>")]
     private async ValueTask<IJSObjectReference> GetModuleAsync()
     {
         await moduleLock.WaitAsync();

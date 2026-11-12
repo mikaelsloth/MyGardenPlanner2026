@@ -19,8 +19,8 @@ public sealed class FejlTrackerPolicyIKraftTests(PlaywrightAppFixture fixture)
 
     private const string WrongPassword = "Forkert-Adgangskode1!";
 
-    // Login.razor.cs: "Error: Invalid login attempt." (engelsk, ikke oversat endnu).
-    private const string InvalidLoginText = "Invalid login attempt";
+    // Login.razor.cs: "Error: Ugyldigt loginforsøg."
+    private const string InvalidLoginText = "Ugyldigt loginforsøg";
 
     [Fact]
     public async Task Threshold_AendretTil2_SenderAlarmVedAndetForkerteForsoeg()

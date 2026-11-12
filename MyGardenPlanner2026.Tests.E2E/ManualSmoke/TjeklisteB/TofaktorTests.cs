@@ -18,10 +18,10 @@ public sealed partial class TofaktorTests(PlaywrightAppFixture fixture)
     private const string Checklist = "Tjekliste B";
     private const string TestName = "2FA";
 
-    // Manage-siderne er ikke oversat endnu (engelske titler/tekster) og ligger i ManageLayout (h1).
-    private const string ManageHeading = "Manage your account";
-    private const string TwoFactorTitle = "Two-factor authentication (2FA)";
-    private const string EnableTitle = "Configure authenticator app";
+    // Manage-siderne ligger i ManageLayout (h1) og har titlen "<side> – MyGardenPlanner".
+    private const string ManageHeading = "Administrer din konto";
+    private const string TwoFactorTitle = "Totrinsbekræftelse (2FA) – MyGardenPlanner";
+    private const string EnableTitle = "Konfigurer authenticator-app – MyGardenPlanner";
 
     private const string WrongCode = "000000";
 
@@ -46,9 +46,9 @@ public sealed partial class TofaktorTests(PlaywrightAppFixture fixture)
         // 2FA-oversigten: endnu ikke aktiveret.
         await page.GotoAsync($"{fixture.RootUri}{E2ERoutes.TwoFactorAuthentication}");
         await SmokePageAssertions.ExpectPageAsync(page, TwoFactorTitle, ManageHeading);
-        var addLink = page.GetByRole(AriaRole.Link, new() { Name = "Add authenticator app", Exact = true });
+        var addLink = page.GetByRole(AriaRole.Link, new() { Name = "Tilføj authenticator-app", Exact = true });
         await Assertions.Expect(addLink).ToBeVisibleAsync();
-        await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = "Disable 2FA", Exact = true }))
+        await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = "Deaktivér 2FA", Exact = true }))
             .ToHaveCountAsync(0);
 
         await addLink.ClickAsync();
@@ -61,14 +61,14 @@ public sealed partial class TofaktorTests(PlaywrightAppFixture fixture)
         var recoveryCodes = await TwoFactorSetup.VerifyAsync(page, key);
 
         recoveryCodes.Should().HaveCount(10);
-        await Assertions.Expect(page.GetByText("Your authenticator app has been verified.")).ToBeVisibleAsync();
+        await Assertions.Expect(page.GetByText("Din authenticator-app er bekræftet.")).ToBeVisibleAsync();
         await ScreenshotRecorder.CaptureAsync(page, Chapter, Checklist, TestName, "RecoveryCodes");
 
         // 2FA-oversigten: nu aktiveret.
         await page.GotoAsync($"{fixture.RootUri}{E2ERoutes.TwoFactorAuthentication}");
-        await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = "Disable 2FA", Exact = true }))
+        await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = "Deaktivér 2FA", Exact = true }))
             .ToBeVisibleAsync();
-        await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = "Add authenticator app", Exact = true }))
+        await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = "Tilføj authenticator-app", Exact = true }))
             .ToHaveCountAsync(0);
 
         // Log ud (ingen log ud-knap i layoutet) og ind igen: 2FA-prompten.
@@ -93,7 +93,7 @@ public sealed partial class TofaktorTests(PlaywrightAppFixture fixture)
 
         await page.GotoAsync($"{fixture.RootUri}{E2ERoutes.TwoFactorAuthentication}");
         await SmokePageAssertions.ExpectPageAsync(page, TwoFactorTitle, ManageHeading);
-        await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = "Disable 2FA", Exact = true }))
+        await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = "Deaktivér 2FA", Exact = true }))
             .ToBeVisibleAsync();
     }
 }

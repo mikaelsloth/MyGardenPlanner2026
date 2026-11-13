@@ -41,6 +41,8 @@ public sealed class RedigerBasisprisTests(PlaywrightAppFixture fixture)
     [InlineData(Viewports.Desktop)]
     public async Task RedigerBasispris_MedStepUp_ViserNyePriserPaaPricingOgGendannes(int width)
     {
+        // Admin-API-kvoten er pr. bruger (appsettings: 100 pr. 60 sek.; E2E overstyrer den ikke).
+        // Ny bruger pr. test og 6 gem (3 + 3 ved gendannelse) holder testen langt under grænsen.
         var user = await fixture.SeedExtraUserAsync(RoleNames.SystemAdmin);
         var page = await AdminSubscriptionsPage.OpenAsync(fixture, user, width);
 

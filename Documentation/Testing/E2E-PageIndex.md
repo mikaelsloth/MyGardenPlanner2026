@@ -183,6 +183,8 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - Eksporten bruger sidst SØGTE filter (`CurrentFilter`), ikke de aktuelle feltværdier. `Results.Problem` skriver ikke-ASCII som \u-escapes i den rå tekst: parse JSON og læs "detail".
 - Policy-editors: "Gem" er deaktiveret (aria-disabled="true" + klassen "disabled", ikke disabled-attributten) under gem og mens step-up-modalen er åben. Succesbeskeden slutter med " Gemt kl. HH:mm:ss UTC." (sekundopløsning). Afvent aktiv knap (ToBeEnabledAsync) før næste indtastning; alarm-mailen bekræfter hvert gem.
 - En blokeret bruger kan ikke gendanne selv: åbn en ny PolicyAdmin FØR ændringen og brug den til gendannelse.
+- Delt data ved afbrudt kørsel: F1 (basispriser, delt med A2) og E5 (JIT-policy: Min = 1, Sweep = 1) gendanner i finally. Dræbes processen midt i, forbliver ændringen, til databasen droppes (lokalt ved dispose, i CI ved næste CreateAsync). Accepteret; ingen egen collection. E5 tager 2-4 minutter, fordi appen kører med rigtig tid.
+- Admin-API-kvoten (AdminActionGuard/AdminActionRateLimiter) er pr. bruger (sliding window, appsettings: 100 pr. 60 sek.; E2E overstyrer den ikke). F1 bruger en ny bruger pr. test og 6 gem (3 + 3 ved gendannelse). Kun en ugendannet kvotepolicy fra G2e kan få F1 til at ramme grænsen (fejltekst: AdminActionGuard.RateLimitedMessage).
 
 ### Step-up, re-auth og sikkerhedsalarm
 - `ReAuthenticationService` er Scoped. Login markerer kun re-auth i request-scope, så en frisk circuit har intet tidsstempel, og `StepUpReAuthModal` vises ved første beskyttede handling uden ventetid. Efter step-up gælder vinduet i samme circuit; reload = ny circuit = ny modal.
@@ -654,11 +656,11 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ~~- R9.3 `LoginPolicyIKraftTests` (G2f) har en privat kopi af `LoginAttemptStatusAsync`; dedup mod `LoginFlow.AttemptStatusAsync`.~~
 ~~- R9.4 `AuditLogEksportVolumenTests.ClickWithStepUpAsync` dublerer `ExportAsync` i `AuditLogEksportTests`.~~
 ~~- R9.5 `SecurityAlertSubject` er delt med B2-testen, som har en privat kopi.~~
-- R9.6 `SweepUdloebTests` (E5) ændrer JIT-policyen i engangsdatabasen (Min = 1, Sweep = 1) og gendanner den i finally. Afbrydes processen midt i, forbliver policyen ændret, til databasen droppes (lokalt ved dispose, i CI ved næste CreateAsync). Testen tager 2-4 minutter, fordi appen kører med rigtig tid.
-- R9.7 Basispriser deles med A2. F1 gendanner i finally; ved proces-kill kan databasen forblive ændret indtil næste CreateAsync (i CI) eller dropning (lokalt).
-- R9.8 `AdminActionGuard` har en kvote pr. bruger (ukendt grænse). F1 gemmer 6 gange pr. bruger.
+~~- R9.6 `SweepUdloebTests` (E5) ændrer JIT-policyen i engangsdatabasen (Min = 1, Sweep = 1) og gendanner den i finally. Afbrydes processen midt i, forbliver policyen ændret, til databasen droppes (lokalt ved dispose, i CI ved næste CreateAsync). Testen tager 2-4 minutter, fordi appen kører med rigtig tid.~~
+~~- R9.7 Basispriser deles med A2. F1 gendanner i finally; ved proces-kill kan databasen forblive ændret indtil næste CreateAsync (i CI) eller dropning (lokalt).~~
+~~- R9.8 `AdminActionGuard` har en kvote pr. bruger (ukendt grænse). F1 gemmer 6 gange pr. bruger.~~
 
-Filer til Upload: de berørte E2E-filer
+~~Filer til Upload: de berørte E2E-filer~~
 
 ### R10 – Kontosletning: ejerskab og backup (separat scope)
 - R10.1 Eneste ejer i en have med andre medlemmer blokerer kontosletning. Mangler: ejerskabsoverdragelse (vælg ny ejer) eller bekræftelse af, at alles adgang til havedata slettes (dog ikke andre brugeres konti).

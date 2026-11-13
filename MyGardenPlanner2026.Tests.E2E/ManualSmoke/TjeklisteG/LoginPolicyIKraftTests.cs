@@ -1,9 +1,8 @@
 ﻿namespace MyGardenPlanner2026.Tests.E2E.ManualSmoke.TjeklisteG;
 
 using FluentAssertions;
-using Microsoft.Playwright;
 using MyGardenPlanner2026.Core.Entities.Common;
-using Ids = MyGardenPlanner2026.Tests.E2E.SecurityPolicyPage.FieldIds;
+using Ids = SecurityPolicyPage.FieldIds;
 
 /// <summary>
 /// Tjekliste G2 (Login rate limit): PermitLimit 1000 → 2 (E2E-seed er 1000 via PlaywrightAppFixture,
@@ -42,9 +41,9 @@ public sealed class LoginPolicyIKraftTests(PlaywrightAppFixture fixture)
             await SecurityAlerts.ExpectPolicyChangedAsync(
                 fixture.SmtpServer, policyAdminId, SecurityPolicyPage.LoginRateLimit.PolicyName);
 
-            var first = await LoginAttemptStatusAsync(userPage, user);
-            var second = await LoginAttemptStatusAsync(userPage, user);
-            var third = await LoginAttemptStatusAsync(userPage, user);
+            var first = await LoginFlow.AttemptStatusAsync(userPage, fixture.RootUri, user);
+            var second = await LoginFlow.AttemptStatusAsync(userPage, fixture.RootUri, user);
+            var third = await LoginFlow.AttemptStatusAsync(userPage, fixture.RootUri, user);
 
             first.Should().NotBe(TooManyRequests, "1. loginforsøg ligger inden for den nye grænse (2)");
             second.Should().NotBe(TooManyRequests, "2. loginforsøg ligger inden for den nye grænse (2)");
@@ -56,23 +55,5 @@ public sealed class LoginPolicyIKraftTests(PlaywrightAppFixture fixture)
                 fixture, policyPage, SecurityPolicyPage.LoginRateLimit, Ids.LoginPermit,
                 policyAdmin, OriginalPermit);
         }
-    }
-
-    /// <summary>
-    /// Ét loginforsøg (log ud via ryd cookies, åbn login, send formularen) og HTTP-statussen på POST'en.
-    /// Fanges via svaret, da LoginFlow venter på URL-skift, som et 429-svar aldrig giver.
-    /// </summary>
-    private async Task<int> LoginAttemptStatusAsync(IPage page, SmokeTestUser user)
-    {
-        await page.Context.ClearCookiesAsync();
-        await page.GotoAsync($"{fixture.RootUri}{E2ERoutes.Login}");
-        await LoginFlow.FillCredentialsAsync(page, user.Email, user.Password);
-
-        var response = await page.RunAndWaitForResponseAsync(
-            () => LoginFlow.LoginButton(page).ClickAsync(),
-            r => r.Request.Method == "POST"
-                 && r.Url.Contains(E2ERoutes.Login, StringComparison.OrdinalIgnoreCase));
-
-        return response.Status;
     }
 }

@@ -124,7 +124,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
   - `RefreshRequestsAsync(page, showHistory?)`: genindlæser "Mine anmodninger" via fanehop Godkend → Anmod (ingen sideindlæsning). "Vis afviste/udløbne" nulstilles ved hop og krydses af igen med showHistory.
   - WithdrawAsync(page, årsag, rolle): klikker “Træk tilbage” og “Ja, træk tilbage” i rækken og afventer beskeden. WithdrawButton/ConfirmWithdrawButton(page, årsag), CancelledLabel.
 - `PricingMatrix` (/pricing): `OpenAnonymousAsync(fixture, bredde)`, `SelectCycleAsync(page, cyklus)`, `ExpectPriceAsync(page, lag, kategori, beløb)`.
-- `PricingCalculatorPage` (/pricing): `WaitUntilInteractiveAsync(page)`, `CalculateAsync(page, lag, kategori, cyklus, aktive, arkiverede)`, `ExpectResultAsync(page, vægtet, rabat%, subtotal, tilkøb, total)`.
+- `PricingCalculatorPage` (/pricing): `WaitUntilInteractiveAsync(page)`, `CalculateAsync(page, lag, kategori, cyklus, aktive, arkiverede = 0, tilkøb = null)` (tilkøb: `AddOnQuantity(type, antal)`, findes via label), `ExpectResultAsync(page, vægtet, rabat%, subtotal, tilkøb, total)`. Bruges af A2 og F2.
 - `PricingAddOns` (/pricing, tilkøbskort): `Cards(page)`, `Card/Price(page, navn, cyklus)`, `ExpectPriceAsync(page, navn, cyklus, beløb)`.
 - `PricingVolumeDiscounts`: `PercentCell/ExpectPercentAsync(page, rækkenavn, procent)` (rabattabellen på /pricing, række fx "2 - 5 haver").
 
@@ -648,8 +648,8 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ~~Filer til Upload: de berørte sider, StatusMessage~~
 
 ### R9 – Test-oprydning (prioritet 9, sidst)
-- R9.1 `AmountParser` dubleres af `PricingCalculatorTests.ParseAmount`.
-- R9.2 `PricingCalculatorTests` (A2) har egne kopier af calculator-selektorer, ParseAmount/ParseNumber og pris-polling; dedup mod `PricingCalculatorPage`, `AmountParser` og `PriceAssertions`.
+~~- R9.1 `AmountParser` dubleres af `PricingCalculatorTests.ParseAmount`.~~
+~~- R9.2 `PricingCalculatorTests` (A2) har egne kopier af calculator-selektorer, ParseAmount/ParseNumber og pris-polling; dedup mod `PricingCalculatorPage`, `AmountParser` og `PriceAssertions`.~~
 - R9.3 `LoginPolicyIKraftTests` (G2f) har en privat kopi af `LoginAttemptStatusAsync`; dedup mod `LoginFlow.AttemptStatusAsync`.
 - R9.4 `AuditLogEksportVolumenTests.ClickWithStepUpAsync` dublerer `ExportAsync` i `AuditLogEksportTests`.
 - R9.5 `SecurityAlertSubject` er delt med B2-testen, som har en privat kopi.

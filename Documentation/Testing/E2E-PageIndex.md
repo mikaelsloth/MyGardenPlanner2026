@@ -139,6 +139,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
   - Resultater: `Rows/RowsFor(page, entitet)/Cell(række, kolonne)`, `EmptyState`, `PaginationInfo`, Forrige/Næste
   - Modal: `DetailDialog`, `JsonBlock(page, 0|1)`, `CloseButton`, `DetailBackdrop`, `DetailsButton(række)`
   - Eksport: `ExportButton`, `BackgroundExportButton`, `ThresholdConfirm` (+Button/Cancel), `ExportError`, `ExportSuccess`; `JobRows`
+  - Eksport med step-up: `ExportAsync(page, bruger, format?)` (vælger evt. format, klikker, step-up ved behov, returnerer opsnappet URL; kun uden bekræftelse/afvisning), `ClickExportAsync(page, bruger, udfald)`, `ClickWithStepUpAsync(page, bruger, knap, udfald)` (udfald = tilstand, der viser, at handlingen gik igennem uden modal; kalderen afventer selv resultatet)
 - `AuditLogExport`: window.open opsnappes (init-script, installeres af `AuditLogPage.OpenAsync`). Verificerer ikke selve browser-downloadet.
   - `WaitForNewUrlAsync(page, kendtAntal)`, `FetchAsync(page, url, timeoutMs?)` (standard 30 sek.) → `ExportResponse(Status, ContentType, ContentDisposition, Body, Text, FileName)`
   - `ParseCsv`, `JsonRowCount`, `XlsxRowCount`, `IsZip`, `XlsxColumn(body, kolonne)`
@@ -186,7 +187,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 ### Step-up, re-auth og sikkerhedsalarm
 - `ReAuthenticationService` er Scoped. Login markerer kun re-auth i request-scope, så en frisk circuit har intet tidsstempel, og `StepUpReAuthModal` vises ved første beskyttede handling uden ventetid. Efter step-up gælder vinduet i samme circuit; reload = ny circuit = ny modal.
 - Kun udløb i samme circuit kræver ventetid: E2E-appen kører med MaxAgeMinutes=1, og testen venter ca. 62 sek.
-- Eksport: step-up vises kun første gang i en circuit inden for re-auth-vinduet. Hjælpere, der eksporterer flere gange, må håndtere begge udfald (modal eller direkte URL).
+- Eksport: step-up vises kun første gang i en circuit inden for re-auth-vinduet. Hjælpere, der eksporterer flere gange, må håndtere begge udfald (modal eller direkte URL).  Brug `AuditLogPage.ExportAsync`/`ClickWithStepUpAsync`.
 - Admin-sider kræver 2FA: NoMfa redirectes til EnableAuthenticator og når aldrig modalen.
 - Fejltæller (`ReAuthFailureTracker`): alarm sendes ved hvert multiplum af Threshold (5, 10, 15 …) inden for vinduet. Fejl tælles samlet pr. bruger på tværs af login og step-up (vindue 2 dage). Brug en ny bruger pr. test (`SeedExtraUserAsync`).
 - Modal: forkert password og forkert TOTP (med korrekt password) tælles. Tom TOTP tælles ikke. Skift mellem de to fejltyper, når flere forsøg skal afventes, så den nye fejltekst adskiller sig fra den forrige.
@@ -651,7 +652,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ~~- R9.1 `AmountParser` dubleres af `PricingCalculatorTests.ParseAmount`.~~
 ~~- R9.2 `PricingCalculatorTests` (A2) har egne kopier af calculator-selektorer, ParseAmount/ParseNumber og pris-polling; dedup mod `PricingCalculatorPage`, `AmountParser` og `PriceAssertions`.~~
 ~~- R9.3 `LoginPolicyIKraftTests` (G2f) har en privat kopi af `LoginAttemptStatusAsync`; dedup mod `LoginFlow.AttemptStatusAsync`.~~
-- R9.4 `AuditLogEksportVolumenTests.ClickWithStepUpAsync` dublerer `ExportAsync` i `AuditLogEksportTests`.
+~~- R9.4 `AuditLogEksportVolumenTests.ClickWithStepUpAsync` dublerer `ExportAsync` i `AuditLogEksportTests`.~~
 - R9.5 `SecurityAlertSubject` er delt med B2-testen, som har en privat kopi.
 - R9.6 `SweepUdloebTests` (E5) ændrer JIT-policyen i engangsdatabasen (Min = 1, Sweep = 1) og gendanner den i finally. Afbrydes processen midt i, forbliver policyen ændret, til databasen droppes (lokalt ved dispose, i CI ved næste CreateAsync). Testen tager 2-4 minutter, fordi appen kører med rigtig tid.
 - R9.7 Basispriser deles med A2. F1 gendanner i finally; ved proces-kill kan databasen forblive ændret indtil næste CreateAsync (i CI) eller dropning (lokalt).

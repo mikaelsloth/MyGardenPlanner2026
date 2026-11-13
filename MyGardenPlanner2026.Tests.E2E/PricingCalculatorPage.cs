@@ -3,11 +3,14 @@
 using Microsoft.Playwright;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Layer1;
+using MyGardenPlanner2026.Infrastructure.Data.Seed;
 using System.Globalization;
 
+/// <summary>Et tilkøb og antal, der angives i pricing-calculatoren.</summary>
+public sealed record AddOnQuantity(AddOnType Type, int Quantity);
+
 /// <summary>
-/// Page-object for .pricing-calculator på /pricing (uden tilkøb). Samme selektorer og afventning som
-/// PricingCalculatorTests (A2), som endnu har sin egen kopi (kandidat til dedup).
+/// Page-object for .pricing-calculator på /pricing. Bruges af A2 og F2.
 /// </summary>
 public static class PricingCalculatorPage
 {
@@ -28,14 +31,18 @@ public static class PricingCalculatorPage
             async () => await Calculator(page).Locator(".pricing-calculator-result").CountAsync() == 1,
             description: "Pricing-calculatoren blev ikke interaktiv eller viste intet resultat");
 
-    /// <summary>Udfylder og klikker "Beregn pris". Venter ikke på resultatet (brug ExpectResultAsync).</summary>
+    /// <summary>
+    /// Udfylder (inkl. valgfri tilkøb) og klikker "Beregn pris". Venter ikke på resultatet
+    /// (brug ExpectResultAsync). Tilkøb findes via label (navn fra DefaultSubscriptionAddOnCatalog).
+    /// </summary>
     public static async Task CalculateAsync(
         IPage page,
         GardenAccessLevel level,
         AccessCategory category,
         BillingCycle cycle,
         int activeGardens,
-        int archivedGardens = 0)
+        int archivedGardens = 0,
+        IReadOnlyList<AddOnQuantity>? addOns = null)
     {
         var calculator = Calculator(page);
 
@@ -45,6 +52,18 @@ public static class PricingCalculatorPage
 
         await SetNumberAsync(calculator.Locator("#calc-active"), activeGardens);
         await SetNumberAsync(calculator.Locator("#calc-archived"), archivedGardens);
+
+        if (addOns is { Count: > 0 })
+        {
+            var addOnNames = new DefaultSubscriptionAddOnCatalog().GetDefaultAddOns()
+                .ToDictionary(a => a.Type, a => a.Name);
+
+            foreach (var addOn in addOns)
+            {
+                var input = calculator.GetByLabel(addOnNames[addOn.Type], new() { Exact = true });
+                await SetNumberAsync(input, addOn.Quantity);
+            }
+        }
 
         await CalculateButton(page).ClickAsync();
     }

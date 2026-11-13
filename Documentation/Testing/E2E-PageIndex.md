@@ -56,7 +56,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 
 - `LoginFlow`: `LoginAsync` = `SubmitPasswordAsync` + (hvis 2FA) `SubmitTwoFactorCodeAsync`. Bruger labels "E-mail" og "Adgangskode", knappen "Log ind" og "Godkendelseskode".
   - `FillCredentialsAsync(page, email, password)`, `LoginButton(page)`
-  - AttemptAsync(page, rootUri, user): ryd cookies, åbn login, send formularen (ingen 2FA) og returnér LoginAttemptResponse(Status, Body, RetryAfter) for POST’en (Body kun ved status ≥ 400). AttemptStatusAsync returnerer kun statussen. Til tests, hvor svaret kan være 429.
+    - AttemptAsync(page, rootUri, user): ryd cookies, åbn login, send formularen (ingen 2FA) og returnér LoginAttemptResponse(Status, Body, RetryAfter) for POST’en (Body kun ved status ≥ 400). Bruges af H1. AttemptStatusAsync returnerer kun statussen (bruges af G2f). Til tests, hvor svaret kan være 429.
 - `PublicNavigation.ClickRegisterAsync(page)`: klikker "Opret bruger" i headeren, eller åbner NavDrawer, hvis linket er skjult.
 - `RegisteredUserFlow` (nye brugere via UI, adgangskode = `SmokeTestDataSeeder.SharedPassword`, e-mail e2e-`<guid>`@test.dk):
   - `NewEmail()`, `RegisterAsync(page, email?)` (fra /Account/Register til RegisterConfirmation), `ConfirmAsync(page)` (følger bekræftelseslinket), `RegisterAndConfirmAsync(page, rootUri)`
@@ -650,7 +650,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ### R9 – Test-oprydning (prioritet 9, sidst)
 ~~- R9.1 `AmountParser` dubleres af `PricingCalculatorTests.ParseAmount`.~~
 ~~- R9.2 `PricingCalculatorTests` (A2) har egne kopier af calculator-selektorer, ParseAmount/ParseNumber og pris-polling; dedup mod `PricingCalculatorPage`, `AmountParser` og `PriceAssertions`.~~
-- R9.3 `LoginPolicyIKraftTests` (G2f) har en privat kopi af `LoginAttemptStatusAsync`; dedup mod `LoginFlow.AttemptStatusAsync`.
+~~- R9.3 `LoginPolicyIKraftTests` (G2f) har en privat kopi af `LoginAttemptStatusAsync`; dedup mod `LoginFlow.AttemptStatusAsync`.~~
 - R9.4 `AuditLogEksportVolumenTests.ClickWithStepUpAsync` dublerer `ExportAsync` i `AuditLogEksportTests`.
 - R9.5 `SecurityAlertSubject` er delt med B2-testen, som har en privat kopi.
 - R9.6 `SweepUdloebTests` (E5) ændrer JIT-policyen i engangsdatabasen (Min = 1, Sweep = 1) og gendanner den i finally. Afbrydes processen midt i, forbliver policyen ændret, til databasen droppes (lokalt ved dispose, i CI ved næste CreateAsync). Testen tager 2-4 minutter, fordi appen kører med rigtig tid.

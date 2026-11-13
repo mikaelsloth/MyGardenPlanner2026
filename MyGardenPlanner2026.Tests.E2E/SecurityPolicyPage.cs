@@ -111,8 +111,8 @@ public static class SecurityPolicyPage
     {
         var hopTab = tab == LoginRateLimit ? Jit : LoginRateLimit;
 
-        await SelectTabAsync(page, hopTab.Name);
-        await SelectTabAsync(page, tab.Name);
+        await TabNavigation.SelectAsync(page, hopTab.Name);
+        await TabNavigation.SelectAsync(page, tab.Name);
         await Assertions.Expect(Field(page, readyFieldId)).ToBeVisibleAsync();
     }
 
@@ -159,28 +159,9 @@ public static class SecurityPolicyPage
         await ExpectFieldValueAsync(page, fieldId, original);
     }
 
-    /// <summary>
-    /// Vælger en fane og gentager klikket, til fanen er aktiv (uden et forbundet kredsløb ignoreres klik).
-    /// Aktiv fane har klassen "active" og aria-selected="true"; øvrige faner har aria-selected="false".
-    /// </summary>
-    public static Task SelectTabAsync(IPage page, string name)
-    {
-        var tab = page.GetByRole(AriaRole.Tab, new() { Name = name });
-
-        return BlazorInteraction.ActUntilAsync(
-            () => tab.ClickAsync(),
-            async () =>
-            {
-                var classes = await tab.GetAttributeAsync("class") ?? string.Empty;
-                return classes.Split(' ', StringSplitOptions.RemoveEmptyEntries).Contains("active");
-            },
-            maxAttempts: 12,
-            description: $"Fanen '{name}' blev ikke valgt");
-    }
-
     public static async Task OpenExportJobTabAsync(IPage page)
     {
-        await SelectTabAsync(page, "AuditLog-eksport");
+        await TabNavigation.SelectAsync(page, "AuditLog-eksport");
         await Assertions.Expect(Retention(page)).ToBeVisibleAsync();
     }
 
@@ -213,8 +194,8 @@ public static class SecurityPolicyPage
     /// </summary>
     public static async Task OpenJitTabAsync(IPage page)
     {
-        await SelectTabAsync(page, OtherTabName);
-        await SelectTabAsync(page, JitTabName);
+        await TabNavigation.SelectAsync(page, OtherTabName);
+        await TabNavigation.SelectAsync(page, JitTabName);
         await Assertions.Expect(JitMin(page)).ToBeVisibleAsync();
     }
 

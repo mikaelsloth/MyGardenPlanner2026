@@ -49,7 +49,7 @@ public sealed class EgenAnmodningIKoeTests(PlaywrightAppFixture fixture)
         await JitRequestsPage.RequestAndWaitAsync(pageA, RoleNames.SystemAdmin, Minutes, reasonA);
 
         // A's kø: B's række (positiv kontrol), ikke A's egen.
-        await JitRequestsPage.SelectTabAsync(pageA, JitRequestsPage.ApproveTabName);
+        await TabNavigation.SelectAsync(pageA, JitRequestsPage.ApproveTabName);
         await Assertions.Expect(JitRequestsPage.QueueRow(pageA, reasonB)).ToBeVisibleAsync();
         await Assertions.Expect(JitRequestsPage.QueueRow(pageA, reasonB)).ToContainTextAsync("@test.dk");
         await Assertions.Expect(JitRequestsPage.QueueRow(pageA, reasonB)).Not.ToContainTextAsync("(Slettet)");
@@ -58,20 +58,20 @@ public sealed class EgenAnmodningIKoeTests(PlaywrightAppFixture fixture)
         await ScreenshotRecorder.CaptureAsync(pageA, Chapter, Checklist, TestName, "E2_Koe");
 
         // A's egen anmodning står under "Mine anmodninger".
-        await JitRequestsPage.SelectTabAsync(pageA, JitRequestsPage.RequestTabName);
+        await TabNavigation.SelectAsync(pageA, JitRequestsPage.RequestTabName);
         var ownRow = JitRequestsPage.RequestRow(pageA, reasonA);
         await Assertions.Expect(ownRow).ToBeVisibleAsync();
         await Assertions.Expect(JitRequestsPage.StatusBadge(ownRow)).ToHaveTextAsync(JitRequestsPage.PendingLabel);
 
         // Auditor (#4, AuditViewer): B's række, ikke A's (SystemAdmin).
         var pageAuditor = await JitRequestsPage.OpenAsync(fixture, SmokeTestPersonas.Auditor);
-        await JitRequestsPage.SelectTabAsync(pageAuditor, JitRequestsPage.ApproveTabName);
+        await TabNavigation.SelectAsync(pageAuditor, JitRequestsPage.ApproveTabName);
         await Assertions.Expect(JitRequestsPage.QueueRow(pageAuditor, reasonB)).ToBeVisibleAsync();
         await Assertions.Expect(JitRequestsPage.QueueRow(pageAuditor, reasonA)).ToHaveCountAsync(0);
 
         // Admin (#1, SystemAdmin): A's række, ikke B's (AuditViewer).
         var pageAdmin = await JitRequestsPage.OpenAsync(fixture, SmokeTestPersonas.Admin);
-        await JitRequestsPage.SelectTabAsync(pageAdmin, JitRequestsPage.ApproveTabName);
+        await TabNavigation.SelectAsync(pageAdmin, JitRequestsPage.ApproveTabName);
         await Assertions.Expect(JitRequestsPage.QueueRow(pageAdmin, reasonA)).ToBeVisibleAsync();
         await Assertions.Expect(JitRequestsPage.QueueRow(pageAdmin, reasonB)).ToHaveCountAsync(0);
     }

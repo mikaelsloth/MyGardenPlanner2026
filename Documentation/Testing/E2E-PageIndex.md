@@ -83,7 +83,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - `AccessAssertions.ExpectAccessDeniedAsync(page)`: URL indeholder /Account/AccessDenied, titel/h1 "Adgang nægtet", teksten "Du har ikke adgang til denne ressource.".
 - `PriceAssertions.ExpectValueAsync(locator, forventet, parse, beskrivelse)` / `ExpectAmountAsync(locator, forventet, beskrivelse)`: poller en vist værdi (5 sek.).
 - `AmountParser.Parse(text)`: beløb ud fra cifrene i en vist pris (C2). `ParseNumber(text)`: heltal, brøk og procent (fx "85 %").
-- `TabNavigation.SelectAsync(page, name)`: vælger role=tab og gentager klikket, til fanen er "active".
+- `TabNavigation.SelectAsync(page, name)`: vælger role=tab (Exact = true) og gentager klikket, til fanen er "active". Bruges af alle page-objects og tests (JitRequestsPage, SecurityPolicyPage, AdminSubscriptionsPage m.fl.); ingen egne kopier.
 
 ### 2.5 Admin og pricing: page-objects
 
@@ -648,7 +648,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ~~Filer til Upload: de berørte sider, StatusMessage~~
 
 ### R9 – Test-oprydning (prioritet 9, sidst)
-- R9.1 Dedup: `TabNavigation.SelectAsync` dubleres af `JitRequestsPage.SelectTabAsync` og `SecurityPolicyPage.SelectTabAsync`. `AmountParser` dubleres af `PricingCalculatorTests.ParseAmount`.
+- R9.1 `AmountParser` dubleres af `PricingCalculatorTests.ParseAmount`.
 - R9.2 `PricingCalculatorTests` (A2) har egne kopier af calculator-selektorer, ParseAmount/ParseNumber og pris-polling; dedup mod `PricingCalculatorPage`, `AmountParser` og `PriceAssertions`.
 - R9.3 `LoginPolicyIKraftTests` (G2f) har en privat kopi af `LoginAttemptStatusAsync`; dedup mod `LoginFlow.AttemptStatusAsync`.
 - R9.4 `AuditLogEksportVolumenTests.ClickWithStepUpAsync` dublerer `ExportAsync` i `AuditLogEksportTests`.

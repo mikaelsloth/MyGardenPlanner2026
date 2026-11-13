@@ -34,7 +34,11 @@ public partial class AuditLogExportJobsPanel
     }
 
     /// <summary>Kaldes af parent-siden, når et nyt job er oprettet, eller brugeren klikker "Opdater".</summary>
-    public Task RefreshAsync() => LoadAsync();
+    public async Task RefreshAsync()
+    {
+        await LoadAsync();
+        await InvokeAsync(StateHasChanged);
+    }
 
     private async Task LoadAsync() => jobs = currentUserId is null
             ? []

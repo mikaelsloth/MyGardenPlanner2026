@@ -99,16 +99,16 @@ public sealed partial class SkiftPasswordTests(PlaywrightAppFixture fixture)
     }
 
     [Theory]
-    [InlineData("Ab1!", "Ab1!", "mindst 6 og højst 100 tegn")]
-    [InlineData(NewPassword, "AndenAdgangskode789!", "ikke ens")]
+    [InlineData("Ab1!", "Ab1!", "Input.NewPassword", "mindst 6 og højst 100 tegn")]
+    [InlineData(NewPassword, "AndenAdgangskode789!", "Input.ConfirmPassword", "ikke ens")]
     public async Task SkiftPassword_UgyldigtNytPassword_ViserValideringsfejl(
-        string newPassword, string confirmPassword, string expectedError)
+        string newPassword, string confirmPassword, string field, string expectedError)
     {
         var (page, user) = await LoginNewUserOnChangePasswordPageAsync();
 
         await SubmitPasswordFormAsync(page, user.Password, newPassword, confirmPassword);
 
-        await Assertions.Expect(page.Locator(".validation-message")).ToContainTextAsync(expectedError);
+        await Assertions.Expect(page.Locator($"[data-valmsg-for='{field}']")).ToContainTextAsync(expectedError);
         await Assertions.Expect(page.GetByText(ChangedText)).ToHaveCountAsync(0);
     }
 

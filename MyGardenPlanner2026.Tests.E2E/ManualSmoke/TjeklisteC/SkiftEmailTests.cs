@@ -105,7 +105,7 @@ public sealed class SkiftEmailTests(PlaywrightAppFixture fixture)
 
         await SubmitNewEmailAsync(page, "ikke-en-email");
 
-        await Assertions.Expect(page.Locator(".validation-message"))
+        await Assertions.Expect(page.Locator("[data-valmsg-for='Input.NewEmail']"))
             .ToContainTextAsync("Angiv en gyldig e-mailadresse.");
         await Assertions.Expect(page.GetByText(ChangeSentText)).ToHaveCountAsync(0);
         await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = ConfirmLinkText })).ToHaveCountAsync(0);

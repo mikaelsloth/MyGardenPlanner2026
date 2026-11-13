@@ -37,7 +37,7 @@ public partial class AuditLogExportJobsPanel
     public async Task RefreshAsync()
     {
         await LoadAsync();
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadAsync() => jobs = currentUserId is null

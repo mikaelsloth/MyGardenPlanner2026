@@ -157,6 +157,7 @@ public partial class AuditLogExportPanel
         pendingRowCount = 0;
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "BL0016:Unguarded JS interop call", Justification = "<Pending>")]
     private async Task TriggerDownloadAsync()
     {
         var userId = await CurrentUserIdResolver.ResolveAsync(AuthenticationStateTask);

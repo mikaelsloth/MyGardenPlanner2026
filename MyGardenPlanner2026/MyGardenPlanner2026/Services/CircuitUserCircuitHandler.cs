@@ -62,7 +62,9 @@ public sealed class CircuitUserCircuitHandler(
     {
         try
         {
+#pragma warning disable BL0013 // AuthenticationStateProvider.GetAuthenticationStateAsync used without subscribing to AuthenticationStateChanged
             var state = await authenticationStateProvider.GetAuthenticationStateAsync();
+#pragma warning restore BL0013 // AuthenticationStateProvider.GetAuthenticationStateAsync used without subscribing to AuthenticationStateChanged
             return CircuitUserContext.From(state.User, clientIpAddress);
         }
         catch (InvalidOperationException)

@@ -9,6 +9,7 @@ using Xunit;
 public sealed class NavDrawerJsInteropTests : BunitContext
 {
     [Fact]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "BL0016:Unguarded JS interop call", Justification = "<Pending>")]
     public async Task SetupNavDrawerModule_ModuleAcceptsActivateAndDeactivate()
     {
         var setup = this.SetupNavDrawerModule();

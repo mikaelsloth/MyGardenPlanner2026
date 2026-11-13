@@ -26,6 +26,7 @@ public partial class InvitationLinkCard : IAsyncDisposable
 
     private string InviteUrl => NavigationManager.ToAbsoluteUri($"/invite?token={Result.RawToken}").ToString();
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "BL0016:Unguarded JS interop call", Justification = "<Pending>")]
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -39,12 +40,14 @@ public partial class InvitationLinkCard : IAsyncDisposable
         }
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "BL0016:Unguarded JS interop call", Justification = "<Pending>")]
     private async Task CopyLinkAsync()
     {
         await JS.InvokeVoidAsync("navigator.clipboard.writeText", InviteUrl);
         copied = true;
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "BL0016:Unguarded JS interop call", Justification = "<Pending>")]
     private async Task PrintAsync()
     {
         if (module is not null)

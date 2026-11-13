@@ -19,7 +19,7 @@ public static class AuditLogPage
 
     /// <summary>
     /// Logger ind, åbner siden og venter, til den er interaktiv. Installerer opsnapning af window.open
-    /// (se <see cref="AuditLogEport"/>) FØR første navigation.
+    /// (se <see cref="AuditLogExport"/>) FØR første navigation.
     /// </summary>
     public static async Task<IPage> OpenAsync(PlaywrightAppFixture fixture, SmokeTestUser user, int? width = null)
     {
@@ -154,6 +154,50 @@ public static class AuditLogPage
     public static ILocator ExportPanel(IPage page) => page.Locator(".audit-log-export-panel");
 
     public static ILocator ExportFormatSelect(IPage page) => page.Locator("#export-format");
+
+    /// <summary>
+    /// Klikker en knap og gennemfører step-up, hvis modalen vises (kun første gang inden for re-auth-vinduet
+    /// i circuiten). Handlingen fortsætter af sig selv efter modalen. Kalderen afventer selv udfaldet.
+    /// <paramref name="outcomeWithoutModal"/> er det udfald, der viser, at handlingen er gået igennem uden modal.
+    /// </summary>
+    public static async Task ClickWithStepUpAsync(
+        IPage page, SmokeTestUser user, ILocator button, Func<Task<bool>> outcomeWithoutModal)
+    {
+        await button.ClickAsync();
+
+        await BlazorInteraction.WaitUntilAsync(
+            async () => await StepUpModal.Dialog(page).IsVisibleAsync() || await outcomeWithoutModal(),
+            TimeSpan.FromSeconds(30));
+
+        if (await StepUpModal.Dialog(page).IsVisibleAsync())
+        {
+            await StepUpModal.CompleteAsync(page, user);
+        }
+    }
+
+    /// <summary>Klikker "Eksportér" med step-up ved behov (se <see cref="ClickWithStepUpAsync"/>).</summary>
+    public static Task ClickExportAsync(IPage page, SmokeTestUser user, Func<Task<bool>> outcomeWithoutModal) =>
+        ClickWithStepUpAsync(page, user, ExportButton(page), outcomeWithoutModal);
+
+    /// <summary>
+    /// Vælger evt. format, klikker "Eksportér", gennemfører step-up, hvis modalen vises, og returnerer den
+    /// opsnappede eksport-URL. Kun til eksporter uden bekræftelse eller afvisning.
+    /// </summary>
+    public static async Task<string> ExportAsync(
+        IPage page, SmokeTestUser user, AuditLogExportFormat? format = null)
+    {
+        var known = (await AuditLogExport.OpenedUrlsAsync(page)).Count;
+
+        if (format is not null)
+        {
+            await SelectExportFormatAsync(page, format.Value);
+        }
+
+        await ClickExportAsync(
+            page, user, async () => (await AuditLogExport.OpenedUrlsAsync(page)).Count > known);
+
+        return await AuditLogExport.WaitForNewUrlAsync(page, known);
+    }
 
     public static ILocator ExportButton(IPage page) =>
         page.GetByRole(AriaRole.Button, new() { Name = "Eksportér", Exact = true });

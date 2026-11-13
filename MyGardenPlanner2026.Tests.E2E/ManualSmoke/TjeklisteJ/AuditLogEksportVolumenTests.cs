@@ -57,7 +57,7 @@ public sealed class AuditLogEksportVolumenTests(PlaywrightAppFixture fixture)
 
         await SearchAsync(page, data, data.Day(0), data.Day(0), Rows50000);
 
-        var url = await ExportAsync(page, user);
+        var url = await AuditLogPage.ExportAsync(page, user);
 
         await Assertions.Expect(AuditLogPage.ThresholdConfirm(page)).ToHaveCountAsync(0);
         await Assertions.Expect(AuditLogPage.ExportError(page)).ToHaveCountAsync(0);
@@ -83,7 +83,7 @@ public sealed class AuditLogEksportVolumenTests(PlaywrightAppFixture fixture)
         await SearchAsync(page, data, data.Day(0), data.Day(1), Rows50001);
 
         // Eksportér: bekræftelsen vises, og intet download startes.
-        await ClickExportAsync(page, user, () => AuditLogPage.ThresholdConfirm(page).IsVisibleAsync());
+        await AuditLogPage.ClickExportAsync(page, user, () => AuditLogPage.ThresholdConfirm(page).IsVisibleAsync());
 
         await Assertions.Expect(AuditLogPage.ThresholdConfirm(page))
             .ToContainTextAsync("Eksporten omfatter 50001 rækker og kan tage et øjeblik. Fortsæt?");
@@ -98,7 +98,7 @@ public sealed class AuditLogEksportVolumenTests(PlaywrightAppFixture fixture)
         openedAfterCancel.Should().BeFalse("Annullér må ikke starte et download");
 
         // Igen, og denne gang "Ja, fortsæt".
-        await ClickExportAsync(page, user, () => AuditLogPage.ThresholdConfirm(page).IsVisibleAsync());
+        await AuditLogPage.ClickExportAsync(page, user, () => AuditLogPage.ThresholdConfirm(page).IsVisibleAsync());
         await Assertions.Expect(AuditLogPage.ThresholdConfirm(page)).ToBeVisibleAsync();
         await AuditLogPage.ThresholdConfirmButton(page).ClickAsync();
 
@@ -122,7 +122,7 @@ public sealed class AuditLogEksportVolumenTests(PlaywrightAppFixture fixture)
 
         await SearchAsync(page, data, data.Day(0), data.Day(2), Rows250000);
 
-        await ClickExportAsync(page, user, () => AuditLogPage.ThresholdConfirm(page).IsVisibleAsync());
+        await AuditLogPage.ClickExportAsync(page, user, () => AuditLogPage.ThresholdConfirm(page).IsVisibleAsync());
 
         await Assertions.Expect(AuditLogPage.ThresholdConfirm(page))
             .ToContainTextAsync("Eksporten omfatter 250000 rækker og kan tage et øjeblik. Fortsæt?");
@@ -144,7 +144,7 @@ public sealed class AuditLogEksportVolumenTests(PlaywrightAppFixture fixture)
 
         await SearchAsync(page, data, from: null, to: null, Rows250001);
 
-        await ClickExportAsync(page, user, () => AuditLogPage.ExportError(page).IsVisibleAsync());
+        await AuditLogPage.ClickExportAsync(page, user, () => AuditLogPage.ExportError(page).IsVisibleAsync());
 
         await Assertions.Expect(AuditLogPage.ExportError(page)).ToContainTextAsync(
             "Error: Eksporten omfatter 250001 rækker, hvilket overstiger grænsen på 250000. " +
@@ -166,7 +166,7 @@ public sealed class AuditLogEksportVolumenTests(PlaywrightAppFixture fixture)
         // Et gyldigt token fås ved at eksportere 50.000 rækker. Derefter fjernes datofiltrene fra URL'en, så
         // filteret rammer alle 250.001 rækker. UI'et ville aldrig udstede en sådan URL.
         await SearchAsync(page, data, data.Day(0), data.Day(0), Rows50000);
-        var url = await ExportAsync(page, user);
+        var url = await AuditLogPage.ExportAsync(page, user);
 
         var uri = new Uri(url);
         var query = HttpUtility.ParseQueryString(uri.Query);
@@ -195,7 +195,7 @@ public sealed class AuditLogEksportVolumenTests(PlaywrightAppFixture fixture)
 
         await SearchAsync(page, data, from: null, to: null, Rows250001);
 
-        await ClickWithStepUpAsync(
+        await AuditLogPage.ClickWithStepUpAsync(
             page, user, AuditLogPage.BackgroundExportButton(page), () => AuditLogPage.ExportError(page).IsVisibleAsync());
 
         await Assertions.Expect(AuditLogPage.ExportError(page)).ToContainTextAsync("Eksporten omfatter 250001 rækker");
@@ -216,7 +216,7 @@ public sealed class AuditLogEksportVolumenTests(PlaywrightAppFixture fixture)
         await SearchAsync(page, data, data.Day(0), data.Day(0), Rows50000);
         await AuditLogPage.SelectExportFormatAsync(page, AuditLogExportFormat.Xlsx);
 
-        var url = await ExportAsync(page, user);
+        var url = await AuditLogPage.ExportAsync(page, user);
 
         await Assertions.Expect(AuditLogPage.ExportError(page)).ToHaveCountAsync(0);
         var response = await AuditLogExport.FetchAsync(page, url, FetchTimeoutMs);
@@ -236,7 +236,7 @@ public sealed class AuditLogEksportVolumenTests(PlaywrightAppFixture fixture)
         await SearchAsync(page, data, data.Day(0), data.Day(1), Rows50001);
         await AuditLogPage.SelectExportFormatAsync(page, AuditLogExportFormat.Xlsx);
 
-        await ClickExportAsync(page, user, () => AuditLogPage.ExportError(page).IsVisibleAsync());
+        await AuditLogPage.ClickExportAsync(page, user, () => AuditLogPage.ExportError(page).IsVisibleAsync());
 
         await Assertions.Expect(AuditLogPage.ExportError(page)).ToContainTextAsync(
             "Error: Excel-eksporten omfatter 50001 rækker, hvilket overstiger grænsen på 50000. " +
@@ -258,7 +258,7 @@ public sealed class AuditLogEksportVolumenTests(PlaywrightAppFixture fixture)
         // Et gyldigt token fås ved en CSV-eksport af 50.001 rækker (med bekræftelse). Derefter skiftes
         // formatet til Xlsx i URL'en. UI'et ville aldrig udstede en sådan URL.
         await SearchAsync(page, data, data.Day(0), data.Day(1), Rows50001);
-        await ClickExportAsync(page, user, () => AuditLogPage.ThresholdConfirm(page).IsVisibleAsync());
+        await AuditLogPage.ClickExportAsync(page, user, () => AuditLogPage.ThresholdConfirm(page).IsVisibleAsync());
         await AuditLogPage.ThresholdConfirmButton(page).ClickAsync();
         var url = await AuditLogExport.WaitForNewUrlAsync(page, knownCount: 0);
         url.Should().Contain("format=Csv");
@@ -284,7 +284,7 @@ public sealed class AuditLogEksportVolumenTests(PlaywrightAppFixture fixture)
         await SearchAsync(page, data, data.Day(0), data.Day(1), Rows50001);
         await AuditLogPage.SelectExportFormatAsync(page, AuditLogExportFormat.Xlsx);
 
-        await ClickWithStepUpAsync(
+        await AuditLogPage.ClickWithStepUpAsync(
             page, user, AuditLogPage.BackgroundExportButton(page), () => AuditLogPage.ExportError(page).IsVisibleAsync());
 
         await Assertions.Expect(AuditLogPage.ExportError(page)).ToContainTextAsync("Excel-eksporten omfatter 50001 rækker");
@@ -305,7 +305,7 @@ public sealed class AuditLogEksportVolumenTests(PlaywrightAppFixture fixture)
         var page = await AuditLogPage.OpenAsync(fixture, user, width);
 
         await SearchAsync(page, data, data.Day(0), data.Day(1), Rows50001);
-        await ClickExportAsync(page, user, () => AuditLogPage.ThresholdConfirm(page).IsVisibleAsync());
+        await AuditLogPage.ClickExportAsync(page, user, () => AuditLogPage.ThresholdConfirm(page).IsVisibleAsync());
         await Assertions.Expect(AuditLogPage.ThresholdConfirm(page)).ToBeVisibleAsync();
         await Assertions.Expect(page.Locator("[class*='skeleton']")).ToHaveCountAsync(0);
         await ScreenshotRecorder.CaptureAsync(page, Chapter, Checklist, TestName, "J4_Bekraeftelse");
@@ -314,7 +314,7 @@ public sealed class AuditLogEksportVolumenTests(PlaywrightAppFixture fixture)
         await Assertions.Expect(AuditLogPage.ThresholdConfirm(page)).ToHaveCountAsync(0);
 
         await SearchAsync(page, data, from: null, to: null, Rows250001);
-        await ClickExportAsync(page, user, () => AuditLogPage.ExportError(page).IsVisibleAsync());
+        await AuditLogPage.ClickExportAsync(page, user, () => AuditLogPage.ExportError(page).IsVisibleAsync());
         await Assertions.Expect(AuditLogPage.ExportError(page)).ToContainTextAsync("overstiger grænsen på 250000");
         await ScreenshotRecorder.CaptureAsync(page, Chapter, Checklist, TestName, "J4_Graense");
     }
@@ -361,41 +361,5 @@ public sealed class AuditLogEksportVolumenTests(PlaywrightAppFixture fixture)
 
         await Assertions.Expect(AuditLogPage.PaginationInfo(page))
             .ToContainTextAsync($"({expectedTotal} rækker i alt)", new() { Timeout = SearchTimeoutMs });
-    }
-
-    /// <summary>
-    /// Klikker "Eksportér" og gennemfører step-up, hvis modalen vises. Returnerer den opsnappede URL.
-    /// Bruges kun, når eksporten ikke kræver bekræftelse.
-    /// </summary>
-    private static async Task<string> ExportAsync(IPage page, SmokeTestUser user)
-    {
-        var known = (await AuditLogExport.OpenedUrlsAsync(page)).Count;
-
-        await ClickExportAsync(page, user, async () => (await AuditLogExport.OpenedUrlsAsync(page)).Count > known);
-
-        return await AuditLogExport.WaitForNewUrlAsync(page, known);
-    }
-
-    private static Task ClickExportAsync(IPage page, SmokeTestUser user, Func<Task<bool>> outcomeWithoutModal) =>
-        ClickWithStepUpAsync(page, user, AuditLogPage.ExportButton(page), outcomeWithoutModal);
-
-    /// <summary>
-    /// Klikker og gennemfører step-up, hvis modalen vises (kun første gang inden for re-auth-vinduet i
-    /// circuiten). Handlingen fortsætter af sig selv efter modalen. Kalderen afventer selv udfaldet.
-    /// Dublerer ExportAsync i AuditLogEksportTests (kandidat til dedup).
-    /// </summary>
-    private static async Task ClickWithStepUpAsync(
-        IPage page, SmokeTestUser user, ILocator button, Func<Task<bool>> outcomeWithoutModal)
-    {
-        await button.ClickAsync();
-
-        await BlazorInteraction.WaitUntilAsync(
-            async () => await StepUpModal.Dialog(page).IsVisibleAsync() || await outcomeWithoutModal(),
-            TimeSpan.FromSeconds(30));
-
-        if (await StepUpModal.Dialog(page).IsVisibleAsync())
-        {
-            await StepUpModal.CompleteAsync(page, user);
-        }
     }
 }

@@ -121,7 +121,7 @@ public sealed partial class AuditLogEksportTests(PlaywrightAppFixture fixture)
         var page = await AuditLogPage.OpenAsync(fixture, user, Viewports.Desktop);
         await FilterByEmailAsync(page, seed);
 
-        var url = await ExportAsync(page, user, format);
+        var url = await AuditLogPage.ExportAsync(page, user, format);
         var response = await AuditLogExport.FetchAsync(page, url);
 
         url.Should().Contain($"format={format}").And.Contain($"userEmail={Uri.EscapeDataString(seed.Email)}");
@@ -153,7 +153,7 @@ public sealed partial class AuditLogEksportTests(PlaywrightAppFixture fixture)
         // Ændret men ikke søgt: må ikke påvirke eksporten.
         await AuditLogPage.SetTextAsync(AuditLogPage.UserEmailInput(page), AuditLogTestData.NewUserEmail());
 
-        var url = await ExportAsync(page, user, AuditLogExportFormat.Csv);
+        var url = await AuditLogPage.ExportAsync(page, user, AuditLogExportFormat.Csv);
         var response = await AuditLogExport.FetchAsync(page, url);
 
         url.Should().Contain($"userEmail={Uri.EscapeDataString(seed.Email)}");
@@ -282,30 +282,6 @@ public sealed partial class AuditLogEksportTests(PlaywrightAppFixture fixture)
 
         await Assertions.Expect(AuditLogPage.Rows(page)).ToHaveCountAsync(3);
         await Assertions.Expect(AuditLogPage.Rows(page).Filter(new() { HasText = seed.Email })).ToHaveCountAsync(3);
-    }
-
-    /// <summary>
-    /// Vælger format, klikker Eksportér og gennemfører step-up, hvis modalen vises (kun første gang inden for
-    /// re-auth-vinduet i circuiten). Returnerer den opsnappede eksport-URL.
-    /// </summary>
-    private static async Task<string> ExportAsync(IPage page, SmokeTestUser user, AuditLogExportFormat format)
-    {
-        var known = (await AuditLogExport.OpenedUrlsAsync(page)).Count;
-
-        await AuditLogPage.SelectExportFormatAsync(page, format);
-        await AuditLogPage.ExportButton(page).ClickAsync();
-
-        await BlazorInteraction.WaitUntilAsync(
-            async () => await StepUpModal.Dialog(page).IsVisibleAsync()
-                || (await AuditLogExport.OpenedUrlsAsync(page)).Count > known,
-            TimeSpan.FromSeconds(10));
-
-        if (await StepUpModal.Dialog(page).IsVisibleAsync())
-        {
-            await StepUpModal.CompleteAsync(page, user);
-        }
-
-        return await AuditLogExport.WaitForNewUrlAsync(page, known);
     }
 
     [GeneratedRegex("^(Afventer|Kører|Klar)$")]

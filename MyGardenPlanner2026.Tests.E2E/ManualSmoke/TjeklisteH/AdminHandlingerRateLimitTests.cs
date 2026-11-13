@@ -59,7 +59,7 @@ public sealed class AdminHandlingerRateLimitTests(PlaywrightAppFixture fixture)
                 SecurityPolicyPage.AdminApiRateLimit.SavedText);
 
             // b. 10 hurtige gem af ReAuth MaxAge.
-            await SecurityPolicyPage.SelectTabAsync(pageA, SecurityPolicyPage.ReAuth.Name);
+            await TabNavigation.SelectAsync(pageA, SecurityPolicyPage.ReAuth.Name);
             await SecurityPolicyPage.ExpectFieldValueAsync(pageA, Ids.ReAuthMaxAge, OriginalMaxAge);
 
             for (var i = 0; i < MaxAgeSequence.Length; i++)
@@ -87,8 +87,8 @@ public sealed class AdminHandlingerRateLimitTests(PlaywrightAppFixture fixture)
             await ScreenshotRecorder.CaptureAsync(pageA, Chapter, Checklist, TestName, "H2");
 
             // Værdien er stadig den sidste gemte (15), ikke 25: fanehop genindlæser editoren.
-            await SecurityPolicyPage.SelectTabAsync(pageA, SecurityPolicyPage.Jit.Name);
-            await SecurityPolicyPage.SelectTabAsync(pageA, SecurityPolicyPage.ReAuth.Name);
+            await TabNavigation.SelectAsync(pageA, SecurityPolicyPage.Jit.Name);
+            await TabNavigation.SelectAsync(pageA, SecurityPolicyPage.ReAuth.Name);
             await SecurityPolicyPage.ExpectFieldValueAsync(pageA, Ids.ReAuthMaxAge, MaxAgeSequence[^1]);
         }
         finally
@@ -162,8 +162,8 @@ public sealed class AdminHandlingerRateLimitTests(PlaywrightAppFixture fixture)
     /// <summary>Fanehop via JIT-fanen genindlæser fanens editor, så den viser de aktuelle værdier.</summary>
     private static async Task OpenTabFreshAsync(IPage page, SecurityPolicyPage.PolicyTab tab, string fieldId)
     {
-        await SecurityPolicyPage.SelectTabAsync(page, SecurityPolicyPage.Jit.Name);
-        await SecurityPolicyPage.SelectTabAsync(page, tab.Name);
+        await TabNavigation.SelectAsync(page, SecurityPolicyPage.Jit.Name);
+        await TabNavigation.SelectAsync(page, tab.Name);
         await Assertions.Expect(SecurityPolicyPage.Field(page, fieldId)).ToBeVisibleAsync();
     }
 }

@@ -81,7 +81,7 @@ public sealed class SikkerhedspolicyFanerTests(PlaywrightAppFixture fixture)
 
         foreach (var expectation in Expectations)
         {
-            await SecurityPolicyPage.SelectTabAsync(page, expectation.Tab.Name);
+            await TabNavigation.SelectAsync(page, expectation.Tab.Name);
 
             foreach (var field in expectation.Fields)
             {

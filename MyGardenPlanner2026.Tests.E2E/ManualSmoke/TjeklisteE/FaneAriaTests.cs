@@ -25,7 +25,7 @@ public sealed class FaneAriaTests(PlaywrightAppFixture fixture)
         await Assertions.Expect(JitRequestsPage.Tab(page, JitRequestsPage.ApproveTabName))
             .ToHaveAttributeAsync("aria-selected", "false");
 
-        await JitRequestsPage.SelectTabAsync(page, JitRequestsPage.ApproveTabName);
+        await TabNavigation.SelectAsync(page, JitRequestsPage.ApproveTabName);
 
         await Assertions.Expect(JitRequestsPage.Tab(page, JitRequestsPage.ApproveTabName))
             .ToHaveAttributeAsync("aria-selected", "true");

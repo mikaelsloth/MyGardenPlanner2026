@@ -54,7 +54,7 @@ public sealed class TilbagetraekningTests(PlaywrightAppFixture fixture)
 
         // Admins kø: kontrolrækken (positiv kontrol), ikke A's.
         var pageAdmin = await JitRequestsPage.OpenAsync(fixture, SmokeTestPersonas.Admin);
-        await JitRequestsPage.SelectTabAsync(pageAdmin, JitRequestsPage.ApproveTabName);
+        await TabNavigation.SelectAsync(pageAdmin, JitRequestsPage.ApproveTabName);
         await Assertions.Expect(JitRequestsPage.QueueRow(pageAdmin, controlReason)).ToBeVisibleAsync();
         await Assertions.Expect(JitRequestsPage.QueueRow(pageAdmin, reasonA)).ToHaveCountAsync(0);
 

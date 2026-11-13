@@ -49,8 +49,8 @@ public sealed class ReAuthPolicyIKraftTests(PlaywrightAppFixture fixture)
             }
 
             // Fanehop rydder succesbeskeden (så en ny besked beviser en ny gem) og genindlæser editoren.
-            await SecurityPolicyPage.SelectTabAsync(page, SecurityPolicyPage.Jit.Name);
-            await SecurityPolicyPage.SelectTabAsync(page, SecurityPolicyPage.ReAuth.Name);
+            await TabNavigation.SelectAsync(page, SecurityPolicyPage.Jit.Name);
+            await TabNavigation.SelectAsync(page, SecurityPolicyPage.ReAuth.Name);
             await SecurityPolicyPage.ExpectFieldValueAsync(page, Ids.ReAuthMaxAge, ChangedMaxAge);
 
             // Samme circuit, efter det gamle vindues udløb: ingen modal, fordi vinduet nu er 10 min.

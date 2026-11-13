@@ -82,7 +82,7 @@ public sealed partial class KorrektStepUpTests(PlaywrightAppFixture fixture)
             .ToContainTextAsync(SecurityPolicyPage.ExportJobSavedText);
 
         // 2. Inden for vinduet: fanehop rydder statusbeskeden, så en ny besked beviser en ny gem.
-        await SecurityPolicyPage.SelectTabAsync(page, "Login rate limit");
+        await TabNavigation.SelectAsync(page, "Login rate limit");
         await SecurityPolicyPage.OpenExportJobTabAsync(page);
         (await SecurityPolicyPage.ReadRetentionAsync(page)).Should().Be(changed);
 

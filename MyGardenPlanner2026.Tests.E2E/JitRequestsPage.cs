@@ -58,31 +58,15 @@ public static class JitRequestsPage
     /// </summary>
     public static async Task WaitUntilInteractiveAsync(IPage page)
     {
-        await SelectTabAsync(page, ApproveTabName);
+        await TabNavigation.SelectAsync(page, ApproveTabName);
         await Assertions.Expect(QueueHeading(page)).ToBeVisibleAsync();
 
-        await SelectTabAsync(page, RequestTabName);
+        await TabNavigation.SelectAsync(page, RequestTabName);
         await Assertions.Expect(RequestHeading(page)).ToBeVisibleAsync();
     }
 
     public static ILocator Tab(IPage page, string name) =>
         page.GetByRole(AriaRole.Tab, new() { Name = name, Exact = true });
-
-    /// <summary>Vælger en fane og gentager klikket, til fanen er aktiv (klassen "active").</summary>
-    public static Task SelectTabAsync(IPage page, string name)
-    {
-        var tab = Tab(page, name);
-
-        return BlazorInteraction.ActUntilAsync(
-            () => tab.ClickAsync(),
-            async () =>
-            {
-                var classes = await tab.GetAttributeAsync("class") ?? string.Empty;
-                return classes.Split(' ', StringSplitOptions.RemoveEmptyEntries).Contains("active");
-            },
-            maxAttempts: 12,
-            description: $"Fanen '{name}' blev ikke valgt");
-    }
 
     public static ILocator RequestHeading(IPage page) =>
         page.GetByRole(AriaRole.Heading, new() { Name = RequestHeadingText });
@@ -155,8 +139,8 @@ public static class JitRequestsPage
     /// </summary>
     public static async Task RefreshRequestsAsync(IPage page, bool showHistory = false)
     {
-        await SelectTabAsync(page, ApproveTabName);
-        await SelectTabAsync(page, RequestTabName);
+        await TabNavigation.SelectAsync(page, ApproveTabName);
+        await TabNavigation.SelectAsync(page, RequestTabName);
         await Assertions.Expect(RequestHeading(page)).ToBeVisibleAsync();
 
         if (showHistory)
@@ -195,7 +179,7 @@ public static class JitRequestsPage
     private static async Task DecideAsync(
         IPage page, SmokeTestUser approver, string reason, ILocator button, string expectedMessage)
     {
-        await SelectTabAsync(page, ApproveTabName);
+        await TabNavigation.SelectAsync(page, ApproveTabName);
         await Assertions.Expect(QueueRow(page, reason)).ToBeVisibleAsync();
 
         await StepUpModal.OpenAsync(page, () => button.ClickAsync());

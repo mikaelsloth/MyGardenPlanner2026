@@ -24,7 +24,6 @@ public sealed partial class ForkertLoginTests(PlaywrightAppFixture fixture)
 
     // Login.razor.cs: "Error: Ugyldigt loginforsøg."
     private const string InvalidLoginText = "Ugyldigt loginforsøg";
-    private const string AlertSubject = "[MyGardenPlanner] Sikkerhedsalarm: Gentagne fejlede login-/re-auth-forsøg";
 
     [GeneratedRegex("/account/lockout$", RegexOptions.IgnoreCase)]
     private static partial Regex LockoutUrl { get; }
@@ -59,7 +58,7 @@ public sealed partial class ForkertLoginTests(PlaywrightAppFixture fixture)
             m => m.Body.Contains(userId, StringComparison.Ordinal));
 
         alert.Recipients.Should().Equal(PlaywrightAppFixture.SecurityAlertRecipient);
-        alert.Subject.Should().Be(AlertSubject);
+        alert.Subject.Should().Be(PlaywrightAppFixture.SecurityAlertSubject);
         alert.Body.Should().Contain($"Bruger-ID: {userId}").And.Contain("IP-adresse:");
 
         await page.GotoAsync($"{fixture.RootUri}{E2ERoutes.Login}");

@@ -26,9 +26,13 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
     private string? _lastLoggedTest;
 
     public string RootUri { get; private set; } = default!;
+
     public const string SecurityAlertRecipient = "sikkerhedsalarm@e2e.test";
+
+    /// <summary>Forventet emne på sikkerhedsalarmen (hardcodet, ikke udledt af produktionskoden). Bruges af B2 og D2.</summary>
     public const string SecurityAlertSubject =
-    "[MyGardenPlanner] Sikkerhedsalarm: Gentagne fejlede login-/re-auth-forsøg";
+        "[MyGardenPlanner] Sikkerhedsalarm: Gentagne fejlede login-/re-auth-forsøg";
+
     /// <summary>E2E-appens re-auth-vindue. 1 minut gør, at udløbstesten (Tjekliste D3) kun venter ca. ét minut.</summary>
     public const int ReAuthMaxAgeMinutes = 1;
     /// <summary>Standard-timeout for Expect. CI-runnere er langsomme til at forbinde Blazor-circuits.</summary>

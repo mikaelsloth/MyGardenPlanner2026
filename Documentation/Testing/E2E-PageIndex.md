@@ -18,7 +18,7 @@ Indeks til manual smoke tests i MyGardenPlanner2026.Tests.E2E. Kun det, der er v
   - `LoginAndGotoAsync(SmokeTestUser, path, width)`: samme for en vilkårlig seedet bruger
   - `RootUri`
   - `AppConnectionString`: appens forbindelse til engangsdatabasen
-  - `SmtpServer` (`TestSmtpServer`), `SecurityAlertRecipient`, `SecurityAlertSubject` (delt med B2-testen, som har en privat kopi)
+  - `SmtpServer` (`TestSmtpServer`), `SecurityAlertRecipient`, `SecurityAlertSubject` (bruges af B2 og D2)
   - `ReAuthMaxAgeMinutes = 1`: sendes som `ReAuthenticationPolicy__MaxAgeMinutes` til E2E-appen (appsettings: 15)
   - `SeedExtraUserAsync(role)` → `SmokeTestDataSeeder.SeedExtraUserAsync(connectionString, role)`: ny bruger (e2e-`<guid>`@test.dk) med rollen og 2FA. Rollen skal findes (oprettes af SeedAsync). Giver en test egen fejltæller/session uden at røre personas.
   - Identity__ShowEmailLinks=true sendes til E2E-appen (links på RegisterConfirmation/Email vises kun med flaget, R2.1/R2.2)
@@ -653,7 +653,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ~~- R9.2 `PricingCalculatorTests` (A2) har egne kopier af calculator-selektorer, ParseAmount/ParseNumber og pris-polling; dedup mod `PricingCalculatorPage`, `AmountParser` og `PriceAssertions`.~~
 ~~- R9.3 `LoginPolicyIKraftTests` (G2f) har en privat kopi af `LoginAttemptStatusAsync`; dedup mod `LoginFlow.AttemptStatusAsync`.~~
 ~~- R9.4 `AuditLogEksportVolumenTests.ClickWithStepUpAsync` dublerer `ExportAsync` i `AuditLogEksportTests`.~~
-- R9.5 `SecurityAlertSubject` er delt med B2-testen, som har en privat kopi.
+~~- R9.5 `SecurityAlertSubject` er delt med B2-testen, som har en privat kopi.~~
 - R9.6 `SweepUdloebTests` (E5) ændrer JIT-policyen i engangsdatabasen (Min = 1, Sweep = 1) og gendanner den i finally. Afbrydes processen midt i, forbliver policyen ændret, til databasen droppes (lokalt ved dispose, i CI ved næste CreateAsync). Testen tager 2-4 minutter, fordi appen kører med rigtig tid.
 - R9.7 Basispriser deles med A2. F1 gendanner i finally; ved proces-kill kan databasen forblive ændret indtil næste CreateAsync (i CI) eller dropning (lokalt).
 - R9.8 `AdminActionGuard` har en kvote pr. bruger (ukendt grænse). F1 gemmer 6 gange pr. bruger.

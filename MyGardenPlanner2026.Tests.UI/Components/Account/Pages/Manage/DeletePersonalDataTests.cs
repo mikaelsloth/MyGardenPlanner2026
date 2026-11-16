@@ -79,7 +79,9 @@ public class DeletePersonalDataTests : BunitContext
         var (userManager, signInManager, accountDeletion, user) = RegisterFakes();
         userManager.CheckPasswordAsync(user, Password).Returns(Task.FromResult(true));
         accountDeletion.DeleteUserDataAsync("user-1", UserEmail, Arg.Any<CancellationToken>())
-            .Returns(AccountDeletionResult.Blocked(["Have A", "Have B"]));
+            .Returns(AccountDeletionResult.Blocked([
+                new BlockingGardenDto(Guid.NewGuid(), "Have A", []),
+                new BlockingGardenDto(Guid.NewGuid(), "Have B", [])]));
         this.UseIdentityRedirectManager();
 
         var cut = this.RenderWithHttpContext<DeletePersonalData>();

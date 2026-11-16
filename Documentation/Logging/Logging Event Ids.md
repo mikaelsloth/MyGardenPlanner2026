@@ -105,3 +105,5 @@ EventId | Fil | Metode |
 1157 | AuditLogExportPanel.razor.cs | ExportXlsxLimitExceeded
 1158 | AuditLogEndpointsExtension.cs | ExportEndpointXlsxLimitExceeded
 1159 | AuditLogExportJobService.cs | EnqueueXlsxLimitExceeded
+1160 | AccountDeletionService.cs | GardenOwnershipTransferred |
+1161 | AccountDeletionService.cs | GardenOwnershipResolutionRejected |

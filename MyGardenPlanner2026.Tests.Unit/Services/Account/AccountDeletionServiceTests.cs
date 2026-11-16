@@ -4,7 +4,9 @@ using FluentAssertions;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using MyGardenPlanner2026.Core.Contracts.Account;
 using MyGardenPlanner2026.Core.Contracts.Admin;
+using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Gardens;
 using MyGardenPlanner2026.Infrastructure.Data;
 using MyGardenPlanner2026.Infrastructure.Services.Account;
@@ -15,6 +17,8 @@ public sealed class AccountDeletionServiceTests : IDisposable
 {
     private const string UserId = "user-1";
     private const string OtherUserId = "user-2";
+    private const string ThirdUserId = "user-3";
+    private const string FourthUserId = "user-4";
     private const string UserEmail = "bruger@example.dk";
 
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
@@ -112,6 +116,39 @@ public sealed class AccountDeletionServiceTests : IDisposable
         });
         await context.SaveChangesAsync(Ct);
     }
+
+    private async Task<Garden> SeedGardenWithRolesAsync(
+    string name,
+    params (string UserId, bool IsOwner, GardenAccessLevel Layer, AccessCategory Category)[] members)
+    {
+        await using var context = new PlannerDbContext(_options);
+        var garden = new Garden { Name = name };
+        context.Gardens.Add(garden);
+        foreach (var (userId, isOwner, layer, category) in members)
+        {
+            context.GardenMemberships.Add(new GardenMembership
+            {
+                GardenId = garden.Id,
+                UserId = userId,
+                IsOwner = isOwner,
+                Layer = layer,
+                Category = category
+            });
+        }
+
+        await context.SaveChangesAsync(Ct);
+        return garden;
+    }
+
+    private async Task<GardenMembership?> FindMembershipAsync(Guid gardenId, string userId)
+    {
+        await using var context = new PlannerDbContext(_options);
+        return await context.GardenMemberships.IgnoreQueryFilters()
+            .FirstOrDefaultAsync(m => m.GardenId == gardenId && m.UserId == userId, Ct);
+    }
+
+    private static Dictionary<Guid, GardenOwnershipResolution> Transfer(Guid gardenId, string newOwnerUserId) =>
+        new() { [gardenId] = new GardenOwnershipResolution(newOwnerUserId) };
 
     // ---------- Opslag (uden query-filtre) ----------
 
@@ -310,5 +347,183 @@ public sealed class AccountDeletionServiceTests : IDisposable
         await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
 
         await _tracker.Received(1).ClearFailuresAsync(UserId, Arg.Any<CancellationToken>());
+    }
+
+    // ---------- R10.1a: ejerskabsoverdragelse ----------
+
+    [Fact]
+    public async Task GetBlockingGardensAsync_SoleOwnerWithOtherMembers_ReturnsCandidatesOrderedByCategoryDescending()
+    {
+        var garden = await SeedGardenWithRolesAsync("Blokeret have",
+            (UserId, true, GardenAccessLevel.Planlaegger, AccessCategory.Administrator),
+            (OtherUserId, false, GardenAccessLevel.BedDesigner, AccessCategory.Editor),
+            (ThirdUserId, false, GardenAccessLevel.Planlaegger, AccessCategory.Administrator),
+            (FourthUserId, false, GardenAccessLevel.HaveArkitekt, AccessCategory.Viewer));
+
+        var result = await _sut.GetBlockingGardensAsync(UserId, Ct);
+
+        var blocking = result.Should().ContainSingle().Subject;
+        blocking.GardenId.Should().Be(garden.Id);
+        blocking.Name.Should().Be("Blokeret have");
+        blocking.Candidates.Select(c => c.UserId).Should().Equal(ThirdUserId, OtherUserId, FourthUserId);
+    }
+
+    [Fact]
+    public async Task GetBlockingGardensAsync_NoBlockingGardens_ReturnsEmpty()
+    {
+        await SeedGardenAsync("Egen have", (UserId, true));
+        await SeedGardenAsync("Delt ejerskab", (UserId, true), (OtherUserId, true));
+        await SeedGardenAsync("Som medlem", (OtherUserId, true), (UserId, false));
+
+        var result = await _sut.GetBlockingGardensAsync(UserId, Ct);
+
+        result.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetBlockingGardensAsync_ChangesNothing()
+    {
+        await SeedGardenAsync("Blokeret have", (UserId, true), (OtherUserId, false));
+
+        await _sut.GetBlockingGardensAsync(UserId, Ct);
+
+        (await CountGardensAsync()).Should().Be(1);
+        (await CountMembershipsAsync(UserId)).Should().Be(1);
+        (await CountMembershipsAsync(OtherUserId)).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task GetBlockingGardensAsync_BlankUserId_Throws()
+    {
+        var act = () => _sut.GetBlockingGardensAsync(" ", Ct);
+
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_NullResolutions_Throws()
+    {
+        var act = () => _sut.DeleteUserDataAsync(UserId, UserEmail, null!, Ct);
+
+        await act.Should().ThrowAsync<ArgumentNullException>();
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_TransferToEditor_PromotesToAdministratorKeepsLayerAndDeletesOwnMembership()
+    {
+        var garden = await SeedGardenWithRolesAsync("Overdrages",
+            (UserId, true, GardenAccessLevel.Planlaegger, AccessCategory.Administrator),
+            (OtherUserId, false, GardenAccessLevel.BedDesigner, AccessCategory.Editor));
+
+        var result = await _sut.DeleteUserDataAsync(UserId, UserEmail, Transfer(garden.Id, OtherUserId), Ct);
+
+        result.IsBlocked.Should().BeFalse();
+        (await CountGardensAsync()).Should().Be(1);
+        (await FindMembershipAsync(garden.Id, UserId)).Should().BeNull();
+        var newOwner = await FindMembershipAsync(garden.Id, OtherUserId);
+        newOwner.Should().NotBeNull();
+        newOwner!.IsOwner.Should().BeTrue();
+        newOwner.Category.Should().Be(AccessCategory.Administrator);
+        newOwner.Layer.Should().Be(GardenAccessLevel.BedDesigner);
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_TransferToAdministrator_StaysAdministrator()
+    {
+        var garden = await SeedGardenWithRolesAsync("Overdrages",
+            (UserId, true, GardenAccessLevel.Planlaegger, AccessCategory.Administrator),
+            (OtherUserId, false, GardenAccessLevel.Planlaegger, AccessCategory.Administrator));
+
+        var result = await _sut.DeleteUserDataAsync(UserId, UserEmail, Transfer(garden.Id, OtherUserId), Ct);
+
+        result.IsBlocked.Should().BeFalse();
+        var newOwner = await FindMembershipAsync(garden.Id, OtherUserId);
+        newOwner!.IsOwner.Should().BeTrue();
+        newOwner.Category.Should().Be(AccessCategory.Administrator);
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_Transfer_DeletesUsersEntitlementButKeepsNewOwnersEntitlement()
+    {
+        var garden = await SeedGardenWithRolesAsync("Overdrages",
+            (UserId, true, GardenAccessLevel.Planlaegger, AccessCategory.Administrator),
+            (OtherUserId, false, GardenAccessLevel.Planlaegger, AccessCategory.Editor));
+        await SeedEntitlementAsync(garden.Id, UserId);
+        await SeedEntitlementAsync(garden.Id, OtherUserId);
+
+        await _sut.DeleteUserDataAsync(UserId, UserEmail, Transfer(garden.Id, OtherUserId), Ct);
+
+        (await CountEntitlementsAsync(UserId)).Should().Be(0);
+        (await CountEntitlementsAsync(OtherUserId)).Should().Be(1);
+    }
+
+    [Theory]
+    [InlineData("ukendt-bruger")]
+    [InlineData(UserId)]
+    public async Task DeleteUserDataAsync_InvalidRecipient_IsBlockedAndChangesNothing(string recipient)
+    {
+        var garden = await SeedGardenWithRolesAsync("Blokeret have",
+            (UserId, true, GardenAccessLevel.Planlaegger, AccessCategory.Administrator),
+            (OtherUserId, false, GardenAccessLevel.Planlaegger, AccessCategory.Editor));
+
+        var result = await _sut.DeleteUserDataAsync(UserId, UserEmail, Transfer(garden.Id, recipient), Ct);
+
+        result.IsBlocked.Should().BeTrue();
+        result.BlockingGardenNames.Should().Equal("Blokeret have");
+        (await CountMembershipsAsync(UserId)).Should().Be(1);
+        var other = await FindMembershipAsync(garden.Id, OtherUserId);
+        other!.IsOwner.Should().BeFalse();
+        other.Category.Should().Be(AccessCategory.Editor);
+        await _tracker.DidNotReceive().ClearFailuresAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_SoftDeletedRecipient_IsBlocked()
+    {
+        var garden = await SeedGardenWithRolesAsync("Blokeret have",
+            (UserId, true, GardenAccessLevel.Planlaegger, AccessCategory.Administrator),
+            (OtherUserId, false, GardenAccessLevel.Planlaegger, AccessCategory.Editor));
+        await SeedSoftDeletedMembershipAsync(garden.Id, ThirdUserId);
+
+        var result = await _sut.DeleteUserDataAsync(UserId, UserEmail, Transfer(garden.Id, ThirdUserId), Ct);
+
+        result.IsBlocked.Should().BeTrue();
+        (await CountMembershipsAsync(UserId)).Should().Be(1);
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_OnlyOneOfTwoBlockingGardensResolved_IsBlockedWithUnresolvedAndChangesNothing()
+    {
+        var resolved = await SeedGardenWithRolesAsync("A - løst",
+            (UserId, true, GardenAccessLevel.Planlaegger, AccessCategory.Administrator),
+            (OtherUserId, false, GardenAccessLevel.Planlaegger, AccessCategory.Editor));
+        await SeedGardenWithRolesAsync("B - uløst",
+            (UserId, true, GardenAccessLevel.Planlaegger, AccessCategory.Administrator),
+            (OtherUserId, false, GardenAccessLevel.Planlaegger, AccessCategory.Editor));
+
+        var result = await _sut.DeleteUserDataAsync(UserId, UserEmail, Transfer(resolved.Id, OtherUserId), Ct);
+
+        result.IsBlocked.Should().BeTrue();
+        result.BlockingGardenNames.Should().Equal("B - uløst");
+        (await CountGardensAsync()).Should().Be(2);
+        (await CountMembershipsAsync(UserId)).Should().Be(2);
+        var other = await FindMembershipAsync(resolved.Id, OtherUserId);
+        other!.IsOwner.Should().BeFalse();
+        other.Category.Should().Be(AccessCategory.Editor);
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_ResolutionForNonBlockingGarden_IsIgnored()
+    {
+        var garden = await SeedGardenWithRolesAsync("Delt ejerskab",
+            (UserId, true, GardenAccessLevel.Planlaegger, AccessCategory.Administrator),
+            (OtherUserId, true, GardenAccessLevel.Planlaegger, AccessCategory.Editor));
+
+        var result = await _sut.DeleteUserDataAsync(UserId, UserEmail, Transfer(garden.Id, ThirdUserId), Ct);
+
+        result.IsBlocked.Should().BeFalse();
+        (await FindMembershipAsync(garden.Id, UserId)).Should().BeNull();
+        var other = await FindMembershipAsync(garden.Id, OtherUserId);
+        other!.Category.Should().Be(AccessCategory.Editor);
     }
 }

@@ -2,9 +2,11 @@
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Contracts.Account;
 using MyGardenPlanner2026.Core.Contracts.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
+using MyGardenPlanner2026.Core.Entities.Gardens;
 using MyGardenPlanner2026.Infrastructure.Data;
 
 /// <summary>
@@ -17,10 +19,16 @@ using MyGardenPlanner2026.Infrastructure.Data;
 /// Invitationer sendt til brugerens e-mail slettes også (match på nuværende e-mail, case-insensitivt).
 /// R10.1a: er brugeren eneste ejer i en have med andre medlemmer, kan ejerskabet overdrages til et
 /// aktivt medlem (hæves til Administrator) i samme transaktion som sletningen.
+/// R10.1b: haver, hvor brugeren er eneste medlem, og haver valgt "slet for alle", soft-slettes og
+/// bevares i GardenRestoreOptions.RetentionDays (PendingGardenRestore, matchet via e-mail-hash).
+/// Ejerens medlemskab/entitlement bevares soft-slettet; andres medlemskaber, entitlements og
+/// invitationer slettes fysisk. Uden e-mail kan haven ikke gendannes og slettes fysisk.
 /// </summary>
 public sealed partial class AccountDeletionService(
     IDbContextFactory<PlannerDbContext> contextFactory,
     IReAuthFailureTracker reAuthFailureTracker,
+    IOptionsMonitor<GardenRestoreOptions> restoreOptions,
+    TimeProvider timeProvider,
     ILogger<AccountDeletionService> logger) : IAccountDeletionService
 {
     private static readonly IReadOnlyDictionary<Guid, GardenOwnershipResolution> NoResolutions =
@@ -37,6 +45,9 @@ public sealed partial class AccountDeletionService(
 
     [LoggerMessage(EventId = 1161, Level = LogLevel.Information, Message = "Ownership resolution for garden '{GardenId}' rejected for user '{UserId}': {Reason}.")]
     static partial void GardenOwnershipResolutionRejected(ILogger logger, Guid GardenId, string UserId, string Reason);
+
+    [LoggerMessage(EventId = 1162, Level = LogLevel.Information, Message = "Account deletion for user '{UserId}': {GardenCount} garden(s) soft-deleted and retained for restore until {ExpiresUtc}.")]
+    static partial void GardensRetainedForRestore(ILogger logger, string UserId, int GardenCount, DateTimeOffset ExpiresUtc);
 
     public async Task<IReadOnlyList<BlockingGardenDto>> GetBlockingGardensAsync(
         string userId, CancellationToken cancellationToken = default)
@@ -65,12 +76,17 @@ public sealed partial class AccountDeletionService(
         var plan = await PlanAsync(context, userId, cancellationToken);
 
         var transfers = new List<(Guid GardenId, string NewOwnerUserId)>();
+        var deleteForAllIds = new List<Guid>();
         var unresolved = new List<BlockingGardenDto>();
         foreach (var blocking in plan.BlockingGardens)
         {
             if (!resolutions.TryGetValue(blocking.GardenId, out var resolution))
             {
                 unresolved.Add(blocking);
+            }
+            else if (resolution.Kind == GardenResolutionKind.DeleteForAll)
+            {
+                deleteForAllIds.Add(blocking.GardenId);
             }
             else if (!blocking.Candidates.Any(c => c.UserId == resolution.NewOwnerUserId))
             {
@@ -79,7 +95,7 @@ public sealed partial class AccountDeletionService(
             }
             else
             {
-                transfers.Add((blocking.GardenId, resolution.NewOwnerUserId));
+                transfers.Add((blocking.GardenId, resolution.NewOwnerUserId!));
             }
         }
 
@@ -108,21 +124,88 @@ public sealed partial class AccountDeletionService(
             }
         }
 
-        var gardenIdsToDelete = plan.GardenIdsToDelete;
+        // R10.1b: sole-member-haver og "slet for alle" bevares soft-slettet, hvis e-mailen kendes.
+        var now = timeProvider.GetUtcNow();
+        var expiresUtc = now.AddDays(Math.Max(1, restoreOptions.CurrentValue.RetentionDays));
+        var emailHash = string.IsNullOrWhiteSpace(email) ? null : RestoreEmailHasher.Hash(email);
 
-        // Eneste medlem: haven slettes (medlemskaber, entitlements og invitationer kaskaderer i databasen).
-        var gardens = gardenIdsToDelete.Count == 0
+        List<Guid> wholeGardenIds = [.. plan.GardenIdsToDelete, .. deleteForAllIds];
+        List<Guid> retainedIds = emailHash is null ? [] : wholeGardenIds;
+        List<Guid> purgedIds = emailHash is null ? wholeGardenIds : [];
+
+        // Uden e-mail: haven slettes fysisk (medlemskaber, entitlements og invitationer kaskaderer i databasen).
+        var gardens = purgedIds.Count == 0
             ? 0
             : await context.Gardens.IgnoreQueryFilters()
-                .Where(g => gardenIdsToDelete.Contains(g.Id))
+                .Where(g => purgedIds.Contains(g.Id))
                 .ExecuteDeleteAsync(cancellationToken);
 
+        var retainedOthersMemberships = 0;
+        var retainedOthersEntitlements = 0;
+        var retainedInvitations = 0;
+        if (retainedIds.Count > 0)
+        {
+            // Andre medlemmers adgang og invitationer til haven slettes fysisk.
+            retainedOthersMemberships = await context.GardenMemberships.IgnoreQueryFilters()
+                .Where(m => retainedIds.Contains(m.GardenId) && m.UserId != userId)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            retainedOthersEntitlements = await context.UserEntitlements.IgnoreQueryFilters()
+                .Where(e => retainedIds.Contains(e.GardenId) && e.UserId != userId)
+                .ExecuteDeleteAsync(cancellationToken);
+
+            retainedInvitations = await context.GardenInvitations.IgnoreQueryFilters()
+                .Where(i => retainedIds.Contains(i.GardenId))
+                .ExecuteDeleteAsync(cancellationToken);
+
+            // Ejerens rækker og haven soft-slettes og bevares til gendannelse/udløb.
+            DateTimeOffset? deletedAt = now;
+
+            await context.GardenMemberships
+                .Where(m => retainedIds.Contains(m.GardenId) && m.UserId == userId)
+                .ExecuteUpdateAsync(
+                    s => s.SetProperty(m => m.IsDeleted, true)
+                          .SetProperty(m => m.DeletedAtUtc, deletedAt)
+                          .SetProperty(m => m.DeletedBy, userId),
+                    cancellationToken);
+
+            await context.UserEntitlements
+                .Where(e => retainedIds.Contains(e.GardenId) && e.UserId == userId)
+                .ExecuteUpdateAsync(
+                    s => s.SetProperty(e => e.IsDeleted, true)
+                          .SetProperty(e => e.DeletedAtUtc, deletedAt)
+                          .SetProperty(e => e.DeletedBy, userId),
+                    cancellationToken);
+
+            await context.Gardens
+                .Where(g => retainedIds.Contains(g.Id))
+                .ExecuteUpdateAsync(
+                    s => s.SetProperty(g => g.IsDeleted, true)
+                          .SetProperty(g => g.DeletedAtUtc, deletedAt)
+                          .SetProperty(g => g.DeletedBy, userId),
+                    cancellationToken);
+
+            foreach (var gardenId in retainedIds)
+            {
+                context.PendingGardenRestores.Add(new PendingGardenRestore
+                {
+                    GardenId = gardenId,
+                    OwnerEmailHash = emailHash!,
+                    FormerUserId = userId,
+                    DeletedAtUtc = now,
+                    ExpiresUtc = expiresUtc
+                });
+            }
+
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
         var memberships = await context.GardenMemberships.IgnoreQueryFilters()
-            .Where(m => m.UserId == userId)
+            .Where(m => m.UserId == userId && !retainedIds.Contains(m.GardenId))
             .ExecuteDeleteAsync(cancellationToken);
 
         var entitlements = await context.UserEntitlements.IgnoreQueryFilters()
-            .Where(e => e.UserId == userId)
+            .Where(e => e.UserId == userId && !retainedIds.Contains(e.GardenId))
             .ExecuteDeleteAsync(cancellationToken);
 
         var drafts = await context.CheckoutDrafts
@@ -160,7 +243,14 @@ public sealed partial class AccountDeletionService(
             GardenOwnershipTransferred(logger, gardenId, userId, newOwnerUserId);
         }
 
-        AccountDataDeleted(logger, userId, gardens, memberships, entitlements, drafts, invitationsDeleted, invitationsToEmailDeleted, invitationsRevoked);
+        if (retainedIds.Count > 0)
+        {
+            GardensRetainedForRestore(logger, userId, retainedIds.Count, expiresUtc);
+        }
+
+        AccountDataDeleted(
+            logger, userId, gardens, memberships + retainedOthersMemberships, entitlements + retainedOthersEntitlements,
+            drafts, invitationsDeleted + retainedInvitations, invitationsToEmailDeleted, invitationsRevoked);
         return AccountDeletionResult.Completed();
     }
 
@@ -169,12 +259,14 @@ public sealed partial class AccountDeletionService(
     {
         // Query-filteret udelader soft-slettede medlemskaber og haver: kun aktive indgår i planen.
         var gardenIds = await context.GardenMemberships
+            .AsNoTracking()
             .Where(m => m.UserId == userId)
             .Select(m => m.GardenId)
             .Distinct()
             .ToListAsync(cancellationToken);
 
         var gardens = (await context.Gardens
+            .AsNoTracking()
             .Where(g => gardenIds.Contains(g.Id))
             .ToListAsync(cancellationToken))
             .OrderBy(g => g.Name, StringComparer.CurrentCulture)
@@ -182,6 +274,7 @@ public sealed partial class AccountDeletionService(
 
         var activeGardenIds = gardens.Select(g => g.Id).ToList();
         var membersByGarden = (await context.GardenMemberships
+            .AsNoTracking()
             .Where(m => activeGardenIds.Contains(m.GardenId))
             .ToListAsync(cancellationToken))
             .ToLookup(m => m.GardenId);

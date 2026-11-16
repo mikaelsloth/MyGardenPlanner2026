@@ -22,10 +22,10 @@ public interface IAccountDeletionService
         string userId, string? email, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Som overloaden uden valg, men blokerende haver kan løses ved at overdrage ejerskabet
-    /// (nøgle = GardenId). Er en blokerende have uden gyldigt valg (modtager skal være aktivt
-    /// medlem, ikke brugeren selv), ændres intet, og resultatet er blokeret med de uløste haver.
-    /// Valg for haver, der ikke blokerer, ignoreres.
+    /// Som overloaden uden valg, men blokerende haver kan løses ved at overdrage ejerskabet eller
+    /// slette haven for alle (nøgle = GardenId). Er en blokerende have uden gyldigt valg (modtager
+    /// skal være aktivt medlem, ikke brugeren selv), ændres intet, og resultatet er blokeret med de
+    /// uløste haver. Valg for haver, der ikke blokerer, ignoreres.
     /// </summary>
     Task<AccountDeletionResult> DeleteUserDataAsync(
         string userId, string? email, IReadOnlyDictionary<Guid, GardenOwnershipResolution> resolutions,

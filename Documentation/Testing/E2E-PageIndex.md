@@ -406,7 +406,8 @@ Filer: PersonalData.razor (+ .cs), IdentityComponentsEndpointRouteBuilderExtensi
 /Account/Manage/DeletePersonalData
 Titel: Slet personlige data – MyGardenPlanner. h3 "Slet personlige data".
 Felt "Adgangskode" (kun hvis brugeren har password), knap "Slet data og luk min konto".
-Forkert password: "Error: Adgangskoden er forkert.". Eneste ejer i have med andre medlemmer: "Error: Du er eneste ejer af haver, der deles med andre medlemmer: <haver>. Ejerskabet skal overdrages, før din konto kan slettes." Fejlet DeleteAsync: "Error: Din konto kunne ikke slettes. Prøv igen." Succes: data og konto slettes, bruger logges ud, redirect til forsiden.
+Forkert password: "Error: Adgangskoden er forkert.". Eneste ejer i have med andre medlemmer: "Error: Du er eneste ejer af haver, der deles med andre medlemmer: <haver>. Ejerskabet skal overdrages, før din konto kan slettes." Fejlet DeleteAsync: "Error: Din konto kunne ikke slettes. Prøv igen." 
+  Succes: data og konto slettes, bruger logges ud, redirect til forsiden. Haver, hvor brugeren er eneste medlem, bevares soft-slettet i GardenRestore:RetentionDays (standard 30) og kan gendannes ved registrering med samme e-mail (R10.1b; UI i R10.1d).
 Filer: DeletePersonalData.razor (+ .cs), AccountDeletionService.cs, IAccountDeletionService.cs
 ```
 

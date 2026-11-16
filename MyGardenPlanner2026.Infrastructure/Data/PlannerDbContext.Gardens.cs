@@ -10,6 +10,7 @@ public partial class PlannerDbContext
     public DbSet<UserEntitlement> UserEntitlements => Set<UserEntitlement>();
     public DbSet<GardenInvitation> GardenInvitations => Set<GardenInvitation>();
     public DbSet<CheckoutDraft> CheckoutDrafts => Set<CheckoutDraft>();
+    public DbSet<PendingGardenRestore> PendingGardenRestores => Set<PendingGardenRestore>();
 
     /// <summary>
     /// Gardens-entiteterne ligger i standard (dbo) schema og bruger IKKE temporal tables
@@ -80,6 +81,22 @@ public partial class PlannerDbContext
             entity.Property(e => e.AddOnQuantities)
                               .HasConversion(AddOnQuantitiesConverter)
                               .Metadata.SetValueComparer(AddOnQuantitiesComparer);
+            entity.HasIndex(e => e.ExpiresUtc);
+        });
+
+        modelBuilder.Entity<PendingGardenRestore>(entity =>
+        {
+            entity.ToTable("PendingGardenRestores");
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.OwnerEmailHash).IsRequired().HasMaxLength(64);
+            entity.Property(e => e.FormerUserId).IsRequired().HasMaxLength(450);
+            entity.HasOne<Garden>()
+                  .WithMany()
+                  .HasForeignKey(e => e.GardenId)
+                  .OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(e => e.GardenId).IsUnique();
+            entity.HasIndex(e => e.OwnerEmailHash);
             entity.HasIndex(e => e.ExpiresUtc);
         });
     }

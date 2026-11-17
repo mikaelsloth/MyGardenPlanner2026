@@ -17,6 +17,7 @@ public static class OffboardingServicesExtensions
 
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<IAccountDeletionService, AccountDeletionService>();
+        services.AddScoped<IGardenRestoreService, GardenRestoreService>();
         return services;
     }
 }

@@ -108,3 +108,5 @@ EventId | Fil | Metode |
 1160 | AccountDeletionService.cs | GardenOwnershipTransferred |
 1161 | AccountDeletionService.cs | GardenOwnershipResolutionRejected |
 1162 | AccountDeletionService.cs | GardensRetainedForRestore |
+1163 | GardenRestoreService.cs | GardenRestored |
+1164 | GardenRestoreService.cs | GardenRestoreRejected |

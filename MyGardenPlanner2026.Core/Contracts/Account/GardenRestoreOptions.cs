@@ -7,4 +7,10 @@ public sealed class GardenRestoreOptions
 
     /// <summary>Antal dage en slettet have kan gendannes, før den slettes fysisk (1-365).</summary>
     public int RetentionDays { get; set; } = 30;
+
+    /// <summary>
+    /// Antal minutter mellem hver oprydning af udløbne gendannelige haver (1-1440).
+    /// En ændret værdi træder i kraft efter den igangværende ventetid.
+    /// </summary>
+    public int SweepIntervalMinutes { get; set; } = 60;
 }

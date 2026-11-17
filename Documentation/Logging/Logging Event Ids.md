@@ -110,3 +110,6 @@ EventId | Fil | Metode |
 1162 | AccountDeletionService.cs | GardensRetainedForRestore |
 1163 | GardenRestoreService.cs | GardenRestored |
 1164 | GardenRestoreService.cs | GardenRestoreRejected |
+1165 | GardenRestoreExpirySweepService.cs | ExpiredGardensPurged |
+1166 | GardenRestoreExpirySweepService.cs | StaleRestoreTicketsRemoved |
+1167 | GardenRestoreExpirySweepService.cs | SweepFailed |

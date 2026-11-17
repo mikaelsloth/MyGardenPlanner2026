@@ -73,4 +73,10 @@ internal static class AccountMessages
     public static string AccountDeletionBlocked(IEnumerable<string> gardenNames) =>
         $"Error: Du er eneste ejer af haver, der deles med andre medlemmer: {string.Join(", ", gardenNames)}. " +
         "Ejerskabet skal overdrages, før din konto kan slettes.";
+
+    public static string GardenChoiceMissing(string gardenName) =>
+    $"Error: Vælg, hvad der skal ske med haven '{gardenName}'.";
+
+    public static string GardenDeleteNameMismatch(string gardenName) =>
+        $"Error: Skriv havens navn '{gardenName}' for at bekræfte, at haven slettes for alle medlemmer.";
 }

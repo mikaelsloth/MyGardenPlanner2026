@@ -1,13 +1,16 @@
 ﻿@page "/Account/Manage/DeletePersonalData"
 
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.Extensions.Options
 @using MyGardenPlanner2026.Core.Entities;
 @using MyGardenPlanner2026.Core.Contracts.Account;
+@using MyGardenPlanner2026.Infrastructure.Services.Account;
 
 @inject IAccountDeletionService AccountDeletionService
 @inject UserManager<ApplicationUser> UserManager
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityRedirectManager RedirectManager
+@inject IOptionsMonitor<GardenRestoreOptions> RestoreOptions
 @inject ILogger<DeletePersonalData> Logger
 
 <PageTitle>Slet personlige data – MyGardenPlanner</PageTitle>
@@ -20,12 +23,55 @@
     <p>
         <strong>Sletning af disse data fjerner din konto permanent og kan ikke fortrydes.</strong>
     </p>
+    <p class="mb-0">
+        Haver, hvor du er eneste medlem, og haver du vælger at slette for alle medlemmer, gemmes dog i @RestoreDays dage, før de slettes permanent. Opretter du en ny bruger med samme e-mailadresse i den periode, kan du gendanne dem.
+    </p>
 </div>
 
 <div>
     <EditForm Model="Input" FormName="delete-user" OnValidSubmit="OnValidSubmitAsync" method="post">
         <DataAnnotationsValidator />
         <ValidationSummary class="text-danger" role="alert" />
+
+        @if (blockingGardens.Count > 0)
+        {
+            <p>
+                Du er eneste ejer af følgende haver, der deles med andre medlemmer. Vælg, hvad der skal ske med hver have.
+                Overdrager du ejerskabet, bliver modtageren administrator af haven. Sletter du haven, mister alle medlemmer adgangen.
+            </p>
+
+            @for (var i = 0; i < blockingGardens.Count; i++)
+            {
+                var index = i;
+                var garden = blockingGardens[index];
+
+                <fieldset class="mb-4" @key="garden.GardenId">
+                    <legend class="h6">@garden.Name</legend>
+                    <input type="hidden" name="@($"Input.Gardens[{index}].GardenId")" value="@garden.GardenId" />
+
+                    <div class="form-floating mb-2">
+                        <InputSelect id="@($"garden-choice-{index}")" @bind-Value="Input.Gardens[index].Choice" class="form-select" aria-required="true">
+                            <option value="">Vælg…</option>
+                            @foreach (var candidate in garden.Candidates)
+                            {
+                                <option @key="candidate.UserId" value="@(TransferPrefix + candidate.UserId)">Overdrag ejerskab til @CandidateLabel(candidate)</option>
+                            }
+                            <option value="@DeleteChoice">Slet haven for alle medlemmer</option>
+                        </InputSelect>
+                        <label for="@($"garden-choice-{index}")">Hvad skal ske med haven?</label>
+                    </div>
+
+                    <div class="form-floating mb-1">
+                        <InputText id="@($"garden-confirm-{index}")" @bind-Value="Input.Gardens[index].ConfirmName" class="form-control" autocomplete="off" placeholder="Skriv havens navn" aria-describedby="@($"garden-confirm-hint-{index}")" />
+                        <label for="@($"garden-confirm-{index}")">Havens navn (kun ved sletning for alle)</label>
+                    </div>
+                    <p class="form-text" id="@($"garden-confirm-hint-{index}")">
+                        Vælger du at slette haven for alle, skal du skrive <strong>@garden.Name</strong> for at bekræfte.
+                    </p>
+                </fieldset>
+            }
+        }
+
         @if (requirePassword)
         {
             <div class="form-floating mb-3">

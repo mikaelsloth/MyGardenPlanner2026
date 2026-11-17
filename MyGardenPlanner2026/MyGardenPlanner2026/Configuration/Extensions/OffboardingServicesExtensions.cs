@@ -13,11 +13,15 @@ public static class OffboardingServicesExtensions
             .Validate(
                 o => o.RetentionDays is >= 1 and <= 365,
                 "GardenRestore:RetentionDays skal være mellem 1 og 365.")
+            .Validate(
+                o => o.SweepIntervalMinutes is >= 1 and <= 1440,
+                "GardenRestore:SweepIntervalMinutes skal være mellem 1 og 1440.")
             .ValidateOnStart();
 
         services.TryAddSingleton(TimeProvider.System);
         services.AddScoped<IAccountDeletionService, AccountDeletionService>();
         services.AddScoped<IGardenRestoreService, GardenRestoreService>();
+        services.AddHostedService<GardenRestoreExpirySweepService>();
         return services;
     }
 }

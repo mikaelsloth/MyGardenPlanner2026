@@ -44,6 +44,13 @@
             @switch (currentStep)
             {
                 case CheckoutStep.Configuration:
+                    @if (restorableGardens.Count > 0)
+                    {
+                        <StatusBanner Variant="StatusBanner.StatusBannerVariant.Info" IconClass="bi-arrow-counterclockwise">
+                            Du har gemte haver, der kan gendannes. Når du har valgt abonnement, kan du vælge at gendanne en af dem i stedet for at oprette en ny have.
+                        </StatusBanner>
+                    }
+
                     <FormSection Title="Din have" Columns="2">
                         <div class="field">
                             <label class="field-label" for="garden-name">Havenavn</label>
@@ -101,9 +108,19 @@
                 case CheckoutStep.Payment:
                     @if (pendingSelection is not null)
                     {
-                        <PaymentMockPage GardenName="@gardenName"
+                        @if (restorableGardens.Count > 0)
+                        {
+                            <RestoreGardenChoice Gardens="restorableGardens"
+                                                 SelectedLayer="pendingSelection.Level"
+                                                 SelectedCategory="pendingSelection.Category"
+                                                 @bind-SelectedPendingRestoreId="selectedRestoreId"
+                                                 OnChangeSubscription="BackToConfiguration" />
+                        }
+
+                        <PaymentMockPage GardenName="@PaymentGardenName"
                                          PriceResult="pendingSelection.PriceResult"
                                          BillingCycle="pendingSelection.BillingCycle"
+                                         ConfirmButtonLabel="@ConfirmButtonLabel"
                                          IsProcessing="isSubmittingPayment"
                                          ErrorMessage="@paymentErrorMessage"
                                          OnConfirmPayment="ConfirmPaymentAsync" />

@@ -1,0 +1,13 @@
+/* CSS for RestoreGardenChoice component */
+.restore-garden-choice {
+    margin-bottom: var(--mgp-space-md);
+}
+
+.restore-garden-choice-hint {
+    margin-bottom: var(--mgp-space-sm);
+}
+
+.restore-garden-choice-upgrade {
+    color: var(--mgp-text);
+    font-weight: var(--font-weight-medium);
+}

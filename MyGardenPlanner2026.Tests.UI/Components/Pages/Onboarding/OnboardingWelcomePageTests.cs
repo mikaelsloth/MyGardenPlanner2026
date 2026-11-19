@@ -4,15 +4,31 @@ using Bunit;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using MyGardenPlanner2026.Components.Pages;
+using MyGardenPlanner2026.Core.Contracts.Account;
 using MyGardenPlanner2026.Core.Contracts.Onboarding;
+using MyGardenPlanner2026.Core.Entities.Common;
 using NSubstitute;
 using Xunit;
 
 public sealed class OnboardingWelcomePageTests : BunitContext
 {
-    private readonly IOnboardingService onboardingService = Substitute.For<IOnboardingService>();
+    private const string Email = "bruger@example.dk";
 
-    public OnboardingWelcomePageTests() => Services.AddSingleton(onboardingService);
+    private readonly IOnboardingService onboardingService = Substitute.For<IOnboardingService>();
+    private readonly IGardenRestoreService restoreService = Substitute.For<IGardenRestoreService>();
+
+    public OnboardingWelcomePageTests()
+    {
+        restoreService.GetRestorableGardensAsync(Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<RestorableGardenDto>>([]));
+
+        Services.AddSingleton(onboardingService);
+        Services.AddSingleton(restoreService);
+    }
+
+    private static RestorableGardenDto Restorable(string name, DateTimeOffset expiresUtc) =>
+        new(Guid.NewGuid(), Guid.NewGuid(), name, expiresUtc.AddDays(-30), expiresUtc,
+            GardenAccessLevel.BedDesigner, AccessCategory.Editor);
 
     [Fact]
     public void RendersBothOptionCards()
@@ -49,5 +65,45 @@ public sealed class OnboardingWelcomePageTests : BunitContext
 
         await onboardingService.DidNotReceive().CreateSandboxGardenAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
         this.ShouldHaveNavigatedTo("/onboarding/checkout");
+    }
+
+    [Fact]
+    public void NoRestorableGardens_ShowsNoRestoreBanner()
+    {
+        this.AuthorizeAs("user-1", email: Email);
+
+        var cut = Render<OnboardingWelcomePage>();
+
+        cut.FindAll(".status-banner").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void RestorableGardens_ShowsBannerWithNamesNearestDeadlineAndCheckoutLink()
+    {
+        this.AuthorizeAs("user-1", email: Email);
+        IReadOnlyList<RestorableGardenDto> gardens =
+        [
+            Restorable("Have A", new DateTimeOffset(2026, 12, 20, 12, 0, 0, TimeSpan.Zero)),
+            Restorable("Have B", new DateTimeOffset(2026, 12, 5, 12, 0, 0, TimeSpan.Zero))
+        ];
+        restoreService.GetRestorableGardensAsync(Email, Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(gardens));
+
+        var cut = Render<OnboardingWelcomePage>();
+
+        var banner = cut.Find(".status-banner");
+        banner.TextContent.Should().Contain("Have A, Have B");
+        banner.TextContent.Should().Contain("05.12.2026 (UTC)");
+        banner.QuerySelector("a")!.GetAttribute("href").Should().Be("/onboarding/checkout");
+    }
+
+    [Fact]
+    public void NoEmailClaim_DoesNotLookUpRestorableGardens()
+    {
+        this.AuthorizeAs("user-1");
+
+        Render<OnboardingWelcomePage>();
+
+        _ = restoreService.DidNotReceive().GetRestorableGardensAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 }

@@ -2,6 +2,7 @@
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using MyGardenPlanner2026.Core.Contracts.Account;
 using MyGardenPlanner2026.Core.Contracts.Onboarding;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Gardens;
@@ -56,6 +57,12 @@ public sealed partial class OnboardingService(
 
     [LoggerMessage(EventId = 1109, Level = LogLevel.Information, Message = "Accept af invitation afvist for bruger '{UserId}': {Reason}")]
     static partial void InvitationAcceptanceRejected(ILogger logger, string UserId, string Reason);
+
+    [LoggerMessage(EventId = 1163, Level = LogLevel.Information, Message = "Have '{GardenId}' gendannet for bruger '{UserId}' (Layer={Layer}, Category={Category}).")]
+    static partial void GardenRestored(ILogger logger, Guid GardenId, string UserId, GardenAccessLevel Layer, AccessCategory Category);
+
+    [LoggerMessage(EventId = 1164, Level = LogLevel.Information, Message = "Gendannelse '{PendingRestoreId}' afvist for bruger '{UserId}': {Reason}.")]
+    static partial void GardenRestoreRejected(ILogger logger, Guid PendingRestoreId, string UserId, string Reason);
 
     public async Task<SandboxGardenResultDto> CreateSandboxGardenAsync(
         string userId, CancellationToken cancellationToken = default)
@@ -187,6 +194,64 @@ public sealed partial class OnboardingService(
         CheckoutDraftProvisioned(logger, draftId, garden.Id, userId);
 
         return new PaidGardenProvisionResultDto(garden.Id, membership.Id, entitlement.Id);
+    }
+
+    public async Task<PaidGardenProvisionResultDto> ProvisionRestoredGardenAsync(
+    PaidGardenRestoreRequestDto request, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.UserId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(request.Email);
+
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+
+        var result = await RestoreGardenCoreAsync(context, request, timeProvider.GetUtcNow(), cancellationToken);
+
+        await context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        GardenRestored(logger, result.GardenId, request.UserId, request.Layer, request.Category);
+
+        return result;
+    }
+
+    public async Task<PaidGardenProvisionResultDto> ProvisionRestoredGardenFromDraftAsync(
+        Guid draftId, string userId, string email, Guid restorePendingId, CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(email);
+
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+        var now = timeProvider.GetUtcNow();
+
+        var draft = await context.CheckoutDrafts.SingleOrDefaultAsync(d => d.Id == draftId, cancellationToken)
+            ?? throw new InvalidOperationException("Konfigurationen findes ikke eller er allerede brugt.");
+
+        if (draft.ExpiresUtc < now)
+        {
+            context.CheckoutDrafts.Remove(draft);
+            await context.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            CheckoutDraftProvisionFailed(logger, draftId, "udløbet");
+            throw new InvalidOperationException("Konfigurationen er udløbet. Start venligst forfra.");
+        }
+
+        var request = new PaidGardenRestoreRequestDto(
+            userId, email, restorePendingId, draft.Layer, draft.Category, draft.BillingCycle, draft.AddOnQuantities);
+
+        // Afvises købet, kastes der her, og transaktionen rulles tilbage (draften bevares).
+        var result = await RestoreGardenCoreAsync(context, request, now, cancellationToken);
+
+        context.CheckoutDrafts.Remove(draft);
+        await context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        GardenRestored(logger, result.GardenId, userId, draft.Layer, draft.Category);
+
+        return result;
     }
 
     public async Task<CreateInvitationResultDto> CreateInvitationAsync(
@@ -459,6 +524,112 @@ public sealed partial class OnboardingService(
         await context.UserEntitlements.AddAsync(entitlement, CancellationToken.None);
 
         return (garden, membership, entitlement);
+    }
+
+    /// <summary>
+    /// Kerne for gendannelse (R10.1d). Skal kaldes inde i en transaktion; kaster InvalidOperationException
+    /// uden at have committet noget. Gendannelsesrække, medlemskab og have læses uden tracking og ændres
+    /// via ExecuteUpdate/ExecuteDelete (som AccountDeletionService); kun det nye entitlement tilføjes
+    /// til change tracker og gemmes af kalderen.
+    /// </summary>
+    private async Task<PaidGardenProvisionResultDto> RestoreGardenCoreAsync(
+        PlannerDbContext context, PaidGardenRestoreRequestDto request, DateTimeOffset now, CancellationToken cancellationToken)
+    {
+        var emailHash = RestoreEmailHasher.Hash(request.Email);
+
+        var ticket = await context.PendingGardenRestores
+            .AsNoTracking()
+            .SingleOrDefaultAsync(p => p.Id == request.RestorePendingId && p.OwnerEmailHash == emailHash, cancellationToken);
+
+        if (ticket is null)
+        {
+            GardenRestoreRejected(logger, request.RestorePendingId, request.UserId, "ukendt gendannelse eller anden e-mail");
+            throw new InvalidOperationException("Gendannelsen findes ikke eller er ikke tilgængelig for din e-mail.");
+        }
+
+        if (ticket.ExpiresUtc < now)
+        {
+            GardenRestoreRejected(logger, request.RestorePendingId, request.UserId, "gendannelsesperioden er udløbet");
+            throw new InvalidOperationException("Gendannelsesperioden er udløbet.");
+        }
+
+        var gardenId = ticket.GardenId;
+        var formerUserId = ticket.FormerUserId;
+        var ticketId = ticket.Id;
+
+        var formerMembership = await context.GardenMemberships.IgnoreQueryFilters()
+            .AsNoTracking()
+            .SingleOrDefaultAsync(m => m.GardenId == gardenId && m.UserId == formerUserId && m.IsDeleted, cancellationToken);
+
+        if (formerMembership is null)
+        {
+            GardenRestoreRejected(logger, request.RestorePendingId, request.UserId, "ejerens medlemskab mangler");
+            throw new InvalidOperationException("Haven kan ikke gendannes, fordi data mangler.");
+        }
+
+        if (!GardenRestoreCoverage.Covers(request.Layer, request.Category, formerMembership.Layer, formerMembership.Category))
+        {
+            GardenRestoreRejected(logger, request.RestorePendingId, request.UserId, "det valgte niveau dækker ikke havens tidligere niveau");
+            throw new InvalidOperationException(
+                $"Den valgte adgang dækker ikke haven. Vælg mindst {formerMembership.Layer.ToDisplayName()} / {formerMembership.Category.ToDisplayName()}.");
+        }
+
+        var userId = request.UserId;
+        var layer = request.Layer;
+        var category = request.Category;
+        DateTimeOffset? noDeletedAt = null;
+        string? noDeletedBy = null;
+
+        var gardens = await context.Gardens.IgnoreQueryFilters()
+            .Where(g => g.Id == gardenId && g.IsDeleted)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(g => g.IsDeleted, false)
+                      .SetProperty(g => g.DeletedAtUtc, noDeletedAt)
+                      .SetProperty(g => g.DeletedBy, noDeletedBy),
+                cancellationToken);
+
+        var memberships = await context.GardenMemberships.IgnoreQueryFilters()
+            .Where(m => m.GardenId == gardenId && m.UserId == formerUserId && m.IsDeleted)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(m => m.UserId, userId)
+                      .SetProperty(m => m.Layer, layer)
+                      .SetProperty(m => m.Category, category)
+                      .SetProperty(m => m.IsDeleted, false)
+                      .SetProperty(m => m.DeletedAtUtc, noDeletedAt)
+                      .SetProperty(m => m.DeletedBy, noDeletedBy),
+                cancellationToken);
+
+        if (gardens != 1 || memberships != 1)
+        {
+            // Integritetsfejl: transaktionen rulles tilbage ved dispose.
+            GardenRestoreRejected(logger, request.RestorePendingId, request.UserId, "havens eller ejerens medlemskabs data mangler");
+            throw new InvalidOperationException("Haven kan ikke gendannes, fordi data mangler.");
+        }
+
+        // Det gamle entitlement erstattes af købet (Q1 = A).
+        await context.UserEntitlements.IgnoreQueryFilters()
+            .Where(e => e.GardenId == gardenId && e.UserId == formerUserId)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        var entitlement = new UserEntitlement
+        {
+            UserId = request.UserId,
+            GardenId = gardenId,
+            Layer = request.Layer,
+            Category = request.Category,
+            BillingCycle = request.BillingCycle,
+            IsTrial = false,
+            ValidToUtc = ComputeValidTo(request.BillingCycle, now)
+        };
+
+        await ApplyAddOnQuantitiesAsync(context, entitlement, request.AddOnQuantities, cancellationToken);
+        await context.UserEntitlements.AddAsync(entitlement, CancellationToken.None);
+
+        await context.PendingGardenRestores
+            .Where(p => p.Id == ticketId)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        return new PaidGardenProvisionResultDto(gardenId, formerMembership.Id, entitlement.Id);
     }
 
     private async Task<FreeInvitationQuotaDto> CalculateFreeQuotaAsync(

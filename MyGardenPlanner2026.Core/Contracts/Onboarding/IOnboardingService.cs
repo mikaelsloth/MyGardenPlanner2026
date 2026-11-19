@@ -1,5 +1,7 @@
 ﻿namespace MyGardenPlanner2026.Core.Contracts.Onboarding;
 
+using MyGardenPlanner2026.Core.Contracts.Account;
+
 /// <summary>
 /// Orkestrerer onboarding-flows: oprettelse af gratis Sandkasse-haver, provisionering af
 /// betalte haver, samt oprettelse/validering/tilbagekaldelse af haveinvitationer.
@@ -69,6 +71,23 @@ public interface IOnboardingService
     /// </summary>
     Task<PaidGardenProvisionResultDto> ProvisionPaidGardenFromDraftAsync(
         Guid draftId, string userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gendanner en slettet have som del af et betalt køb (R10.1d): un-sletter haven, flytter ejerens
+    /// bevarede medlemskab til brugeren med det KØBTE Layer/Category, sletter det gamle entitlement og
+    /// opretter et nyt fra købet. Købet skal dække havens tidligere niveau (GardenRestoreCoverage).
+    /// Kaster InvalidOperationException (uden ændringer), hvis gendannelsen ikke findes, ikke tilhører
+    /// e-mailen, er udløbet, eller købet ikke dækker. <c>Email</c> skal være den BEKRÆFTEDE e-mail.
+    /// </summary>
+    Task<PaidGardenProvisionResultDto> ProvisionRestoredGardenAsync(
+        PaidGardenRestoreRequestDto request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Som ProvisionRestoredGardenAsync, men køb (niveau, kategori, frekvens, tilkøb) hentes fra en
+    /// gemt checkout-draft, som slettes atomisk. Ved afvisning bevares draften.
+    /// </summary>
+    Task<PaidGardenProvisionResultDto> ProvisionRestoredGardenFromDraftAsync(
+        Guid draftId, string userId, string email, Guid restorePendingId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Accepterer en invitation: opretter GardenMembership til brugeren på det angivne

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Contracts.Account;
+using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Infrastructure.Data;
 
 /// <summary>
@@ -19,8 +20,7 @@ using MyGardenPlanner2026.Infrastructure.Data;
 ///
 /// SQLite-kompatibilitet: DateTimeOffset-sammenligning udføres IKKE i SQL. Gendannelsesrækkerne
 /// materialiseres først og tidsvindue-filtreres i hukommelsen (samme mønster som
-/// RoleElevationExpirySweepService). ExecuteDelete går uden om interceptors og skriver derfor ingen
-/// AuditLog-rækker (R10.4 tilføjer audit).
+/// RoleElevationExpirySweepService). ExecuteDelete går uden om interceptors, så oprydningen dokumenteres eksplicit i AuditLogs (R10.4).
 /// </summary>
 public sealed partial class GardenRestoreExpirySweepService(
     IDbContextFactory<PlannerDbContext> contextFactory,
@@ -63,10 +63,6 @@ public sealed partial class GardenRestoreExpirySweepService(
         }
     }
 
-    /// <summary>
-    /// Kører sweep'et én gang. Offentlig og uafhængig af timeren, så den kan testes direkte.
-    /// Returnerer antal udløbne gendannelsesrækker, der er behandlet.
-    /// </summary>
     public async Task<int> SweepOnceAsync(CancellationToken cancellationToken = default)
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
@@ -85,20 +81,49 @@ public sealed partial class GardenRestoreExpirySweepService(
 
         var gardenIds = expired.Select(t => t.GardenId).ToList();
         var ticketIds = expired.Select(t => t.Id).ToList();
+        var expiryByGarden = expired.ToDictionary(t => t.GardenId, t => t.ExpiresUtc);
+
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+
+        var candidateIds = await context.Gardens.IgnoreQueryFilters()
+            .Where(g => gardenIds.Contains(g.Id) && g.IsDeleted)
+            .Select(g => g.Id)
+            .ToListAsync(cancellationToken);
 
         // Cascade fjerner havens medlemskaber, entitlements, invitationer og gendannelsesrækken.
-        var purged = await context.Gardens.IgnoreQueryFilters()
-            .Where(g => gardenIds.Contains(g.Id) && g.IsDeleted)
-            .ExecuteDeleteAsync(cancellationToken);
+        // IsDeleted-tjekket gentages, så en have, der netop er gendannet, aldrig slettes.
+        if (candidateIds.Count > 0)
+        {
+            await context.Gardens.IgnoreQueryFilters()
+                .Where(g => candidateIds.Contains(g.Id) && g.IsDeleted)
+                .ExecuteDeleteAsync(cancellationToken);
+        }
+
+        List<Guid> survivors = candidateIds.Count == 0
+            ? []
+            : await context.Gardens.IgnoreQueryFilters()
+                .Where(g => candidateIds.Contains(g.Id))
+                .Select(g => g.Id)
+                .ToListAsync(cancellationToken);
+
+        var purgedIds = candidateIds.Except(survivors).ToList();
 
         // Rækker, der ikke blev fjernet via cascade, hørte til en have, der ikke var slettet.
         var stale = await context.PendingGardenRestores
             .Where(p => ticketIds.Contains(p.Id))
             .ExecuteDeleteAsync(cancellationToken);
 
-        if (purged > 0)
+        // R10.4: ExecuteDelete går uden om interceptors, så oprydningen dokumenteres eksplicit (aktør = system).
+        context.AuditLogs.AddRange(purgedIds.Select(id => GardenLifecycleAudit.Entry(
+            GardenLifecycleAudit.SystemActor, now, AuditAction.Delete, GardenLifecycleAudit.GardenEntity, id.ToString(),
+            new { IsDeleted = true, RestoreExpiredUtc = expiryByGarden[id] })));
+
+        await context.SaveChangesAsync(cancellationToken);
+        await transaction.CommitAsync(cancellationToken);
+
+        if (purgedIds.Count > 0)
         {
-            ExpiredGardensPurged(logger, purged);
+            ExpiredGardensPurged(logger, purgedIds.Count);
         }
 
         if (stale > 0)

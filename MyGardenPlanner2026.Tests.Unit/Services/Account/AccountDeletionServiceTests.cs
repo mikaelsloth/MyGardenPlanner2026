@@ -7,11 +7,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Contracts.Account;
 using MyGardenPlanner2026.Core.Contracts.Admin;
+using MyGardenPlanner2026.Core.Contracts.Common;
+using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Gardens;
 using MyGardenPlanner2026.Infrastructure.Data;
 using MyGardenPlanner2026.Infrastructure.Services.Account;
 using NSubstitute;
+using System.Text.Json;
 using Xunit;
 
 public sealed class AccountDeletionServiceTests : IDisposable
@@ -25,6 +28,8 @@ public sealed class AccountDeletionServiceTests : IDisposable
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
     private readonly DbContextOptions<PlannerDbContext> _options;
     private readonly IReAuthFailureTracker _tracker = Substitute.For<IReAuthFailureTracker>();
+    private static readonly CurrentUserInfo Actor = new(UserId, UserEmail, "10.0.0.1");
+    private readonly ICurrentUserAccessor _currentUser = Substitute.For<ICurrentUserAccessor>();
     private static readonly DateTimeOffset Now = new(2026, 11, 20, 12, 0, 0, TimeSpan.Zero);
 
     private readonly AccountDeletionService _sut;
@@ -44,13 +49,24 @@ public sealed class AccountDeletionServiceTests : IDisposable
 
     private AccountDeletionService CreateSut(int retentionDays)
     {
+        _currentUser.GetCurrent().Returns(Actor);
+
         var restoreOptions = Substitute.For<IOptionsMonitor<GardenRestoreOptions>>();
         restoreOptions.CurrentValue.Returns(new GardenRestoreOptions { RetentionDays = retentionDays });
 
         return new AccountDeletionService(
-            new TestFactory(_options), _tracker, restoreOptions, new FixedTimeProvider(Now),
+            new TestFactory(_options), _tracker, _currentUser, restoreOptions, new FixedTimeProvider(Now),
             NullLogger<AccountDeletionService>.Instance);
     }
+
+    private async Task<List<AuditLog>> GetAuditAsync()
+    {
+        await using var context = new PlannerDbContext(_options);
+        return await context.AuditLogs.AsNoTracking().OrderBy(a => a.Id).ToListAsync(Ct);
+    }
+
+    private static string Prop(string? json, string name) =>
+        JsonElement.Parse(json!).GetProperty(name).ToString();
 
     private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
     {
@@ -691,5 +707,127 @@ public sealed class AccountDeletionServiceTests : IDisposable
         }
 
         (await GetPendingAsync()).Should().BeEmpty();
+    }
+
+    // ---------- R10.4: audit ----------
+
+    [Fact]
+    public async Task DeleteUserDataAsync_SoleMember_WritesGardenRowAndSummaryRow()
+    {
+        var garden = await SeedGardenAsync("Min private have", (UserId, true));
+
+        await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
+
+        var audit = await GetAuditAsync();
+        audit.Should().HaveCount(2);
+
+        var gardenRow = audit.Single(a => a.EntityName == "Garden");
+        gardenRow.Action.Should().Be(AuditAction.Delete);
+        gardenRow.EntityId.Should().Be(garden.Id.ToString());
+        gardenRow.UserId.Should().Be(UserId);
+        gardenRow.UserEmail.Should().Be(UserEmail);
+        gardenRow.IpAddress.Should().Be("10.0.0.1");
+        gardenRow.TimestampUtc.Should().Be(Now);
+        Prop(gardenRow.OldValues, "IsDeleted").Should().Be("False");
+        Prop(gardenRow.NewValues, "Outcome").Should().Be("RetainedForRestore");
+        Prop(gardenRow.NewValues, "Reason").Should().Be("SoleMember");
+        Prop(gardenRow.NewValues, "RestorableUntilUtc").Should().Contain("2026-12-20");
+
+        var summary = audit.Single(a => a.EntityName == "AccountDeletion");
+        summary.Action.Should().Be(AuditAction.Delete);
+        summary.EntityId.Should().Be(UserId);
+        summary.UserId.Should().Be(UserId);
+        Prop(summary.NewValues, "GardensRetainedForRestore").Should().Be("1");
+        Prop(summary.NewValues, "GardensDeleted").Should().Be("0");
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_AuditValues_ContainNoEmailOrGardenName()
+    {
+        await SeedGardenAsync("Min private have", (UserId, true));
+        await SeedInvitationAsync((await SeedGardenAsync("Fælles", (OtherUserId, true), (UserId, false))).Id, OtherUserId, email: UserEmail);
+
+        await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
+
+        var audit = await GetAuditAsync();
+        foreach (var row in audit)
+        {
+            (row.OldValues ?? string.Empty).Should().NotContain(UserEmail).And.NotContain("Min private have");
+            (row.NewValues ?? string.Empty).Should().NotContain(UserEmail).And.NotContain("Min private have");
+        }
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_SoleMemberWithoutEmail_WritesPurgedOutcome()
+    {
+        await SeedGardenAsync("Min have", (UserId, true));
+
+        await _sut.DeleteUserDataAsync(UserId, null, Ct);
+
+        var gardenRow = (await GetAuditAsync()).Single(a => a.EntityName == "Garden");
+        Prop(gardenRow.NewValues, "Outcome").Should().Be("Purged");
+        gardenRow.NewValues.Should().NotContain("RestorableUntilUtc");
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_DeleteForAll_WritesRowWithDeleteForAllReason()
+    {
+        var garden = await SeedGardenWithRolesAsync("Slettes for alle",
+            (UserId, true, GardenAccessLevel.Planlaegger, AccessCategory.Administrator),
+            (OtherUserId, false, GardenAccessLevel.Planlaegger, AccessCategory.Editor));
+
+        await _sut.DeleteUserDataAsync(UserId, UserEmail, DeleteForAll(garden.Id), Ct);
+
+        var gardenRow = (await GetAuditAsync()).Single(a => a.EntityName == "Garden");
+        gardenRow.EntityId.Should().Be(garden.Id.ToString());
+        Prop(gardenRow.NewValues, "Reason").Should().Be("DeleteForAll");
+        Prop(gardenRow.NewValues, "Outcome").Should().Be("RetainedForRestore");
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_Transfer_WritesUpdateRowWithOldAndNewOwner()
+    {
+        var garden = await SeedGardenWithRolesAsync("Overdrages",
+            (UserId, true, GardenAccessLevel.Planlaegger, AccessCategory.Administrator),
+            (OtherUserId, false, GardenAccessLevel.BedDesigner, AccessCategory.Editor));
+
+        await _sut.DeleteUserDataAsync(UserId, UserEmail, Transfer(garden.Id, OtherUserId), Ct);
+
+        var audit = await GetAuditAsync();
+        var gardenRow = audit.Single(a => a.EntityName == "Garden");
+        gardenRow.Action.Should().Be(AuditAction.Update);
+        gardenRow.EntityId.Should().Be(garden.Id.ToString());
+        Prop(gardenRow.OldValues, "OwnerUserId").Should().Be(UserId);
+        Prop(gardenRow.NewValues, "OwnerUserId").Should().Be(OtherUserId);
+        Prop(gardenRow.NewValues, "NewOwnerCategory").Should().Be("Administrator");
+
+        var summary = audit.Single(a => a.EntityName == "AccountDeletion");
+        Prop(summary.NewValues, "GardensTransferred").Should().Be("1");
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_SharedGardenAsNonOwner_WritesOnlySummaryRow()
+    {
+        await SeedGardenAsync("Fælles have", (OtherUserId, true), (UserId, false));
+
+        await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
+
+        var audit = await GetAuditAsync();
+        var summary = audit.Should().ContainSingle().Subject;
+        summary.EntityName.Should().Be("AccountDeletion");
+        Prop(summary.NewValues, "Memberships").Should().Be("1");
+        Prop(summary.NewValues, "GardensDeleted").Should().Be("0");
+        Prop(summary.NewValues, "GardensRetainedForRestore").Should().Be("0");
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_Blocked_WritesNoAuditRows()
+    {
+        await SeedGardenAsync("Blokeret have", (UserId, true), (OtherUserId, false));
+
+        var result = await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
+
+        result.IsBlocked.Should().BeTrue();
+        (await GetAuditAsync()).Should().BeEmpty();
     }
 }

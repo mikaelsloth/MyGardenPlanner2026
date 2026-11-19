@@ -109,7 +109,7 @@ public sealed class OnboardingServiceRestoreTests : IDisposable
 
     private async Task<Guid> SeedDraftAsync(
         GardenAccessLevel layer, AccessCategory category, BillingCycle cycle = BillingCycle.Annual,
-        DateTimeOffset? expiresUtc = null)
+        DateTimeOffset? expiresUtc = null, Dictionary<Guid, int>? addOnQuantities = null)
     {
         await using var context = new PlannerDbContext(_options);
         var draft = new CheckoutDraft
@@ -118,7 +118,8 @@ public sealed class OnboardingServiceRestoreTests : IDisposable
             Layer = layer,
             Category = category,
             BillingCycle = cycle,
-            ExpiresUtc = expiresUtc ?? Now.AddMinutes(10)
+            ExpiresUtc = expiresUtc ?? Now.AddMinutes(10),
+            AddOnQuantities = addOnQuantities ?? []
         };
         context.CheckoutDrafts.Add(draft);
         await context.SaveChangesAsync(Ct);
@@ -131,8 +132,9 @@ public sealed class OnboardingServiceRestoreTests : IDisposable
         AccessCategory category = AccessCategory.Editor,
         BillingCycle cycle = BillingCycle.Annual,
         string userId = NewUserId,
-        string email = OwnerEmail) =>
-        new(userId, email, ticketId, layer, category, cycle, new Dictionary<Guid, int>());
+        string email = OwnerEmail,
+        IReadOnlyDictionary<Guid, int>? addOnQuantities = null) =>
+        new(userId, email, ticketId, layer, category, cycle, addOnQuantities ?? new Dictionary<Guid, int>());
 
     private async Task<Garden?> FindGardenAsync(Guid gardenId)
     {
@@ -164,6 +166,24 @@ public sealed class OnboardingServiceRestoreTests : IDisposable
     {
         await using var context = new PlannerDbContext(_options);
         return await context.CheckoutDrafts.CountAsync(d => d.Id == draftId, Ct);
+    }
+
+    private async Task<Guid> SeedAddOnAsync(AddOnType type)
+    {
+        await using var context = new PlannerDbContext(_options);
+        var addOn = new SubscriptionAddOn
+        {
+            Type = type,
+            Name = type.ToString(),
+            UnitDescription = "stk",
+            AnnualPrice = 100m,
+            MonthlyPrice = 10m,
+            PerpetualPrice = 300m,
+            DisplayOrder = (int)type
+        };
+        context.SubscriptionAddOns.Add(addOn);
+        await context.SaveChangesAsync(Ct);
+        return addOn.Id;
     }
 
     private async Task AssertNothingRestoredAsync(Guid gardenId)
@@ -226,6 +246,49 @@ public sealed class OnboardingServiceRestoreTests : IDisposable
         await _sut.ProvisionRestoredGardenAsync(Request(ticketId, cycle: BillingCycle.Perpetual), Ct);
 
         (await FindEntitlementAsync(gardenId, NewUserId))!.ValidToUtc.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task ProvisionRestoredGardenAsync_WithAddOns_SetsQuotasOnNewEntitlement()
+    {
+        var (gardenId, ticketId) = await SeedDeletedGardenAsync();
+        var bedProposals = await SeedAddOnAsync(AddOnType.BedforslagNiveau2);
+        var artifactsA = await SeedAddOnAsync(AddOnType.ArtefaktpakkeA);
+
+        await _sut.ProvisionRestoredGardenAsync(
+            Request(ticketId, addOnQuantities: new Dictionary<Guid, int> { [bedProposals] = 2, [artifactsA] = 3 }), Ct);
+
+        var entitlement = await FindEntitlementAsync(gardenId, NewUserId);
+        entitlement!.ExtraBedProposalsCount.Should().Be(2);
+        entitlement.ExtraCategoryAArtifactsCount.Should().Be(3);
+        entitlement.ExtraPlannedBedsCount.Should().Be(0);
+        entitlement.ExtraCategoryBArtifactsCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task ProvisionRestoredGardenAsync_UnknownAddOn_ThrowsAndRollsBackEverything()
+    {
+        var (gardenId, ticketId) = await SeedDeletedGardenAsync();
+
+        var act = () => _sut.ProvisionRestoredGardenAsync(
+            Request(ticketId, addOnQuantities: new Dictionary<Guid, int> { [Guid.NewGuid()] = 1 }), Ct);
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*Tilkøb*findes ikke*");
+        await AssertNothingRestoredAsync(gardenId);
+    }
+
+    [Fact]
+    public async Task ProvisionRestoredGardenFromDraftAsync_WithAddOns_UsesDraftQuotasAndConsumesDraft()
+    {
+        var (gardenId, ticketId) = await SeedDeletedGardenAsync();
+        var plannedBeds = await SeedAddOnAsync(AddOnType.PlanlagteBedeNiveau3);
+        var draftId = await SeedDraftAsync(
+            GardenAccessLevel.BedDesigner, AccessCategory.Editor, addOnQuantities: new Dictionary<Guid, int> { [plannedBeds] = 4 });
+
+        await _sut.ProvisionRestoredGardenFromDraftAsync(draftId, NewUserId, OwnerEmail, ticketId, Ct);
+
+        (await FindEntitlementAsync(gardenId, NewUserId))!.ExtraPlannedBedsCount.Should().Be(4);
+        (await CountDraftsAsync(draftId)).Should().Be(0);
     }
 
     [Fact]

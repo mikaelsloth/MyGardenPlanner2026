@@ -18,6 +18,15 @@
             </div>
         }
 
+        @if (restorableGardens.Count > 0)
+        {
+            <StatusBanner Variant="StatusBanner.StatusBannerVariant.Info" IconClass="bi-arrow-counterclockwise">
+                Du har gemte haver, der kan gendannes: @RestorableNames. Den nærmeste frist er @NearestExpiryLabel.
+                Vælg et abonnement, der dækker dem, for at gendanne en have i stedet for at oprette en ny.
+                <a href="/onboarding/checkout" class="btn btn-outline-primary btn-sm ms-3">Vælg abonnement og gendan</a>
+            </StatusBanner>
+        }
+
         <div class="row g-4">
             <div class="col-md-6">
                 <Card Variant="Card.CardVariant.Entity"

@@ -1,0 +1,39 @@
+﻿@namespace MyGardenPlanner2026.Components.Domain.Subscriptions
+
+<fieldset class="restore-garden-choice card" data-density="default">
+    <legend class="h5">Gendan en gemt have?</legend>
+    <p class="card-description">
+        Du har gemte haver, der kan gendannes. Gendanner du en have, bruges dit køb til den i stedet for at oprette en ny have.
+    </p>
+
+    <div class="form-check">
+        <input class="form-check-input" type="radio" name="restore-garden-choice" id="restore-garden-none"
+               checked="@(SelectedPendingRestoreId is null)"
+               @onchange="() => SelectAsync(null)" />
+        <label class="form-check-label" for="restore-garden-none">Opret en ny have</label>
+    </div>
+
+    @foreach (var garden in Gardens)
+    {
+        var covered = IsCovered(garden);
+        var inputId = $"restore-garden-{garden.PendingRestoreId}";
+        var hintId = $"{inputId}-hint";
+
+        <div class="form-check" @key="garden.PendingRestoreId">
+            <input class="form-check-input" type="radio" name="restore-garden-choice" id="@inputId"
+                   checked="@(SelectedPendingRestoreId == garden.PendingRestoreId)"
+                   disabled="@(!covered)"
+                   aria-describedby="@hintId"
+                   @onchange="() => SelectAsync(garden.PendingRestoreId)" />
+            <label class="form-check-label" for="@inputId">Gendan <strong>@garden.Name</strong></label>
+            <p class="form-text restore-garden-choice-hint" id="@hintId">
+                Kan gendannes til @ExpiryLabel(garden).
+                @if (!covered)
+                {
+                    <span class="restore-garden-choice-upgrade">Kræver mindst @RequiredLabel(garden). Dit nuværende valg dækker ikke haven.</span>
+                    <button type="button" class="btn btn-link btn-sm p-0 ms-1" @onclick="OnChangeSubscription">Ændr abonnement</button>
+                }
+            </p>
+        </div>
+    }
+</fieldset>

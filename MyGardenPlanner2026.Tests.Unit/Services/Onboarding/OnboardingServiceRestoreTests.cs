@@ -7,6 +7,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Contracts.Account;
 using MyGardenPlanner2026.Core.Contracts.Admin;
+using MyGardenPlanner2026.Core.Contracts.Common;
+using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Gardens;
 using MyGardenPlanner2026.Core.Entities.Layer1;
@@ -14,6 +16,7 @@ using MyGardenPlanner2026.Infrastructure.Data;
 using MyGardenPlanner2026.Infrastructure.Services.Account;
 using MyGardenPlanner2026.Infrastructure.Services.Onboarding;
 using NSubstitute;
+using System.Text.Json;
 using Xunit;
 
 public sealed class OnboardingServiceRestoreTests : IDisposable
@@ -23,7 +26,7 @@ public sealed class OnboardingServiceRestoreTests : IDisposable
     private const string OwnerEmail = "bruger@example.dk";
 
     private static readonly DateTimeOffset Now = new(2026, 11, 20, 12, 0, 0, TimeSpan.Zero);
-
+    private readonly ICurrentUserAccessor _currentUser = Substitute.For<ICurrentUserAccessor>();
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
     private readonly DbContextOptions<PlannerDbContext> _options;
     private readonly OnboardingService _sut;
@@ -38,9 +41,11 @@ public sealed class OnboardingServiceRestoreTests : IDisposable
             context.Database.EnsureCreated();
         }
 
+        _currentUser.GetCurrent().Returns(new CurrentUserInfo(NewUserId, OwnerEmail, "10.0.0.1"));
+
         _sut = new OnboardingService(
             new TestFactory(_options), new InvitationTokenService(), new FixedTimeProvider(Now),
-            NullLogger<OnboardingService>.Instance);
+            NullLogger<OnboardingService>.Instance, _currentUser);
     }
 
     public void Dispose() => _connection.Dispose();
@@ -551,7 +556,7 @@ public sealed class OnboardingServiceRestoreTests : IDisposable
         var restoreOptions = Substitute.For<IOptionsMonitor<GardenRestoreOptions>>();
         restoreOptions.CurrentValue.Returns(new GardenRestoreOptions { RetentionDays = 30 });
         var deletion = new AccountDeletionService(
-            new TestFactory(_options), Substitute.For<IReAuthFailureTracker>(), restoreOptions,
+            new TestFactory(_options), Substitute.For<IReAuthFailureTracker>(), _currentUser, restoreOptions,
             new FixedTimeProvider(Now), NullLogger<AccountDeletionService>.Instance);
         var restoreService = new GardenRestoreService(new TestFactory(_options), new FixedTimeProvider(Now));
 
@@ -570,5 +575,87 @@ public sealed class OnboardingServiceRestoreTests : IDisposable
         (await verify.GardenMemberships.SingleAsync(Ct)).UserId.Should().Be(NewUserId);
         (await verify.UserEntitlements.CountAsync(e => e.UserId == NewUserId, Ct)).Should().Be(1);
         (await restoreService.GetRestorableGardensAsync(OwnerEmail, Ct)).Should().BeEmpty();
+    }
+
+    private async Task<List<AuditLog>> GetAuditAsync()
+    {
+        await using var context = new PlannerDbContext(_options);
+        return await context.AuditLogs.AsNoTracking().OrderBy(a => a.Id).ToListAsync(Ct);
+    }
+
+    private static string Prop(string? json, string name) =>
+        JsonElement.Parse(json!).GetProperty(name).ToString();
+
+    // ---------- R10.4: audit ----------
+
+    [Fact]
+    public async Task ProvisionRestoredGardenAsync_Success_WritesGardenAndMembershipAuditRows()
+    {
+        var (gardenId, ticketId) = await SeedDeletedGardenAsync();
+
+        var result = await _sut.ProvisionRestoredGardenAsync(
+            Request(ticketId, GardenAccessLevel.HaveArkitekt, AccessCategory.Administrator), Ct);
+
+        var audit = await GetAuditAsync();
+
+        var gardenRow = audit.Single(a => a.EntityName == "Garden");
+        gardenRow.Action.Should().Be(AuditAction.Update);
+        gardenRow.EntityId.Should().Be(gardenId.ToString());
+        gardenRow.UserId.Should().Be(NewUserId);
+        gardenRow.UserEmail.Should().Be(OwnerEmail);
+        gardenRow.IpAddress.Should().Be("10.0.0.1");
+        gardenRow.TimestampUtc.Should().Be(Now);
+        Prop(gardenRow.OldValues, "IsDeleted").Should().Be("True");
+        Prop(gardenRow.NewValues, "IsDeleted").Should().Be("False");
+        Prop(gardenRow.NewValues, "RestoredByUserId").Should().Be(NewUserId);
+
+        var membershipRow = audit.Single(a => a.EntityName == "GardenMembership");
+        membershipRow.Action.Should().Be(AuditAction.Update);
+        membershipRow.EntityId.Should().Be(result.MembershipId.ToString());
+        Prop(membershipRow.OldValues, "UserId").Should().Be(FormerUserId);
+        Prop(membershipRow.NewValues, "UserId").Should().Be(NewUserId);
+        Prop(membershipRow.NewValues, "Layer").Should().Be("HaveArkitekt");
+        Prop(membershipRow.NewValues, "Category").Should().Be("Administrator");
+    }
+
+    [Fact]
+    public async Task ProvisionRestoredGardenAsync_Rejected_WritesNoAuditRows()
+    {
+        var (_, ticketId) = await SeedDeletedGardenAsync();
+
+        var act = () => _sut.ProvisionRestoredGardenAsync(
+            Request(ticketId, GardenAccessLevel.Planlaegger, AccessCategory.Editor), Ct);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        (await GetAuditAsync()).Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ProvisionRestoredGardenAsync_AccessorWithoutUser_UsesPurchasingUserAndKeepsIp()
+    {
+        _currentUser.GetCurrent().Returns(new CurrentUserInfo(null, null, "10.0.0.2"));
+        var (_, ticketId) = await SeedDeletedGardenAsync();
+
+        await _sut.ProvisionRestoredGardenAsync(Request(ticketId), Ct);
+
+        var gardenRow = (await GetAuditAsync()).Single(a => a.EntityName == "Garden");
+        gardenRow.UserId.Should().Be(NewUserId);
+        gardenRow.UserEmail.Should().Be(OwnerEmail);
+        gardenRow.IpAddress.Should().Be("10.0.0.2");
+    }
+
+    [Fact]
+    public async Task ProvisionRestoredGardenAsync_WithoutAccessor_UsesPurchasingUserWithoutIp()
+    {
+        var sut = new OnboardingService(
+            new TestFactory(_options), new InvitationTokenService(), new FixedTimeProvider(Now),
+            NullLogger<OnboardingService>.Instance);
+        var (_, ticketId) = await SeedDeletedGardenAsync();
+
+        await sut.ProvisionRestoredGardenAsync(Request(ticketId), Ct);
+
+        var gardenRow = (await GetAuditAsync()).Single(a => a.EntityName == "Garden");
+        gardenRow.UserId.Should().Be(NewUserId);
+        gardenRow.IpAddress.Should().BeNull();
     }
 }

@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Contracts.Account;
 using MyGardenPlanner2026.Core.Contracts.Admin;
+using MyGardenPlanner2026.Core.Contracts.Common;
+using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Gardens;
 using MyGardenPlanner2026.Infrastructure.Data;
@@ -13,8 +15,9 @@ using MyGardenPlanner2026.Infrastructure.Data;
 /// Standardimplementering af IAccountDeletionService. Garden-tabellerne har ingen FK til
 /// AspNetUsers (kun UserId som streng), så brugersletning kaskaderer ikke af sig selv.
 /// Sletning er fysisk (IgnoreQueryFilters + ExecuteDelete), så personhenførbare data forsvinder;
-/// ExecuteDelete går uden om interceptors og skriver derfor ingen AuditLog-rækker (loggen
-/// 'AccountDataDeleted' dokumenterer sletningen). AuditLogs og RoleElevationRequests røres ikke.
+/// ExecuteDelete/ExecuteUpdate går uden om interceptors, så sletningen dokumenteres eksplicit i
+/// AuditLogs i samme transaktion (R10.4, se GardenLifecycleAudit): én række pr. berørt have og én
+/// resumérække. AuditLogs og RoleElevationRequests røres ikke.
 /// re-auth-fejlforsøg ligger i admin-schema og slettes via IReAuthFailureTracker.
 /// Invitationer sendt til brugerens e-mail slettes også (match på nuværende e-mail, case-insensitivt).
 /// R10.1a: er brugeren eneste ejer i en have med andre medlemmer, kan ejerskabet overdrages til et
@@ -27,6 +30,7 @@ using MyGardenPlanner2026.Infrastructure.Data;
 public sealed partial class AccountDeletionService(
     IDbContextFactory<PlannerDbContext> contextFactory,
     IReAuthFailureTracker reAuthFailureTracker,
+    ICurrentUserAccessor currentUser,
     IOptionsMonitor<GardenRestoreOptions> restoreOptions,
     TimeProvider timeProvider,
     ILogger<AccountDeletionService> logger) : IAccountDeletionService
@@ -196,8 +200,6 @@ public sealed partial class AccountDeletionService(
                     ExpiresUtc = expiresUtc
                 });
             }
-
-            await context.SaveChangesAsync(cancellationToken);
         }
 
         var memberships = await context.GardenMemberships.IgnoreQueryFilters()
@@ -234,6 +236,49 @@ public sealed partial class AccountDeletionService(
             .Where(i => i.InvitedByUserId == userId && !i.IsAccepted && !i.IsRevoked)
             .ExecuteUpdateAsync(s => s.SetProperty(i => i.IsRevoked, true), cancellationToken);
 
+        // R10.4: handlingerne ovenfor går uden om interceptors, så de dokumenteres eksplicit (samme transaktion).
+        var actor = currentUser.GetCurrent();
+        var auditEntries = new List<AuditLog>();
+
+        foreach (var (gardenId, newOwnerUserId) in transfers)
+        {
+            auditEntries.Add(GardenLifecycleAudit.Entry(
+                actor, now, AuditAction.Update, GardenLifecycleAudit.GardenEntity, gardenId.ToString(),
+                new { OwnerUserId = userId },
+                new { OwnerUserId = newOwnerUserId, NewOwnerCategory = AccessCategory.Administrator }));
+        }
+
+        foreach (var gardenId in plan.GardenIdsToDelete)
+        {
+            auditEntries.Add(GardenDeletedEntry(actor, now, gardenId, "SoleMember", retainedIds.Contains(gardenId), expiresUtc));
+        }
+
+        foreach (var gardenId in deleteForAllIds)
+        {
+            auditEntries.Add(GardenDeletedEntry(actor, now, gardenId, "DeleteForAll", retainedIds.Contains(gardenId), expiresUtc));
+        }
+
+        auditEntries.Add(GardenLifecycleAudit.Entry(
+            actor, now, AuditAction.Delete, GardenLifecycleAudit.AccountDeletionEntity, userId,
+            null,
+            new
+            {
+                GardensTransferred = transfers.Count,
+                GardensRetainedForRestore = retainedIds.Count,
+                GardensDeleted = gardens,
+                Memberships = memberships + retainedOthersMemberships,
+                Entitlements = entitlements + retainedOthersEntitlements,
+                CheckoutDrafts = drafts,
+                InvitationsDeleted = invitationsDeleted + retainedInvitations,
+                InvitationsToEmailDeleted = invitationsToEmailDeleted,
+                InvitationsRevoked = invitationsRevoked
+            }));
+
+        context.AuditLogs.AddRange(auditEntries);
+
+        // Gemmer gendannelsesrækkerne og auditrækkerne; fejler det, rulles hele sletningen tilbage.
+        await context.SaveChangesAsync(cancellationToken);
+
         await transaction.CommitAsync(cancellationToken);
 
         await reAuthFailureTracker.ClearFailuresAsync(userId, cancellationToken);
@@ -253,6 +298,18 @@ public sealed partial class AccountDeletionService(
             drafts, invitationsDeleted + retainedInvitations, invitationsToEmailDeleted, invitationsRevoked);
         return AccountDeletionResult.Completed();
     }
+
+    private static AuditLog GardenDeletedEntry(
+        CurrentUserInfo actor, DateTimeOffset now, Guid gardenId, string reason, bool retained, DateTimeOffset expiresUtc) =>
+        GardenLifecycleAudit.Entry(
+            actor, now, AuditAction.Delete, GardenLifecycleAudit.GardenEntity, gardenId.ToString(),
+            new { IsDeleted = false },
+            new
+            {
+                Outcome = retained ? "RetainedForRestore" : "Purged",
+                Reason = reason,
+                RestorableUntilUtc = retained ? expiresUtc : (DateTimeOffset?)null
+            });
 
     private static async Task<DeletionPlan> PlanAsync(
         PlannerDbContext context, string userId, CancellationToken cancellationToken)

@@ -6,11 +6,13 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Core.Contracts.Account;
+using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Gardens;
 using MyGardenPlanner2026.Infrastructure.Data;
 using MyGardenPlanner2026.Infrastructure.Services.Account;
 using NSubstitute;
+using System.Text.Json;
 using Xunit;
 
 public sealed class GardenRestoreExpirySweepServiceTests : IDisposable
@@ -268,5 +270,52 @@ public sealed class GardenRestoreExpirySweepServiceTests : IDisposable
         {
             await _sut.StopAsync(CancellationToken.None);
         }
+    }
+
+    private async Task<List<AuditLog>> GetAuditAsync()
+    {
+        await using var context = new PlannerDbContext(_options);
+        return await context.AuditLogs.AsNoTracking().OrderBy(a => a.Id).ToListAsync(Ct);
+    }
+
+    [Fact]
+    public async Task SweepOnceAsync_PurgedGarden_WritesSystemAuditRow()
+    {
+        var (gardenId, _) = await SeedTicketAsync("Udløbet", Now.AddSeconds(-1));
+
+        await _sut.SweepOnceAsync(Ct);
+
+        var row = (await GetAuditAsync()).Should().ContainSingle().Subject;
+        row.EntityName.Should().Be("Garden");
+        row.Action.Should().Be(AuditAction.Delete);
+        row.EntityId.Should().Be(gardenId.ToString());
+        row.UserId.Should().BeNull();
+        row.UserEmail.Should().BeNull();
+        row.IpAddress.Should().BeNull();
+        row.TimestampUtc.Should().Be(Now);
+        row.NewValues.Should().BeNull();
+        JsonElement.Parse(row.OldValues!).GetProperty("RestoreExpiredUtc").ToString()
+            .Should().Contain("2026-11-20");
+    }
+
+    [Fact]
+    public async Task SweepOnceAsync_OnlyExpiredGardensAreAudited()
+    {
+        var (expiredId, _) = await SeedTicketAsync("Udløbet", Now.AddDays(-1));
+        await SeedTicketAsync("Gendannelig", Now.AddDays(5));
+
+        await _sut.SweepOnceAsync(Ct);
+
+        (await GetAuditAsync()).Should().ContainSingle().Which.EntityId.Should().Be(expiredId.ToString());
+    }
+
+    [Fact]
+    public async Task SweepOnceAsync_ExpiredTicketForGardenNotMarkedDeleted_WritesNoAuditRow()
+    {
+        await SeedTicketAsync("Gendannet", Now.AddDays(-1), gardenIsDeleted: false);
+
+        await _sut.SweepOnceAsync(Ct);
+
+        (await GetAuditAsync()).Should().BeEmpty();
     }
 }

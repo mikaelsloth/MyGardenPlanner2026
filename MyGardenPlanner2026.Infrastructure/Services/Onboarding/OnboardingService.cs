@@ -3,11 +3,13 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using MyGardenPlanner2026.Core.Contracts.Account;
+using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Contracts.Onboarding;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Gardens;
 using MyGardenPlanner2026.Core.Entities.Layer1;
 using MyGardenPlanner2026.Infrastructure.Data;
+using MyGardenPlanner2026.Infrastructure.Services.Account;
 
 /// <summary>
 /// Standardimplementering af IOnboardingService. Skriver via den almindelige
@@ -23,7 +25,8 @@ public sealed partial class OnboardingService(
     IDbContextFactory<PlannerDbContext> contextFactory,
     IInvitationTokenService tokenService,
     TimeProvider timeProvider,
-    ILogger<OnboardingService> logger) : IOnboardingService
+    ILogger<OnboardingService> logger,
+    ICurrentUserAccessor? currentUser = null) : IOnboardingService
 {
     private static readonly TimeSpan TrialDuration = TimeSpan.FromDays(30);
     private static readonly TimeSpan CheckoutDraftLifetime = TimeSpan.FromMinutes(30);
@@ -628,6 +631,23 @@ public sealed partial class OnboardingService(
         await context.PendingGardenRestores
             .Where(p => p.Id == ticketId)
             .ExecuteDeleteAsync(cancellationToken);
+
+        // R10.4: ExecuteUpdate går uden om interceptors, så gendannelsen dokumenteres eksplicit.
+        // Uden bruger i accessoren (fx en Blazor-circuit) bruges brugeren fra købet.
+        var current = currentUser?.GetCurrent();
+        var actor = current is { UserId: not null }
+            ? current
+            : new CurrentUserInfo(request.UserId, request.Email, current?.IpAddress);
+
+        context.AuditLogs.Add(GardenLifecycleAudit.Entry(
+            actor, now, AuditAction.Update, GardenLifecycleAudit.GardenEntity, gardenId.ToString(),
+            new { IsDeleted = true },
+            new { IsDeleted = false, RestoredByUserId = request.UserId, request.Layer, request.Category }));
+
+        context.AuditLogs.Add(GardenLifecycleAudit.Entry(
+            actor, now, AuditAction.Update, GardenLifecycleAudit.MembershipEntity, formerMembership.Id.ToString(),
+            new { UserId = formerUserId, formerMembership.Layer, formerMembership.Category, IsDeleted = true },
+            new { request.UserId, request.Layer, request.Category, IsDeleted = false }));
 
         return new PaidGardenProvisionResultDto(gardenId, formerMembership.Id, entitlement.Id);
     }

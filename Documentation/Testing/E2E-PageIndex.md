@@ -503,6 +503,7 @@ Detaljemodal (AuditLogDetailModal):
   Tests: ManualSmoke/TjeklisteJ/AuditLogDetailTests.
   Rækker fra Blazor-handlinger har handlende bruger via CircuitUserCircuitHandler (AsyncLocal CircuitUserContext) og HttpContextCurrentUserAccessor. IP-adressen er klientens IP fra circuit-forbindelsen (R1.5).
   Tidspunkter (resultattabel, detaljemodal, jobliste) vises i UTC med suffikset " UTC" via AuditLogTimeFormatter (format "g", da-DK). Filterdatoer tolkes også som UTC.
+  Livscyklus-rækker (R10.4): kontosletning, gendannelse og oprydning af haver skrives eksplicit (ExecuteDelete/ExecuteUpdate går uden om interceptoren): EntityName "Garden" (Update ved ejerskabsoverdragelse/gendannelse, Delete ved sletning/oprydning), "GardenMembership" (Update ved gendannelse) og "AccountDeletion" (resumé, EntityId = bruger-ID). Værdierne indeholder kun id'er, udfald og antal (ingen e-mail eller havenavne). Oprydning har tom aktør (system).
 Filter: AuditLogFilterBar synkroniserer kun fra InitialFilter ved første OnParametersSet. AdminAuditLogPage renderer derfor først filterbaren, når præferencen er indlæst (filterReady). Datoer tolkes som UTC.
   Datofelterne hedder "Fra (UTC)" og "Til (UTC)" (id #audit-filter-from / #audit-filter-to).
 Eksportpanel (AuditLogExportPanel):
@@ -669,7 +670,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ~~- R10.1 Eneste ejer i en have med andre medlemmer blokerer kontosletning. Mangler: ejerskabsoverdragelse (vælg ny ejer) eller bekræftelse af, at alles adgang til havedata slettes (dog ikke andre brugeres konti).~~
 - R10.2 Tilbyd en backup-fil af brugerens data, som kun kan bruges, hvis brugeren vender tilbage.
 - R10.3 Layer 2/3-data (bede, planer m.m.) skal medtages i AccountDeletionService (eller kaskade), når de bygges.
-- R10.4 AccountDeletionService bruger ExecuteDelete og skriver derfor ingen AuditLog-rækker. Overvej en eksplicit audit-post som dokumentation.
+~~- R10.4 AccountDeletionService bruger ExecuteDelete og skriver derfor ingen AuditLog-rækker. Overvej en eksplicit audit-post som dokumentation.~~
 ~~- R10.5 Kontosider på engelsk (blokeringsbesked mv.) lokaliseres i R8.~~
 - R10.6 (backlog) E2E for kontosletning: ejerskabsoverdragelse, slet for alle og gendannelse (kræver seedning af haver med flere medlemmer i SmokeTestDataSeeder).
 - R10.7 (backlog) Notifikationsmail til ny ejer ved ejerskabsoverdragelse (kræver en rigtig IEmailSender; SmtpSecurityEmailSender sender kun til Smtp:AdminSecurityEmails).

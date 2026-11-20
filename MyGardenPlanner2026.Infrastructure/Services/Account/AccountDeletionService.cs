@@ -26,6 +26,8 @@ using MyGardenPlanner2026.Infrastructure.Data;
 /// bevares i GardenRestoreOptions.RetentionDays (PendingGardenRestore, matchet via e-mail-hash).
 /// Ejerens medlemskab/entitlement bevares soft-slettet; andres medlemskaber, entitlements og
 /// invitationer slettes fysisk. Uden e-mail kan haven ikke gendannes og slettes fysisk.
+/// R10.3: AccountDeletionCoverageTests (Tests.Unit/Architecture) fejler, når en ny entitet eller bruger-egenskab
+/// tilføjes til EF-modellen uden klassifikation. Nye haveejede entiteter (Layer 2/3) skal cascade fra Garden.
 /// </summary>
 public sealed partial class AccountDeletionService(
     IDbContextFactory<PlannerDbContext> contextFactory,
@@ -236,6 +238,11 @@ public sealed partial class AccountDeletionService(
             .Where(i => i.InvitedByUserId == userId && !i.IsAccepted && !i.IsRevoked)
             .ExecuteUpdateAsync(s => s.SetProperty(i => i.IsRevoked, true), cancellationToken);
 
+        // R10.3: brugerens præferencer for AuditLog-siden (filteret kan indeholde e-mails) slettes.
+        var viewerPreferences = await context.AuditLogViewerPreferences
+            .Where(p => p.UserId == userId)
+            .ExecuteDeleteAsync(cancellationToken);
+
         // R10.4: handlingerne ovenfor går uden om interceptors, så de dokumenteres eksplicit (samme transaktion).
         var actor = currentUser.GetCurrent();
         var auditEntries = new List<AuditLog>();
@@ -271,7 +278,8 @@ public sealed partial class AccountDeletionService(
                 CheckoutDrafts = drafts,
                 InvitationsDeleted = invitationsDeleted + retainedInvitations,
                 InvitationsToEmailDeleted = invitationsToEmailDeleted,
-                InvitationsRevoked = invitationsRevoked
+                InvitationsRevoked = invitationsRevoked,
+                ViewerPreferences = viewerPreferences
             }));
 
         context.AuditLogs.AddRange(auditEntries);

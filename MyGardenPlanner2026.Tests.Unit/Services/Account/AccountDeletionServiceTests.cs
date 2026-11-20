@@ -117,6 +117,24 @@ public sealed class AccountDeletionServiceTests : IDisposable
         await context.SaveChangesAsync(Ct);
     }
 
+    private async Task SeedViewerPreferenceAsync(string userId)
+    {
+        await using var context = new PlannerDbContext(_options);
+        context.AuditLogViewerPreferences.Add(new AuditLogViewerPreference
+        {
+            UserId = userId,
+            PageSize = 50,
+            LastFilterJson = "{\"UserEmail\":\"admin@example.dk\"}"
+        });
+        await context.SaveChangesAsync(Ct);
+    }
+
+    private async Task<int> CountViewerPreferencesAsync(string userId)
+    {
+        await using var context = new PlannerDbContext(_options);
+        return await context.AuditLogViewerPreferences.CountAsync(p => p.UserId == userId, Ct);
+    }
+
     private async Task<Guid> SeedInvitationAsync(
         Guid gardenId, string invitedBy, bool accepted = false, bool revoked = false,
         string email = "inviteret@example.dk")
@@ -829,5 +847,45 @@ public sealed class AccountDeletionServiceTests : IDisposable
 
         result.IsBlocked.Should().BeTrue();
         (await GetAuditAsync()).Should().BeEmpty();
+    }
+
+    // ---------- R10.3: AuditLog-præferencer ----------
+
+    [Fact]
+    public async Task DeleteUserDataAsync_RemovesUsersAuditLogViewerPreference_ButNotOthers()
+    {
+        await SeedGardenAsync("Min have", (UserId, true));
+        await SeedViewerPreferenceAsync(UserId);
+        await SeedViewerPreferenceAsync(OtherUserId);
+
+        await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
+
+        (await CountViewerPreferencesAsync(UserId)).Should().Be(0);
+        (await CountViewerPreferencesAsync(OtherUserId)).Should().Be(1);
+        var summary = (await GetAuditAsync()).Single(a => a.EntityName == "AccountDeletion");
+        Prop(summary.NewValues, "ViewerPreferences").Should().Be("1");
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_NoViewerPreference_SummaryCountsZero()
+    {
+        await SeedGardenAsync("Min have", (UserId, true));
+
+        await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
+
+        var summary = (await GetAuditAsync()).Single(a => a.EntityName == "AccountDeletion");
+        Prop(summary.NewValues, "ViewerPreferences").Should().Be("0");
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_Blocked_KeepsViewerPreference()
+    {
+        await SeedGardenAsync("Blokeret have", (UserId, true), (OtherUserId, false));
+        await SeedViewerPreferenceAsync(UserId);
+
+        var result = await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
+
+        result.IsBlocked.Should().BeTrue();
+        (await CountViewerPreferencesAsync(UserId)).Should().Be(1);
     }
 }

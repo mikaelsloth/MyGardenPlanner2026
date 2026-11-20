@@ -669,7 +669,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ### R10 – Kontosletning: ejerskab og backup (separat scope)
 ~~- R10.1 Eneste ejer i en have med andre medlemmer blokerer kontosletning. Mangler: ejerskabsoverdragelse (vælg ny ejer) eller bekræftelse af, at alles adgang til havedata slettes (dog ikke andre brugeres konti).~~
 - R10.2 Tilbyd en backup-fil af brugerens data, som kun kan bruges, hvis brugeren vender tilbage.
-- R10.3 Layer 2/3-data (bede, planer m.m.) skal medtages i AccountDeletionService (eller kaskade), når de bygges.
+~~- R10.3 Layer 2/3-data (bede, planer m.m.) skal medtages i AccountDeletionService (eller kaskade), når de bygges.~~
 ~~- R10.4 AccountDeletionService bruger ExecuteDelete og skriver derfor ingen AuditLog-rækker. Overvej en eksplicit audit-post som dokumentation.~~
 ~~- R10.5 Kontosider på engelsk (blokeringsbesked mv.) lokaliseres i R8.~~
 - R10.6 (backlog) E2E for kontosletning: ejerskabsoverdragelse, slet for alle og gendannelse (kræver seedning af haver med flere medlemmer i SmokeTestDataSeeder).
@@ -677,6 +677,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 - R10.8 (backlog) Overdragelse med modtagerens accept og betaling af eventuel forskel (i dag hæves kun Category til Administrator uden nyt entitlement).
 - R10.9 (backlog) Backup-filen (R10.2) bundet til en anden e-mail end den oprindelige (intet sikkert design endnu).
 - R10.10 (backlog) Fortrydelse af hele kontosletningen i 30 dage (deaktivering af Identity-brugeren i stedet for sletning).
+- R10.11 (observation) SoftDeleteInterceptor skriver handlende brugers e-mail (UserEmail ?? UserId) i DeletedBy. Efter kontosletning bevares værdien på soft-slettede rækker (fx kataloger), jf. AccountDeletionCoverageTests (DeletedBy er bevaret som regel). Overvej at skrive bruger-ID i stedet for e-mail.
 
 Filer til Upload: AccountDeletionService, DeletePersonalData, Garden-entiteterne
 

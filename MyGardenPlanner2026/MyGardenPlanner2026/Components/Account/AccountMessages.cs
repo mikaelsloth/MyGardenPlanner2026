@@ -79,4 +79,6 @@ internal static class AccountMessages
 
     public static string GardenDeleteNameMismatch(string gardenName) =>
         $"Error: Skriv havens navn '{gardenName}' for at bekræfte, at haven slettes for alle medlemmer.";
+
+    public const string BackupNeedsEmail = "Kontoen har ingen e-mailadresse og kan ikke sikkerhedskopieres.";
 }

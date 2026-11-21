@@ -406,11 +406,12 @@ Filer: PersonalData.razor (+ .cs), IdentityComponentsEndpointRouteBuilderExtensi
 /Account/Manage/DeletePersonalData
 Titel: Slet personlige data – MyGardenPlanner. h3 "Slet personlige data". Static SSR.
 Felt "Adgangskode" (kun hvis brugeren har password), knap "Slet data og luk min konto". Advarselsboksen viser opbevaringsperioden (GardenRestore:RetentionDays, standard 30 dage).
+Over formularen: kort "Hent en backup, før du sletter" med knappen "Download backup" (POST til /Account/Manage/DownloadAccountBackup, kræver login og antiforgery, filnavn MyGardenPlanner-backup.json). Filen er læsbar JSON (format MyGardenPlanner.AccountBackup, version 1) med personlige data og egne haver, signeret via Data Protection og bundet til e-mailen med et hash (R10.2). Ingen import endnu.
 Er brugeren eneste ejer i haver med andre medlemmer, vises pr. have en fieldset (legend = havens navn) med select #garden-choice-<n> ("Vælg…", "Overdrag ejerskab til <e-mail> (<kategori>, <niveau>)", "Slet haven for alle medlemmer"; n = 0, 1, …), felt #garden-confirm-<n> (havens navn, kun ved sletning for alle) og et skjult felt Input.Gardens[n].GardenId.
 Forkert password: "Error: Adgangskoden er forkert.". Mangler valg: "Error: Vælg, hvad der skal ske med haven '<navn>'.". Forkert navn ved sletning for alle (trimmet, versalfølsomt ikke): "Error: Skriv havens navn '<navn>' for at bekræfte, at haven slettes for alle medlemmer.". Service afviser stadig (fx ugyldig modtager): "Error: Du er eneste ejer af haver, der deles med andre medlemmer: <haver>. Ejerskabet skal overdrages, før din konto kan slettes." Fejlet DeleteAsync: "Error: Din konto kunne ikke slettes. Prøv igen."
   Overdragelse: modtageren får IsOwner og hæves til Administrator (Layer uændret, intet nyt entitlement). Sletning for alle: haven soft-slettes i GardenRestore:RetentionDays, andre medlemmers adgang slettes fysisk.
   Succes: data og konto slettes, bruger logges ud, redirect til forsiden. Haver, hvor brugeren er eneste medlem, bevares soft-slettet i GardenRestore:RetentionDays (standard 30) og kan gendannes ved registrering med samme e-mail (R10.1b; UI i R10.1d).
-Filer: DeletePersonalData.razor (+ .cs), AccountDeletionService.cs, IAccountDeletionService.cs, GardenRestoreService.cs
+Filer: DeletePersonalData.razor (+ .cs), AccountDeletionService.cs, IAccountDeletionService.cs, GardenRestoreService.cs, AccountBackupService.cs, IAccountBackupService.cs, PersonalDataExporter.cs
 ```
 
 ### 4.4 Admin
@@ -668,7 +669,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 
 ### R10 – Kontosletning: ejerskab og backup (separat scope)
 ~~- R10.1 Eneste ejer i en have med andre medlemmer blokerer kontosletning. Mangler: ejerskabsoverdragelse (vælg ny ejer) eller bekræftelse af, at alles adgang til havedata slettes (dog ikke andre brugeres konti).~~
-- R10.2 Tilbyd en backup-fil af brugerens data, som kun kan bruges, hvis brugeren vender tilbage.
+~~- R10.2 Tilbyd en backup-fil af brugerens data, som kun kan bruges, hvis brugeren vender tilbage.~~
 ~~- R10.3 Layer 2/3-data (bede, planer m.m.) skal medtages i AccountDeletionService (eller kaskade), når de bygges.~~
 ~~- R10.4 AccountDeletionService bruger ExecuteDelete og skriver derfor ingen AuditLog-rækker. Overvej en eksplicit audit-post som dokumentation.~~
 ~~- R10.5 Kontosider på engelsk (blokeringsbesked mv.) lokaliseres i R8.~~
@@ -678,6 +679,9 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 - R10.9 (backlog) Backup-filen (R10.2) bundet til en anden e-mail end den oprindelige (intet sikkert design endnu).
 - R10.10 (backlog) Fortrydelse af hele kontosletningen i 30 dage (deaktivering af Identity-brugeren i stedet for sletning).
 - R10.11 (observation) SoftDeleteInterceptor skriver handlende brugers e-mail (UserEmail ?? UserId) i DeletedBy. Efter kontosletning bevares værdien på soft-slettede rækker (fx kataloger), jf. AccountDeletionCoverageTests (DeletedBy er bevaret som regel). Overvej at skrive bruger-ID i stedet for e-mail.
+- R10.12 (backlog) Import af backup-filen (kræver Layer 2/3-data; brug IAccountBackupService.Verify med den nye brugers BEKRÆFTEDE e-mail).
+- R10.13 (backlog) Data Protection: persistér og sikkerhedskopiér nøgleringen og sæt et stabilt ApplicationName, ellers kan gamle backup-filer ikke verificeres (se R10.2).
+- R10.14 (backlog) E2E: download af backup fra DeletePersonalData og verifikation af filens format.
 
 Filer til Upload: AccountDeletionService, DeletePersonalData, Garden-entiteterne
 

@@ -28,8 +28,21 @@
     </p>
 </div>
 
+<div class="card stack-xs mb-4" data-density="default">
+    <h4 class="h5">Hent en backup, før du sletter</h4>
+    <p class="mb-2">
+        Backup-filen indeholder dine personlige data og oplysninger om dine haver. Den er signeret og bundet til din e-mailadresse,
+        så den kun kan bruges af en bruger med samme bekræftede e-mailadresse. Funktionen til at indlæse filen kommer senere.
+        Filen er ikke krypteret, så opbevar den sikkert.
+    </p>
+    <form id="account-backup-form" action="Account/Manage/DownloadAccountBackup" method="post">
+        <AntiforgeryToken />
+        <button class="btn btn-secondary" type="submit">Download backup</button>
+    </form>
+</div>
+
 <div>
-    <EditForm Model="Input" FormName="delete-user" OnValidSubmit="OnValidSubmitAsync" method="post">
+    <EditForm id="delete-user-form" Model="Input" FormName="delete-user" OnValidSubmit="OnValidSubmitAsync" method="post">
         <DataAnnotationsValidator />
         <ValidationSummary class="text-danger" role="alert" />
 

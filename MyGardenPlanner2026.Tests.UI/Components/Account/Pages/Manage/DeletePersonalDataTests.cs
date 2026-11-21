@@ -2,6 +2,7 @@
 
 using Bunit;
 using FluentAssertions;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -49,6 +50,7 @@ public class DeletePersonalDataTests : BunitContext
         Services.AddSingleton(accountDeletion);
         Services.AddSingleton(Substitute.For<ILogger<DeletePersonalData>>());
         RegisterRestoreOptions(retentionDays);
+        RegisterAntiforgery();
 
         return (userManager, signInManager, accountDeletion, user);
     }
@@ -58,6 +60,14 @@ public class DeletePersonalDataTests : BunitContext
         var restoreOptions = Substitute.For<IOptionsMonitor<GardenRestoreOptions>>();
         restoreOptions.CurrentValue.Returns(new GardenRestoreOptions { RetentionDays = retentionDays });
         Services.AddSingleton(restoreOptions);
+    }
+
+    private void RegisterAntiforgery() =>
+    Services.AddSingleton<AntiforgeryStateProvider>(new FakeAntiforgeryStateProvider());
+
+    private sealed class FakeAntiforgeryStateProvider : AntiforgeryStateProvider
+    {
+        public override AntiforgeryRequestToken? GetAntiforgeryToken() => new("token", "__RequestVerificationToken");
     }
 
     private static string ErrorText(IRenderedComponent<DeletePersonalData> cut) =>
@@ -148,7 +158,7 @@ public class DeletePersonalDataTests : BunitContext
 
         var cut = this.RenderWithHttpContext<DeletePersonalData>();
         await cut.Find("#Input\\.Password").ChangeAsync("forkert");
-        await cut.Find("form").SubmitAsync();
+        await cut.Find("#delete-user-form").SubmitAsync();
 
         cut.Markup.Should().Contain("Error: Adgangskoden er forkert.");
         await accountDeletion.DidNotReceive().DeleteUserDataAsync(
@@ -166,7 +176,7 @@ public class DeletePersonalDataTests : BunitContext
 
         var cut = this.RenderWithHttpContext<DeletePersonalData>();
         await cut.Find("#Input\\.Password").ChangeAsync(Password);
-        await cut.Find("form").SubmitAsync();
+        await cut.Find("#delete-user-form").SubmitAsync();
 
         ErrorText(cut).Should().Be("Error: Vælg, hvad der skal ske med haven 'Have A'.");
         await accountDeletion.DidNotReceive().DeleteUserDataAsync(
@@ -186,7 +196,7 @@ public class DeletePersonalDataTests : BunitContext
         await cut.Find("#garden-choice-0").ChangeAsync("delete");
         await cut.Find("#garden-confirm-0").ChangeAsync("Forkert navn");
         await cut.Find("#Input\\.Password").ChangeAsync(Password);
-        await cut.Find("form").SubmitAsync();
+        await cut.Find("#delete-user-form").SubmitAsync();
 
         ErrorText(cut).Should().Be("Error: Skriv havens navn 'Have A' for at bekræfte, at haven slettes for alle medlemmer.");
         await accountDeletion.DidNotReceive().DeleteUserDataAsync(
@@ -206,7 +216,7 @@ public class DeletePersonalDataTests : BunitContext
         await cut.Find("#garden-choice-0").ChangeAsync("delete");
         await cut.Find("#garden-confirm-0").ChangeAsync("  have a ");
         await cut.Find("#Input\\.Password").ChangeAsync(Password);
-        await cut.Find("form").SubmitAsync();
+        await cut.Find("#delete-user-form").SubmitAsync();
 
         await accountDeletion.Received(1).DeleteUserDataAsync(
             "user-1",
@@ -228,7 +238,7 @@ public class DeletePersonalDataTests : BunitContext
         var cut = this.RenderWithHttpContext<DeletePersonalData>();
         await cut.Find("#garden-choice-0").ChangeAsync("transfer:user-2");
         await cut.Find("#Input\\.Password").ChangeAsync(Password);
-        await cut.Find("form").SubmitAsync();
+        await cut.Find("#delete-user-form").SubmitAsync();
 
         await accountDeletion.Received(1).DeleteUserDataAsync(
             "user-1",
@@ -255,7 +265,7 @@ public class DeletePersonalDataTests : BunitContext
         await cut.Find("#garden-choice-1").ChangeAsync("delete");
         await cut.Find("#garden-confirm-1").ChangeAsync("Have B");
         await cut.Find("#Input\\.Password").ChangeAsync(Password);
-        await cut.Find("form").SubmitAsync();
+        await cut.Find("#delete-user-form").SubmitAsync();
 
         await accountDeletion.Received(1).DeleteUserDataAsync(
             "user-1",
@@ -282,7 +292,7 @@ public class DeletePersonalDataTests : BunitContext
         var cut = this.RenderWithHttpContext<DeletePersonalData>();
         await cut.Find("#garden-choice-0").ChangeAsync("transfer:user-2");
         await cut.Find("#Input\\.Password").ChangeAsync(Password);
-        await cut.Find("form").SubmitAsync();
+        await cut.Find("#delete-user-form").SubmitAsync();
 
         cut.Markup.Should().Contain("Error: Du er eneste ejer af haver, der deles med andre medlemmer:");
         await userManager.DidNotReceive().DeleteAsync(Arg.Any<ApplicationUser>());
@@ -299,7 +309,7 @@ public class DeletePersonalDataTests : BunitContext
 
         var cut = this.RenderWithHttpContext<DeletePersonalData>();
         await cut.Find("#Input\\.Password").ChangeAsync(Password);
-        await cut.Find("form").SubmitAsync();
+        await cut.Find("#delete-user-form").SubmitAsync();
 
         cut.Markup.Should().Contain("Error: Din konto kunne ikke slettes. Prøv igen.");
         await signInManager.DidNotReceive().SignOutAsync();
@@ -315,7 +325,7 @@ public class DeletePersonalDataTests : BunitContext
 
         var cut = this.RenderWithHttpContext<DeletePersonalData>();
         await cut.Find("#Input\\.Password").ChangeAsync(Password);
-        await cut.Find("form").SubmitAsync();
+        await cut.Find("#delete-user-form").SubmitAsync();
 
         await accountDeletion.Received(1).DeleteUserDataAsync(
             "user-1", UserEmail, Arg.Is<IReadOnlyDictionary<Guid, GardenOwnershipResolution>>(r => r.Count == 0), Arg.Any<CancellationToken>());
@@ -332,7 +342,7 @@ public class DeletePersonalDataTests : BunitContext
         this.UseIdentityRedirectManager();
 
         var cut = this.RenderWithHttpContext<DeletePersonalData>();
-        await cut.Find("form").SubmitAsync();
+        await cut.Find("#delete-user-form").SubmitAsync();
 
         await userManager.DidNotReceive().CheckPasswordAsync(Arg.Any<ApplicationUser>(), Arg.Any<string>());
         await userManager.Received(1).DeleteAsync(user);
@@ -346,10 +356,25 @@ public class DeletePersonalDataTests : BunitContext
         Services.AddSingleton(Substitute.For<IAccountDeletionService>());
         Services.AddSingleton(Substitute.For<ILogger<DeletePersonalData>>());
         RegisterRestoreOptions(30);
+        RegisterAntiforgery();
         var navMan = this.UseIdentityRedirectManager();
 
         this.RenderWithHttpContext<DeletePersonalData>();
 
         navMan.Uri.Should().Contain("Account/InvalidUser");
+    }
+
+    [Fact]
+    public void RendersBackupDownloadForm()
+    {
+        RegisterFakes();
+        this.UseIdentityRedirectManager();
+
+        var cut = this.RenderWithHttpContext<DeletePersonalData>();
+
+        var form = cut.Find("#account-backup-form");
+        form.GetAttribute("action").Should().Be("Account/Manage/DownloadAccountBackup");
+        form.GetAttribute("method").Should().Be("post");
+        form.QuerySelector("button")!.TextContent.Should().Contain("Download backup");
     }
 }

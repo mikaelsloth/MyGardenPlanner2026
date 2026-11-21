@@ -7,10 +7,18 @@ using System.Text.Json;
 /// <summary>
 /// Bygger indholdet af PersonalData.json: kun felter markeret med [PersonalData] samt
 /// eksterne login-nøgler. Authenticator-nøglen (en hemmelighed) eksporteres bevidst IKKE.
+/// GetPersonalDataAsync deles med backup-filen (R10.2).
 /// </summary>
 internal sealed class PersonalDataExporter(UserManager<ApplicationUser> userManager)
 {
     public async Task<byte[]> ExportAsync(ApplicationUser user)
+    {
+        var personalData = await GetPersonalDataAsync(user);
+
+        return JsonSerializer.SerializeToUtf8Bytes(personalData);
+    }
+
+    public async Task<Dictionary<string, string>> GetPersonalDataAsync(ApplicationUser user)
     {
         ArgumentNullException.ThrowIfNull(user);
 
@@ -29,6 +37,6 @@ internal sealed class PersonalDataExporter(UserManager<ApplicationUser> userMana
             personalData.Add($"{l.LoginProvider} external login provider key", l.ProviderKey);
         }
 
-        return JsonSerializer.SerializeToUtf8Bytes(personalData);
+        return personalData;
     }
 }

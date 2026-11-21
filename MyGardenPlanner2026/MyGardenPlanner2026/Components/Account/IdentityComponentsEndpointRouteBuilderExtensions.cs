@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using MyGardenPlanner2026.Components.Account.Pages;
 using MyGardenPlanner2026.Components.Account.Pages.Manage;
+using MyGardenPlanner2026.Core.Contracts.Account;
 using MyGardenPlanner2026.Core.Entities;
 using System.Security.Claims;
 
@@ -15,6 +16,9 @@ internal static partial class IdentityComponentsEndpointRouteBuilderExtensions
 {
     [LoggerMessage(EventId = 1020, Level = LogLevel.Information, Message = "User with ID '{UserId}' asked for their personal data.")]
     static partial void PersonalDataDownloadRequested(ILogger logger, string UserId);
+
+    [LoggerMessage(EventId = 1168, Level = LogLevel.Information, Message = "User with ID '{UserId}' downloaded an account backup.")]
+    static partial void AccountBackupDownloaded(ILogger logger, string UserId);
 
     // These endpoints are required by the Identity Razor components defined in the /Components/Account/Pages directory of this project.
     public static IEndpointConventionBuilder MapAdditionalIdentityEndpoints(this IEndpointRouteBuilder endpoints)
@@ -130,6 +134,38 @@ internal static partial class IdentityComponentsEndpointRouteBuilderExtensions
 
             context.Response.Headers.TryAdd("Content-Disposition", "attachment; filename=PersonalData.json");
             return TypedResults.File(fileBytes, contentType: "application/json", fileDownloadName: "PersonalData.json");
+        });
+
+        var backupLogger = loggerFactory.CreateLogger("DownloadAccountBackup");
+
+        manageGroup.MapPost("/DownloadAccountBackup", async (
+            HttpContext context,
+            [FromServices] UserManager<ApplicationUser> userManager,
+            [FromServices] PersonalDataExporter personalDataExporter,
+            [FromServices] IAccountBackupService backupService,
+            [FromServices] IAntiforgery antiforgery) =>
+        {
+            await antiforgery.ValidateRequestAsync(context);
+
+            var user = await userManager.GetUserAsync(context.User);
+            if (user is null)
+            {
+                return Results.NotFound(AccountMessages.UserNotLoadedDetail(userManager.GetUserId(context.User)));
+            }
+
+            var userId = await userManager.GetUserIdAsync(user);
+            var email = await userManager.GetEmailAsync(user);
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return Results.BadRequest(AccountMessages.BackupNeedsEmail);
+            }
+
+            var personalData = await personalDataExporter.GetPersonalDataAsync(user);
+            var fileBytes = await backupService.CreateAsync(userId, email, personalData, context.RequestAborted);
+
+            AccountBackupDownloaded(backupLogger, userId);
+
+            return TypedResults.File(fileBytes, contentType: "application/json", fileDownloadName: "MyGardenPlanner-backup.json");
         });
 
         return accountGroup;

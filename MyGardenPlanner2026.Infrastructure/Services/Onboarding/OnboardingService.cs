@@ -588,7 +588,8 @@ public sealed partial class OnboardingService(
             .ExecuteUpdateAsync(
                 s => s.SetProperty(g => g.IsDeleted, false)
                       .SetProperty(g => g.DeletedAtUtc, noDeletedAt)
-                      .SetProperty(g => g.DeletedBy, noDeletedBy),
+                      .SetProperty(g => g.DeletedByUserId, noDeletedBy)
+                      .SetProperty(g => g.DeletedByEmail, noDeletedBy),
                 cancellationToken);
 
         var memberships = await context.GardenMemberships.IgnoreQueryFilters()
@@ -599,7 +600,8 @@ public sealed partial class OnboardingService(
                       .SetProperty(m => m.Category, category)
                       .SetProperty(m => m.IsDeleted, false)
                       .SetProperty(m => m.DeletedAtUtc, noDeletedAt)
-                      .SetProperty(m => m.DeletedBy, noDeletedBy),
+                      .SetProperty(m => m.DeletedByUserId, noDeletedBy)
+                      .SetProperty(m => m.DeletedByEmail, noDeletedBy),
                 cancellationToken);
 
         if (gardens != 1 || memberships != 1)

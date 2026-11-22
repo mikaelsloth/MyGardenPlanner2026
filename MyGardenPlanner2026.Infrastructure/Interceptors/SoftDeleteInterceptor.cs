@@ -7,7 +7,8 @@ using MyGardenPlanner2026.Core.Entities.Common;
 
 /// <summary>
 /// Konverterer sletning (EntityState.Deleted) af ISoftDelete-entities til en opdatering
-/// der sætter IsDeleted = true, DeletedAtUtc og DeletedBy, i stedet for en fysisk DELETE.
+/// der sætter IsDeleted, DeletedAtUtc, DeletedByUserId og DeletedByEmail;
+/// uden bruger bruges SystemActorContext (ellers 'system-unknown')"
 /// </summary>
 public sealed class SoftDeleteInterceptor(ICurrentUserAccessor currentUser) : SaveChangesInterceptor
 {
@@ -36,14 +37,20 @@ public sealed class SoftDeleteInterceptor(ICurrentUserAccessor currentUser) : Sa
         var deletedEntries = context.ChangeTracker.Entries<ISoftDelete>()
             .Where(e => e.State == EntityState.Deleted);
 
-        var user = currentUser.GetCurrent();
+        var (userId, email) = ResolveActor(currentUser.GetCurrent());
 
         foreach (var entry in deletedEntries)
         {
             entry.State = EntityState.Modified;
             entry.Entity.IsDeleted = true;
             entry.Entity.DeletedAtUtc = DateTimeOffset.UtcNow;
-            entry.Entity.DeletedBy = user.UserEmail ?? user.UserId ?? "system";
+            entry.Entity.DeletedByUserId = userId;
+            entry.Entity.DeletedByEmail = email;
         }
     }
+
+    private static (string? UserId, string? Email) ResolveActor(CurrentUserInfo user) =>
+        user.UserId is null && user.UserEmail is null
+            ? (SystemActorContext.Current ?? SystemActorContext.UnknownActor, null)
+            : (user.UserId, user.UserEmail);
 }

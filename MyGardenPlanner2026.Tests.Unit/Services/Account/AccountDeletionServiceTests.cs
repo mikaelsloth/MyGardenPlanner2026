@@ -277,7 +277,7 @@ public sealed class AccountDeletionServiceTests : IDisposable
         result.IsBlocked.Should().BeFalse();
         var deletedGarden = await FindGardenAsync(garden.Id);
         deletedGarden!.IsDeleted.Should().BeTrue();
-        deletedGarden.DeletedBy.Should().Be(UserId);
+        deletedGarden.DeletedByUserId.Should().Be(UserId);
         deletedGarden.DeletedAtUtc.Should().Be(Now);
         (await FindMembershipAsync(garden.Id, UserId))!.IsDeleted.Should().BeTrue();
         (await FindEntitlementAsync(garden.Id, UserId))!.IsDeleted.Should().BeTrue();

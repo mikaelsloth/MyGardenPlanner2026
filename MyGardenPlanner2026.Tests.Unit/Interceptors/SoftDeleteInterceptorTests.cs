@@ -4,7 +4,9 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using MyGardenPlanner2026.Core.Contracts.Common;
 using MyGardenPlanner2026.Core.Entities.Common;
+using MyGardenPlanner2026.Core.Entities.Layer1;
 using MyGardenPlanner2026.Infrastructure.Interceptors;
+using NSubstitute;
 using Xunit;
 
 public class SoftDeleteInterceptorTests : TestDbContext
@@ -31,7 +33,8 @@ public class SoftDeleteInterceptorTests : TestDbContext
 
         raw.IsDeleted.Should().BeTrue();
         raw.DeletedAtUtc.Should().NotBeNull();
-        raw.DeletedBy.Should().Be("admin@mygardenplanner.dk");
+        raw.DeletedByUserId.Should().Be("user-1");
+        raw.DeletedByEmail.Should().Be("admin@mygardenplanner.dk");
     }
 
     [Fact]
@@ -72,5 +75,78 @@ public class SoftDeleteInterceptorTests : TestDbContext
             .SingleOrDefaultAsync(t => t.Id == tier.Id, TestContext.Current.CancellationToken);
 
         visible.Should().NotBeNull();
+    }
+
+    private static ICurrentUserAccessor NoUser()
+    {
+        var accessor = Substitute.For<ICurrentUserAccessor>();
+        accessor.GetCurrent().Returns(new CurrentUserInfo(null, null, null));
+        return accessor;
+    }
+
+    private async Task<SubscriptionAddOn> ReadRawAsync(Guid id)
+    {
+        using var verifyContext = CreateDbContext();
+        return await verifyContext.SubscriptionAddOns
+            .IgnoreQueryFilters()
+            .SingleAsync(a => a.Id == id, TestContext.Current.CancellationToken);
+    }
+
+    [Fact]
+    public async Task Remove_WithoutUser_InSystemActorScope_WritesSystemLabel()
+    {
+        using var context = CreateDbContextWithInterceptors(new SoftDeleteInterceptor(NoUser()));
+        var addOn = TestEntities.AddOn();
+        await context.SubscriptionAddOns.AddAsync(addOn, TestContext.Current.CancellationToken);
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        using (SystemActorContext.Begin<SoftDeleteInterceptorTests>())
+        {
+            context.SubscriptionAddOns.Remove(addOn);
+            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var raw = await ReadRawAsync(addOn.Id);
+
+        raw.DeletedByUserId.Should().Be(
+            $"system-{nameof(SoftDeleteInterceptorTests)}.{nameof(Remove_WithoutUser_InSystemActorScope_WritesSystemLabel)}");
+        raw.DeletedByEmail.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Remove_WithoutUserAndWithoutScope_WritesSystemUnknown()
+    {
+        using var context = CreateDbContextWithInterceptors(new SoftDeleteInterceptor(NoUser()));
+        var addOn = TestEntities.AddOn();
+        await context.SubscriptionAddOns.AddAsync(addOn, TestContext.Current.CancellationToken);
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        context.SubscriptionAddOns.Remove(addOn);
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        var raw = await ReadRawAsync(addOn.Id);
+
+        raw.DeletedByUserId.Should().Be(SystemActorContext.UnknownActor);
+        raw.DeletedByEmail.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Remove_WithUser_IgnoresSystemActorScope()
+    {
+        using var context = CreateDbContextWithInterceptors(new SoftDeleteInterceptor(FakeUser()));
+        var addOn = TestEntities.AddOn();
+        await context.SubscriptionAddOns.AddAsync(addOn, TestContext.Current.CancellationToken);
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        using (SystemActorContext.Begin("Seeder", "Run"))
+        {
+            context.SubscriptionAddOns.Remove(addOn);
+            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var raw = await ReadRawAsync(addOn.Id);
+
+        raw.DeletedByUserId.Should().Be("user-1");
+        raw.DeletedByEmail.Should().Be("admin@mygardenplanner.dk");
     }
 }

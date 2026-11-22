@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Core.Entities.Admin;
+using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Gardens;
 using MyGardenPlanner2026.Core.Entities.Layer1;
 using MyGardenPlanner2026.Infrastructure.Data;
@@ -85,8 +86,8 @@ public sealed class AccountDeletionCoverageTests
     };
 
     /// <summary>
-    /// Alle egenskaber, der refererer til en bruger (nøgle "Entitet.Egenskab"). "DeletedBy" er undtaget
-    /// og bevares altid (soft-delete-aktør, se SoftDeleteInterceptor).
+    /// Alle egenskaber, der refererer til en bruger (nøgle "Entitet.Egenskab"). "DeletedByUserId" og "DeletedByEmail" er undtaget (soft-delete-aktør,
+    /// se SoftDeleteInterceptor; e-mailen nulstilles af AccountDeletionService i 11b).
     /// </summary>
     private static readonly Dictionary<string, (UserReferenceKind Kind, string Reason)> UserReferences = new()
     {
@@ -130,10 +131,11 @@ public sealed class AccountDeletionCoverageTests
 
     private static List<string> DiscoverUserReferences() =>
         [.. ApplicationEntities()
-            .SelectMany(t => t.GetProperties()
-                .Where(p => IsUserReference(p.Name))
-                .Select(p => $"{t.ClrType.Name}.{p.Name}"))
-            .Order(StringComparer.Ordinal)];
+        .SelectMany(t => t.GetProperties()
+            .Where(p => IsUserReference(p.Name))
+            .Where(p => p.Name is not (nameof(ISoftDelete.DeletedByUserId) or nameof(ISoftDelete.DeletedByEmail)))
+            .Select(p => $"{t.ClrType.Name}.{p.Name}"))
+        .Order(StringComparer.Ordinal)];
 
     private static bool CascadesToGarden(IEntityType start)
     {

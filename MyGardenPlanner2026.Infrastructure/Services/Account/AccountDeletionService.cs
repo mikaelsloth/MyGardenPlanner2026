@@ -172,7 +172,7 @@ public sealed partial class AccountDeletionService(
                 .ExecuteUpdateAsync(
                     s => s.SetProperty(m => m.IsDeleted, true)
                           .SetProperty(m => m.DeletedAtUtc, deletedAt)
-                          .SetProperty(m => m.DeletedBy, userId),
+                          .SetProperty(m => m.DeletedByUserId, userId),
                     cancellationToken);
 
             await context.UserEntitlements
@@ -180,7 +180,7 @@ public sealed partial class AccountDeletionService(
                 .ExecuteUpdateAsync(
                     s => s.SetProperty(e => e.IsDeleted, true)
                           .SetProperty(e => e.DeletedAtUtc, deletedAt)
-                          .SetProperty(e => e.DeletedBy, userId),
+                          .SetProperty(E => E.DeletedByUserId, userId),
                     cancellationToken);
 
             await context.Gardens
@@ -188,7 +188,7 @@ public sealed partial class AccountDeletionService(
                 .ExecuteUpdateAsync(
                     s => s.SetProperty(g => g.IsDeleted, true)
                           .SetProperty(g => g.DeletedAtUtc, deletedAt)
-                          .SetProperty(g => g.DeletedBy, userId),
+                          .SetProperty(g => g.DeletedByUserId, userId),
                     cancellationToken);
 
             foreach (var gardenId in retainedIds)

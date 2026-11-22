@@ -17,7 +17,7 @@ partial class PlannerDbContextModelSnapshot : ModelSnapshot
     // If you encounter a merge conflict in the line below, it means you need to
     // discard one of the migration branches and recreate its migrations on top of
     // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20261116220502_AddPendingGardenRestore";
+    public override string LastMigrationId => "20261122182731_SoftDeleteActorUserIdAndEmail";
 
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
@@ -224,8 +224,13 @@ partial class PlannerDbContextModelSnapshot : ModelSnapshot
                 b.Property<DateTimeOffset?>("DeletedAtUtc")
                     .HasColumnType("datetimeoffset");
 
-                b.Property<string>("DeletedBy")
-                    .HasColumnType("nvarchar(max)");
+                b.Property<string>("DeletedByEmail")
+                    .HasMaxLength(256)
+                    .HasColumnType("nvarchar(256)");
+
+                b.Property<string>("DeletedByUserId")
+                    .HasMaxLength(450)
+                    .HasColumnType("nvarchar(450)");
 
                 b.Property<bool>("IsDeleted")
                     .HasColumnType("bit");
@@ -383,8 +388,13 @@ partial class PlannerDbContextModelSnapshot : ModelSnapshot
                 b.Property<DateTimeOffset?>("DeletedAtUtc")
                     .HasColumnType("datetimeoffset");
 
-                b.Property<string>("DeletedBy")
-                    .HasColumnType("nvarchar(max)");
+                b.Property<string>("DeletedByEmail")
+                    .HasMaxLength(256)
+                    .HasColumnType("nvarchar(256)");
+
+                b.Property<string>("DeletedByUserId")
+                    .HasMaxLength(450)
+                    .HasColumnType("nvarchar(450)");
 
                 b.Property<bool>("IsDeleted")
                     .HasColumnType("bit");
@@ -449,8 +459,13 @@ partial class PlannerDbContextModelSnapshot : ModelSnapshot
                 b.Property<DateTimeOffset?>("DeletedAtUtc")
                     .HasColumnType("datetimeoffset");
 
-                b.Property<string>("DeletedBy")
-                    .HasColumnType("nvarchar(max)");
+                b.Property<string>("DeletedByEmail")
+                    .HasMaxLength(256)
+                    .HasColumnType("nvarchar(256)");
+
+                b.Property<string>("DeletedByUserId")
+                    .HasMaxLength(450)
+                    .HasColumnType("nvarchar(450)");
 
                 b.Property<bool>("IsDeleted")
                     .HasColumnType("bit");
@@ -501,8 +516,13 @@ partial class PlannerDbContextModelSnapshot : ModelSnapshot
                 b.Property<DateTimeOffset?>("DeletedAtUtc")
                     .HasColumnType("datetimeoffset");
 
-                b.Property<string>("DeletedBy")
-                    .HasColumnType("nvarchar(max)");
+                b.Property<string>("DeletedByEmail")
+                    .HasMaxLength(256)
+                    .HasColumnType("nvarchar(256)");
+
+                b.Property<string>("DeletedByUserId")
+                    .HasMaxLength(450)
+                    .HasColumnType("nvarchar(450)");
 
                 b.Property<bool>("IsDeleted")
                     .HasColumnType("bit");
@@ -571,8 +591,13 @@ partial class PlannerDbContextModelSnapshot : ModelSnapshot
                 b.Property<DateTimeOffset?>("DeletedAtUtc")
                     .HasColumnType("datetimeoffset");
 
-                b.Property<string>("DeletedBy")
-                    .HasColumnType("nvarchar(max)");
+                b.Property<string>("DeletedByEmail")
+                    .HasMaxLength(256)
+                    .HasColumnType("nvarchar(256)");
+
+                b.Property<string>("DeletedByUserId")
+                    .HasMaxLength(450)
+                    .HasColumnType("nvarchar(450)");
 
                 b.Property<bool>("IsDeleted")
                     .HasColumnType("bit");
@@ -617,8 +642,13 @@ partial class PlannerDbContextModelSnapshot : ModelSnapshot
                 b.Property<DateTimeOffset?>("DeletedAtUtc")
                     .HasColumnType("datetimeoffset");
 
-                b.Property<string>("DeletedBy")
-                    .HasColumnType("nvarchar(max)");
+                b.Property<string>("DeletedByEmail")
+                    .HasMaxLength(256)
+                    .HasColumnType("nvarchar(256)");
+
+                b.Property<string>("DeletedByUserId")
+                    .HasMaxLength(450)
+                    .HasColumnType("nvarchar(450)");
 
                 b.Property<bool>("IsDeleted")
                     .HasColumnType("bit");
@@ -667,7 +697,11 @@ partial class PlannerDbContextModelSnapshot : ModelSnapshot
                 b.Property<DateTimeOffset?>("DeletedAtUtc")
                     .HasColumnType("datetimeoffset");
 
-                b.Property<string>("DeletedBy")
+                b.Property<string>("DeletedByEmail")
+                    .HasMaxLength(256)
+                    .HasColumnType("nvarchar(256)");
+
+                b.Property<string>("DeletedByUserId")
                     .HasMaxLength(450)
                     .HasColumnType("nvarchar(450)");
 
@@ -885,8 +919,13 @@ partial class PlannerDbContextModelSnapshot : ModelSnapshot
                 b.Property<DateTimeOffset?>("DeletedAtUtc")
                     .HasColumnType("datetimeoffset");
 
-                b.Property<string>("DeletedBy")
-                    .HasColumnType("nvarchar(max)");
+                b.Property<string>("DeletedByEmail")
+                    .HasMaxLength(256)
+                    .HasColumnType("nvarchar(256)");
+
+                b.Property<string>("DeletedByUserId")
+                    .HasMaxLength(450)
+                    .HasColumnType("nvarchar(450)");
 
                 b.Property<string>("Description")
                     .HasMaxLength(2000)
@@ -922,8 +961,13 @@ partial class PlannerDbContextModelSnapshot : ModelSnapshot
                 b.Property<DateTimeOffset?>("DeletedAtUtc")
                     .HasColumnType("datetimeoffset");
 
-                b.Property<string>("DeletedBy")
-                    .HasColumnType("nvarchar(max)");
+                b.Property<string>("DeletedByEmail")
+                    .HasMaxLength(256)
+                    .HasColumnType("nvarchar(256)");
+
+                b.Property<string>("DeletedByUserId")
+                    .HasMaxLength(450)
+                    .HasColumnType("nvarchar(450)");
 
                 b.Property<string>("Email")
                     .IsRequired()
@@ -991,8 +1035,13 @@ partial class PlannerDbContextModelSnapshot : ModelSnapshot
                 b.Property<DateTimeOffset?>("DeletedAtUtc")
                     .HasColumnType("datetimeoffset");
 
-                b.Property<string>("DeletedBy")
-                    .HasColumnType("nvarchar(max)");
+                b.Property<string>("DeletedByEmail")
+                    .HasMaxLength(256)
+                    .HasColumnType("nvarchar(256)");
+
+                b.Property<string>("DeletedByUserId")
+                    .HasMaxLength(450)
+                    .HasColumnType("nvarchar(450)");
 
                 b.Property<Guid>("GardenId")
                     .HasColumnType("uniqueidentifier");
@@ -1072,8 +1121,13 @@ partial class PlannerDbContextModelSnapshot : ModelSnapshot
                 b.Property<DateTimeOffset?>("DeletedAtUtc")
                     .HasColumnType("datetimeoffset");
 
-                b.Property<string>("DeletedBy")
-                    .HasColumnType("nvarchar(max)");
+                b.Property<string>("DeletedByEmail")
+                    .HasMaxLength(256)
+                    .HasColumnType("nvarchar(256)");
+
+                b.Property<string>("DeletedByUserId")
+                    .HasMaxLength(450)
+                    .HasColumnType("nvarchar(450)");
 
                 b.Property<int>("ExtraBedProposalsCount")
                     .HasColumnType("int");
@@ -1125,8 +1179,13 @@ partial class PlannerDbContextModelSnapshot : ModelSnapshot
                 b.Property<DateTimeOffset?>("DeletedAtUtc")
                     .HasColumnType("datetimeoffset");
 
-                b.Property<string>("DeletedBy")
-                    .HasColumnType("nvarchar(max)");
+                b.Property<string>("DeletedByEmail")
+                    .HasMaxLength(256)
+                    .HasColumnType("nvarchar(256)");
+
+                b.Property<string>("DeletedByUserId")
+                    .HasMaxLength(450)
+                    .HasColumnType("nvarchar(450)");
 
                 b.Property<int>("DisplayOrder")
                     .HasColumnType("int");
@@ -1186,8 +1245,13 @@ partial class PlannerDbContextModelSnapshot : ModelSnapshot
                 b.Property<DateTimeOffset?>("DeletedAtUtc")
                     .HasColumnType("datetimeoffset");
 
-                b.Property<string>("DeletedBy")
-                    .HasColumnType("nvarchar(max)");
+                b.Property<string>("DeletedByEmail")
+                    .HasMaxLength(256)
+                    .HasColumnType("nvarchar(256)");
+
+                b.Property<string>("DeletedByUserId")
+                    .HasMaxLength(450)
+                    .HasColumnType("nvarchar(450)");
 
                 b.Property<int>("DisplayOrder")
                     .HasColumnType("int");
@@ -1261,8 +1325,13 @@ partial class PlannerDbContextModelSnapshot : ModelSnapshot
                 b.Property<DateTimeOffset?>("DeletedAtUtc")
                     .HasColumnType("datetimeoffset");
 
-                b.Property<string>("DeletedBy")
-                    .HasColumnType("nvarchar(max)");
+                b.Property<string>("DeletedByEmail")
+                    .HasMaxLength(256)
+                    .HasColumnType("nvarchar(256)");
+
+                b.Property<string>("DeletedByUserId")
+                    .HasMaxLength(450)
+                    .HasColumnType("nvarchar(450)");
 
                 b.Property<string>("Description")
                     .IsRequired()

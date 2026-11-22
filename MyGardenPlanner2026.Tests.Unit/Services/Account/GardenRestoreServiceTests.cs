@@ -59,7 +59,7 @@ public sealed class GardenRestoreServiceTests : IDisposable
         var deletedAt = Now.AddDays(-1);
 
         await using var context = new PlannerDbContext(_options);
-        var garden = new Garden { Name = name, IsDeleted = true, DeletedAtUtc = deletedAt, DeletedBy = FormerUserId };
+        var garden = new Garden { Name = name, IsDeleted = true, DeletedAtUtc = deletedAt, DeletedByUserId = FormerUserId, DeletedByEmail = OwnerEmail };
         context.Gardens.Add(garden);
 
         if (withOwnerMembership)
@@ -73,7 +73,8 @@ public sealed class GardenRestoreServiceTests : IDisposable
                 Category = category,
                 IsDeleted = true,
                 DeletedAtUtc = deletedAt,
-                DeletedBy = FormerUserId
+                DeletedByUserId = FormerUserId,
+                DeletedByEmail = OwnerEmail
             });
         }
 

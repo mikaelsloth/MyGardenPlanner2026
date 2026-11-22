@@ -14,5 +14,6 @@ public class ReAuthFailureTrackerSettings : ISoftDelete, ISingletonSettings
 
     public bool IsDeleted { get; set; }
     public DateTimeOffset? DeletedAtUtc { get; set; }
-    public string? DeletedBy { get; set; }
+    public string? DeletedByUserId { get; set; }
+    public string? DeletedByEmail { get; set; }
 }

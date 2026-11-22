@@ -51,7 +51,10 @@ public partial class PlannerDbContext(DbContextOptions<PlannerDbContext> options
             var condition = Expression.Equal(property, Expression.Constant(false));
             var lambda = Expression.Lambda(condition, parameter);
 
-            modelBuilder.Entity(entityType.ClrType).HasQueryFilter(lambda);
+            var builder = modelBuilder.Entity(entityType.ClrType);
+            builder.HasQueryFilter(lambda);
+            builder.Property(nameof(ISoftDelete.DeletedByUserId)).HasMaxLength(450);
+            builder.Property(nameof(ISoftDelete.DeletedByEmail)).HasMaxLength(256);
         }
     }
 }

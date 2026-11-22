@@ -69,10 +69,11 @@ public sealed class GardenRestoreExpirySweepServiceTests : IDisposable
         string name, DateTimeOffset expiresUtc, bool gardenIsDeleted = true)
     {
         DateTimeOffset? deletedAt = gardenIsDeleted ? Now.AddDays(-30) : null;
-        var deletedBy = gardenIsDeleted ? FormerUserId : null;
+        var deletedByUser = gardenIsDeleted ? FormerUserId : null;
+        var deletedByEmail = gardenIsDeleted ? OwnerEmail : null;
 
         await using var context = new PlannerDbContext(_options);
-        var garden = new Garden { Name = name, IsDeleted = gardenIsDeleted, DeletedAtUtc = deletedAt, DeletedBy = deletedBy };
+        var garden = new Garden { Name = name, IsDeleted = gardenIsDeleted, DeletedAtUtc = deletedAt, DeletedByUserId = deletedByUser, DeletedByEmail = deletedByEmail };
         context.Gardens.Add(garden);
         context.GardenMemberships.Add(new GardenMembership
         {
@@ -83,7 +84,8 @@ public sealed class GardenRestoreExpirySweepServiceTests : IDisposable
             Category = AccessCategory.Administrator,
             IsDeleted = gardenIsDeleted,
             DeletedAtUtc = deletedAt,
-            DeletedBy = deletedBy
+            DeletedByUserId = deletedByUser,
+            DeletedByEmail = deletedByEmail
         });
         context.UserEntitlements.Add(new UserEntitlement
         {
@@ -91,7 +93,8 @@ public sealed class GardenRestoreExpirySweepServiceTests : IDisposable
             UserId = FormerUserId,
             IsDeleted = gardenIsDeleted,
             DeletedAtUtc = deletedAt,
-            DeletedBy = deletedBy
+            DeletedByUserId = deletedByUser,
+            DeletedByEmail = deletedByEmail
         });
 
         var ticket = new PendingGardenRestore

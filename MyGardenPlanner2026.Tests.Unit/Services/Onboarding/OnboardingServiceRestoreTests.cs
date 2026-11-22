@@ -74,7 +74,7 @@ public sealed class OnboardingServiceRestoreTests : IDisposable
         var deletedAt = Now.AddDays(-1);
 
         await using var context = new PlannerDbContext(_options);
-        var garden = new Garden { Name = name, IsDeleted = true, DeletedAtUtc = deletedAt, DeletedBy = FormerUserId };
+        var garden = new Garden { Name = name, IsDeleted = true, DeletedAtUtc = deletedAt, DeletedByUserId = FormerUserId, DeletedByEmail = OwnerEmail };
         context.Gardens.Add(garden);
         context.GardenMemberships.Add(new GardenMembership
         {
@@ -85,7 +85,8 @@ public sealed class OnboardingServiceRestoreTests : IDisposable
             Category = formerCategory,
             IsDeleted = true,
             DeletedAtUtc = deletedAt,
-            DeletedBy = FormerUserId
+            DeletedByUserId = FormerUserId,
+            DeletedByEmail = OwnerEmail
         });
         context.UserEntitlements.Add(new UserEntitlement
         {
@@ -95,7 +96,8 @@ public sealed class OnboardingServiceRestoreTests : IDisposable
             Category = formerCategory,
             IsDeleted = true,
             DeletedAtUtc = deletedAt,
-            DeletedBy = FormerUserId
+            DeletedByUserId = FormerUserId,
+            DeletedByEmail = OwnerEmail
         });
 
         var ticket = new PendingGardenRestore
@@ -216,7 +218,7 @@ public sealed class OnboardingServiceRestoreTests : IDisposable
         var garden = await FindGardenAsync(gardenId);
         garden!.IsDeleted.Should().BeFalse();
         garden.DeletedAtUtc.Should().BeNull();
-        garden.DeletedBy.Should().BeNull();
+        garden.DeletedByUserId.Should().BeNull();
 
         var membership = await FindMembershipAsync(gardenId, NewUserId);
         membership.Should().NotBeNull();
@@ -224,7 +226,7 @@ public sealed class OnboardingServiceRestoreTests : IDisposable
         membership.IsOwner.Should().BeTrue();
         membership.IsDeleted.Should().BeFalse();
         membership.DeletedAtUtc.Should().BeNull();
-        membership.DeletedBy.Should().BeNull();
+        membership.DeletedByUserId.Should().BeNull();
         membership.Layer.Should().Be(GardenAccessLevel.HaveArkitekt);
         membership.Category.Should().Be(AccessCategory.Administrator);
         (await FindMembershipAsync(gardenId, FormerUserId)).Should().BeNull();

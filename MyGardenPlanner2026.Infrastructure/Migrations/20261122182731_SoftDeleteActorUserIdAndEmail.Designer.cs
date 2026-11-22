@@ -13,8 +13,8 @@ using MyGardenPlanner2026.Infrastructure.Data;
 namespace MyGardenPlanner2026.Infrastructure.Migrations;
 
 [DbContext(typeof(PlannerDbContext))]
-[Migration("20261122180725_SoftDeleteActorUserIdAndEmail")]
-partial class _20261122180725_SoftDeleteActorUserIdAndEmail
+[Migration("20261122182731_SoftDeleteActorUserIdAndEmail")]
+partial class _20261122182731_SoftDeleteActorUserIdAndEmail
 {
     /// <inheritdoc />
     protected override void BuildTargetModel(ModelBuilder modelBuilder)

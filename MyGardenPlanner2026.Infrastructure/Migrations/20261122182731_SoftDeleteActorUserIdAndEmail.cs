@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace MyGardenPlanner2026.Infrastructure.Migrations;
 
 /// <inheritdoc />
-public partial class _20261122180725_SoftDeleteActorUserIdAndEmail : Migration
+public partial class _20261122182731_SoftDeleteActorUserIdAndEmail : Migration
 {
     /// <inheritdoc />
     protected override void Up(MigrationBuilder migrationBuilder)
@@ -77,12 +77,12 @@ public partial class _20261122180725_SoftDeleteActorUserIdAndEmail : Migration
             table: "RoleElevationRequests");
 
         migrationBuilder.AddColumn<string>(
-           name: "DeletedByUserId",
-           table: "RoleElevationRequests",
-           type: "nvarchar(450)",
-           maxLength: 450,
-           nullable: true);
-
+            name: "DeletedByUserId",
+            schema: "admin",
+            table: "RoleElevationRequests",
+            type: "nvarchar(450)",
+            maxLength: 450,
+            nullable: true);
 
         migrationBuilder.AddColumn<string>(
             name: "DeletedByEmail",
@@ -430,6 +430,7 @@ public partial class _20261122180725_SoftDeleteActorUserIdAndEmail : Migration
 
         migrationBuilder.AddColumn<string>(
             name: "DeletedBy",
+            schema: "admin",
             table: "RoleElevationRequests",
             type: "nvarchar(max)",
             nullable: true);

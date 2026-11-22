@@ -71,7 +71,7 @@ jobs:
 
       - name: Check EF Core migrations
         run: |
-          dotnet tool install --global dotnet-ef --version 10.*
+          dotnet tool install --global dotnet-ef --version 11.*
           dotnet ef migrations has-pending-model-changes \
             --configuration Release --no-build \
             --project MyGardenPlanner2026.Infrastructure \

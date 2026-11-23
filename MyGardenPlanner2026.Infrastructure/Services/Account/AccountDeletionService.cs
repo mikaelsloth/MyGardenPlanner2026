@@ -32,6 +32,7 @@ using MyGardenPlanner2026.Infrastructure.Data;
 public sealed partial class AccountDeletionService(
     IDbContextFactory<PlannerDbContext> contextFactory,
     IReAuthFailureTracker reAuthFailureTracker,
+    IAdminSoftDeleteActorScrubber adminActorScrubber,
     ICurrentUserAccessor currentUser,
     IOptionsMonitor<GardenRestoreOptions> restoreOptions,
     TimeProvider timeProvider,
@@ -54,6 +55,9 @@ public sealed partial class AccountDeletionService(
 
     [LoggerMessage(EventId = 1162, Level = LogLevel.Information, Message = "Account deletion for user '{UserId}': {GardenCount} garden(s) soft-deleted and retained for restore until {ExpiresUtc}.")]
     static partial void GardensRetainedForRestore(ILogger logger, string UserId, int GardenCount, DateTimeOffset ExpiresUtc);
+
+    [LoggerMessage(EventId = 1169, Level = LogLevel.Information, Message = "Soft-delete actor e-mails cleared for user '{UserId}': {Rows} row(s) in dbo, {AdminRows} row(s) in the admin schema.")]
+    static partial void SoftDeleteActorEmailsCleared(ILogger logger, string UserId, int Rows, int AdminRows);
 
     public async Task<IReadOnlyList<BlockingGardenDto>> GetBlockingGardensAsync(
         string userId, CancellationToken cancellationToken = default)
@@ -243,6 +247,10 @@ public sealed partial class AccountDeletionService(
             .Where(p => p.UserId == userId)
             .ExecuteDeleteAsync(cancellationToken);
 
+        // R10.11: e-mailen, brugeren er stemplet med som sletter (DeletedByEmail), nulstilles. Bruger-ID bevares.
+        var actorEmailsCleared = await SoftDeleteActorEmailScrubbing.ClearAsync(
+            context, userId, adminSchema: false, cancellationToken);
+
         // R10.4: handlingerne ovenfor går uden om interceptors, så de dokumenteres eksplicit (samme transaktion).
         var actor = currentUser.GetCurrent();
         var auditEntries = new List<AuditLog>();
@@ -270,6 +278,7 @@ public sealed partial class AccountDeletionService(
             null,
             new
             {
+                SoftDeleteActorEmailsCleared = actorEmailsCleared,
                 GardensTransferred = transfers.Count,
                 GardensRetainedForRestore = retainedIds.Count,
                 GardensDeleted = gardens,
@@ -290,6 +299,13 @@ public sealed partial class AccountDeletionService(
         await transaction.CommitAsync(cancellationToken);
 
         await reAuthFailureTracker.ClearFailuresAsync(userId, cancellationToken);
+
+        var adminActorEmailsCleared = await adminActorScrubber.ClearActorEmailAsync(userId, cancellationToken);
+
+        if (actorEmailsCleared + adminActorEmailsCleared > 0)
+        {
+            SoftDeleteActorEmailsCleared(logger, userId, actorEmailsCleared, adminActorEmailsCleared);
+        }
 
         foreach (var (gardenId, newOwnerUserId) in transfers)
         {

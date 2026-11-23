@@ -558,7 +558,7 @@ public sealed class OnboardingServiceRestoreTests : IDisposable
         var restoreOptions = Substitute.For<IOptionsMonitor<GardenRestoreOptions>>();
         restoreOptions.CurrentValue.Returns(new GardenRestoreOptions { RetentionDays = 30 });
         var deletion = new AccountDeletionService(
-            new TestFactory(_options), Substitute.For<IReAuthFailureTracker>(), _currentUser, restoreOptions,
+            new TestFactory(_options), Substitute.For<IReAuthFailureTracker>(), Substitute.For<IAdminSoftDeleteActorScrubber>(), _currentUser, restoreOptions,
             new FixedTimeProvider(Now), NullLogger<AccountDeletionService>.Instance);
         var restoreService = new GardenRestoreService(new TestFactory(_options), new FixedTimeProvider(Now));
 

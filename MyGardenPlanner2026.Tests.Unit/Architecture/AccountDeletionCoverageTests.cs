@@ -15,7 +15,8 @@ using Xunit;
 /// <summary>
 /// R10.3: sikkerhedsnet for kontosletning. Fejler, når en ny entitet eller bruger-egenskab tilføjes
 /// til EF-modellen uden at være klassificeret her. Klassifikationen tvinger udvikleren til at beslutte,
-/// hvad der sker med dataene, når en bruger (eller en have) slettes. Se AccountDeletionService.
+/// hvad der sker med dataene, når en bruger (eller en have) slettes. E-mailen nulstilles af SoftDeleteActorEmailScrubbing 
+/// (via AccountDeletionService og AdminSoftDeleteActorScrubber).Se AccountDeletionService.
 ///
 /// Når Layer 2/3-entiteter (bede, planer m.m.) bygges: klassificér dem som GardenOwned og sørg for en
 /// cascade-sti til Garden. Testen verificerer stien.

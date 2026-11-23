@@ -17,7 +17,7 @@ partial class PlannerDbContextModelSnapshot : ModelSnapshot
     // If you encounter a merge conflict in the line below, it means you need to
     // discard one of the migration branches and recreate its migrations on top of
     // the other branch. See https://aka.ms/efcore-docs-migrations-conflicts for more info.
-    public override string LastMigrationId => "20261122182731_SoftDeleteActorUserIdAndEmail";
+    public override string LastMigrationId => "20261123121616_AddDataProtectionKeys";
 
     protected override void BuildModel(ModelBuilder modelBuilder)
     {
@@ -449,6 +449,27 @@ partial class PlannerDbContextModelSnapshot : ModelSnapshot
                 b.HasKey("UserId");
 
                 b.ToTable("AuditLogViewerPreferences");
+            });
+
+        modelBuilder.Entity("MyGardenPlanner2026.Core.Entities.Admin.DataProtectionKeyRecord", b =>
+            {
+                var id = b.Property<int>("Id")
+                    .ValueGeneratedOnAdd()
+                    .HasColumnType("int");
+
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(id);
+
+                b.Property<string>("FriendlyName")
+                    .HasMaxLength(200)
+                    .HasColumnType("nvarchar(200)");
+
+                b.Property<string>("Xml")
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
+
+                b.HasKey("Id");
+
+                b.ToTable("DataProtectionKeys", "admin");
             });
 
         modelBuilder.Entity("MyGardenPlanner2026.Core.Entities.Admin.JitElevationPolicySettings", b =>

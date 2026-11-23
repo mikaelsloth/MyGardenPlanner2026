@@ -680,7 +680,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 - R10.10 (backlog) Fortrydelse af hele kontosletningen i 30 dage (deaktivering af Identity-brugeren i stedet for sletning).
 ~~- R10.11 (observation) SoftDeleteInterceptor skriver handlende brugers e-mail (UserEmail ?? UserId) i DeletedBy. Efter kontosletning bevares værdien på soft-slettede rækker (fx kataloger), jf. AccountDeletionCoverageTests (DeletedBy er bevaret som regel). Overvej at skrive bruger-ID i stedet for e-mail.~~
 - R10.12 (backlog) Import af backup-filen (kræver Layer 2/3-data; brug IAccountBackupService.Verify med den nye brugers BEKRÆFTEDE e-mail).
-- R10.13 (backlog) Data Protection: persistér og sikkerhedskopiér nøgleringen og sæt et stabilt ApplicationName, ellers kan gamle backup-filer ikke verificeres (se R10.2).
+~~- R10.13 (backlog) Data Protection: persistér og sikkerhedskopiér nøgleringen og sæt et stabilt ApplicationName, ellers kan gamle backup-filer ikke verificeres (se R10.2).~~
 - R10.14 (backlog) E2E: download af backup fra DeletePersonalData og verifikation af filens format.
 
 Filer til Upload: AccountDeletionService, DeletePersonalData, Garden-entiteterne

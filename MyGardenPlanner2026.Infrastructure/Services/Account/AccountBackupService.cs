@@ -16,9 +16,9 @@ using System.Text.Json.Serialization;
 /// så omformatering af filen er uden betydning, mens enhver ændring af indholdet gør signaturen ugyldig.
 /// Signaturen dækker e-mail-hashen, så den ikke kan udskiftes.
 ///
-/// OBS: Verifikation kræver samme Data Protection-nøglering som ved oprettelsen. Nøgleringen skal
-/// persisteres og sikkerhedskopieres, og ApplicationName skal være stabilt, ellers kan gamle filer ikke
-/// verificeres (se PR-beskrivelsen).
+/// OBS: Verifikation kræver samme Data Protection-nøglering som ved oprettelsen. Nøgleringen persisteres i
+/// admin.DataProtectionKeys (R10.13, krypteret med certifikat i Production) og ApplicationName er fast
+/// ("MyGardenPlanner"). Mistes nøgleringen eller certifikatet, kan gamle filer ikke verificeres.
 /// </summary>
 public sealed class AccountBackupService(
     IDbContextFactory<PlannerDbContext> contextFactory,

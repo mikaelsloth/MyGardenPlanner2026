@@ -77,6 +77,7 @@ public sealed class AccountDeletionCoverageTests
         [typeof(SubscriptionAddOn)] = (EntityKind.Global, "Abonnementskatalog."),
         [typeof(DummyEntityPlant)] = (EntityKind.Global,
             "Midlertidig stamdata uden bruger- eller haveref. Omklassificér, når Layer 1-stamdata bliver brugerejet."),
+        [typeof(DataProtectionKeyRecord)] = (EntityKind.Global, "Certifikater til restore funktionalitet"),
 
         [typeof(JitElevationPolicySettings)] = (EntityKind.Global, "Singleton-sikkerhedspolicy."),
         [typeof(ReAuthenticationPolicySettings)] = (EntityKind.Global, "Singleton-sikkerhedspolicy."),

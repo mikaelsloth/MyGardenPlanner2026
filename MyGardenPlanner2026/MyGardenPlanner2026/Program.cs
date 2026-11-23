@@ -7,6 +7,7 @@ var provider = builder.Configuration["DatabaseProvider"];
 builder.Services
     .AddBlazorServices()
     .AddDatabaseServices(builder.Configuration, provider)
+    .AddDataProtectionServices(builder.Configuration, builder.Environment)
     .AddIdentityServices()
     .AddIdentityBootstrapSeeding(builder.Configuration)
     .AddAuthorizationServices()

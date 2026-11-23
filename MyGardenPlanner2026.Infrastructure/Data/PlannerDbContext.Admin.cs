@@ -15,6 +15,7 @@ public partial class PlannerDbContext
     public DbSet<AdminApiRateLimitSettings> AdminApiRateLimitSettings => Set<AdminApiRateLimitSettings>();
     public DbSet<LoginRateLimitSettings> LoginRateLimitSettings => Set<LoginRateLimitSettings>();
     public DbSet<AuditLogExportJobPolicySettings> AuditLogExportJobPolicySettings => Set<AuditLogExportJobPolicySettings>();
+    public DbSet<DataProtectionKeyRecord> DataProtectionKeys => Set<DataProtectionKeyRecord>();
 
     /// <summary>
     /// Instansmetode (var static): Database.IsSqlServer() kræver context-instansen,
@@ -28,7 +29,16 @@ public partial class PlannerDbContext
         ConfigureRoleElevation(modelBuilder, useTemporalTables);
         ConfigureReAuthFailureAttempts(modelBuilder);
         ConfigureSecurityPolicySettings(modelBuilder, useTemporalTables);
+        ConfigureDataProtectionKeys(modelBuilder);
     }
+
+    private static void ConfigureDataProtectionKeys(ModelBuilder modelBuilder) => modelBuilder.Entity<DataProtectionKeyRecord>(entity =>
+    {
+        entity.ToTable("DataProtectionKeys", AdminSchema);
+        entity.HasKey(e => e.Id);
+        entity.Property(e => e.FriendlyName).HasMaxLength(200);
+        entity.Property(e => e.Xml).IsRequired();
+    });
 
     private static void ConfigureSecurityPolicySettings(ModelBuilder modelBuilder, bool useTemporalTables)
     {

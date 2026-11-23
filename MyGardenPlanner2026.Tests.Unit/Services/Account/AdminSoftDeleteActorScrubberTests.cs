@@ -10,14 +10,6 @@ using Xunit;
 
 public class AdminSoftDeleteActorScrubberTests : TestDbContext
 {
-    private sealed class FakeAdminDbContextFactory(Func<PlannerDbContext> create) : IAdminDbContextFactory
-    {
-        public PlannerDbContext CreateDbContext() => create();
-
-        public Task<PlannerDbContext> CreateDbContextAsync(CancellationToken cancellationToken = default) =>
-            Task.FromResult(create());
-    }
-
     private static AdminSoftDeleteActorScrubber CreateSut(Func<PlannerDbContext> create) =>
         new(new FakeAdminDbContextFactory(create), NullLogger<AdminSoftDeleteActorScrubber>.Instance);
 

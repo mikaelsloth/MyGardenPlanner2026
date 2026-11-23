@@ -12,6 +12,7 @@ using MyGardenPlanner2026.Core.Entities.Admin;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Gardens;
 using MyGardenPlanner2026.Infrastructure.Data;
+using MyGardenPlanner2026.Infrastructure.Interceptors;
 using MyGardenPlanner2026.Infrastructure.Services.Account;
 using NSubstitute;
 using System.Text.Json;
@@ -28,6 +29,7 @@ public sealed class AccountDeletionServiceTests : IDisposable
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
     private readonly DbContextOptions<PlannerDbContext> _options;
     private readonly IReAuthFailureTracker _tracker = Substitute.For<IReAuthFailureTracker>();
+    private readonly IAdminSoftDeleteActorScrubber _adminScrubber = Substitute.For<IAdminSoftDeleteActorScrubber>();
     private static readonly CurrentUserInfo Actor = new(UserId, UserEmail, "10.0.0.1");
     private readonly ICurrentUserAccessor _currentUser = Substitute.For<ICurrentUserAccessor>();
     private static readonly DateTimeOffset Now = new(2026, 11, 20, 12, 0, 0, TimeSpan.Zero);
@@ -55,7 +57,7 @@ public sealed class AccountDeletionServiceTests : IDisposable
         restoreOptions.CurrentValue.Returns(new GardenRestoreOptions { RetentionDays = retentionDays });
 
         return new AccountDeletionService(
-            new TestFactory(_options), _tracker, Substitute.For<IAdminSoftDeleteActorScrubber>(), _currentUser, restoreOptions, new FixedTimeProvider(Now),
+            new TestFactory(_options), _tracker, _adminScrubber, _currentUser, restoreOptions, new FixedTimeProvider(Now),
             NullLogger<AccountDeletionService>.Instance);
     }
 
@@ -189,6 +191,36 @@ public sealed class AccountDeletionServiceTests : IDisposable
 
         await context.SaveChangesAsync(Ct);
         return garden;
+    }
+
+    private async Task<Garden> SeedSoftDeletedGardenAsync(string deletedByUserId, string? deletedByEmail)
+    {
+        await using var context = new PlannerDbContext(_options);
+        var garden = new Garden
+        {
+            Name = "Slettet have",
+            IsDeleted = true,
+            DeletedAtUtc = Now,
+            DeletedByUserId = deletedByUserId,
+            DeletedByEmail = deletedByEmail
+        };
+        context.Gardens.Add(garden);
+        await context.SaveChangesAsync(Ct);
+        return garden;
+    }
+
+    /// <summary>Soft-sletter via den rigtige SoftDeleteInterceptor, så aktøren stemples som i produktion.</summary>
+    private async Task SoftDeleteGardenViaInterceptorAsync(Guid gardenId)
+    {
+        var options = new DbContextOptionsBuilder<PlannerDbContext>()
+            .UseSqlite(_connection)
+            .AddInterceptors(new SoftDeleteInterceptor(_currentUser))
+            .Options;
+
+        await using var context = new PlannerDbContext(options);
+        var garden = await context.Gardens.SingleAsync(g => g.Id == gardenId, Ct);
+        context.Gardens.Remove(garden);
+        await context.SaveChangesAsync(Ct);
     }
 
     private async Task<GardenMembership?> FindMembershipAsync(Guid gardenId, string userId)
@@ -887,5 +919,89 @@ public sealed class AccountDeletionServiceTests : IDisposable
 
         result.IsBlocked.Should().BeTrue();
         (await CountViewerPreferencesAsync(UserId)).Should().Be(1);
+    }
+
+    // ---------- R10.11: soft-delete-aktørens e-mail ----------
+
+    [Fact]
+    public async Task DeleteUserDataAsync_RowsSoftDeletedByUserViaInterceptor_HaveEmailClearedButUserIdKept()
+    {
+        var garden = await SeedGardenAsync("Anden have", (OtherUserId, true));
+        await SoftDeleteGardenViaInterceptorAsync(garden.Id);
+
+        var before = await FindGardenAsync(garden.Id);
+        before!.DeletedByUserId.Should().Be(UserId);
+        before.DeletedByEmail.Should().Be(UserEmail);
+
+        var result = await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
+
+        result.IsBlocked.Should().BeFalse();
+        var after = await FindGardenAsync(garden.Id);
+        after!.IsDeleted.Should().BeTrue();
+        after.DeletedByUserId.Should().Be(UserId);
+        after.DeletedByEmail.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_RowsSoftDeletedByOtherUser_KeepTheirEmail()
+    {
+        var other = await SeedSoftDeletedGardenAsync(OtherUserId, "anden@example.dk");
+
+        await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
+
+        var after = await FindGardenAsync(other.Id);
+        after!.DeletedByUserId.Should().Be(OtherUserId);
+        after.DeletedByEmail.Should().Be("anden@example.dk");
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_SummaryRow_CountsClearedActorEmails()
+    {
+        await SeedSoftDeletedGardenAsync(UserId, UserEmail);
+        await SeedSoftDeletedGardenAsync(UserId, UserEmail);
+        await SeedSoftDeletedGardenAsync(OtherUserId, "anden@example.dk");
+
+        await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
+
+        var summary = (await GetAuditAsync()).Single(a => a.EntityName == "AccountDeletion");
+        Prop(summary.NewValues, "SoftDeleteActorEmailsCleared").Should().Be("2");
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_SoleMemberGarden_IsNotCountedAsClearedActorEmail()
+    {
+        // Haven soft-slettes via ExecuteUpdate med DeletedByUserId og uden e-mail.
+        var garden = await SeedGardenAsync("Min have", (UserId, true));
+
+        await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
+
+        var deleted = await FindGardenAsync(garden.Id);
+        deleted!.DeletedByUserId.Should().Be(UserId);
+        deleted.DeletedByEmail.Should().BeNull();
+        var summary = (await GetAuditAsync()).Single(a => a.EntityName == "AccountDeletion");
+        Prop(summary.NewValues, "SoftDeleteActorEmailsCleared").Should().Be("0");
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_Success_CallsAdminScrubberOnceWithUserId()
+    {
+        await SeedGardenAsync("Min have", (UserId, true));
+
+        await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
+
+        await _adminScrubber.Received(1).ClearActorEmailAsync(UserId, Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task DeleteUserDataAsync_Blocked_DoesNotClearEmailsOrCallAdminScrubber()
+    {
+        await SeedGardenAsync("Blokeret have", (UserId, true), (OtherUserId, false));
+        var stamped = await SeedSoftDeletedGardenAsync(UserId, UserEmail);
+
+        var result = await _sut.DeleteUserDataAsync(UserId, UserEmail, Ct);
+
+        result.IsBlocked.Should().BeTrue();
+        (await FindGardenAsync(stamped.Id))!.DeletedByEmail.Should().Be(UserEmail);
+        await _adminScrubber.DidNotReceive().ClearActorEmailAsync(Arg.Any<string>(), Arg.Any<CancellationToken>());
     }
 }

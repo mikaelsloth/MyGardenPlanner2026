@@ -114,3 +114,5 @@ EventId | Fil | Metode |
 1166 | GardenRestoreExpirySweepService.cs | StaleRestoreTicketsRemoved |
 1167 | GardenRestoreExpirySweepService.cs | SweepFailed |
 1168 | IdentityComponentsEndpointRouteBuilderExtensions.cs | AccountBackupDownloaded |
+1169 | AccountDeletionService.cs | SoftDeleteActorEmailsCleared |
+1170 | AdminSoftDeleteActorScrubber.cs | AdminActorEmailClearFailed |

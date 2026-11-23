@@ -55,7 +55,7 @@ public sealed class AccountDeletionServiceTests : IDisposable
         restoreOptions.CurrentValue.Returns(new GardenRestoreOptions { RetentionDays = retentionDays });
 
         return new AccountDeletionService(
-            new TestFactory(_options), _tracker, _currentUser, restoreOptions, new FixedTimeProvider(Now),
+            new TestFactory(_options), _tracker, Substitute.For<IAdminSoftDeleteActorScrubber>(), _currentUser, restoreOptions, new FixedTimeProvider(Now),
             NullLogger<AccountDeletionService>.Instance);
     }
 

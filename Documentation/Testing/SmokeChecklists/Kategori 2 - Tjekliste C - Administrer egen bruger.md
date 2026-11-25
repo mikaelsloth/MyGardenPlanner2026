@@ -3,6 +3,8 @@
 - [ ] Skift e-mail (bekræftelseslink)
 - [ ] Skift password
 - [ ] Download/slet personlige data
+- [ ] Download backup før sletning
+
 ### C1. Skift e-mail (bekræftelseslink)
 - Pre-requisite: Ny bruger oprettet og bekræftet via UI (RegisteredUserFlow) og logget ind (LoginFlow).
 - Route: `/` --> `/Account/Login` --> (direkte URL, intet link i UI) --> `/Account/Manage/Email` --> `/Account/ConfirmEmailChange?...` (linket vises på Email-siden, fordi appen bruger IdentityNoOpEmailSender)
@@ -54,4 +56,17 @@
   - Forkert password ved sletning: "Error: Incorrect password."; kontoen findes stadig (login virker).
 - Skærmbillede: ja `/Account/Manage/PersonalData` og `/Account/Manage/DeletePersonalData` ved sideindlæsning (375, 768, 939, 940, 1280)
 - Filer: Components\Account\Pages\Manage\PersonalData.razor(.cs), Components\Account\Pages\Manage\DeletePersonalData.razor(.cs), Components\Account\IdentityComponentsEndpointRouteBuilderExtensions.cs (POST /Account/Manage/DownloadPersonalData)
- 
+### C4. Download backup før sletning
+- Pre-requisite: Smoke-bruger Plain (ingen 2FA) logget ind (LoginFlow).
+- Route: `/` --> `/Account/Login` --> (direkte URL, intet link i UI) --> `/Account/Manage/DeletePersonalData` (kortet "Hent en backup, før du sletter")
+- Bruger: Plain; NoMfa bruges kun til at sammenligne e-mail-hash.
+- Handling:
+  a. Klik "Download backup"
+  b. Hent backup en gang til, og hent den som anden bruger (NoMfa)
+- Forventet:
+  a. Filen `MyGardenPlanner-backup.json` hentes. JSON: `format` = `MyGardenPlanner.AccountBackup`, `version` = 1, `createdUtc`, `emailHash` (64 hex-tegn), `signature`, `payload.personalData` med "Email" (uden "Authenticator Key") og `payload.gardens` (liste).
+  b. `emailHash` er ens for samme bruger og forskellig mellem brugere.
+- Negative tests: ingen. Signaturen kan ikke verificeres i E2E (appens nøglering er i en separat proces); den dækkes af xUnit (AccountBackupServiceTests, PersistedDataProtectionTests).
+- Skærmbillede: nej (C3 viser kortet på `/Account/Manage/DeletePersonalData` ved alle bredder)
+- Filer: Components\Account\Pages\Manage\DeletePersonalData.razor(.cs), Components\Account\IdentityComponentsEndpointRouteBuilderExtensions.cs (POST /Account/Manage/DownloadAccountBackup), AccountBackupService.cs
+- 

@@ -20,7 +20,7 @@ Indeks til manual smoke tests i MyGardenPlanner2026.Tests.E2E. Kun det, der er v
   - `AppConnectionString`: appens forbindelse til engangsdatabasen
   - `SmtpServer` (`TestSmtpServer`), `SecurityAlertRecipient`, `SecurityAlertSubject` (bruges af B2 og D2)
   - `ReAuthMaxAgeMinutes = 1`: sendes som `ReAuthenticationPolicy__MaxAgeMinutes` til E2E-appen (appsettings: 15)
-  - `SeedExtraUserAsync(role)` → `SmokeTestDataSeeder.SeedExtraUserAsync(connectionString, role)`: ny bruger (e2e-`<guid>`@test.dk) med rollen og 2FA. Rollen skal findes (oprettes af SeedAsync). Giver en test egen fejltæller/session uden at røre personas.
+  - `SmokeTestDataSeeder.SeedExtraUserAsync(connectionString, role, twoFactorEnabled)`: ny bruger (e2e-`<guid>`@test.dk). Uden rolle (null) har brugeren ingen rolle. Angives en rolle, skal den findes (oprettes af SeedAsync). Giver en test egen fejltæller/session uden at røre personas.
   - Identity__ShowEmailLinks=true sendes til E2E-appen (links på RegisterConfirmation/Email vises kun med flaget, R2.1/R2.2)
 - Skærmbilleder: `ScreenshotRecorder.CaptureAsync(page, kapitel, tjekliste, testnavn, komponent)`
   - Gemmer TestResults/Screenshots/`<kapitel>`/`<tjekliste>`/`<testnavn>`_`<komponent>`_`<bredde>`.png (fuld side).
@@ -144,6 +144,13 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
   - `WaitForNewUrlAsync(page, kendtAntal)`, `FetchAsync(page, url, timeoutMs?)` (standard 30 sek.) → `ExportResponse(Status, ContentType, ContentDisposition, Body, Text, FileName)`
   - `ParseCsv`, `JsonRowCount`, `XlsxRowCount`, `IsZip`, `XlsxColumn(body, kolonne)`
 
+### 2.7 Haver
+
+- `GardenTestData` (seeder og læser haver i engangsdatabasen via app-forbindelsen; dbo, ikke admin):
+  - `SeedAsync(connectionString, GardenSeed(navn, medlemmer))` → `SeededGarden(Id, Name)`. Brugerne skal findes (`fixture.SeedExtraUserAsync`). Præcis én ejer, ingen dublet-e-mails.
+  - `GardenMemberSeed.Owner(email, layer?)`: IsOwner, Administrator, med entitlement (Annual, gyldigt 1 år, ikke trial). `GardenMemberSeed.Member(email, category = Editor, layer?, withEntitlement = false)`. Standardniveau er HaveArkitekt.
+  - Læsere (IgnoreQueryFilters, også soft-slettede): `FindGardenAsync` → `GardenSnapshot?`, `GetMembershipsAsync` → `MembershipSnapshot`, `GetEntitlementsAsync` → `EntitlementSnapshot`.
+
 ## 3. Læringer (undgå gentagelser)
 
 ### Playwright og Blazor
@@ -185,6 +192,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - En blokeret bruger kan ikke gendanne selv: åbn en ny PolicyAdmin FØR ændringen og brug den til gendannelse.
 - Delt data ved afbrudt kørsel: F1 (basispriser, delt med A2) og E5 (JIT-policy: Min = 1, Sweep = 1) gendanner i finally. Dræbes processen midt i, forbliver ændringen, til databasen droppes (lokalt ved dispose, i CI ved næste CreateAsync). Accepteret; ingen egen collection. E5 tager 2-4 minutter, fordi appen kører med rigtig tid.
 - Admin-API-kvoten (AdminActionGuard/AdminActionRateLimiter) er pr. bruger (sliding window, appsettings: 100 pr. 60 sek.; E2E overstyrer den ikke). F1 bruger en ny bruger pr. test og 6 gem (3 + 3 ved gendannelse). Kun en ugendannet kvotepolicy fra G2e kan få F1 til at ramme grænsen (fejltekst: AdminActionGuard.RateLimitedMessage).
+- Haver seedes direkte i databasen (`GardenTestData`) og læses tilbage med IgnoreQueryFilters: brug en ny have og nye brugere pr. test, så delt data ikke påvirker andre tests. Kontosletning ændrer kun brugerens egne rækker.
 
 ### Step-up, re-auth og sikkerhedsalarm
 - `ReAuthenticationService` er Scoped. Login markerer kun re-auth i request-scope, så en frisk circuit har intet tidsstempel, og `StepUpReAuthModal` vises ved første beskyttede handling uden ventetid. Efter step-up gælder vinduet i samme circuit; reload = ny circuit = ny modal.
@@ -675,7 +683,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ~~- R10.3 Layer 2/3-data (bede, planer m.m.) skal medtages i AccountDeletionService (eller kaskade), når de bygges.~~
 ~~- R10.4 AccountDeletionService bruger ExecuteDelete og skriver derfor ingen AuditLog-rækker. Overvej en eksplicit audit-post som dokumentation.~~
 ~~- R10.5 Kontosider på engelsk (blokeringsbesked mv.) lokaliseres i R8.~~
-- R10.6 (backlog) E2E for kontosletning: ejerskabsoverdragelse, slet for alle og gendannelse (kræver seedning af haver med flere medlemmer i SmokeTestDataSeeder).
+- R10.6 (backlog) E2E for kontosletning: ejerskabsoverdragelse, slet for alle og gendannelse (kræver seedning af haver med flere medlemmer i SmokeTestDataSeeder). (seeding af haver leveret i PR 14: GardenTestData).
 - R10.7 (backlog) Notifikationsmail til ny ejer ved ejerskabsoverdragelse (kræver en rigtig IEmailSender; SmtpSecurityEmailSender sender kun til Smtp:AdminSecurityEmails).
 - R10.8 (backlog) Overdragelse med modtagerens accept og betaling af eventuel forskel (i dag hæves kun Category til Administrator uden nyt entitlement).
 - R10.9 (backlog) Backup-filen (R10.2) bundet til en anden e-mail end den oprindelige (intet sikkert design endnu).

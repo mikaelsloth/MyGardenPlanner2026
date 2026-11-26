@@ -41,15 +41,6 @@ public sealed class GardenTestDataValidationTests
     }
 
     [Fact]
-    public async Task SeedAsync_TwoOwners_Throws()
-    {
-        var act = () => Seed(new GardenSeed("Have",
-            [GardenMemberSeed.Owner("a@test.dk"), GardenMemberSeed.Owner("b@test.dk")]));
-
-        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*ejer*");
-    }
-
-    [Fact]
     public async Task SeedAsync_DuplicateEmailsIgnoringCase_Throws()
     {
         var act = () => Seed(new GardenSeed("Have",

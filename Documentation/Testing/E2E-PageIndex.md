@@ -147,7 +147,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 ### 2.7 Haver
 
 - `GardenTestData` (seeder og læser haver i engangsdatabasen via app-forbindelsen; dbo, ikke admin):
-  - `SeedAsync(connectionString, GardenSeed(navn, medlemmer))` → `SeededGarden(Id, Name)`. Brugerne skal findes (`fixture.SeedExtraUserAsync`). Præcis én ejer, ingen dublet-e-mails.
+  - `SeedAsync(connectionString, GardenSeed(navn, medlemmer))` → `SeededGarden(Id, Name)`. Brugerne skal findes (`fixture.SeedExtraUserAsync`). Mindst én ejer (flere tilladt), ingen dublet-e-mails.
   - `GardenMemberSeed.Owner(email, layer?)`: IsOwner, Administrator, med entitlement (Annual, gyldigt 1 år, ikke trial). `GardenMemberSeed.Member(email, category = Editor, layer?, withEntitlement = false)`. Standardniveau er HaveArkitekt.
   - Læsere (IgnoreQueryFilters, også soft-slettede): `FindGardenAsync` → `GardenSnapshot?`, `GetMembershipsAsync` → `MembershipSnapshot`, `GetEntitlementsAsync` → `EntitlementSnapshot`.
 
@@ -416,6 +416,7 @@ Titel: Slet personlige data – MyGardenPlanner. h3 "Slet personlige data". Stat
 Felt "Adgangskode" (kun hvis brugeren har password), knap "Slet data og luk min konto". Advarselsboksen viser opbevaringsperioden (GardenRestore:RetentionDays, standard 30 dage).
 Over formularen: kort "Hent en backup, før du sletter" med knappen "Download backup" (POST til /Account/Manage/DownloadAccountBackup, kræver login og antiforgery, filnavn MyGardenPlanner-backup.json). Filen er læsbar JSON (format MyGardenPlanner.AccountBackup, version 1) med personlige data og egne haver, signeret via Data Protection og bundet til e-mailen med et hash (R10.2). Ingen import endnu.
 Tests: ManualSmoke/TjeklisteC/BackupDownloadTests (format, ikke signatur).
+Tests: ManualSmoke/TjeklisteC/KontosletningHaverTests (overdragelse, slet for alle, fejl, flere haver, flere ejere).
 Er brugeren eneste ejer i haver med andre medlemmer, vises pr. have en fieldset (legend = havens navn) med select #garden-choice-<n> ("Vælg…", "Overdrag ejerskab til <e-mail> (<kategori>, <niveau>)", "Slet haven for alle medlemmer"; n = 0, 1, …), felt #garden-confirm-<n> (havens navn, kun ved sletning for alle) og et skjult felt Input.Gardens[n].GardenId.
 Forkert password: "Error: Adgangskoden er forkert.". Mangler valg: "Error: Vælg, hvad der skal ske med haven '<navn>'.". Forkert navn ved sletning for alle (trimmet, versalfølsomt ikke): "Error: Skriv havens navn '<navn>' for at bekræfte, at haven slettes for alle medlemmer.". Service afviser stadig (fx ugyldig modtager): "Error: Du er eneste ejer af haver, der deles med andre medlemmer: <haver>. Ejerskabet skal overdrages, før din konto kan slettes." Fejlet DeleteAsync: "Error: Din konto kunne ikke slettes. Prøv igen."
   Overdragelse: modtageren får IsOwner og hæves til Administrator (Layer uændret, intet nyt entitlement). Sletning for alle: haven soft-slettes i GardenRestore:RetentionDays, andre medlemmers adgang slettes fysisk.
@@ -550,6 +551,7 @@ Eksportpanel (AuditLogExportPanel):
 | C2 | Skift password | SkiftPasswordTests | SkiftPassword_ChangePassword_`<bredde>` (5), SkiftPassword_ChangePasswordEfterSkift_`<bredde>` (5) | ikke kørt |
 | C3 | Download/slet personlige data | PersonligeDataTests | PersonligeData_PersonalData_`<bredde>` (5), PersonligeData_DeletePersonalData_`<bredde>` (5) | ikke kørt |
 | C4 | Download backup før sletning | BackupDownloadTests | ingen | ikke kørt |
+| C5 | Slet konto: haver med flere medlemmer | KontosletningHaverTests | ingen | ikke kørt |
 | D1 | Modal vises ved beskyttet handling (+ AccessDenied for Requester) | ModalVisesTests | StepUp_`<Side>`_Side (20), StepUp_`<Side>`_Modal (15), StepUp_AccessDenied_`<bredde>` (5) | grøn |
 | D1b | Step-up-modal: Esc, fokus-trap, fokus-returnering, ingen baggrundslukning | StepUpModalTastaturTests | ingen | ikke kørt |
 | D2 | Forkert password/TOTP i modal + alarm ved 5. fejl | ForkertPasswordModalTests | StepUp_AdminSecurityPolicies_ForkertPassword_`<bredde>` (5) | grøn |
@@ -683,7 +685,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ~~- R10.3 Layer 2/3-data (bede, planer m.m.) skal medtages i AccountDeletionService (eller kaskade), når de bygges.~~
 ~~- R10.4 AccountDeletionService bruger ExecuteDelete og skriver derfor ingen AuditLog-rækker. Overvej en eksplicit audit-post som dokumentation.~~
 ~~- R10.5 Kontosider på engelsk (blokeringsbesked mv.) lokaliseres i R8.~~
-- R10.6 (backlog) E2E for kontosletning: ejerskabsoverdragelse, slet for alle og gendannelse (kræver seedning af haver med flere medlemmer i SmokeTestDataSeeder). (seeding af haver leveret i PR 14: GardenTestData).
+- R10.6 (backlog) E2E for kontosletning: ejerskabsoverdragelse, slet for alle og gendannelse (kræver seedning af haver med flere medlemmer i SmokeTestDataSeeder). (seeding af haver leveret i PR 14: GardenTestData). ejerskab og slet for alle leveret i PR 15 (C5). Gendannelse mangler.
 - R10.7 (backlog) Notifikationsmail til ny ejer ved ejerskabsoverdragelse (kræver en rigtig IEmailSender; SmtpSecurityEmailSender sender kun til Smtp:AdminSecurityEmails).
 - R10.8 (backlog) Overdragelse med modtagerens accept og betaling af eventuel forskel (i dag hæves kun Category til Administrator uden nyt entitlement).
 - R10.9 (backlog) Backup-filen (R10.2) bundet til en anden e-mail end den oprindelige (intet sikkert design endnu).

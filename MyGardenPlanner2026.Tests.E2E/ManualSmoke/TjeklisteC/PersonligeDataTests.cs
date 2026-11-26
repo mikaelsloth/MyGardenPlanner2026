@@ -5,6 +5,7 @@ using Microsoft.Playwright;
 using MyGardenPlanner2026.Tests.E2E.Screenshots;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using static MyGardenPlanner2026.Tests.E2E.ManualSmoke.TjeklisteC.ManagePageTexts;
 
 /// <summary>
 /// Tjekliste C3: download/slet personlige data. Ny bruger logger ind, henter PersonalData.json fra
@@ -22,9 +23,6 @@ public sealed partial class PersonligeDataTests(PlaywrightAppFixture fixture)
 
     // Manage-siderne ligger i ManageLayout (h1) og har titlen "<side> – MyGardenPlanner".
     private const string PersonalDataTitle = "Personlige data – MyGardenPlanner";
-    private const string DeleteTitle = "Slet personlige data – MyGardenPlanner";
-    private const string ManageHeading = "Administrer din konto";
-
     private const string DownloadFileName = "PersonalData.json";
     private const string DeleteButtonName = "Slet data og luk min konto";
     private const string IncorrectPasswordText = "Adgangskoden er forkert";

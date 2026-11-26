@@ -407,6 +407,7 @@ Filer: PersonalData.razor (+ .cs), IdentityComponentsEndpointRouteBuilderExtensi
 Titel: Slet personlige data – MyGardenPlanner. h3 "Slet personlige data". Static SSR.
 Felt "Adgangskode" (kun hvis brugeren har password), knap "Slet data og luk min konto". Advarselsboksen viser opbevaringsperioden (GardenRestore:RetentionDays, standard 30 dage).
 Over formularen: kort "Hent en backup, før du sletter" med knappen "Download backup" (POST til /Account/Manage/DownloadAccountBackup, kræver login og antiforgery, filnavn MyGardenPlanner-backup.json). Filen er læsbar JSON (format MyGardenPlanner.AccountBackup, version 1) med personlige data og egne haver, signeret via Data Protection og bundet til e-mailen med et hash (R10.2). Ingen import endnu.
+Tests: ManualSmoke/TjeklisteC/BackupDownloadTests (format, ikke signatur).
 Er brugeren eneste ejer i haver med andre medlemmer, vises pr. have en fieldset (legend = havens navn) med select #garden-choice-<n> ("Vælg…", "Overdrag ejerskab til <e-mail> (<kategori>, <niveau>)", "Slet haven for alle medlemmer"; n = 0, 1, …), felt #garden-confirm-<n> (havens navn, kun ved sletning for alle) og et skjult felt Input.Gardens[n].GardenId.
 Forkert password: "Error: Adgangskoden er forkert.". Mangler valg: "Error: Vælg, hvad der skal ske med haven '<navn>'.". Forkert navn ved sletning for alle (trimmet, versalfølsomt ikke): "Error: Skriv havens navn '<navn>' for at bekræfte, at haven slettes for alle medlemmer.". Service afviser stadig (fx ugyldig modtager): "Error: Du er eneste ejer af haver, der deles med andre medlemmer: <haver>. Ejerskabet skal overdrages, før din konto kan slettes." Fejlet DeleteAsync: "Error: Din konto kunne ikke slettes. Prøv igen."
   Overdragelse: modtageren får IsOwner og hæves til Administrator (Layer uændret, intet nyt entitlement). Sletning for alle: haven soft-slettes i GardenRestore:RetentionDays, andre medlemmers adgang slettes fysisk.
@@ -540,6 +541,7 @@ Eksportpanel (AuditLogExportPanel):
 | C1 | Skift e-mail | SkiftEmailTests | SkiftEmail_Email_`<bredde>` (5), SkiftEmail_EmailEfterSkift_`<bredde>` (5) | ikke kørt |
 | C2 | Skift password | SkiftPasswordTests | SkiftPassword_ChangePassword_`<bredde>` (5), SkiftPassword_ChangePasswordEfterSkift_`<bredde>` (5) | ikke kørt |
 | C3 | Download/slet personlige data | PersonligeDataTests | PersonligeData_PersonalData_`<bredde>` (5), PersonligeData_DeletePersonalData_`<bredde>` (5) | ikke kørt |
+| C4 | Download backup før sletning | BackupDownloadTests | ingen | ikke kørt |
 | D1 | Modal vises ved beskyttet handling (+ AccessDenied for Requester) | ModalVisesTests | StepUp_`<Side>`_Side (20), StepUp_`<Side>`_Modal (15), StepUp_AccessDenied_`<bredde>` (5) | grøn |
 | D1b | Step-up-modal: Esc, fokus-trap, fokus-returnering, ingen baggrundslukning | StepUpModalTastaturTests | ingen | ikke kørt |
 | D2 | Forkert password/TOTP i modal + alarm ved 5. fejl | ForkertPasswordModalTests | StepUp_AdminSecurityPolicies_ForkertPassword_`<bredde>` (5) | grøn |
@@ -681,7 +683,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ~~- R10.11 (observation) SoftDeleteInterceptor skriver handlende brugers e-mail (UserEmail ?? UserId) i DeletedBy. Efter kontosletning bevares værdien på soft-slettede rækker (fx kataloger), jf. AccountDeletionCoverageTests (DeletedBy er bevaret som regel). Overvej at skrive bruger-ID i stedet for e-mail.~~
 - R10.12 (backlog) Import af backup-filen (kræver Layer 2/3-data; brug IAccountBackupService.Verify med den nye brugers BEKRÆFTEDE e-mail).
 ~~- R10.13 (backlog) Data Protection: persistér og sikkerhedskopiér nøgleringen og sæt et stabilt ApplicationName, ellers kan gamle backup-filer ikke verificeres (se R10.2).~~
-- R10.14 (backlog) E2E: download af backup fra DeletePersonalData og verifikation af filens format.
+~~- R10.14 (backlog) E2E: download af backup fra DeletePersonalData og verifikation af filens format.~~
 
 Filer til Upload: AccountDeletionService, DeletePersonalData, Garden-entiteterne
 

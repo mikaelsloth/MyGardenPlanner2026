@@ -141,9 +141,9 @@ public static class GardenTestData
             throw new ArgumentException("En have skal have mindst ét medlem.", nameof(seed));
         }
 
-        if (seed.Members.Count(m => m.IsOwner) != 1)
+        if (!seed.Members.Any(m => m.IsOwner))
         {
-            throw new ArgumentException("Præcis ét medlem skal være ejer.", nameof(seed));
+            throw new ArgumentException("Mindst ét medlem skal være ejer.", nameof(seed));
         }
 
         if (seed.Members.Select(m => m.Email).Distinct(StringComparer.OrdinalIgnoreCase).Count() != seed.Members.Count)

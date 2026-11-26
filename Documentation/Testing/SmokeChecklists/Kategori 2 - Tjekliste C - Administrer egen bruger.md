@@ -4,6 +4,7 @@
 - [ ] Skift password
 - [ ] Download/slet personlige data
 - [ ] Download backup før sletning
+- [ ] Slet konto: haver med flere medlemmer
 
 ### C1. Skift e-mail (bekræftelseslink)
 - Pre-requisite: Ny bruger oprettet og bekræftet via UI (RegisteredUserFlow) og logget ind (LoginFlow).
@@ -69,4 +70,21 @@
 - Negative tests: ingen. Signaturen kan ikke verificeres i E2E (appens nøglering er i en separat proces); den dækkes af xUnit (AccountBackupServiceTests, PersistedDataProtectionTests).
 - Skærmbillede: nej (C3 viser kortet på `/Account/Manage/DeletePersonalData` ved alle bredder)
 - Filer: Components\Account\Pages\Manage\DeletePersonalData.razor(.cs), Components\Account\IdentityComponentsEndpointRouteBuilderExtensions.cs (POST /Account/Manage/DownloadAccountBackup), AccountBackupService.cs
-- 
+### C5. Slet konto: haver med flere medlemmer
+- Pre-requisite: Nye brugere uden 2FA og uden rolle (SeedExtraUserAsync) og haver seedet direkte i databasen (GardenTestData). Brugeren er logget ind.
+- Route: `/Account/Manage/DeletePersonalData` (direkte URL)
+- Handling:
+  a. Eneste ejer i en have med andre medlemmer: vælg "Overdrag ejerskab til …", indtast adgangskode, klik "Slet data og luk min konto"
+  b. Vælg "Slet haven for alle medlemmer", skriv havens navn (trimmet, versalfølsomt ikke), indtast adgangskode, slet
+  c. Intet valg for haven, eller forkert havenavn
+  d. To haver: forskellige valg i samme indsendelse
+  e. Én af to ejere (ingen blokering)
+- Forventet:
+  a. Redirect til forsiden. Modtageren er ejer og Administrator (niveau uændret), haven bevares, brugerens rækker og entitlement er slettet, og der oprettes intet nyt entitlement. Login afvises.
+  b. Haven soft-slettes (bruger-ID som sletter, ingen e-mail), andres medlemskaber og entitlements slettes fysisk, og ejerens rækker soft-slettes.
+  c. "Error: Vælg, hvad der skal ske med haven '<navn>'." eller "Error: Skriv havens navn '<navn>' for at bekræfte, at haven slettes for alle medlemmer." Intet slettes, og kontoen findes stadig.
+  d. Fieldsets står i havenavn-rækkefølge, og valget gælder pr. have.
+  e. Ingen fieldset. Haven bevares med den anden ejer.
+- Valglisten: "Vælg…", kandidater med højeste kategori først, "Slet haven for alle medlemmer".
+- Skærmbillede: nej
+- Filer: Components\Account\Pages\Manage\DeletePersonalData.razor(.cs), AccountDeletionService.cs, GardenTestData.cs

@@ -94,4 +94,21 @@ public sealed class GardenTestDataRoundtripTests(PlaywrightAppFixture fixture)
     [Fact]
     public async Task FindGardenAsync_UnknownId_ReturnsNull() =>
         (await GardenTestData.FindGardenAsync(ConnectionString, Guid.NewGuid())).Should().BeNull();
+
+    [Fact]
+    public async Task SeedAsync_TwoOwners_BothAreOwners()
+    {
+        var first = await fixture.SeedExtraUserAsync(twoFactorEnabled: false);
+        var second = await fixture.SeedExtraUserAsync(twoFactorEnabled: false);
+        var firstId = await SmokeTestDataSeeder.GetUserIdAsync(ConnectionString, first.Email);
+        var secondId = await SmokeTestDataSeeder.GetUserIdAsync(ConnectionString, second.Email);
+
+        var garden = await GardenTestData.SeedAsync(ConnectionString, new GardenSeed(
+            $"To ejere {Guid.NewGuid():N}",
+            [GardenMemberSeed.Owner(first.Email), GardenMemberSeed.Owner(second.Email)]));
+
+        var memberships = await GardenTestData.GetMembershipsAsync(ConnectionString, garden.Id);
+        memberships.Select(m => m.UserId).Should().BeEquivalentTo([firstId, secondId]);
+        memberships.Should().OnlyContain(m => m.IsOwner);
+    }
 }

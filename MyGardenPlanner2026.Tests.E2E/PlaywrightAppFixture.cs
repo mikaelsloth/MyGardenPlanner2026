@@ -119,8 +119,8 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         return await context.NewPageAsync();
     }
 
-    public Task<SmokeTestUser> SeedExtraUserAsync(string role) =>
-        SmokeTestDataSeeder.SeedExtraUserAsync(AppConnectionString, role);
+    public Task<SmokeTestUser> SeedExtraUserAsync(string? role = null, bool twoFactorEnabled = true) =>
+        SmokeTestDataSeeder.SeedExtraUserAsync(AppConnectionString, role, twoFactorEnabled);
 
     /// <summary>Som persona-overloaden, men for en vilkårlig seedet bruger.</summary>
     public async Task<IPage> LoginAndGotoAsync(SmokeTestUser user, string path, int? viewportWidth)

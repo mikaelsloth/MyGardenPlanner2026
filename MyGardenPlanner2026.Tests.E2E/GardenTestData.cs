@@ -43,6 +43,9 @@ public sealed record EntitlementSnapshot(
 public sealed record PendingRestoreSnapshot(
     string OwnerEmailHash, string FormerUserId, DateTimeOffset DeletedAtUtc, DateTimeOffset ExpiresUtc);
 
+public sealed record PendingRestoreSeed(
+    string Name, string OwnerEmail, GardenAccessLevel Layer, AccessCategory Category, DateTimeOffset ExpiresUtc);
+
 /// <summary>
 /// Seeder og læser af haver i engangsdatabasen (R10.6). Haver oprettes direkte i dbo via app-forbindelsen,
 /// uden om appens interceptors og UI. Brugerne skal findes (se <c>PlaywrightAppFixture.SeedExtraUserAsync</c>).
@@ -138,6 +141,71 @@ public static class GardenTestData
     /// </summary>
     public static string ExpectedOwnerEmailHash(string email) =>
         Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(email.Trim().ToLowerInvariant())));
+
+    /// <summary>
+    /// Seeder en soft-slettet have med ejerens soft-slettede medlemskab og entitlement og en gendannelsesbillet
+    /// til OwnerEmail, som om en tidligere bruger var slettet (formerUserId findes ikke). ExpiresUtc i fortiden
+    /// giver en udløben billet.
+    /// </summary>
+    public static async Task<SeededGarden> SeedPendingRestoreAsync(string connectionString, PendingRestoreSeed seed)
+    {
+        ArgumentNullException.ThrowIfNull(seed);
+        ArgumentException.ThrowIfNullOrWhiteSpace(seed.Name);
+        ArgumentException.ThrowIfNullOrWhiteSpace(seed.OwnerEmail);
+
+        await using var provider = SmokeTestDataSeeder.BuildServiceProvider(connectionString);
+        using var scope = provider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<PlannerDbContext>();
+
+        var formerUserId = Guid.NewGuid().ToString();
+        var deletedAt = seed.ExpiresUtc.AddDays(-30);
+
+        var garden = new Garden
+        {
+            Name = seed.Name,
+            IsDeleted = true,
+            DeletedAtUtc = deletedAt,
+            DeletedByUserId = formerUserId,
+        };
+        garden.Members.Add(new GardenMembership
+        {
+            UserId = formerUserId,
+            IsOwner = true,
+            Layer = seed.Layer,
+            Category = seed.Category,
+            IsDeleted = true,
+            DeletedAtUtc = deletedAt,
+            DeletedByUserId = formerUserId,
+        });
+
+        context.UserEntitlements.Add(new UserEntitlement
+        {
+            UserId = formerUserId,
+            GardenId = garden.Id,
+            Layer = seed.Layer,
+            Category = seed.Category,
+            BillingCycle = BillingCycle.Annual,
+            ValidToUtc = deletedAt.AddYears(1),
+            IsTrial = false,
+            IsDeleted = true,
+            DeletedAtUtc = deletedAt,
+            DeletedByUserId = formerUserId,
+        });
+
+        context.PendingGardenRestores.Add(new PendingGardenRestore
+        {
+            GardenId = garden.Id,
+            OwnerEmailHash = ExpectedOwnerEmailHash(seed.OwnerEmail),
+            FormerUserId = formerUserId,
+            DeletedAtUtc = deletedAt,
+            ExpiresUtc = seed.ExpiresUtc,
+        });
+
+        context.Gardens.Add(garden);
+        await context.SaveChangesAsync();
+
+        return new SeededGarden(garden.Id, garden.Name);
+    }
 
     private static async Task<T> ReadAsync<T>(string connectionString, Func<PlannerDbContext, Task<T>> read)
     {

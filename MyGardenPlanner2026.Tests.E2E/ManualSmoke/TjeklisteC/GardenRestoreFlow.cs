@@ -18,4 +18,15 @@ internal static class GardenRestoreFlow
         await LoginFlow.LoginAsync(page, user);
         return user;
     }
+
+    /// <summary>Sletter kontoen via UI og registrerer og logger ind igen med samme e-mail. Returnerer siden.</summary>
+    public static async Task<IPage> DeleteAccountAndReRegisterAsync(PlaywrightAppFixture fixture, SmokeTestUser user)
+    {
+        var page = await DeletePersonalDataPage.OpenAsync(fixture, user);
+        await DeletePersonalDataPage.SubmitAsync(page, user);
+        await DeletePersonalDataPage.ExpectLandingPageAsync(page);
+
+        await RegisterAndLoginAsync(fixture, page, user.Email);
+        return page;
+    }
 }

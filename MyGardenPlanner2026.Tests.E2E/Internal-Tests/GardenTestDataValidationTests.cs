@@ -1,6 +1,7 @@
 ﻿namespace MyGardenPlanner2026.Tests.E2E.Internal_Tests;
 
 using FluentAssertions;
+using MyGardenPlanner2026.Core.Entities.Common;
 
 public sealed class GardenTestDataValidationTests
 {
@@ -54,4 +55,15 @@ public sealed class GardenTestDataValidationTests
     // SHA-256("abc") er et kendt testvektor.
     GardenTestData.ExpectedOwnerEmailHash("  ABC  ")
         .Should().Be("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+
+    [Theory]
+    [InlineData("", "a@test.dk")]
+    [InlineData("Have", " ")]
+    public async Task SeedPendingRestoreAsync_BlankNameOrEmail_Throws(string name, string email)
+    {
+        var act = () => GardenTestData.SeedPendingRestoreAsync("Server=ignored", new PendingRestoreSeed(
+            name, email, GardenAccessLevel.HaveArkitekt, AccessCategory.Administrator, DateTimeOffset.UtcNow));
+
+        await act.Should().ThrowAsync<ArgumentException>();
+    }
 }

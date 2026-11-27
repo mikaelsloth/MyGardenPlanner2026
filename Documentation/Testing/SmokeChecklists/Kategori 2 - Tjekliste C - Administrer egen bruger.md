@@ -5,7 +5,8 @@
 - [ ] Download/slet personlige data
 - [ ] Download backup før sletning
 - [ ] Slet konto: haver med flere medlemmer
-- [ ] Slet konto: gemte haver og tilbud om gendannelse og nederst:
+- [ ] Slet konto: gemte haver og tilbud om gendannelse
+- [ ] Gendan en gemt have i checkout
 
 ### C1. Skift e-mail (bekræftelseslink)
 - Pre-requisite: Ny bruger oprettet og bekræftet via UI (RegisteredUserFlow) og logget ind (LoginFlow).
@@ -105,3 +106,20 @@
   e. Intet banner.
 - Skærmbillede: nej
 - Filer: Components\Pages\OnboardingWelcomePage.razor(.cs), AccountDeletionService.cs, GardenRestoreService.cs, GardenTestData.cs
+### C7. Gendan en gemt have i checkout
+- Pre-requisite: Ny bruger uden 2FA og uden rolle (SeedExtraUserAsync) som eneste medlem/ejer af en have (BedDesigner/Administrator, seedet med GardenTestData). Kontoen slettes via UI, og brugeren registrerer, bekræfter og logger ind igen med SAMME e-mail.
+- Route: `/onboarding/welcome` --> "Vælg abonnement og gendan" --> `/onboarding/checkout` --> `/gardens/<id>/access`
+- Handling:
+  a. Indtast et havenavn, vælg BedDesigner/Administrator, klik "Fortsæt", vælg "Gendan <havenavn>", klik "Gennemfør betaling og gendan have"
+  b. Vælg Planlaegger/Editor og klik "Fortsæt"; klik "Ændr abonnement"; vælg BedDesigner/Administrator og gendan
+  c. Behold "Opret en ny have" og gennemfør købet
+  d. Efter c: åbn checkout igen og gendan den gamle have med et dækkende køb
+  e. Udløbet gendannelsesbillet (seedet direkte i databasen)
+- Forventet:
+  a. Landing på `/gardens/<id>/access` med "Haveadgang – <havenavn>" (havens oprindelige navn). Haven er ikke længere slettet, medlemskabet tilhører den nye bruger med det købte niveau, det gamle entitlement er erstattet af et nyt, og billetten er slettet. AuditLog har én Update-række for Garden og mindst én for GardenMembership.
+  b. Efter "Fortsæt" er valget "Gendan <havenavn>" deaktiveret med "Kræver mindst … Dit nuværende valg dækker ikke haven.", og "Opret en ny have" er valgt. "Ændr abonnement" går til trin 1 med havenavnet bevaret. Med et dækkende køb lykkes gendannelsen som i a.
+  c. Landing på den nye have. Den gamle have er stadig soft-slettet (medlemskab og entitlement soft-slettet), og billetten findes.
+  d. Den gamle have gendannes som i a. Den nye have er uberørt.
+  e. Intet banner på `/onboarding/welcome` og i checkout, og betalingstrinnet viser ikke "Gendan en gemt have?".
+- Skærmbillede: nej
+- Filer: Components\Pages\OnboardingCheckoutPage.razor(.cs), Components\Domain\Subscriptions\RestoreGardenChoice.razor(.cs), PaymentMockPage.razor(.cs), PricingCalculator.razor(.cs), OnboardingService.cs, GardenRestoreCoverage.cs

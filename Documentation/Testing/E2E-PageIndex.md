@@ -152,6 +152,8 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
   - Læsere (IgnoreQueryFilters, også soft-slettede): `FindGardenAsync` → `GardenSnapshot?`, `GetMembershipsAsync` → `MembershipSnapshot`, `GetEntitlementsAsync` → `EntitlementSnapshot`, FindPendingRestoreAsync → PendingRestoreSnapshot?.
   - ExpectedOwnerEmailHash(email): uafhængig udregning af billettens hash (trim, lowercase, SHA-256, hex).
   - Tjekliste C: DeletePersonalDataPage (selektorer og handlinger på sletsiden) og GardenRestoreFlow.RegisterAndLoginAsync (registrér, bekræft og log ind, også med en slettet brugers e-mail).
+  - SeedPendingRestoreAsync(connectionString, PendingRestoreSeed(navn, ejerEmail, lag, kategori, udløb)): soft-slettet have med ejerens soft-slettede medlemskab og entitlement og en billet (tidligere bruger-ID findes ikke). Udløb i fortiden giver en udløben billet.
+  - Tjekliste C: WelcomePage (tekster og link på /onboarding/welcome), CheckoutPage (selektorer og handlinger på /onboarding/checkout) og GardenRestoreFlow.DeleteAccountAndReRegisterAsync.
 
 ## 3. Læringer (undgå gentagelser)
 
@@ -180,6 +182,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
   Komponenter ejer et FocusTrapScope (SyncAsync fra OnAfterRenderAsync, DisposeAsync fra komponentens DisposeAsync). Ny dialog/drawer: følg samme mønster, og tilføj data-autofocus på det element, der skal have initialt fokus.
 - bUnit: FakeFocusTrapService (AddFakeFocusTrap, idempotent, registreret af RegisterReAuthFakes). NavDrawer-tests bruger den rigtige service med modulopsætning (SetupNavDrawerModule).
 - En udløser (fx "Gem"), der åbner en modal, må ikke få native disabled: Chromium flytter fokus til body, og fokus kan ikke returneres til udløseren (StepUpModalTastaturTests.Escape). Brug aria-disabled.
+- Checkout (InteractiveServer): indtast havenavnet med ActUntilAsync (fill + blur), til prisberegneren vises. Først da er kredsløbet forbundet, og valg i beregneren og klik på "Fortsæt" når serveren i rækkefølge.
 
 ### Testdesign og delt data
 - Tests er hardcodede forventede værdier. De udledes ikke af produktionskoden.
@@ -533,6 +536,7 @@ Eksportpanel (AuditLogExportPanel):
 ```
 
 ### 4.5 Onboarding
+```
 /onboarding/welcome OnboardingWelcomePage
 Titel: Kom i gang – MyGardenPlanner. h1: Velkommen til MyGardenPlanner. Layout: PublicLayout. [Authorize], InteractiveServer.
 Kort: "Prøv gratis" (knap "Opret gratis prøveperiode": sandkasse-have i 30 dage, navigerer til /demo-dashboard) og "Vælg abonnement" (knap "Vælg abonnement og opret have": navigerer til /onboarding/checkout).
@@ -540,11 +544,28 @@ Gemte haver (R10.1e): GetRestorableGardensAsync matcher brugerens e-mail mod gen
 Fejl ved sandkasse uden bruger: "Error: Kunne ikke bestemme den aktuelle bruger."
 Filer: OnboardingWelcomePage.razor (+ .cs, .css), GardenRestoreService.cs
 Tests: ManualSmoke/TjeklisteC/GemteHaverTests.
+```
+```
+/onboarding/checkout OnboardingCheckoutPage
+Titel: Opret betalt have – MyGardenPlanner. h1: Opret betalt have. Layout: PublicLayout, InteractiveServer, offentlig (ingen [Authorize]).
+Trin (.onboarding-steps .context-tab; det aktive har klassen "active"): "1. Konfiguration", "2. Konto", "3. Betaling".
+Konfiguration: "Havenavn" (#garden-name, @bind, udløses ved blur) og "Beskrivelse (valgfri)" (#garden-description). Prisberegneren (PricingCalculator med faste aktive/arkiverede haver) vises først, når havenavnet er udfyldt (backlog B3); "Fortsæt" i beregneren beregner prisen og går videre. Med gemte haver vises en StatusBanner: "Du har gemte haver, der kan gendannes. Når du har valgt abonnement, kan du vælge at gendanne en af dem i stedet for at oprette en ny have."
+Betaling (logget ind): RestoreGardenChoice (.restore-garden-choice, fieldset "Gendan en gemt have?") med radioerne "Opret en ny have" (#restore-garden-none, valgt som standard) og "Gendan <havenavn>" (#restore-garden-<billet-id>) pr. gemt have, med "Kan gendannes til <dd.MM.yyyy> (UTC).". Dækkes havens tidligere niveau ikke (GardenRestoreCoverage), er valget deaktiveret med "Kræver mindst <niveau> / <kategori>. Dit nuværende valg dækker ikke haven." og knappen "Ændr abonnement" (tilbage til trin 1; havenavnet bevares, beregneren nulstilles).
+PaymentMockPage (.payment-mock-page): h2 "Betaling", simuleret betaling. Knap "Gennemfør betaling og opret have", eller "Gennemfør betaling og gendan have" ved gendannelsesvalg (havenavnet er da den gendannede haves).
+Succes: navigerer til /gardens/<id>/access. Gendannelse: haven er ikke længere slettet, ejerens medlemskab flyttes til den nye bruger med det købte niveau, det gamle entitlement erstattes af et nyt (Annual som standard), billetten slettes, og AuditLog får Update-rækker for Garden og GardenMembership.
+Filer: OnboardingCheckoutPage.razor (+ .cs, .css), RestoreGardenChoice.razor (+ .cs, .css), PaymentMockPage.razor (+ .cs), PricingCalculator.razor (+ .cs, .css), OnboardingService.cs, GardenRestoreCoverage.cs
+Tests: ManualSmoke/TjeklisteC/GendannelseTests.
+```
+```
+/gardens/{GardenId:guid}/access GardenAccessManagementPage
+Titel: Haveadgang – MyGardenPlanner. h1: Haveadgang – <havenavn>. [Authorize] + RequireGardenMemberPolicy, InteractiveServer, MainLayout. Skeleton under indlæsning; ikke-medlem: "Ingen adgang". Kun landingssiden efter checkout er verificeret (C7).
+Filer: GardenAccessManagementPage.razor (+ .cs, .css)
+```
 
 ### 4.6 Ikke indekseret endnu
 
 - Komponenter ud over dem nævnt her.
-- Loginbeskyttede sider uden for Manage, admin og /onboarding/welcome (ingen er indekseret).
+- Loginbeskyttede sider uden for Manage, admin, /onboarding/welcome og /gardens/{id}/access.
 
 ## 5. Dækning
 
@@ -564,6 +585,7 @@ Tests: ManualSmoke/TjeklisteC/GemteHaverTests.
 | C4 | Download backup før sletning | BackupDownloadTests | ingen | ikke kørt |
 | C5 | Slet konto: haver med flere medlemmer | KontosletningHaverTests | ingen | ikke kørt |
 | C6 | Slet konto: gemte haver og tilbud om gendannelse | GemteHaverTests | ingen | ikke kørt |
+| C7 | Gendan en gemt have i checkout | GendannelseTests | ingen | ikke kørt |
 | D1 | Modal vises ved beskyttet handling (+ AccessDenied for Requester) | ModalVisesTests | StepUp_`<Side>`_Side (20), StepUp_`<Side>`_Modal (15), StepUp_AccessDenied_`<bredde>` (5) | grøn |
 | D1b | Step-up-modal: Esc, fokus-trap, fokus-returnering, ingen baggrundslukning | StepUpModalTastaturTests | ingen | ikke kørt |
 | D2 | Forkert password/TOTP i modal + alarm ved 5. fejl | ForkertPasswordModalTests | StepUp_AdminSecurityPolicies_ForkertPassword_`<bredde>` (5) | grøn |
@@ -697,19 +719,21 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ~~- R10.3 Layer 2/3-data (bede, planer m.m.) skal medtages i AccountDeletionService (eller kaskade), når de bygges.~~
 ~~- R10.4 AccountDeletionService bruger ExecuteDelete og skriver derfor ingen AuditLog-rækker. Overvej en eksplicit audit-post som dokumentation.~~
 ~~- R10.5 Kontosider på engelsk (blokeringsbesked mv.) lokaliseres i R8.~~
-- R10.6 (backlog) E2E for kontosletning: ejerskabsoverdragelse, slet for alle og gendannelse (kræver seedning af haver med flere medlemmer i SmokeTestDataSeeder). (seeding af haver leveret i PR 14: GardenTestData). Ejerskab og slet for alle leveret i PR 15 (C5). gemte haver og tilbud om gendannelse leveret i PR 16a (C6). Gendannelsen mangler.
+~~- R10.6 (backlog) E2E for kontosletning: ejerskabsoverdragelse, slet for alle og gendannelse (kræver seedning af haver med flere medlemmer i SmokeTestDataSeeder). (seeding af haver leveret i PR 14: GardenTestData). Ejerskab og slet for alle leveret i PR 15 (C5). gemte haver og tilbud om gendannelse leveret i PR 16a (C6). Gendannelsen mangler.~~
+~~- R10.11 (observation) SoftDeleteInterceptor skriver handlende brugers e-mail (UserEmail ?? UserId) i DeletedBy. Efter kontosletning bevares værdien på soft-slettede rækker (fx kataloger), jf. AccountDeletionCoverageTests (DeletedBy er bevaret som regel). Overvej at skrive bruger-ID i stedet for e-mail.~~
+~~- R10.13 (backlog) Data Protection: persistér og sikkerhedskopiér nøgleringen og sæt et stabilt ApplicationName, ellers kan gamle backup-filer ikke verificeres (se R10.2).~~
+~~- R10.14 (backlog) E2E: download af backup fra DeletePersonalData og verifikation af filens format.~~
+
+~~Filer til Upload: AccountDeletionService, DeletePersonalData, Garden-entiteterne~~
+
+### R12 – Kontosletning: notifikation, overdragelse med accept, backup-import og fortrydelse
 - R10.7 (backlog) Notifikationsmail til ny ejer ved ejerskabsoverdragelse (kræver en rigtig IEmailSender; SmtpSecurityEmailSender sender kun til Smtp:AdminSecurityEmails).
 - R10.8 (backlog) Overdragelse med modtagerens accept og betaling af eventuel forskel (i dag hæves kun Category til Administrator uden nyt entitlement).
 - R10.9 (backlog) Backup-filen (R10.2) bundet til en anden e-mail end den oprindelige (intet sikkert design endnu).
 - R10.10 (backlog) Fortrydelse af hele kontosletningen i 30 dage (deaktivering af Identity-brugeren i stedet for sletning).
-~~- R10.11 (observation) SoftDeleteInterceptor skriver handlende brugers e-mail (UserEmail ?? UserId) i DeletedBy. Efter kontosletning bevares værdien på soft-slettede rækker (fx kataloger), jf. AccountDeletionCoverageTests (DeletedBy er bevaret som regel). Overvej at skrive bruger-ID i stedet for e-mail.~~
 - R10.12 (backlog) Import af backup-filen (kræver Layer 2/3-data; brug IAccountBackupService.Verify med den nye brugers BEKRÆFTEDE e-mail).
-~~- R10.13 (backlog) Data Protection: persistér og sikkerhedskopiér nøgleringen og sæt et stabilt ApplicationName, ellers kan gamle backup-filer ikke verificeres (se R10.2).~~
-~~- R10.14 (backlog) E2E: download af backup fra DeletePersonalData og verifikation af filens format.~~
-
-Filer til Upload: AccountDeletionService, DeletePersonalData, Garden-entiteterne
 
 ### Backlog (ikke tildelt gruppe)
 - B1 `EnableAuthenticator.razor.cs`: issuer i otpauth-URI'en er "Microsoft.AspNetCore.Identity.UI" og vises som kontonavn i authenticator-apps. Overvej "MyGardenPlanner". Ændrer ikke nøglen, men eksisterende poster i brugernes apps beholder det gamle navn. Tjek E2E-hjælpere, der læser URI'en.
 - B2 `AccessDenied.razor.cs`: statusbeskeden til brugere uden 2FA ("Adgang til denne funktion kræver, at du har totrinsbekræftelse aktiveret på din konto.") har ikke "Error"-præfiks og vises derfor som success (grøn) i StatusMessage. Overvej "Error: "-præfiks. Det er en adfærdsændring: opdatér NoMfa-assert (D3, KorrektStepUpTests) og afsnit 4.2.
- 
+- B3 `OnboardingCheckoutPage`: prisberegneren (og dermed gendannelsesvalget i betalingstrinnet) vises først, når "Havenavn" er udfyldt, også for en bruger, der kun vil gendanne en gemt have. Navnet bruges ikke ved gendannelse (PaymentGardenName = den gendannede haves navn). Overvej at vise beregneren uden havenavn, når der findes gemte haver, eller at skjule navnefeltet ved gendannelsesvalg. Ændrer checkout-flowet: opdatér E2E (C7) og afsnit 4.5.

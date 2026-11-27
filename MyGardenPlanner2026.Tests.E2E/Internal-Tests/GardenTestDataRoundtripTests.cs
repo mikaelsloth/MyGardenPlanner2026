@@ -121,4 +121,25 @@ public sealed class GardenTestDataRoundtripTests(PlaywrightAppFixture fixture)
 
         (await GardenTestData.FindPendingRestoreAsync(ConnectionString, garden.Id)).Should().BeNull();
     }
+
+    [Fact]
+    public async Task SeedPendingRestoreAsync_CreatesSoftDeletedGardenWithTicket()
+    {
+        var email = RegisteredUserFlow.NewEmail();
+        var expires = DateTimeOffset.UtcNow.AddDays(-1);
+
+        var garden = await GardenTestData.SeedPendingRestoreAsync(ConnectionString, new PendingRestoreSeed(
+            $"Billet {Guid.NewGuid():N}", email, GardenAccessLevel.BedDesigner, AccessCategory.Administrator, expires));
+
+        (await GardenTestData.FindGardenAsync(ConnectionString, garden.Id))!.IsDeleted.Should().BeTrue();
+        var memberships = await GardenTestData.GetMembershipsAsync(ConnectionString, garden.Id);
+        memberships.Should().ContainSingle().Which.Should().Match<MembershipSnapshot>(m =>
+            m.IsOwner && m.IsDeleted && m.Layer == GardenAccessLevel.BedDesigner && m.Category == AccessCategory.Administrator);
+
+        var ticket = await GardenTestData.FindPendingRestoreAsync(ConnectionString, garden.Id);
+        ticket.Should().NotBeNull();
+        ticket!.OwnerEmailHash.Should().Be(GardenTestData.ExpectedOwnerEmailHash(email));
+        ticket.ExpiresUtc.Should().BeCloseTo(expires, TimeSpan.FromSeconds(1));
+        ticket.FormerUserId.Should().Be(memberships.Single().UserId);
+    }
 }

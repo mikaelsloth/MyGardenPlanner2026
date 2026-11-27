@@ -6,6 +6,7 @@ using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Layer1;
 using System.Globalization;
 using static MyGardenPlanner2026.Tests.E2E.ManualSmoke.TjeklisteC.DeletePersonalDataPage;
+using static MyGardenPlanner2026.Tests.E2E.ManualSmoke.TjeklisteC.WelcomePage;
 
 /// <summary>
 /// Tjekliste C6: haver gemmes ved kontosletning og tilbydes ved genregistrering (R10.1b/R10.1e). Sole-member-haver
@@ -17,13 +18,7 @@ using static MyGardenPlanner2026.Tests.E2E.ManualSmoke.TjeklisteC.DeletePersonal
 [Trait(TestCategories.Category, TestCategories.ManualSmoke)]
 public sealed class GemteHaverTests(PlaywrightAppFixture fixture)
 {
-    private const string WelcomeTitle = "Kom i gang – MyGardenPlanner";
-    private const string WelcomeHeading = "Velkommen til MyGardenPlanner";
-    private const string RestoreBannerText = "Du har gemte haver, der kan gendannes";
-    private const string RestoreLinkName = "Vælg abonnement og gendan";
-    private const string SandboxButtonName = "Opret gratis prøveperiode";
     private const int DefaultRetentionDays = 30;
-
     private static readonly TimeSpan Tolerance = TimeSpan.FromMinutes(10);
 
     private string ConnectionString => fixture.AppConnectionString;
@@ -36,7 +31,7 @@ public sealed class GemteHaverTests(PlaywrightAppFixture fixture)
         var garden = await GardenTestData.SeedAsync(ConnectionString,
             new GardenSeed(NewName("Gemt"), [GardenMemberSeed.Owner(user.Email)]));
 
-        var page = await DeletePersonalDataPage.OpenAsync(fixture, user);
+        var page = await OpenAsync(fixture, user);
         await Assertions.Expect(DeleteButton(page)).ToBeVisibleAsync();
         await Assertions.Expect(page.Locator("fieldset")).ToHaveCountAsync(0);
         await SubmitAsync(page, user);
@@ -70,7 +65,7 @@ public sealed class GemteHaverTests(PlaywrightAppFixture fixture)
             NewName("Slet for alle"),
             [GardenMemberSeed.Owner(owner.Email), GardenMemberSeed.Member(other.Email)]));
 
-        var page = await DeletePersonalDataPage.OpenAsync(fixture, owner);
+        var page = await OpenAsync(fixture, owner);
         await ChooseDeleteForAllAsync(page, 0, garden.Name);
         await SubmitAsync(page, owner);
         await ExpectLandingPageAsync(page);
@@ -91,7 +86,7 @@ public sealed class GemteHaverTests(PlaywrightAppFixture fixture)
             NewName("Overdrages"),
             [GardenMemberSeed.Owner(owner.Email), GardenMemberSeed.Member(member.Email)]));
 
-        var page = await DeletePersonalDataPage.OpenAsync(fixture, owner);
+        var page = await OpenAsync(fixture, owner);
         // Kun haven med blokering vises, og den er altid indeks 0.
         await Assertions.Expect(page.Locator("fieldset legend")).ToHaveTextAsync(transferred.Name);
         await ChooseTransferAsync(page, 0, await IdOfAsync(member));
@@ -114,7 +109,7 @@ public sealed class GemteHaverTests(PlaywrightAppFixture fixture)
         var second = await GardenTestData.SeedAsync(ConnectionString,
             new GardenSeed(NewName("Bravo"), [GardenMemberSeed.Owner(user.Email)]));
 
-        var page = await DeletePersonalDataPage.OpenAsync(fixture, user);
+        var page = await OpenAsync(fixture, user);
         await SubmitAsync(page, user);
         await ExpectLandingPageAsync(page);
         var ticket = await ExpectTicketAsync(first.Id, user.Email, userId);
@@ -140,7 +135,7 @@ public sealed class GemteHaverTests(PlaywrightAppFixture fixture)
         await GardenTestData.SeedAsync(ConnectionString,
             new GardenSeed(NewName("Privat"), [GardenMemberSeed.Owner(user.Email)]));
 
-        var page = await DeletePersonalDataPage.OpenAsync(fixture, user);
+        var page = await OpenAsync(fixture, user);
         await SubmitAsync(page, user);
         await ExpectLandingPageAsync(page);
 

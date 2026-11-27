@@ -2,9 +2,12 @@
 
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 using MyGardenPlanner2026.Components.Account;
+using MyGardenPlanner2026.Core.Contracts.Email;
 using MyGardenPlanner2026.Core.Entities;
 using MyGardenPlanner2026.Infrastructure.Data;
+using MyGardenPlanner2026.Infrastructure.Services.Email;
 
 public static class IdentityServicesExtensions
 {
@@ -43,7 +46,16 @@ public static class IdentityServicesExtensions
             .AddErrorDescriber<DanishIdentityErrorDescriber>();
         ;
 
-        services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+        services.AddOptions<EmailOptions>().BindConfiguration(EmailOptions.SectionName);
+        services.AddSingleton<IUserEmailSender, SmtpUserEmailSender>();
+        services.AddSingleton<IdentityNoOpEmailSender>();
+        services.AddSingleton<IdentityEmailSender>();
+
+        // Provideren vælges ved opstart. NoOp er standard (ShowLinks-logikken afhænger af typen).
+        services.AddSingleton<IEmailSender<ApplicationUser>>(sp =>
+            sp.GetRequiredService<IOptionsMonitor<EmailOptions>>().CurrentValue.Provider == EmailProvider.Smtp
+                ? sp.GetRequiredService<IdentityEmailSender>()
+                : sp.GetRequiredService<IdentityNoOpEmailSender>());
 
         return services;
     }

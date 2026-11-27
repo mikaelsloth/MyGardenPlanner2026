@@ -178,6 +178,9 @@ public sealed class PlaywrightAppFixture : IAsyncLifetime
         // Links (RegisterConfirmation/Email) vises kun med dette flag (R2.1/R2.2). E2E bygger på dem.
         startInfo.EnvironmentVariables["Identity__ShowEmailLinks"] = "true";
 
+        // PR 1A: E2E bruger stadig NoOp-afsenderen og links på siden. Overstyrer user-secrets.
+        startInfo.EnvironmentVariables["Email__Provider"] = "NoOp";
+
         // Neutraliserer Program.cs' #if DEBUG SeedSmokeTestUsersAsync(): uden dette
         // overskriver appens egen (evt. user-secrets-konfigurerede) smoke-test-seeder
         // vores fixture-seedede brugeres 2FA-nøgler ved opstart, da e-mails er identiske.

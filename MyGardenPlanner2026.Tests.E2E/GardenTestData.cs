@@ -8,6 +8,8 @@ using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Gardens;
 using MyGardenPlanner2026.Core.Entities.Layer1;
 using MyGardenPlanner2026.Infrastructure.Data;
+using System.Security.Cryptography;
+using System.Text;
 
 /// <summary>Ét medlem i en seedet have. Brug <see cref="Owner"/> og <see cref="Member"/>.</summary>
 public sealed record GardenMemberSeed(
@@ -37,6 +39,9 @@ public sealed record MembershipSnapshot(
 
 public sealed record EntitlementSnapshot(
     string UserId, GardenAccessLevel Layer, AccessCategory Category, BillingCycle BillingCycle, bool IsTrial, bool IsDeleted);
+
+public sealed record PendingRestoreSnapshot(
+    string OwnerEmailHash, string FormerUserId, DateTimeOffset DeletedAtUtc, DateTimeOffset ExpiresUtc);
 
 /// <summary>
 /// Seeder og læser af haver i engangsdatabasen (R10.6). Haver oprettes direkte i dbo via app-forbindelsen,
@@ -118,6 +123,21 @@ public static class GardenTestData
             .OrderBy(e => e.UserId)
             .Select(e => new EntitlementSnapshot(e.UserId, e.Layer, e.Category, e.BillingCycle, e.IsTrial, e.IsDeleted))
             .ToListAsync());
+
+    /// <summary>Null, hvis haven ikke har en gendannelsesbillet.</summary>
+    public static Task<PendingRestoreSnapshot?> FindPendingRestoreAsync(string connectionString, Guid gardenId) =>
+        ReadAsync(connectionString, context => context.PendingGardenRestores
+            .AsNoTracking()
+            .Where(p => p.GardenId == gardenId)
+            .Select(p => new PendingRestoreSnapshot(p.OwnerEmailHash, p.FormerUserId, p.DeletedAtUtc, p.ExpiresUtc))
+            .SingleOrDefaultAsync());
+
+    /// <summary>
+    /// Uafhængig implementering af specifikationen for PendingGardenRestore.OwnerEmailHash: trim + lowercase,
+    /// SHA-256, 64 lowercase hex-tegn. Kalder bevidst ikke produktionskoden (RestoreEmailHasher).
+    /// </summary>
+    public static string ExpectedOwnerEmailHash(string email) =>
+        Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(email.Trim().ToLowerInvariant())));
 
     private static async Task<T> ReadAsync<T>(string connectionString, Func<PlannerDbContext, Task<T>> read)
     {

@@ -4,6 +4,7 @@ using FluentAssertions;
 using Microsoft.Playwright;
 using MyGardenPlanner2026.Core.Entities.Common;
 using MyGardenPlanner2026.Core.Entities.Layer1;
+using static MyGardenPlanner2026.Tests.E2E.ManualSmoke.TjeklisteC.DeletePersonalDataPage;
 
 /// <summary>
 /// Tjekliste C5: kontosletning for en bruger, der er eneste ejer i haver med andre medlemmer (R10.1a/R10.1b).
@@ -15,12 +16,6 @@ using MyGardenPlanner2026.Core.Entities.Layer1;
 [Trait(TestCategories.Category, TestCategories.ManualSmoke)]
 public sealed class KontosletningHaverTests(PlaywrightAppFixture fixture)
 {
-    private const string DeleteButtonName = "Slet data og luk min konto";
-    private const string DeleteChoice = "delete";
-    private const string TransferPrefix = "transfer:";
-    private const string NoChoiceOption = "Vælg…";
-    private const string DeleteOptionText = "Slet haven for alle medlemmer";
-
     private string ConnectionString => fixture.AppConnectionString;
 
     // ---------- Overdragelse ----------
@@ -253,40 +248,7 @@ public sealed class KontosletningHaverTests(PlaywrightAppFixture fixture)
 
     private static string NewName(string prefix) => $"{prefix} {Guid.NewGuid():N}";
 
-    private async Task<IPage> OpenDeletePageAsync(SmokeTestUser user)
-    {
-        var page = await fixture.LoginAndGotoAsync(user, E2ERoutes.DeletePersonalData, null);
-        await SmokePageAssertions.ExpectPageAsync(page, ManagePageTexts.DeleteTitle, ManagePageTexts.ManageHeading);
-        return page;
-    }
-
-    private static ILocator Choice(IPage page, int index) => page.Locator($"#garden-choice-{index}");
-
-    private static ILocator Confirm(IPage page, int index) => page.Locator($"#garden-confirm-{index}");
-
-    private static ILocator ErrorMessage(IPage page) => page.Locator(".status-message.status-danger[role=alert]");
-
-    private static ILocator DeleteButton(IPage page) =>
-        page.GetByRole(AriaRole.Button, new() { Name = DeleteButtonName, Exact = true });
-
-    private static Task<IReadOnlyList<string>> ChooseTransferAsync(IPage page, int index, string newOwnerUserId) =>
-        Choice(page, index).SelectOptionAsync(new SelectOptionValue { Value = TransferPrefix + newOwnerUserId });
-
-    private static async Task ChooseDeleteForAllAsync(IPage page, int index, string confirmName)
-    {
-        await Choice(page, index).SelectOptionAsync(new SelectOptionValue { Value = DeleteChoice });
-        await Confirm(page, index).FillAsync(confirmName);
-    }
-
-    private static async Task SubmitAsync(IPage page, SmokeTestUser user)
-    {
-        await page.GetByLabel("Adgangskode", new() { Exact = true }).FillAsync(user.Password);
-        await DeleteButton(page).ClickAsync();
-    }
-
-    /// <summary>Succes redirecter til forsiden (RedirectTo("")).</summary>
-    private static Task ExpectLandingPageAsync(IPage page) =>
-        page.WaitForURLAsync(url => new Uri(url).AbsolutePath == "/");
+    private Task<IPage> OpenDeletePageAsync(SmokeTestUser user) => OpenAsync(fixture, user);
 
     private async Task ExpectUserDeletedAsync(SmokeTestUser user)
     {

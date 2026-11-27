@@ -149,7 +149,9 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - `GardenTestData` (seeder og læser haver i engangsdatabasen via app-forbindelsen; dbo, ikke admin):
   - `SeedAsync(connectionString, GardenSeed(navn, medlemmer))` → `SeededGarden(Id, Name)`. Brugerne skal findes (`fixture.SeedExtraUserAsync`). Mindst én ejer (flere tilladt), ingen dublet-e-mails.
   - `GardenMemberSeed.Owner(email, layer?)`: IsOwner, Administrator, med entitlement (Annual, gyldigt 1 år, ikke trial). `GardenMemberSeed.Member(email, category = Editor, layer?, withEntitlement = false)`. Standardniveau er HaveArkitekt.
-  - Læsere (IgnoreQueryFilters, også soft-slettede): `FindGardenAsync` → `GardenSnapshot?`, `GetMembershipsAsync` → `MembershipSnapshot`, `GetEntitlementsAsync` → `EntitlementSnapshot`.
+  - Læsere (IgnoreQueryFilters, også soft-slettede): `FindGardenAsync` → `GardenSnapshot?`, `GetMembershipsAsync` → `MembershipSnapshot`, `GetEntitlementsAsync` → `EntitlementSnapshot`, FindPendingRestoreAsync → PendingRestoreSnapshot?.
+  - ExpectedOwnerEmailHash(email): uafhængig udregning af billettens hash (trim, lowercase, SHA-256, hex).
+  - Tjekliste C: DeletePersonalDataPage (selektorer og handlinger på sletsiden) og GardenRestoreFlow.RegisterAndLoginAsync (registrér, bekræft og log ind, også med en slettet brugers e-mail).
 
 ## 3. Læringer (undgå gentagelser)
 
@@ -530,10 +532,19 @@ Eksportpanel (AuditLogExportPanel):
   Tests: ManualSmoke/TjeklisteJ/AuditLogEksportTests, AuditLogEksportVolumenTests.
 ```
 
-### 4.5 Ikke indekseret endnu
+### 4.5 Onboarding
+/onboarding/welcome OnboardingWelcomePage
+Titel: Kom i gang – MyGardenPlanner. h1: Velkommen til MyGardenPlanner. Layout: PublicLayout. [Authorize], InteractiveServer.
+Kort: "Prøv gratis" (knap "Opret gratis prøveperiode": sandkasse-have i 30 dage, navigerer til /demo-dashboard) og "Vælg abonnement" (knap "Vælg abonnement og opret have": navigerer til /onboarding/checkout).
+Gemte haver (R10.1e): GetRestorableGardensAsync matcher brugerens e-mail mod gendannelsesbilletternes hash. Findes mindst én, vises StatusBanner (Info): "Du har gemte haver, der kan gendannes: <navne, sorteret efter navn, kommasepareret>. Den nærmeste frist er <dd.MM.yyyy> (UTC). Vælg et abonnement, der dækker dem, for at gendanne en have i stedet for at oprette en ny." med linket "Vælg abonnement og gendan" (href /onboarding/checkout). Udløbne billetter vises ikke.
+Fejl ved sandkasse uden bruger: "Error: Kunne ikke bestemme den aktuelle bruger."
+Filer: OnboardingWelcomePage.razor (+ .cs, .css), GardenRestoreService.cs
+Tests: ManualSmoke/TjeklisteC/GemteHaverTests.
+
+### 4.6 Ikke indekseret endnu
 
 - Komponenter ud over dem nævnt her.
-- Loginbeskyttede sider uden for Manage og admin (ingen er indekseret).
+- Loginbeskyttede sider uden for Manage, admin og /onboarding/welcome (ingen er indekseret).
 
 ## 5. Dækning
 
@@ -552,6 +563,7 @@ Eksportpanel (AuditLogExportPanel):
 | C3 | Download/slet personlige data | PersonligeDataTests | PersonligeData_PersonalData_`<bredde>` (5), PersonligeData_DeletePersonalData_`<bredde>` (5) | ikke kørt |
 | C4 | Download backup før sletning | BackupDownloadTests | ingen | ikke kørt |
 | C5 | Slet konto: haver med flere medlemmer | KontosletningHaverTests | ingen | ikke kørt |
+| C6 | Slet konto: gemte haver og tilbud om gendannelse | GemteHaverTests | ingen | ikke kørt |
 | D1 | Modal vises ved beskyttet handling (+ AccessDenied for Requester) | ModalVisesTests | StepUp_`<Side>`_Side (20), StepUp_`<Side>`_Modal (15), StepUp_AccessDenied_`<bredde>` (5) | grøn |
 | D1b | Step-up-modal: Esc, fokus-trap, fokus-returnering, ingen baggrundslukning | StepUpModalTastaturTests | ingen | ikke kørt |
 | D2 | Forkert password/TOTP i modal + alarm ved 5. fejl | ForkertPasswordModalTests | StepUp_AdminSecurityPolicies_ForkertPassword_`<bredde>` (5) | grøn |
@@ -685,7 +697,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ~~- R10.3 Layer 2/3-data (bede, planer m.m.) skal medtages i AccountDeletionService (eller kaskade), når de bygges.~~
 ~~- R10.4 AccountDeletionService bruger ExecuteDelete og skriver derfor ingen AuditLog-rækker. Overvej en eksplicit audit-post som dokumentation.~~
 ~~- R10.5 Kontosider på engelsk (blokeringsbesked mv.) lokaliseres i R8.~~
-- R10.6 (backlog) E2E for kontosletning: ejerskabsoverdragelse, slet for alle og gendannelse (kræver seedning af haver med flere medlemmer i SmokeTestDataSeeder). (seeding af haver leveret i PR 14: GardenTestData). ejerskab og slet for alle leveret i PR 15 (C5). Gendannelse mangler.
+- R10.6 (backlog) E2E for kontosletning: ejerskabsoverdragelse, slet for alle og gendannelse (kræver seedning af haver med flere medlemmer i SmokeTestDataSeeder). (seeding af haver leveret i PR 14: GardenTestData). Ejerskab og slet for alle leveret i PR 15 (C5). gemte haver og tilbud om gendannelse leveret i PR 16a (C6). Gendannelsen mangler.
 - R10.7 (backlog) Notifikationsmail til ny ejer ved ejerskabsoverdragelse (kræver en rigtig IEmailSender; SmtpSecurityEmailSender sender kun til Smtp:AdminSecurityEmails).
 - R10.8 (backlog) Overdragelse med modtagerens accept og betaling af eventuel forskel (i dag hæves kun Category til Administrator uden nyt entitlement).
 - R10.9 (backlog) Backup-filen (R10.2) bundet til en anden e-mail end den oprindelige (intet sikkert design endnu).

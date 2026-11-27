@@ -5,6 +5,7 @@
 - [ ] Download/slet personlige data
 - [ ] Download backup før sletning
 - [ ] Slet konto: haver med flere medlemmer
+- [ ] Slet konto: gemte haver og tilbud om gendannelse og nederst:
 
 ### C1. Skift e-mail (bekræftelseslink)
 - Pre-requisite: Ny bruger oprettet og bekræftet via UI (RegisteredUserFlow) og logget ind (LoginFlow).
@@ -88,3 +89,19 @@
 - Valglisten: "Vælg…", kandidater med højeste kategori først, "Slet haven for alle medlemmer".
 - Skærmbillede: nej
 - Filer: Components\Account\Pages\Manage\DeletePersonalData.razor(.cs), AccountDeletionService.cs, GardenTestData.cs
+### C6. Slet konto: gemte haver og tilbud om gendannelse
+- Pre-requisite: Nye brugere uden 2FA og uden rolle (SeedExtraUserAsync) og haver seedet direkte i databasen (GardenTestData).
+- Route: `/Account/Manage/DeletePersonalData` --> forsiden --> `/Account/Register` --> `/Account/Login` --> `/onboarding/welcome`
+- Handling:
+  a. Slet konto som eneste medlem af en have
+  b. Slet konto og vælg "Slet haven for alle medlemmer"
+  c. Slet konto, hvor haven har en anden ejer, eller hvor ejerskabet overdrages
+  d. Registrér, bekræft og log ind med SAMME e-mail som den slettede bruger, og åbn `/onboarding/welcome`
+  e. Gør det samme med en ANDEN e-mail
+- Forventet:
+  a./b. Haven er soft-slettet (bruger-ID som sletter, ingen e-mail), ejerens medlemskab og entitlement er soft-slettet. Gendannelsesbilletten har ejerens tidligere bruger-ID, SHA-256-hash af e-mailen (ingen e-mail i klartekst), slettetidspunkt nu og udløb efter 30 dage.
+  c. Haven er ikke slettet og har ingen gendannelsesbillet.
+  d. Banneret "Du har gemte haver, der kan gendannes: <navne>. Den nærmeste frist er <dd.MM.yyyy> (UTC)." vises med linket "Vælg abonnement og gendan" til `/onboarding/checkout`.
+  e. Intet banner.
+- Skærmbillede: nej
+- Filer: Components\Pages\OnboardingWelcomePage.razor(.cs), AccountDeletionService.cs, GardenRestoreService.cs, GardenTestData.cs

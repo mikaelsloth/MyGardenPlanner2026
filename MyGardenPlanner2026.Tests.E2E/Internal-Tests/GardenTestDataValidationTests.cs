@@ -48,4 +48,10 @@ public sealed class GardenTestDataValidationTests
 
         await act.Should().ThrowAsync<ArgumentException>().WithMessage("*én gang*");
     }
+
+    [Fact]
+    public void ExpectedOwnerEmailHash_TrimsAndLowercasesBeforeHashing() =>
+    // SHA-256("abc") er et kendt testvektor.
+    GardenTestData.ExpectedOwnerEmailHash("  ABC  ")
+        .Should().Be("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
 }

@@ -28,4 +28,7 @@ public static class E2ERoutes
     public const string ChangePassword = "/Account/Manage/ChangePassword";
     public const string PersonalData = "/Account/Manage/PersonalData";
     public const string DeletePersonalData = "/Account/Manage/DeletePersonalData";
+
+    public const string OnboardingWelcome = "/onboarding/welcome";
+    public const string OnboardingCheckout = "/onboarding/checkout";
 }

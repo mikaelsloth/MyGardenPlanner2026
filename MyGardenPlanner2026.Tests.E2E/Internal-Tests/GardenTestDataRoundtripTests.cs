@@ -111,4 +111,14 @@ public sealed class GardenTestDataRoundtripTests(PlaywrightAppFixture fixture)
         memberships.Select(m => m.UserId).Should().BeEquivalentTo([firstId, secondId]);
         memberships.Should().OnlyContain(m => m.IsOwner);
     }
+
+    [Fact]
+    public async Task FindPendingRestoreAsync_GardenWithoutTicket_ReturnsNull()
+    {
+        var owner = await fixture.SeedExtraUserAsync(twoFactorEnabled: false);
+        var garden = await GardenTestData.SeedAsync(ConnectionString,
+            new GardenSeed($"Uden billet {Guid.NewGuid():N}", [GardenMemberSeed.Owner(owner.Email)]));
+
+        (await GardenTestData.FindPendingRestoreAsync(ConnectionString, garden.Id)).Should().BeNull();
+    }
 }

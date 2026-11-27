@@ -116,3 +116,7 @@ EventId | Fil | Metode |
 1168 | IdentityComponentsEndpointRouteBuilderExtensions.cs | AccountBackupDownloaded |
 1169 | AccountDeletionService.cs | SoftDeleteActorEmailsCleared |
 1170 | AdminSoftDeleteActorScrubber.cs | AdminActorEmailClearFailed |
+1171 | SmtpUserEmailSender.cs | SmtpHostNotConfigured |
+1172 | SmtpUserEmailSender.cs | InvalidRecipient |
+1173 | SmtpUserEmailSender.cs | SendFailed |
+1174 | SmtpUserEmailSender.cs | SendTimedOut |

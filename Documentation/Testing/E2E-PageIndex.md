@@ -73,6 +73,7 @@ Smoke-brugere (`SmokeTestPersonas`, seedes af `SmokeTestDataSeeder`):
 - `fixture.SmtpServer` (`TestSmtpServer`): SMTP-sink i testprocessen. `Messages`, `WaitForMessageAsync(predicate, timeout)`.
 - App-processen får `Smtp__Host=127.0.0.1`, `Smtp__Port=<sinkens port>`, `Smtp__EnableSsl=false`, tomme `Smtp__UserName/Password`, og `Smtp__AdminSecurityEmails__0` = `SecurityAlertRecipient` (eneste modtager).
 - `MimeText`: dekoder RFC 2047-headere og base64/quoted-printable (bruges af `TestSmtpServer`).
+- Mails til brugere (R10.7): `IUserEmailSender` (SmtpUserEmailSender) og Email:Provider (NoOp|Smtp). E2E-appen sættes eksplicit til `Email__Provider=NoOp` (PR 1A), indtil PR 1B flytter flowene til SMTP-sinken. Test uden browser: `SmtpUserEmailSenderTests` (Smtp/).
 - `SecurityAlerts.CountPolicyChangedMails(mails, userId, policyName)`: antal "Sikkerhedspolicy ændret"-mails for brugeren og policyen (bekræfter hvert gem, når UI ikke har unik besked).
 - `SecurityAlerts.ExpectJitRequestedAsync/ExpectJitApprovedAsync(smtp, ...)`: venter på JIT-alarmen for ansøgerens Bruger-ID og kontrollerer felterne.
 
@@ -727,7 +728,7 @@ Filer til Upload: AuditLogFilterBar, AdminAuditLogPage, AuditLogExportService, A
 ~~Filer til Upload: AccountDeletionService, DeletePersonalData, Garden-entiteterne~~
 
 ### R12 – Kontosletning: notifikation, overdragelse med accept, backup-import og fortrydelse
-- R10.7 (backlog) Notifikationsmail til ny ejer ved ejerskabsoverdragelse (kræver en rigtig IEmailSender; SmtpSecurityEmailSender sender kun til Smtp:AdminSecurityEmails).
+- R10.7 (backlog) Rigtig IEmailSender: PR 1A leveret (IUserEmailSender, Email:Provider, danske skabeloner). Mangler: PR 1B (E2E via SMTP-sinken, fjern ShowLinks) og notifikationsmail til ny ejer (PR 2).
 - R10.8 (backlog) Overdragelse med modtagerens accept og betaling af eventuel forskel (i dag hæves kun Category til Administrator uden nyt entitlement).
 - R10.9 (backlog) Backup-filen (R10.2) bundet til en anden e-mail end den oprindelige (intet sikkert design endnu).
 - R10.10 (backlog) Fortrydelse af hele kontosletningen i 30 dage (deaktivering af Identity-brugeren i stedet for sletning).
